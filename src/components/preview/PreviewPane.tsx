@@ -8,7 +8,6 @@ interface PreviewPaneProps {
   workspace: WorkspaceSnapshot;
   onRunClick?: () => void;
   autoReload?: boolean;
-  instructorPointer?: { x: number; y: number; clicked?: boolean; targetArea?: any };
   isFloating?: boolean;
   onToggleFloating?: () => void;
 }
@@ -17,7 +16,6 @@ export const PreviewPane = forwardRef<FloatingBrowserRef, PreviewPaneProps>(({
   workspace,
   onRunClick,
   autoReload = true,
-  instructorPointer,
   isFloating = false,
   onToggleFloating,
 }, ref) => {
@@ -27,14 +25,6 @@ export const PreviewPane = forwardRef<FloatingBrowserRef, PreviewPaneProps>(({
       workspace={workspace}
       onRunClick={onRunClick}
       autoReload={autoReload}
-      instructorPointer={
-        instructorPointer
-          ? {
-              ...instructorPointer,
-              targetArea: instructorPointer.targetArea || 'preview',
-            }
-          : undefined
-      }
       isFloating={isFloating}
       onToggleFloating={onToggleFloating || (() => {})}
     />

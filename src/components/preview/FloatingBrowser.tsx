@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { WorkspaceSnapshot } from '../../types/scrim';
 import { ConsoleMessage } from '../../types/runtime';
 import { RuntimeConsole } from './RuntimeConsole';
@@ -25,7 +25,6 @@ interface FloatingBrowserProps {
   workspace: WorkspaceSnapshot;
   onRunClick?: () => void;
   autoReload?: boolean;
-  instructorPointer?: { x: number; y: number; clicked?: boolean; targetArea: 'editor' | 'preview' | 'files' | 'global' };
   isFloating: boolean;
   onToggleFloating: () => void;
 }
@@ -34,7 +33,6 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
   workspace,
   onRunClick,
   autoReload = true,
-  instructorPointer,
   isFloating,
   onToggleFloating,
 }, ref) => {
@@ -59,13 +57,18 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
   const resizeStartRef = useRef({ mouseX: 0, mouseY: 0, startW: 0, startH: 0 });
 
   useEffect(() => {
-    const width = Math.min(420, Math.max(340, Math.round(window.innerWidth * 0.3)));
-    const height = Math.min(540, Math.max(380, window.innerHeight - 148));
-    setSize({ width, height });
-    setPos({
-      x: Math.max(24, window.innerWidth - width - 18),
-      y: 76,
-    });
+    const place = () => {
+      const width = Math.min(420, Math.max(340, Math.round(window.innerWidth * 0.3)));
+      const height = Math.min(540, Math.max(380, window.innerHeight - 148));
+      setSize({ width, height });
+      setPos({
+        x: Math.max(24, window.innerWidth - width - 18),
+        y: 76,
+      });
+    };
+    place();
+    window.addEventListener('resize', place);
+    return () => window.removeEventListener('resize', place);
   }, []);
 
   useImperativeHandle(ref, () => ({
@@ -200,17 +203,27 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
     onRunClick?.();
   };
 
+  const mapPreviewPointer = useCallback((x: number, y: number) => {
+    const iframe = iframeRef.current;
+    const doc = iframe?.contentDocument;
+    const viewportH = iframe?.clientHeight || 1;
+    const viewportW = iframe?.clientWidth || 1;
+    const body = doc?.body;
+    const contentH = Math.max(120, Math.min(body?.scrollHeight || viewportH, viewportH));
+    const contentW = Math.max(160, Math.min(body?.scrollWidth || viewportW, viewportW));
+    return {
+      x: Math.min(92, Math.max(8, (x / 100) * (contentW / viewportW) * 100)),
+      y: Math.min(90, Math.max(8, (y / 100) * (contentH / viewportH) * 100)),
+    };
+  }, []);
+
   // If floating and minimized, show collapsed pill in corner
   if (isFloating && isMinimized) {
     return (
       <div className="fixed top-14 right-5 z-40">
-        <button
-          onClick={() => setIsMinimized(false)}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 text-xs text-zinc-200 shadow-2xl backdrop-blur-md transition-all hover:scale-105"
-        >
-          <Globe className="h-3.5 w-3.5 text-zinc-300" />
-          <span className="font-medium font-sans">Abrir navegador</span>
-          <span className="text-[10px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400">/index.html</span>
+        <button onClick={() => setIsMinimized(false)} className="floating-preview-trigger">
+          <Globe size={14} />
+          <span>Abrir navegador</span>
         </button>
       </div>
     );
@@ -218,94 +231,67 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
 
   const containerClasses = isFloating
     ? isMaximized
-      ? 'fixed inset-10 z-50 rounded-xl shadow-2xl border border-zinc-700/80 bg-[#121214] flex flex-col overflow-hidden backdrop-blur-xl'
-      : 'fixed z-50 rounded-xl shadow-[0_24px_60px_rgba(0,0,0,0.55)] border border-zinc-600/70 bg-[#121214] flex flex-col overflow-hidden'
-    : 'flex h-full w-full flex-col bg-[#121214] border-l border-zinc-800/80 relative overflow-hidden';
+      ? 'browser-window floating-browser-expanded'
+      : 'browser-window fixed z-50'
+    : 'browser-window h-full w-full relative';
 
   const containerStyle =
     isFloating && !isMaximized
       ? {
+          position: 'fixed' as const,
           left: `${pos.x}px`,
           top: `${pos.y}px`,
           width: `${size.width}px`,
           height: `${size.height}px`,
         }
-      : undefined;
+      : isFloating
+        ? { position: 'fixed' as const }
+        : undefined;
 
   return (
     <div className={containerClasses} style={containerStyle}>
       {/* Top Browser Chrome Header */}
       <div
         onMouseDown={handleMouseDownHeader}
-        className={`flex h-10 items-center justify-between px-3 bg-[#141416] border-b border-zinc-800/80 text-xs font-mono select-none ${
-          isFloating ? (isDragging ? 'cursor-grabbing bg-zinc-800' : 'cursor-grab hover:bg-[#1a1a1d]') : ''
-        }`}
+        className={`browser-header-clean ${isFloating ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : ''}`}
         title={isFloating ? 'Arrastra para mover' : undefined}
       >
-        <div className="flex items-center gap-1 text-zinc-400">
-          <button className="p-1 rounded hover:bg-zinc-800 hover:text-zinc-200" title="Atrás">
-            <ArrowLeft className="h-3 w-3" />
-          </button>
-          <button className="p-1 rounded hover:bg-zinc-800 hover:text-zinc-200" title="Adelante">
-            <ArrowRight className="h-3 w-3" />
-          </button>
-          <button
-            onClick={compileAndRun}
-            className={`p-1 rounded hover:bg-zinc-800 hover:text-zinc-200 ${isExecuting ? 'animate-spin' : ''}`}
-            title="Recargar"
-          >
-            <RotateCw className="h-3 w-3" />
-          </button>
+        <div className="browser-header-title">
+          <span>Vista previa</span>
+          <span className="browser-preview-badge">live</span>
         </div>
-
-        <div className="flex-1 max-w-[200px] sm:max-w-[240px] mx-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#09090b] border border-zinc-800 text-[11px] text-zinc-300 font-mono">
-            <span className="text-zinc-500">/</span>
-            <span className="truncate">index.html</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={handleManualRun}
-            className="flex items-center gap-1 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700/60 px-2 py-0.5 text-zinc-200 font-medium text-[11px]"
-            title="Ejecutar"
-          >
-            <Play className="h-2.5 w-2.5 fill-zinc-200" />
-            <span className="hidden sm:inline">Run</span>
+        <div className="browser-window-actions">
+          <button onClick={compileAndRun} className="browser-btn" title="Recargar">
+            <RotateCw size={13} className={isExecuting ? 'animate-spin' : ''} />
           </button>
-
-          <button
-            onClick={onToggleFloating}
-            className="p-1 rounded text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-            title={isFloating ? 'Fijar al lado' : 'Soltar flotante'}
-          >
-            {isFloating ? <Pin className="h-3 w-3" /> : <PinOff className="h-3 w-3" />}
+          <button onClick={handleManualRun} className="browser-btn" title="Ejecutar">
+            <Play size={13} />
           </button>
-
+          <button onClick={onToggleFloating} className="browser-btn" title={isFloating ? 'Fijar al lado' : 'Soltar flotante'}>
+            {isFloating ? <Pin size={13} /> : <PinOff size={13} />}
+          </button>
           {isFloating && (
             <>
-              <button
-                onClick={() => setIsMinimized(true)}
-                className="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded"
-                title="Minimizar"
-              >
-                <Minimize2 className="h-3 w-3" />
+              <button onClick={() => setIsMinimized(true)} className="browser-btn" title="Minimizar">
+                <Minimize2 size={13} />
               </button>
-              <button
-                onClick={() => setIsMaximized(!isMaximized)}
-                className="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded"
-                title={isMaximized ? 'Restaurar' : 'Ampliar'}
-              >
-                <Maximize2 className="h-3 w-3" />
+              <button onClick={() => setIsMaximized(!isMaximized)} className="browser-btn" title={isMaximized ? 'Restaurar' : 'Ampliar'}>
+                <Maximize2 size={13} />
               </button>
             </>
           )}
         </div>
       </div>
+      <div className="browser-navbar">
+        <button className="browser-btn" title="Atrás"><ArrowLeft size={13} /></button>
+        <button className="browser-btn" title="Adelante"><ArrowRight size={13} /></button>
+        <div className="browser-url-box">
+          <input className="browser-url-input" readOnly value="/index.html" />
+        </div>
+      </div>
 
       {/* Main Preview Sandbox Iframe Container */}
-      <div className="relative flex-1 w-full bg-white overflow-hidden">
+      <div className="browser-viewport">
         {/* Transparent overlay while dragging to prevent iframe from intercepting mouse events */}
         {(isDragging || isResizing) && (
           <div className="absolute inset-0 z-30 bg-transparent cursor-move select-none" />
@@ -318,10 +304,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
           className="h-full w-full border-none bg-white"
         />
 
-        {/* Instructor Cursor overlay inside preview area */}
-        {instructorPointer && instructorPointer.targetArea === 'preview' && (
-          <InstructorCursor pointer={instructorPointer} containerType="preview" />
-        )}
+        <InstructorCursor containerType="preview" mapPosition={mapPreviewPointer} />
       </div>
 
       {/* Embedded Runtime Console Drawer */}

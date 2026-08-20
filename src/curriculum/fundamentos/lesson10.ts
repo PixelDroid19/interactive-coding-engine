@@ -11,7 +11,7 @@ export const LESSON_10 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson10Workspace,
-  concepts: ['scope', 'global', 'local', 'closure'],
+  concepts: ['Dónde vive una variable', 'Una función que recuerda'],
   teachNotes: [
     {
       title: 'Las llaves son paredes',

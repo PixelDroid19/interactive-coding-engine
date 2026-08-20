@@ -11,7 +11,7 @@ export const LESSON_04 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson04Workspace,
-  concepts: ['+', '%', '===', '&&', '||'],
+  concepts: ['Calcular (+, *, %)', 'Comparar (=== y &&)'],
   teachNotes: [
     {
       title: 'El porcentaje es el resto',

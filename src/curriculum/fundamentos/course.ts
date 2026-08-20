@@ -1,4 +1,4 @@
-import { Course, ScrimCurriculumItem } from '../../types/curriculum';
+import { Course, CurriculumItem, ScrimCurriculumItem } from '../../types/curriculum';
 import { ScrimLessonData } from '../../types/scrim';
 import { LESSON_01 } from './lesson01';
 import { LESSON_02 } from './lesson02';
@@ -14,22 +14,29 @@ import { LESSON_11 } from './lesson11';
 import { LESSON_12 } from './lesson12';
 import { LESSON_13 } from './lesson13';
 import { LESSON_14 } from './lesson14';
+import { conceptLabels } from './roadmap';
+import { DEBUG_BY_LESSON } from './debugExercises';
+
+function withLessonTerms(lesson: ScrimLessonData): ScrimLessonData {
+  const labels = conceptLabels(lesson.id);
+  return labels.length ? { ...lesson, concepts: labels } : lesson;
+}
 
 export const FUNDAMENTOS_SCRIMS: Record<string, ScrimLessonData> = {
-  [LESSON_01.id]: LESSON_01,
-  [LESSON_02.id]: LESSON_02,
-  [LESSON_03.id]: LESSON_03,
-  [LESSON_04.id]: LESSON_04,
-  [LESSON_05.id]: LESSON_05,
-  [LESSON_06.id]: LESSON_06,
-  [LESSON_07.id]: LESSON_07,
-  [LESSON_08.id]: LESSON_08,
-  [LESSON_09.id]: LESSON_09,
-  [LESSON_10.id]: LESSON_10,
-  [LESSON_11.id]: LESSON_11,
-  [LESSON_12.id]: LESSON_12,
-  [LESSON_13.id]: LESSON_13,
-  [LESSON_14.id]: LESSON_14,
+  [LESSON_01.id]: withLessonTerms(LESSON_01),
+  [LESSON_02.id]: withLessonTerms(LESSON_02),
+  [LESSON_03.id]: withLessonTerms(LESSON_03),
+  [LESSON_04.id]: withLessonTerms(LESSON_04),
+  [LESSON_05.id]: withLessonTerms(LESSON_05),
+  [LESSON_06.id]: withLessonTerms(LESSON_06),
+  [LESSON_07.id]: withLessonTerms(LESSON_07),
+  [LESSON_08.id]: withLessonTerms(LESSON_08),
+  [LESSON_09.id]: withLessonTerms(LESSON_09),
+  [LESSON_10.id]: withLessonTerms(LESSON_10),
+  [LESSON_11.id]: withLessonTerms(LESSON_11),
+  [LESSON_12.id]: withLessonTerms(LESSON_12),
+  [LESSON_13.id]: withLessonTerms(LESSON_13),
+  [LESSON_14.id]: withLessonTerms(LESSON_14),
 };
 
 function itemOf(lesson: ScrimLessonData): ScrimCurriculumItem {
@@ -41,6 +48,11 @@ function itemOf(lesson: ScrimLessonData): ScrimCurriculumItem {
     description: lesson.description,
     scrimDataId: lesson.id,
   };
+}
+
+function withPractice(lesson: ScrimLessonData): CurriculumItem[] {
+  const debug = DEBUG_BY_LESSON[lesson.id];
+  return debug ? [itemOf(lesson), debug] : [itemOf(lesson)];
 }
 
 export const FUNDAMENTOS_COURSE: Course = {
@@ -63,43 +75,48 @@ export const FUNDAMENTOS_COURSE: Course = {
       id: 'mod-primeros-pasos',
       title: 'Módulo 1: Primeros pasos',
       description: 'Qué es un programa y cómo se ataca un problema.',
-      items: [itemOf(LESSON_01), itemOf(LESSON_02)],
+      items: [...withPractice(LESSON_01), ...withPractice(LESSON_02)],
     },
     {
       id: 'mod-datos',
       title: 'Módulo 2: Datos y operaciones',
       description: 'Guardar valores y hacer cuentas, comparaciones y combinaciones.',
-      items: [itemOf(LESSON_03), itemOf(LESSON_04)],
+      items: [...withPractice(LESSON_03), ...withPractice(LESSON_04)],
     },
     {
       id: 'mod-flujo',
       title: 'Módulo 3: Control de flujo',
       description: 'Decidir con if y repetir con bucles.',
-      items: [itemOf(LESSON_05), itemOf(LESSON_06)],
+      items: [...withPractice(LESSON_05), ...withPractice(LESSON_06)],
     },
     {
       id: 'mod-organizacion',
       title: 'Módulo 4: Organización',
       description: 'Empaquetar una tarea en una función y reutilizarla.',
-      items: [itemOf(LESSON_07)],
+      items: [...withPractice(LESSON_07)],
     },
     {
       id: 'mod-estructuras',
       title: 'Módulo 5: Estructuras de datos',
       description: 'Listas por posición y fichas por nombre.',
-      items: [itemOf(LESSON_08), itemOf(LESSON_09)],
+      items: [...withPractice(LESSON_08), ...withPractice(LESSON_09)],
     },
     {
       id: 'mod-avanzado',
       title: 'Módulo 6: Conceptos avanzados',
       description: 'Dónde vive una variable y cómo una función recuerda su entorno.',
-      items: [itemOf(LESSON_10)],
+      items: [...withPractice(LESSON_10)],
     },
     {
       id: 'mod-ciencias',
       title: 'Módulo 7: Ciencias de la computación',
       description: 'Algoritmos, estructuras, Big O y formas de organizar el código.',
-      items: [itemOf(LESSON_11), itemOf(LESSON_12), itemOf(LESSON_13), itemOf(LESSON_14)],
+      items: [
+        ...withPractice(LESSON_11),
+        ...withPractice(LESSON_12),
+        ...withPractice(LESSON_13),
+        ...withPractice(LESSON_14),
+      ],
     },
   ],
 };

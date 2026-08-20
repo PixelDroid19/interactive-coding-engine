@@ -1,5 +1,5 @@
-import React from 'react';
-import { Lightbulb, X, Sparkles, CheckCircle2, Code2 } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { Lightbulb, X, FileCode, Monitor } from 'lucide-react';
 import { WorkspaceSnapshot } from '../../types/scrim';
 
 interface ExplainModalProps {
@@ -8,6 +8,7 @@ interface ExplainModalProps {
   lessonTitle: string;
   workspace: WorkspaceSnapshot;
   notes?: { title: string; body: string }[];
+  concepts?: string[];
 }
 
 export const ExplainModal: React.FC<ExplainModalProps> = ({
@@ -16,74 +17,192 @@ export const ExplainModal: React.FC<ExplainModalProps> = ({
   lessonTitle,
   workspace,
   notes = [],
+  concepts = [],
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const activeFile = workspace.files[workspace.activeFilePath] || Object.values(workspace.files)[0];
+  const guideNotes =
+    notes.length > 0
+      ? notes
+      : [
+          {
+            title: 'Esto no es un video',
+            body: 'El editor tiene código de verdad. Mientras el instructor habla, ves cómo escribe y ejecuta. Puedes pausar, cambiar el código y pulsar Run.',
+          },
+        ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="w-full max-w-lg rounded-2xl border border-zinc-700/80 bg-[#141416] p-6 shadow-2xl text-zinc-200">
-        <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/20 text-amber-300">
-              <Lightbulb className="h-4 w-4" />
+    <div className="drawer-backdrop" onClick={onClose}>
+      <div className="drawer-panel" onClick={(event) => event.stopPropagation()} style={{ width: 420 }}>
+        <div className="drawer-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <div className="lesson-num-badge lesson-num-badge-active" style={{ width: 34, height: 34 }}>
+              <Lightbulb size={16} />
             </div>
-            <div>
-              <h3 className="font-semibold text-zinc-100 text-sm">Guía de la lección</h3>
-              <p className="text-[11px] text-zinc-400 font-mono truncate">{lessonTitle}</p>
+            <div style={{ minWidth: 0 }}>
+              <h2
+                style={{
+                  margin: 0,
+                  fontFamily: 'Patrick Hand, cursive',
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: 'var(--color-text-main)',
+                  lineHeight: 1.1,
+                }}
+              >
+                Explicar
+              </h2>
+              <p
+                style={{
+                  margin: '2px 0 0',
+                  fontSize: 12,
+                  color: 'var(--color-text-muted)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {lessonTitle}
+              </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
-          >
-            <X className="h-4 w-4" />
+          <button onClick={onClose} className="round-icon-btn" aria-label="Cerrar">
+            <X size={16} />
           </button>
         </div>
 
-        <div className="my-4 space-y-3.5 text-xs">
-          {(notes.length > 0 ? notes : [
-            {
-              title: 'Esto no es un video',
-              body: 'El editor tiene código de verdad. Mientras el instructor habla, ves cómo escribe y ejecuta. Puedes pausar, cambiar el código y pulsar Run.',
-            },
-          ]).map((note) => (
-            <div key={note.title} className="rounded-lg bg-zinc-900/80 border border-zinc-800 p-3">
-              <div className="flex items-center gap-1.5 font-medium text-cyan-300 mb-1">
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>{note.title}</span>
+        <div className="drawer-body">
+          {concepts.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {concepts.map((concept, index) => (
+                <span
+                  key={concept}
+                  className="category-tag"
+                  style={{
+                    transform: index % 2 === 0 ? 'rotate(-1deg)' : 'rotate(1deg)',
+                    background:
+                      index % 3 === 0
+                        ? 'var(--color-highlighter-yellow)'
+                        : index % 3 === 1
+                          ? 'var(--color-highlighter-cyan)'
+                          : 'var(--color-highlighter-mint)',
+                  }}
+                >
+                  {concept}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {guideNotes.map((note, index) => (
+            <div
+              key={note.title}
+              className="concept-card"
+              style={{
+                flexDirection: 'column',
+                alignItems: 'stretch',
+                cursor: 'default',
+                gap: 6,
+                background: index === 0 ? 'var(--color-highlighter-yellow)' : 'var(--bg-surface)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontFamily: 'Patrick Hand, cursive',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  color: 'var(--color-text-main)',
+                }}
+              >
+                <Lightbulb size={15} />
+                {note.title}
               </div>
-              <p className="text-zinc-300 leading-relaxed text-[12px]">{note.body}</p>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--color-text-main)' }}>
+                {note.body}
+              </p>
             </div>
           ))}
 
-          <div className="rounded-lg bg-zinc-900/80 border border-zinc-800 p-3">
-            <div className="flex items-center gap-1.5 font-medium text-purple-300 mb-1">
-              <Code2 className="h-3.5 w-3.5" />
-              <span>Archivo activo</span>
+          <div
+            className="concept-card"
+            style={{ flexDirection: 'column', alignItems: 'stretch', cursor: 'default', gap: 6 }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontFamily: 'Patrick Hand, cursive',
+                fontSize: 15,
+                fontWeight: 700,
+              }}
+            >
+              <FileCode size={15} />
+              Archivo activo
             </div>
-            <p className="text-zinc-300 leading-relaxed text-[12px]">
-              Estás en <code className="font-mono text-amber-300 bg-zinc-950 px-1 py-0.5 rounded">{activeFile?.name || 'app.js'}</code>. Haz clic en el código para pausar y editar. El preview se actualiza al pulsar Run.
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--color-text-muted)' }}>
+              Estás en{' '}
+              <code
+                style={{
+                  fontFamily: 'JetBrains Mono, monospace',
+                  fontSize: 12,
+                  background: 'var(--color-highlighter-cyan)',
+                  color: '#0f172a',
+                  padding: '1px 6px',
+                  border: '1.5px solid #232733',
+                  borderRadius: 6,
+                }}
+              >
+                {activeFile?.name || 'app.js'}
+              </code>
+              . Haz clic en el código para pausar y editar.
             </p>
           </div>
 
-          <div className="rounded-lg bg-zinc-900/80 border border-zinc-800 p-3">
-            <div className="flex items-center gap-1.5 font-medium text-emerald-300 mb-1">
-              <CheckCircle2 className="h-3.5 w-3.5" />
-              <span>Preview</span>
+          <div
+            className="concept-card"
+            style={{ flexDirection: 'column', alignItems: 'stretch', cursor: 'default', gap: 6 }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                fontFamily: 'Patrick Hand, cursive',
+                fontSize: 15,
+                fontWeight: 700,
+              }}
+            >
+              <Monitor size={15} />
+              Vista previa
             </div>
-            <p className="text-zinc-300 leading-relaxed text-[12px]">
-              El navegador de la derecha ejecuta tu HTML, CSS y JavaScript de verdad. Durante la clase solo se recarga cuando el instructor pulsa Run. Cuando editas, se recarga solo.
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--color-text-muted)' }}>
+              El navegador ejecuta tu HTML, CSS y JavaScript de verdad. Durante la clase se recarga cuando el instructor pulsa Run. Si editas, se recarga solo.
             </p>
           </div>
         </div>
 
-        <div className="flex justify-end pt-2">
-          <button
-            onClick={onClose}
-            className="rounded-lg bg-zinc-100 px-4 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-white transition-colors"
-          >
+        <div
+          style={{
+            padding: '12px 16px 16px',
+            borderTop: 'var(--border-pencil)',
+            background: 'var(--bg-surface)',
+          }}
+        >
+          <button onClick={onClose} className="btn-next-lesson neu-pill-btn" style={{ width: '100%' }}>
             Entendido
           </button>
         </div>

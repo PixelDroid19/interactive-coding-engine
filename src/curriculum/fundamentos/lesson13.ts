@@ -11,7 +11,7 @@ export const LESSON_13 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson13Workspace,
-  concepts: ['Big O', 'O(1)', 'O(n)', 'O(n²)'],
+  concepts: ['Qué es Big O', 'O(1) y O(n)'],
   teachNotes: [
     {
       title: 'No es una nota',

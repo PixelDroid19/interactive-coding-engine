@@ -16,7 +16,7 @@ export const LESSON_02 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson2Workspace,
-  concepts: ['pasos', 'cuenta', 'variable', 'función'],
+  concepts: ['Dividir el problema', 'La fórmula es el programa'],
   teachNotes: [
     {
       title: 'Parte el problema',

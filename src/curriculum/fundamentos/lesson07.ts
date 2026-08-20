@@ -11,7 +11,7 @@ export const LESSON_07 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson07Workspace,
-  concepts: ['function', 'return', 'parámetro', 'flecha'],
+  concepts: ['Qué es una función', 'return'],
   teachNotes: [
     {
       title: 'Definir no ejecuta',

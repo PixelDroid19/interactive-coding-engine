@@ -3,6 +3,7 @@ import { ScrimChallenge, ScrimLessonData, WorkspaceFile, WorkspaceSnapshot, Lear
 import { PlaybackEngine, PlaybackStatus } from '../../engine/playbackEngine';
 import { SyncTelemetry } from '../../engine/syncEngine';
 import { cloneWorkspace } from '../../engine/eventLog';
+import { publishInstructorPointer } from '../../engine/instructorPointer';
 import { runChallengeValidation } from '../../engine/testRunner';
 import { markChallengeCompleted, markItemCompleted, saveLearnerBranch, updateRecentPosition, loadVoiceVolume, saveVoiceVolume } from '../../engine/persistence';
 import { CodeEditor } from '../editor/CodeEditor';
@@ -48,7 +49,6 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const [durationMs, setDurationMs] = useState(lessonData.durationMs);
   const [playbackStatus, setPlaybackStatus] = useState<PlaybackStatus>('paused');
   const [playbackRate, setPlaybackRate] = useState(1.0);
-  const [instructorPointer, setInstructorPointer] = useState<{ x: number; y: number; targetArea: 'editor' | 'preview' | 'files' | 'global'; clicked?: boolean } | undefined>();
   const [activeSubtitle, setActiveSubtitle] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(() => loadVoiceVolume());
@@ -75,19 +75,13 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const timeRef = useRef(initialTimeMs);
   const workspaceRef = useRef(workspace);
   const lastSaveRef = useRef(0);
+  const lastTimeUiRef = useRef(0);
   const volumeRef = useRef(volume);
   volumeRef.current = volume;
 
   workspaceRef.current = workspace;
   isForkedRef.current = isForked;
   timeRef.current = currentTimeMs;
-
-  const formatClockTime = (ms: number) => {
-    const totalSec = Math.floor(ms / 1000);
-    const m = Math.floor(totalSec / 60);
-    const s = totalSec % 60;
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-  };
 
   const forkLearnerBranch = (baseTime: number) => {
     if (isForkedRef.current) return;
@@ -104,7 +98,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       executionCount: 0,
     };
     setLearnerBranch(branch);
-    setInstructorPointer(undefined);
+    publishInstructorPointer(undefined);
     saveLearnerBranch(branch);
   };
 
@@ -129,9 +123,12 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       },
       onTimeUpdate: (current, duration) => {
         timeRef.current = current;
-        setCurrentTimeMs(current);
-        setDurationMs(duration);
         const now = performance.now();
+        if (now - lastTimeUiRef.current > 48) {
+          lastTimeUiRef.current = now;
+          setCurrentTimeMs(current);
+          setDurationMs(duration);
+        }
         if (now - lastSaveRef.current > 1200) {
           lastSaveRef.current = now;
           updateRecentPosition(
@@ -146,7 +143,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       },
       onPointerChange: (pointer) => {
         if (!isForkedRef.current) {
-          setInstructorPointer(pointer);
+          publishInstructorPointer(pointer);
         }
       },
       onChallengeTrigger: (challenge) => {
@@ -157,6 +154,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       },
       onPlaybackStateChange: (status) => {
         setPlaybackStatus(status);
+        setCurrentTimeMs(timeRef.current);
       },
       onRunTriggered: () => {
         previewRef.current?.reloadPreview();
@@ -180,6 +178,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     return () => {
       engine.destroy();
       engineRef.current = null;
+      publishInstructorPointer(undefined);
     };
   }, [lessonData.id]);
 
@@ -324,135 +323,76 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const activeFile = workspace.files[workspace.activeFilePath] || Object.values(workspace.files)[0] || null;
 
   return (
-    <div className="grid grid-rows-[auto_1fr_auto] h-screen w-screen bg-[#0f0f11] text-zinc-200 overflow-hidden select-none font-sans">
-      {/* Top Header Bar - Minimized Compact Footprint */}
-      <header className="flex h-10 items-center justify-between px-3 bg-[#141416] border-b border-zinc-800/80 z-30 shrink-0">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-1.5 rounded bg-zinc-800/90 hover:bg-zinc-700 px-2 py-1 text-xs text-zinc-300 transition-colors shrink-0"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span className="text-[11px] font-medium hidden sm:inline">Roadmap</span>
+    <div className="app-screen">
+      <div className="studio-card">
+      <header className="window-topbar">
+        <div className="window-titlebar-left min-w-0">
+          <button onClick={onBack} className="neu-pill-btn shrink-0">
+            <ArrowLeft size={15} />
+            <span>Roadmap</span>
           </button>
-
-          <div className="h-3 w-px bg-zinc-800 hidden sm:block shrink-0" />
-
-          {/* Breadcrumb Path */}
-          <div className="flex items-center gap-1.5 text-xs font-mono min-w-0 truncate">
-            <span className="text-zinc-500 text-[13px] shrink-0">⠶</span>
-            <span className="text-zinc-400 hidden sm:inline truncate">{courseTitle}</span>
-            <span className="text-zinc-600 hidden sm:inline shrink-0">/</span>
-            <span className="text-zinc-400 hidden md:inline truncate">{moduleTitle}</span>
-            <span className="text-zinc-600 hidden md:inline shrink-0">/</span>
-            <h2 className="font-semibold text-zinc-100 truncate text-[12px] sm:text-xs">
-              {lessonData.title}
-            </h2>
-          </div>
+          <div className="topbar-divider hidden sm:block" />
+          <span className="topbar-lesson-title truncate">{lessonData.title}</span>
         </div>
 
-        {/* Center Clock / Time */}
-        <div className="hidden lg:flex items-center gap-2 font-mono text-[11px] text-zinc-400 bg-zinc-900/90 border border-zinc-800/90 px-2.5 py-0.5 rounded-full shrink-0">
-          <span className="text-zinc-200 font-semibold">{formatClockTime(currentTimeMs)}</span>
-          <span className="text-zinc-600">/</span>
-          <span>{formatClockTime(durationMs)}</span>
-        </div>
-
-        {/* State Indicators & Action Controls */}
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setIsFloatingBrowser(!isFloatingBrowser)}
-            className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
-              isFloatingBrowser
-                ? 'bg-zinc-800 text-zinc-200 border border-zinc-700'
-                : 'bg-zinc-800/70 text-zinc-300 hover:bg-zinc-700'
-            }`}
+            className="neu-pill-btn"
             title={isFloatingBrowser ? 'Vista flotante' : 'Vista al lado'}
           >
-            {isFloatingBrowser ? <Pin className="h-3 w-3" /> : <PinOff className="h-3 w-3" />}
-            <span className="text-[10px] hidden sm:inline font-medium">
-              {isFloatingBrowser ? 'Flotante' : 'Al lado'}
-            </span>
+            {isFloatingBrowser ? <Pin size={13} /> : <PinOff size={13} />}
+            <span>{isFloatingBrowser ? 'Flotante' : 'Al lado'}</span>
+          </button>
+          <button onClick={() => setIsExplainOpen(true)} className="btn-explain neu-pill-btn">
+            <Lightbulb size={14} />
+            <span>Explicar</span>
           </button>
 
-          {/* AI Explain Button */}
-          <button
-            onClick={() => setIsExplainOpen(true)}
-            className="flex items-center gap-1.5 rounded bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 px-2 py-1 text-xs font-semibold text-amber-300 transition-colors shadow-sm"
-            title="Explain current code and concept"
-          >
-            <Lightbulb className="h-3.5 w-3.5 text-amber-300" />
-            <span className="text-[10px] tracking-wider">EXPLICAR</span>
-          </button>
-
-          {isForked ? (
+          {isForked && (
             <div className="flex items-center gap-1.5">
-              <span className="flex items-center gap-1 text-[10px] font-mono text-amber-300 bg-amber-950/60 border border-amber-800/50 px-2 py-0.5 rounded">
-                <GitBranch className="h-3 w-3" />
-                <span className="hidden sm:inline">Editando</span>
+              <span className="category-tag">
+                <GitBranch size={12} style={{ display: 'inline', marginRight: 4 }} />
+                Editando
               </span>
-
-              <button
-                onClick={handleReturnToLesson}
-                className="flex items-center gap-1 rounded bg-zinc-200 hover:bg-white px-2 py-1 text-zinc-900 text-[11px] font-semibold shadow-sm transition-colors"
-                title="Discard personal edits and return to recorded instructor timeline"
-              >
-                <RotateCcw className="h-3 w-3" />
-                <span className="hidden sm:inline">Volver</span>
+              <button onClick={handleReturnToLesson} className="neu-pill-btn" title="Volver a la cinta">
+                <RotateCcw size={13} />
+                Volver
               </button>
             </div>
-          ) : (
-            <span className="hidden sm:flex items-center gap-1.5 text-[10px] font-mono text-zinc-300 bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800">
-              <span className={`h-1.5 w-1.5 rounded-full ${playbackStatus === 'playing' ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-500'}`} />
-              <span>{playbackStatus === 'playing' ? 'Reproduciendo' : 'Pausa'}</span>
-              {playbackStatus === 'playing' && syncTelemetry && (
-                <span className="text-[9px] text-zinc-400 font-mono hidden xl:inline ml-1 border-l border-zinc-700/80 pl-1">
-                  <span className="text-zinc-300 font-medium">60fps</span> ({Math.abs(syncTelemetry.driftMs) < 0.1 ? '±0ms' : `${syncTelemetry.driftMs > 0 ? '+' : ''}${syncTelemetry.driftMs}ms`})
-                </span>
-              )}
-            </span>
           )}
 
           {onNextLesson && (
-            <button
-              onClick={onNextLesson}
-              className="flex items-center gap-1 rounded bg-zinc-800 hover:bg-zinc-700 px-2 py-1 text-xs text-zinc-300 font-medium transition-colors"
-            >
+            <button onClick={onNextLesson} className="btn-next-lesson neu-pill-btn">
               <span>Siguiente</span>
-              <ChevronRight className="h-3.5 w-3.5" />
+              <ChevronRight size={15} />
             </button>
           )}
         </div>
       </header>
 
       {/* Main Workspace using CSS Grid System (allocating ≥80% viewport to editor & preview) */}
-      <main
-        className={`grid min-h-0 h-full w-full overflow-hidden relative ${
-          showFileTree
-            ? 'grid-cols-[minmax(140px,16vw)_minmax(0,1fr)]'
-            : 'grid-cols-[minmax(0,1fr)]'
-        }`}
-      >
-        {/* File Tree Explorer (Max 16vw, minimal impact on stage) */}
+      <main className="workspace-container">
         {showFileTree && (
-          <aside className="h-full border-r border-zinc-800/80 bg-[#121214] overflow-hidden min-h-0">
+          <aside className="files-sidebar">
             <FileTree
               files={workspace.files}
               activeFilePath={workspace.activeFilePath}
-              instructorPointer={
-                instructorPointer?.targetArea === 'files' ? instructorPointer : undefined
-              }
               onFileSelect={(path) => {
                 setWorkspace((prev) => ({ ...prev, activeFilePath: path }));
               }}
-              onFileCreate={(file) => {
-                forkLearnerBranch(currentTimeMs);
-                setWorkspace((prev) => ({
-                  ...prev,
-                  files: { ...prev.files, [file.path]: file },
-                  activeFilePath: file.path,
-                }));
-              }}
+              onFileCreate={
+                isForked
+                  ? (file) => {
+                      forkLearnerBranch(currentTimeMs);
+                      setWorkspace((prev) => ({
+                        ...prev,
+                        files: { ...prev.files, [file.path]: file },
+                        activeFilePath: file.path,
+                      }));
+                    }
+                  : undefined
+              }
               onFileDelete={(path) => {
                 forkLearnerBranch(currentTimeMs);
                 setWorkspace((prev) => {
@@ -471,21 +411,13 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           </aside>
         )}
 
-        <section
-          className={`grid h-full w-full overflow-hidden bg-[#18181b] min-h-0 ${
-            isFloatingBrowser
-              ? 'grid-cols-[minmax(0,1fr)]'
-              : 'grid-cols-[minmax(0,58%)_minmax(0,42%)]'
-          }`}
-        >
-          <div className="flex flex-col h-full overflow-hidden border-r border-zinc-800/80 relative min-h-0">
-            <div className="flex h-7 items-center justify-between bg-[#141416] border-b border-zinc-800/80 px-2 shrink-0">
-              <div className="flex items-center gap-1 overflow-x-auto">
+        <section className="lesson-stage">
+          <div className="editor-window-wrapper">
+            <div className="editor-tabs-bar">
+              <div className="editor-tabs-group">
                 <button
                   onClick={() => setShowFileTree(!showFileTree)}
-                  className={`p-1 rounded text-zinc-400 hover:text-zinc-200 transition-colors ${
-                    showFileTree ? 'bg-zinc-800 text-zinc-200' : ''
-                  }`}
+                  className="editor-action-btn"
                   title="Toggle Explorer"
                 >
                   <FolderTree className="h-3 w-3" />
@@ -495,43 +427,33 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
                   <button
                     key={f.path}
                     onClick={() => setWorkspace((prev) => ({ ...prev, activeFilePath: f.path }))}
-                    className={`flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-mono transition-colors ${
-                      f.path === workspace.activeFilePath
-                        ? 'bg-[#18181b] text-zinc-100 font-semibold border-t-2 border-zinc-500'
-                        : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-200'
-                    }`}
+                    className={`tab-btn ${f.path === workspace.activeFilePath ? 'tab-btn-active' : ''}`}
                   >
-                    <span className="text-[9px] text-zinc-500 font-semibold">{f.language === 'javascript' ? 'js' : f.language}</span>
-                    <span className="text-[11px]">{f.name}</span>
+                    <span>{f.name}</span>
                   </button>
                 ))}
               </div>
 
               {!isForked && !isFloatingBrowser && (
-                <span className="text-[9px] text-zinc-500 font-mono hidden md:inline pr-2">
-                  Pulsa espacio o el código para pausar y editar
+                <span className="timestamp-text hidden md:inline pr-2">
+                  Espacio para pausar y editar
                 </span>
               )}
             </div>
 
-            <div className="flex-1 w-full h-full relative bg-[#18181b] min-h-0 overflow-hidden">
+            <div className="editor-body relative min-h-0 overflow-hidden">
               <CodeEditor
                 file={activeFile}
                 readOnly={false}
                 onCodeChange={handleCodeChange}
-                instructorPointer={
-                  instructorPointer?.targetArea === 'editor' ? instructorPointer : undefined
-                }
                 instructorCursor={workspace.cursorPosition}
               />
 
               {activeSubtitle && showCaptions && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[90%] pointer-events-none transition-all duration-150 animate-in fade-in">
-                  <div className="bg-zinc-950/90 border border-zinc-700/80 backdrop-blur-md rounded-lg px-3.5 py-1.5 text-xs text-zinc-100 shadow-xl flex items-center gap-2.5">
-                    <Volume2 className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                    <p className="leading-snug font-sans text-[11px] text-zinc-200">
-                      {activeSubtitle}
-                    </p>
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[90%] pointer-events-none">
+                  <div className="caption-chip">
+                    <Volume2 className="h-3.5 w-3.5 shrink-0" />
+                    <p>{activeSubtitle}</p>
                   </div>
                 </div>
               )}
@@ -549,14 +471,13 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
                   onRunClick={() => {
                     if (!isForkedRef.current) forkLearnerBranch(timeRef.current);
                   }}
-                  instructorPointer={instructorPointer}
                 />
               )}
             </div>
           </div>
 
           {!isFloatingBrowser && (
-            <div className="h-full w-full overflow-hidden min-h-0 flex flex-col">
+            <div className="h-full overflow-hidden min-h-0" style={{ width: '40%', minWidth: 280, flexShrink: 0 }}>
               <FloatingBrowser
                 key={`${lessonData.id}-dock`}
                 ref={previewRef}
@@ -567,7 +488,6 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
                 onRunClick={() => {
                   if (!isForkedRef.current) forkLearnerBranch(timeRef.current);
                 }}
-                instructorPointer={instructorPointer}
               />
             </div>
           )}
@@ -595,6 +515,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         lessonTitle={lessonData.title}
         workspace={workspace}
         notes={lessonData.teachNotes}
+        concepts={lessonData.concepts}
       />
 
       {/* Bottom Timeline Bar */}
@@ -636,6 +557,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           engineRef.current?.setPlaybackRate(rate);
         }}
       />
+      </div>
     </div>
   );
 };

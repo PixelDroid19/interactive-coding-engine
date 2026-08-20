@@ -16,7 +16,7 @@ export const LESSON_03 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson03Workspace,
-  concepts: ['variable', 'let', 'const', 'string', 'number', 'boolean'],
+  concepts: ['Qué es una variable', 'let y const'],
   teachNotes: [
     {
       title: 'Una etiqueta, un valor',

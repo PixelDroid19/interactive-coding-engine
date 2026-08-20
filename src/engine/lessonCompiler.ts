@@ -102,6 +102,10 @@ function cursorFromContent(content: string): { line: number; ch: number } {
   return { line: lines.length, ch: lines[lines.length - 1].length };
 }
 
+function clampPct(n: number): number {
+  return Math.max(0, Math.min(100, n));
+}
+
 export function compileLesson(input: CompileLessonInput): ScrimLessonData {
   const workspace = cloneWorkspace(input.initialWorkspace);
   const events: ScrimEvent[] = [];
@@ -151,41 +155,18 @@ export function compileLesson(input: CompileLessonInput): ScrimLessonData {
       }
       case 'gesture': {
         const points = beat.points;
-        const duration = Math.max(120, beat.durationMs ?? 520);
+        const duration = Math.max(160, beat.durationMs ?? 720);
         if (points.length === 0) break;
-        if (points.length === 1) {
+        for (let i = 0; i < points.length; i++) {
+          const u = points.length === 1 ? 0 : i / (points.length - 1);
           events.push({
             id: nextId(),
-            timestamp: t,
+            timestamp: t + u * duration,
             type: 'pointer-move',
-            x: points[0].x,
-            y: points[0].y,
-            targetArea: points[0].targetArea,
-            clicked: points[0].clicked,
-          });
-          t += duration;
-          break;
-        }
-        const step = 36;
-        const frames = Math.max(2, Math.round(duration / step));
-        const ease = (u: number) => (u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2);
-        for (let i = 0; i <= frames; i++) {
-          const u = ease(i / frames);
-          const scaled = u * (points.length - 1);
-          const i0 = Math.min(points.length - 2, Math.floor(scaled));
-          const i1 = i0 + 1;
-          const local = scaled - i0;
-          const a = points[i0];
-          const b = points[i1];
-          const sameArea = a.targetArea === b.targetArea;
-          events.push({
-            id: nextId(),
-            timestamp: t + i * step,
-            type: 'pointer-move',
-            x: sameArea ? a.x + (b.x - a.x) * local : local < 0.5 ? a.x : b.x,
-            y: sameArea ? a.y + (b.y - a.y) * local : local < 0.5 ? a.y : b.y,
-            targetArea: local < 0.5 ? a.targetArea : b.targetArea,
-            clicked: i === frames ? b.clicked : undefined,
+            x: clampPct(points[i].x),
+            y: clampPct(points[i].y),
+            targetArea: points[i].targetArea,
+            clicked: points[i].clicked,
           });
         }
         t += duration;

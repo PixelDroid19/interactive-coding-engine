@@ -1,4 +1,4 @@
-import { ScrimChallenge, ScrimLessonData, WorkspaceSnapshot } from './scrim';
+import { ChallengeTest, ScrimChallenge, ScrimLessonData, WorkspaceSnapshot } from './scrim';
 
 export type ItemType = 'scrim' | 'challenge' | 'debugging' | 'solo-project';
 
@@ -26,22 +26,13 @@ export interface StandaloneChallengeItem extends BaseCurriculumItem {
 
 export interface DebuggingExerciseItem extends BaseCurriculumItem {
   type: 'debugging';
+  relatedLessonId?: string;
   templateId: 'vanilla-js' | 'js-only' | 'react';
   initialWorkspace: WorkspaceSnapshot;
   expectedBehavior: string;
   observedBehavior: string;
   hints: { level: number; text: string }[];
-  tests: {
-    id: string;
-    description: string;
-    targetFunction?: string;
-    args?: any[];
-    expectedReturn?: any;
-    domSelector?: string;
-    domProperty?: string;
-    expectedValue?: any;
-  }[];
-  solutionFiles?: Record<string, string>;
+  tests: ChallengeTest[];
   troubleshootingTips?: string[];
 }
 

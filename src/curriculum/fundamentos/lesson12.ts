@@ -11,7 +11,7 @@ export const LESSON_12 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson12Workspace,
-  concepts: ['pila', 'cola', 'mapa', 'LIFO', 'FIFO'],
+  concepts: ['Pila y cola', 'Mapa por nombre'],
   teachNotes: [
     {
       title: '¿Orden o nombre?',

@@ -11,7 +11,7 @@ export const LESSON_11 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson11Workspace,
-  concepts: ['algoritmo', 'lineal', 'binaria', 'recursión'],
+  concepts: ['Búsqueda lineal', 'Búsqueda binaria'],
   teachNotes: [
     {
       title: 'Lineal vs binaria',

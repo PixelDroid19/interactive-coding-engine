@@ -17,7 +17,7 @@ export const LESSON_01 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson1Workspace,
-  concepts: ['JavaScript', 'variable', 'texto', 'let', 'clic'],
+  concepts: ['Qué es un programa', 'Texto entre comillas'],
   teachNotes: [
     {
       title: 'Un programa son pasos en orden',

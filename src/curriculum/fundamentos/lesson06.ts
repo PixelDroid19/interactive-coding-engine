@@ -11,7 +11,7 @@ export const LESSON_06 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson06Workspace,
-  concepts: ['for', 'while', 'i++', 'FizzBuzz'],
+  concepts: ['for y while', 'FizzBuzz'],
   teachNotes: [
     {
       title: 'Tres piezas del for',

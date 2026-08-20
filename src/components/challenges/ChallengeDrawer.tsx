@@ -48,11 +48,9 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
   const currentHint = challenge.hints && challenge.hints[hintIndex] ? challenge.hints[hintIndex] : null;
 
   return (
-    <div className={`fixed bottom-16 right-5 z-50 w-96 max-w-[calc(100vw-32px)] bg-[#18181b] border border-zinc-700/80 shadow-2xl rounded-xl overflow-hidden transition-all duration-200 ${isMinimized ? 'h-12' : 'max-h-[80vh] flex flex-col'}`}>
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-[#141416] border-b border-zinc-800 select-none">
-        <div className="flex items-center gap-2 text-zinc-100 font-semibold text-xs">
-          <div className="w-2 h-2 rounded-full bg-amber-400" />
+    <div className={`modal-dialog fixed bottom-16 right-5 z-50 w-96 max-w-[calc(100vw-32px)] ${isMinimized ? 'h-12' : 'max-h-[80vh] flex flex-col'}`} style={{ position: 'fixed', maxWidth: 420 }}>
+      <div className="modal-header">
+        <div className="flex items-center gap-2" style={{ fontFamily: 'Patrick Hand, cursive', fontWeight: 700 }}>
           <span className="truncate">{challenge.title}</span>
         </div>
 

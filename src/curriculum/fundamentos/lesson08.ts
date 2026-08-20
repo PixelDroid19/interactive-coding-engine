@@ -11,7 +11,7 @@ export const LESSON_08 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson08Workspace,
-  concepts: ['array', 'índice', 'length', 'push', 'for'],
+  concepts: ['Array (lista)', 'El índice empieza en 0'],
   teachNotes: [
     {
       title: 'El primero es cero',

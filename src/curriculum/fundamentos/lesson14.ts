@@ -11,7 +11,7 @@ export const LESSON_14 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson14Workspace,
-  concepts: ['POO', 'funcional', 'estado', 'map', 'filter'],
+  concepts: ['Objetos con estado', 'map y filter'],
   teachNotes: [
     {
       title: 'No elijas bando',

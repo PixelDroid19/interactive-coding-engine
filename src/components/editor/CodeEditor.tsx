@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { EditorState } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
@@ -15,7 +15,6 @@ interface CodeEditorProps {
   onCodeChange?: (newContent: string, changes: { from: number; to: number; text: string }[]) => void;
   onCursorMove?: (position: { line: number; ch: number }) => void;
   onSelectionChange?: (from: number, to: number) => void;
-  instructorPointer?: { x: number; y: number; clicked?: boolean; targetArea: 'editor' | 'preview' | 'files' | 'global' };
   instructorCursor?: { line: number; ch: number };
 }
 
@@ -25,7 +24,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   onCodeChange,
   onCursorMove,
   onSelectionChange,
-  instructorPointer,
   instructorCursor,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -167,6 +165,22 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
     } catch (e) {}
   }, [instructorCursor]);
 
+  const mapEditorPointer = useCallback((x: number, y: number) => {
+    const wrap = containerRef.current;
+    if (!wrap) return { x, y };
+    const scroller = wrap.querySelector('.cm-scroller') as HTMLElement | null;
+    const gutter = wrap.querySelector('.cm-gutters') as HTMLElement | null;
+    const width = (scroller?.clientWidth || wrap.clientWidth) || 1;
+    const height = (scroller?.clientHeight || wrap.clientHeight) || 1;
+    const gutterW = gutter?.getBoundingClientRect().width ?? 32;
+    const codeWidth = Math.max(180, Math.min(width - gutterW - 16, 520));
+    const codeHeight = Math.min(height, 400);
+    return {
+      x: ((gutterW + 10 + (x / 100) * codeWidth) / width) * 100,
+      y: Math.min(88, Math.max(8, (y / 100) * (codeHeight / height) * 100)),
+    };
+  }, []);
+
   if (!file) {
     return (
       <div className="flex h-full items-center justify-center bg-[#1e1e1e] text-slate-500 font-mono text-sm">
@@ -178,11 +192,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#1e1e1e]">
       <div ref={containerRef} className="h-full w-full" />
-
-      {/* Instructor Pointer Indicator during playback */}
-      {instructorPointer && (
-        <InstructorCursor pointer={instructorPointer} containerType="editor" />
-      )}
+      <InstructorCursor containerType="editor" mapPosition={mapEditorPointer} />
     </div>
   );
 };

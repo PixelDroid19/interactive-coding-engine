@@ -50,7 +50,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
   const activeFile = workspace.files[workspace.activeFilePath] || Object.values(workspace.files)[0] || null;
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-[#0f0f11] text-zinc-200 overflow-hidden font-sans">
+    <div className="app-screen">
       {/* Top Header */}
       <header className="flex h-11 items-center justify-between px-4 bg-[#141416] border-b border-zinc-800/80 z-30">
         <div className="flex items-center gap-3">

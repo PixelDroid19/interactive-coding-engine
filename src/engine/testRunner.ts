@@ -102,10 +102,30 @@ async function evaluateSingleTest(
       if (iframeElement && iframeElement.contentWindow && (iframeElement.contentWindow as any)[test.targetFunction]) {
         targetFn = (iframeElement.contentWindow as any)[test.targetFunction];
       } else {
-        // Safe evaluation in local scoped function
         try {
-          const evalScope = new Function(`${combinedJs}; return typeof ${test.targetFunction} !== "undefined" ? ${test.targetFunction} : null;`);
-          targetFn = evalScope();
+          const stubDocument = {
+            getElementById: () => ({
+              textContent: '',
+              innerText: '',
+              innerHTML: '',
+              value: '',
+              className: '',
+              addEventListener() {},
+            }),
+            querySelector: () => ({
+              textContent: '',
+              innerText: '',
+              innerHTML: '',
+              value: '',
+              addEventListener() {},
+            }),
+            querySelectorAll: () => [],
+          };
+          const evalScope = new Function(
+            'document',
+            `${combinedJs}\n; return typeof ${test.targetFunction} === "function" ? ${test.targetFunction} : null;`
+          );
+          targetFn = evalScope(stubDocument);
         } catch (e: any) {
           return {
             id: test.id,

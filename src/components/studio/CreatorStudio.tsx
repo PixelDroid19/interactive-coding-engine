@@ -190,7 +190,7 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
   const activeFile = workspace.files[workspace.activeFilePath] || Object.values(workspace.files)[0] || null;
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-[#0f0f11] text-zinc-200 overflow-hidden font-sans">
+    <div className="app-screen">
       {/* Studio Navigation Header */}
       <header className="flex h-11 items-center justify-between px-4 bg-[#141416] border-b border-zinc-800/80 z-30">
         <div className="flex items-center gap-3">
@@ -294,7 +294,7 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
 
       {/* Step 1: Template Selection Screen */}
       {step === 'template' ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 bg-[#0f0f11] overflow-y-auto">
+        <div className="flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto" style={{ background: 'var(--bg-main)' }}>
           <div className="max-w-2xl w-full text-center space-y-2 mb-8">
             <h1 className="text-xl font-bold text-zinc-100 tracking-tight">Create a New Interactive Scrim</h1>
             <p className="text-xs text-zinc-400">

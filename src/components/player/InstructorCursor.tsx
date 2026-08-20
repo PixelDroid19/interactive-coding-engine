@@ -1,60 +1,115 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+import {
+  InstructorPointer,
+  subscribeInstructorPointer,
+} from '../../engine/instructorPointer';
 
 interface InstructorCursorProps {
-  pointer?: {
-    x: number;
-    y: number;
-    targetArea: 'editor' | 'preview' | 'files' | 'global';
-    clicked?: boolean;
-  };
   containerType?: 'editor' | 'preview' | 'files' | 'global';
+  mapPosition?: (x: number, y: number, pointer: InstructorPointer) => { x: number; y: number };
+}
+
+type PointerArea = NonNullable<InstructorCursorProps['containerType']>;
+
+function matchesContainer(
+  pointer: InstructorPointer | undefined,
+  containerType: PointerArea
+): pointer is InstructorPointer {
+  if (!pointer) return false;
+  if (containerType === 'global' || pointer.targetArea === 'global') return true;
+  return pointer.targetArea === containerType;
 }
 
 export const InstructorCursor: React.FC<InstructorCursorProps> = ({
-  pointer,
-  containerType = 'global',
+  containerType = 'global' as PointerArea,
+  mapPosition,
 }) => {
-  if (!pointer) return null;
+  const layerRef = useRef<HTMLDivElement>(null);
+  const hitRef = useRef<HTMLSpanElement>(null);
+  const mapRef = useRef(mapPosition);
+  mapRef.current = mapPosition;
 
-  // Only render if target matches container or if global
-  if (containerType !== 'global' && pointer.targetArea !== containerType && pointer.targetArea !== 'global') {
-    return null;
-  }
+  useEffect(() => {
+    return subscribeInstructorPointer((pointer) => {
+      const layer = layerRef.current;
+      if (!layer) return;
+
+      if (!matchesContainer(pointer, containerType)) {
+        layer.style.opacity = '0';
+        if (hitRef.current) hitRef.current.style.opacity = '0';
+        return;
+      }
+
+      const mapped = mapRef.current
+        ? mapRef.current(pointer.x, pointer.y, pointer)
+        : { x: pointer.x, y: pointer.y };
+
+      layer.style.opacity = '1';
+      layer.style.transform = `translate3d(${mapped.x}%, ${mapped.y}%, 0)`;
+      if (hitRef.current) {
+        hitRef.current.style.opacity = pointer.clicked ? '1' : '0';
+        hitRef.current.style.transform = pointer.clicked ? 'scale(1)' : 'scale(0.4)';
+      }
+    });
+  }, [containerType]);
+
+  const onEditor = containerType === 'editor';
 
   return (
     <div
-      className="pointer-events-none absolute z-50 will-change-transform"
-      style={{
-        left: 0,
-        top: 0,
-        transform: `translate3d(${pointer.x}%, ${pointer.y}%, 0)`,
-      }}
+      className={`pointer-events-none absolute inset-0 z-40 ${
+        containerType === 'files' ? 'overflow-visible' : 'overflow-hidden'
+      }`}
+      aria-hidden="true"
     >
-      <div className="relative -top-1 -left-1 flex items-center gap-1.5 select-none">
-        {/* Click ripple effect */}
-        {pointer.clicked && (
-          <span className="absolute -top-2 -left-2 h-9 w-9 rounded-full bg-cyan-400/40 animate-ping" />
-        )}
-
-        {/* Realistic SVG Cursor */}
-        <div className="relative">
+      <div
+        ref={layerRef}
+        className="absolute top-0 left-0 h-full w-full"
+        style={{ opacity: 0, willChange: 'transform' }}
+      >
+        <div
+          className="absolute top-0 left-0 flex items-start gap-1.5"
+          style={{ transform: 'translate(-3px, -1px)' }}
+        >
+          <span
+            ref={hitRef}
+            className="absolute -top-2.5 -left-2.5 h-7 w-7 rounded-full"
+            style={{
+              opacity: 0,
+              border: '1.5px solid #232733',
+              background: 'rgba(186, 230, 253, 0.45)',
+              transform: 'scale(0.4)',
+              transition: 'opacity 160ms ease-out, transform 220ms ease-out',
+            }}
+          />
           <svg
-            className={`h-5 w-5 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] transition-transform duration-75 ${
-              pointer.clicked ? 'scale-90 text-amber-400' : 'text-cyan-400'
-            }`}
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
-            fill="currentColor"
-            stroke="#090d16"
-            strokeWidth="1.2"
+            fill={onEditor ? '#f5f2eb' : '#232733'}
+            stroke={onEditor ? '#12151e' : '#ffffff'}
+            strokeWidth="1.15"
+            style={{
+              filter: onEditor
+                ? 'drop-shadow(1px 2px 0 rgba(0,0,0,0.65))'
+                : 'drop-shadow(1px 2px 0 #1e222d)',
+              flexShrink: 0,
+            }}
           >
             <path d="M4 0l16 12.279-6.951 1.17 4.325 8.817-3.596 1.734-4.35-8.879-5.428 5.102z" />
           </svg>
-        </div>
-
-        {/* Instructor Name Tag Badge */}
-        <div className="flex items-center gap-1 rounded bg-zinc-950/95 border border-cyan-500/50 px-1.5 py-0.5 shadow-lg backdrop-blur-sm">
-          <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          <span className="text-[10px] font-mono font-medium text-cyan-200">
+          <span
+            className="mt-3 whitespace-nowrap px-1.5 font-bold leading-tight"
+            style={{
+              fontFamily: "'Patrick Hand', cursive",
+              fontSize: 13,
+              color: '#1e2433',
+              background: '#ffffff',
+              border: '1.5px solid #232733',
+              boxShadow: '2px 2px 0 #232733',
+              borderRadius: 8,
+            }}
+          >
             Instructor
           </span>
         </div>

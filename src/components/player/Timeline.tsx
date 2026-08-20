@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Sparkles, CheckCircle2, Bookmark } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Sparkles } from 'lucide-react';
 import { ScrimChallenge } from '../../types/scrim';
 
 export interface Chapter {
@@ -113,65 +113,44 @@ export const Timeline: React.FC<TimelineProps> = ({
   const availableSpeeds = [0.75, 1, 1.25, 1.5];
 
   return (
-    <footer className="h-12 bg-[#121214] border-t border-zinc-800/80 flex items-center px-4 gap-4 select-none z-40 text-zinc-200 shrink-0">
-      {/* Clean Play/Pause */}
-      <button
-        onClick={isPlaying ? onPause : onPlay}
-        className="w-7 h-7 rounded-full bg-zinc-100 hover:bg-white flex items-center justify-center text-zinc-950 shrink-0 transition-transform active:scale-95 shadow-sm"
-        title={isPlaying ? 'Pause (Space)' : 'Play (Space)'}
-      >
-        {isPlaying ? (
-          <Pause className="h-3 w-3 fill-zinc-950 text-zinc-950" />
-        ) : (
-          <Play className="h-3 w-3 fill-zinc-950 text-zinc-950 ml-0.5" />
-        )}
-      </button>
-
-      {/* Center Scrubber & Timers */}
-      <div className="flex flex-col flex-1 gap-1 min-w-0">
-        {/* Info row above track */}
-        <div className="flex justify-between items-center text-[10px] font-mono leading-none">
-          <div className="flex items-center gap-2 text-zinc-400 truncate">
-            <span className="text-zinc-100 font-semibold">{formatTime(currentTimeMs)}</span>
-            <span className="text-zinc-600">/</span>
-            <span className="text-zinc-500">{formatTime(durationMs)}</span>
-
-            {/* Current Chapter pill */}
-            {currentChapter && (
-              <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-sans font-medium text-cyan-300 bg-cyan-950/50 border border-cyan-800/40 px-1.5 py-0.5 rounded truncate max-w-[200px]">
-                <Bookmark className="h-2.5 w-2.5 shrink-0 text-cyan-400" />
-                <span className="truncate">{currentChapter.title}</span>
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 text-[10px] text-zinc-500 font-mono">
-            {chapters.length > 0 && (
-              <span className="hidden md:inline text-zinc-400">
-                {chapters.length} chapters
-              </span>
-            )}
-            {challenges.length > 0 && (
-              <span className="flex items-center gap-1 text-amber-400/90 font-medium">
-                <span className="inline-block w-1.5 h-1.5 rotate-45 bg-amber-400" />
-                <span>{challenges.length} challenge{challenges.length > 1 ? 's' : ''}</span>
-              </span>
-            )}
-          </div>
+    <footer className="player-bar">
+      <div className="player-left">
+        <button
+          onClick={isPlaying ? onPause : onPlay}
+          className="play-main-btn"
+          title={isPlaying ? 'Pausa (Espacio)' : 'Reproducir (Espacio)'}
+        >
+          {isPlaying ? (
+            <Pause className="h-3.5 w-3.5" fill="currentColor" />
+          ) : (
+            <Play className="h-3.5 w-3.5 ml-0.5" fill="currentColor" />
+          )}
+        </button>
+        <div className="timestamp-text" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ color: 'var(--color-text-main)', fontWeight: 700 }}>{formatTime(currentTimeMs)}</span>
+          <span>/</span>
+          <span>{formatTime(durationMs)}</span>
         </div>
+        {currentChapter && (
+          <span className="category-tag" style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {currentChapter.title}
+          </span>
+        )}
+      </div>
 
-        {/* Interactive Scrubber Track with Chapter Breaks & Challenge Markers */}
+      <div className="player-center">
         <div
           ref={scrubberRef}
           onMouseDown={handleScrubberMouseDown}
           onMouseMove={handleScrubberMouseMove}
           onMouseLeave={() => setHoveredTimeMs(null)}
-          className="relative h-2 w-full bg-zinc-800/90 hover:bg-zinc-800 rounded-full group cursor-pointer transition-colors"
+          className="relative h-2 w-full rounded-full group cursor-pointer transition-colors"
+          style={{ background: '#cbd5e1', border: '1.5px solid #232733' }}
         >
           {/* Progress filled bar */}
           <div
-            className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyan-500 to-amber-400 rounded-full transition-all duration-75"
-            style={{ width: `${progressPercent}%` }}
+            className="absolute inset-y-0 left-0 rounded-full"
+            style={{ background: '#0284c7', width: `${progressPercent}%` }}
           />
 
           {/* Chapter Break Dividers / Notches */}
@@ -187,8 +166,8 @@ export const Timeline: React.FC<TimelineProps> = ({
                   e.stopPropagation();
                   onSeek(chap.timestamp);
                 }}
-                className="absolute inset-y-0 w-0.5 bg-zinc-950/80 hover:bg-cyan-300 transition-colors z-10 cursor-pointer"
-                style={{ left: `${posPercent}%` }}
+                className="absolute inset-y-0 w-0.5 z-10 cursor-pointer"
+                style={{ background: '#1e2433', left: `${posPercent}%` }}
                 title={`Chapter: ${chap.title} (${formatTime(chap.timestamp)})`}
               />
             );
@@ -196,8 +175,8 @@ export const Timeline: React.FC<TimelineProps> = ({
 
           {/* Current playhead knob */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full border border-zinc-900 shadow-md transition-transform group-hover:scale-125 z-30"
-            style={{ left: `calc(${progressPercent}% - 6px)` }}
+            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 z-30"
+            style={{ background: '#0284c7', border: '2px solid #1e2433', boxShadow: '2px 2px 0 #232733', borderRadius: 6, left: `calc(${progressPercent}% - 6px)` }}
           />
 
           {/* Challenge Markers (Interactive Diamond Badges ◆) */}
@@ -218,7 +197,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                     : 'bg-amber-500/80 border border-amber-300 ring-2 ring-amber-500/30'
                 }`}
                 style={{ left: `${markerPercent}%` }}
-                title={`🎯 Challenge Checkpoint: ${ch.title} (${formatTime(ch.timestamp)})`}
+                title={`Challenge: ${ch.title} (${formatTime(ch.timestamp)})`}
               >
                 {/* Subtle beacon pulse on active challenge */}
                 {Math.abs(currentTimeMs - ch.timestamp) < 1500 && (
@@ -231,22 +210,27 @@ export const Timeline: React.FC<TimelineProps> = ({
           {/* Rich Hover Tooltip (Showing timestamp + Chapter + Challenge) */}
           {hoveredTimeMs !== null && (
             <div
-              className="pointer-events-none absolute -top-9 -translate-x-1/2 rounded-md bg-zinc-950/95 border border-zinc-700/90 px-2 py-1 text-[10px] font-sans text-zinc-100 shadow-2xl z-40 whitespace-nowrap flex items-center gap-1.5 backdrop-blur-md"
+              className="pointer-events-none absolute -top-9 -translate-x-1/2 px-2 py-1 text-[10px] z-40 whitespace-nowrap flex items-center gap-1.5"
               style={{
                 left: `${Math.min(92, Math.max(8, (hoveredTimeMs / durationMs) * 100))}%`,
+                background: 'var(--bg-surface-light)',
+                border: '1.5px solid #232733',
+                boxShadow: '2px 2px 0 #232733',
+                color: 'var(--color-text-main)',
+                borderRadius: 8,
               }}
             >
-              <span className="font-mono font-bold text-zinc-300">{formatTime(hoveredTimeMs)}</span>
+              <span className="font-mono font-bold">{formatTime(hoveredTimeMs)}</span>
               {hoveredChapter && (
                 <>
-                  <span className="text-zinc-600">•</span>
-                  <span className="text-cyan-300 font-medium">{hoveredChapter.title}</span>
+                  <span>•</span>
+                  <span className="font-medium">{hoveredChapter.title}</span>
                 </>
               )}
               {hoveredChallenge && (
                 <>
-                  <span className="text-zinc-600">•</span>
-                  <span className="text-amber-400 font-bold flex items-center gap-0.5">
+                  <span>•</span>
+                  <span className="font-bold flex items-center gap-0.5" style={{ color: '#b45309' }}>
                     <Sparkles className="h-2.5 w-2.5 inline" /> Challenge
                   </span>
                 </>
@@ -256,19 +240,15 @@ export const Timeline: React.FC<TimelineProps> = ({
         </div>
       </div>
 
-      {/* Right Controls: Voice Toggle, Subtitles, Speed, Step */}
-      <div className="flex items-center gap-2.5 shrink-0 text-xs">
+      <div className="player-right">
         {/* Voice Audio Mute Toggle */}
         {(onToggleMute || onVolumeChange) && (
           <div className="flex items-center gap-1.5">
             {onToggleMute && (
               <button
                 onClick={onToggleMute}
-                className={`p-1 rounded transition-colors ${
-                  isMuted || volume <= 0
-                    ? 'text-zinc-500 hover:text-zinc-300'
-                    : 'text-zinc-200 hover:bg-zinc-800'
-                }`}
+                className="p-1 rounded transition-colors"
+                style={{ color: isMuted || volume <= 0 ? 'var(--color-text-subtle)' : 'var(--color-text-main)' }}
                 title={isMuted || volume <= 0 ? 'Activar sonido' : 'Silenciar'}
               >
                 {isMuted || volume <= 0 ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
@@ -283,7 +263,8 @@ export const Timeline: React.FC<TimelineProps> = ({
                 value={isMuted ? 0 : volume}
                 onChange={(event) => onVolumeChange(Number(event.target.value))}
                 onMouseDown={(event) => event.stopPropagation()}
-                className="h-1 w-16 sm:w-20 cursor-pointer appearance-none rounded-full bg-zinc-700 accent-cyan-400"
+                className="h-1 w-16 sm:w-20 cursor-pointer appearance-none rounded-full"
+                style={{ background: '#d6d0c2', accentColor: '#0284c7' }}
                 title={`Volumen ${Math.round((isMuted ? 0 : volume) * 100)}%`}
                 aria-label="Volumen de la explicación"
               />
@@ -295,11 +276,12 @@ export const Timeline: React.FC<TimelineProps> = ({
         {onToggleCaptions && (
           <button
             onClick={onToggleCaptions}
-            className={`px-1.5 py-0.5 rounded transition-colors text-[9px] font-mono font-bold ${
+            className="px-1.5 py-0.5 text-[9px] font-mono font-bold"
+            style={
               showCaptions
-                ? 'bg-zinc-800 text-zinc-100 border border-zinc-700/60'
-                : 'text-zinc-500 hover:text-zinc-300'
-            }`}
+                ? { background: 'var(--color-highlighter-yellow)', color: '#0f172a', border: '1.5px solid #232733', borderRadius: 6 }
+                : { color: 'var(--color-text-muted)' }
+            }
             title="Toggle Live Subtitles / Voice Transcript"
           >
             CC
@@ -309,33 +291,35 @@ export const Timeline: React.FC<TimelineProps> = ({
         <div className="flex items-center gap-0.5">
           <button
             onClick={() => onSeek(Math.max(0, currentTimeMs - 5000))}
-            className="text-zinc-400 hover:text-zinc-200 transition-colors text-[10px] font-mono px-1 py-0.5 rounded hover:bg-zinc-800"
+            className="text-[10px] font-mono px-1 py-0.5 rounded"
+            style={{ color: 'var(--color-text-muted)' }}
             title="Step Back 5s"
           >
             -5s
           </button>
           <button
             onClick={() => onSeek(Math.min(durationMs, currentTimeMs + 5000))}
-            className="text-zinc-400 hover:text-zinc-200 transition-colors text-[10px] font-mono px-1 py-0.5 rounded hover:bg-zinc-800"
+            className="text-[10px] font-mono px-1 py-0.5 rounded"
+            style={{ color: 'var(--color-text-muted)' }}
             title="Step Forward 5s"
           >
             +5s
           </button>
         </div>
 
-        <div className="h-3.5 w-px bg-zinc-800" />
+        <div className="h-3.5 w-px" style={{ background: '#232733' }} />
 
-        {/* Speed Selector */}
-        <div className="flex rounded bg-zinc-900 border border-zinc-800 p-0.5 text-xs font-mono">
+        <div className="flex p-0.5 text-xs font-mono" style={{ border: '1.5px solid #232733', borderRadius: 8, background: 'var(--bg-surface)' }}>
           {availableSpeeds.map((rate) => (
             <button
               key={rate}
               onClick={() => onRateChange(rate)}
-              className={`px-1 py-0.5 rounded text-[9px] font-medium transition-colors ${
+              className="px-1 py-0.5 text-[9px] font-medium"
+              style={
                 playbackRate === rate
-                  ? 'bg-zinc-700 text-white font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-200'
-              }`}
+                  ? { background: 'var(--color-highlighter-cyan)', color: '#0f172a', fontWeight: 700, borderRadius: 6 }
+                  : { color: 'var(--color-text-muted)' }
+              }
             >
               {rate}x
             </button>
@@ -345,7 +329,8 @@ export const Timeline: React.FC<TimelineProps> = ({
         {/* Restart */}
         <button
           onClick={() => onSeek(0)}
-          className="text-zinc-400 hover:text-zinc-200 transition-colors p-1 rounded hover:bg-zinc-800"
+          className="p-1 rounded"
+          style={{ color: 'var(--color-text-muted)' }}
           title="Replay from beginning"
         >
           <RotateCcw className="h-3 w-3" />

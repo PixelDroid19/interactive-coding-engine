@@ -3,10 +3,10 @@ import {
   ScrimEvent,
   SnapshotPoint,
   WorkspaceSnapshot,
-  PointerMoveEvent,
 } from '../types/scrim';
 import { applyEventToWorkspace, cloneWorkspace, reconstructWorkspaceAt } from './eventLog';
 import { AudioNarrator } from './audioNarrator';
+import { CursorTrack, poseFromTrack } from './cursor/cursorTrack';
 
 export type SyncState = 'locked' | 'slewing' | 'resyncing' | 'stalled';
 
@@ -71,6 +71,7 @@ export class HighPrecisionSyncEngine {
 
   // Active state pointers
   private activePointer?: { x: number; y: number; targetArea: 'editor' | 'preview' | 'files'; clicked?: boolean };
+  private cursorTrack: CursorTrack;
   private lastRunTimestamp = -1;
   private triggeredChallenges = new Set<string>();
 
@@ -100,6 +101,7 @@ export class HighPrecisionSyncEngine {
     this.durationMs = durationMs;
     this.audioNarrator = audioNarrator;
     this.callbacks = callbacks;
+    this.cursorTrack = CursorTrack.fromEvents(this.events);
   }
 
   public setFramePerfectMode(enabled: boolean): void {
@@ -123,6 +125,7 @@ export class HighPrecisionSyncEngine {
     this.snapshots = [...snapshots].sort((a, b) => a.timestamp - b.timestamp);
     this.challenges = challenges || [];
     this.durationMs = durationMs;
+    this.cursorTrack = CursorTrack.fromEvents(this.events);
     this.triggeredChallenges.clear();
     this.lastProcessedEventIndex = -1;
     this.lastRunTimestamp = -1;
@@ -272,6 +275,7 @@ export class HighPrecisionSyncEngine {
           this.presentationTimeMs = challenge.timestamp;
           this.triggeredChallenges.add(challenge.id);
           this.applyEventsIncremental(this.presentationTimeMs);
+          this.interpolateSubframePointer(this.presentationTimeMs);
           this.pause();
           this.callbacks.onChallengeTrigger(challenge);
           return;
@@ -334,14 +338,7 @@ export class HighPrecisionSyncEngine {
       this.eventsExecutedTotal++;
       frameEventsCount++;
 
-      if (ev.type === 'pointer-move') {
-        this.activePointer = {
-          x: ev.x,
-          y: ev.y,
-          targetArea: ev.targetArea,
-          clicked: ev.clicked,
-        };
-      } else if (ev.type === 'run-code') {
+      if (ev.type === 'run-code') {
         if (ev.timestamp !== this.lastRunTimestamp) {
           this.lastRunTimestamp = ev.timestamp;
           this.callbacks.onRunTriggered?.();
@@ -357,8 +354,6 @@ export class HighPrecisionSyncEngine {
     if (hasWorkspaceMutated) {
       this.callbacks.onWorkspaceChange(cloneWorkspace(this.currentWorkspace));
     }
-
-    this.callbacks.onPointerChange(this.activePointer);
   }
 
   /**
@@ -375,49 +370,22 @@ export class HighPrecisionSyncEngine {
 
     this.currentWorkspace = cloneWorkspace(result.workspace);
     this.lastProcessedEventIndex = result.lastEventIndex;
-    this.activePointer = result.activePointer;
     this.lastRunTimestamp = result.lastRunTimestamp ?? -1;
+    this.cursorTrack.seekIndex(targetTimeMs);
 
     this.callbacks.onWorkspaceChange(this.currentWorkspace);
-    this.callbacks.onPointerChange(this.activePointer);
+    this.interpolateSubframePointer(targetTimeMs);
     this.callbacks.onRunTriggered?.();
   }
 
   /**
-   * Performs sub-frame linear interpolation between two adjacent pointer-move events
-   * when the instructor is performing a continuous gesture.
+   * Cursor pose is a pure function of presentation time. Seek jumps here
+   * immediately; playback interpolates between pointer keyframes every rAF.
    */
   private interpolateSubframePointer(currentMs: number): void {
-    const currentIndex = this.lastProcessedEventIndex;
-    if (currentIndex < 0 || currentIndex >= this.events.length) return;
-
-    const currentEvent = this.events[currentIndex];
-    if (currentEvent?.type !== 'pointer-move') return;
-
-    let nextPointerEvent: PointerMoveEvent | null = null;
-    for (let i = currentIndex + 1; i < this.events.length; i++) {
-      const candidate = this.events[i];
-      if (candidate.timestamp - currentEvent.timestamp > 360) break;
-      if (candidate.type !== 'pointer-move') continue;
-      if (candidate.targetArea === currentEvent.targetArea) {
-        nextPointerEvent = candidate;
-      }
-      break;
-    }
-
-    if (nextPointerEvent && nextPointerEvent.timestamp > currentEvent.timestamp) {
-      const t = Math.max(0, Math.min(1, (currentMs - currentEvent.timestamp) / (nextPointerEvent.timestamp - currentEvent.timestamp)));
-      const lerpedX = currentEvent.x + (nextPointerEvent.x - currentEvent.x) * t;
-      const lerpedY = currentEvent.y + (nextPointerEvent.y - currentEvent.y) * t;
-
-      this.activePointer = {
-        x: Math.round(lerpedX * 100) / 100,
-        y: Math.round(lerpedY * 100) / 100,
-        targetArea: currentEvent.targetArea,
-        clicked: currentEvent.clicked,
-      };
-      this.callbacks.onPointerChange(this.activePointer);
-    }
+    const pose = poseFromTrack(this.cursorTrack, currentMs);
+    this.activePointer = pose;
+    this.callbacks.onPointerChange(pose);
   }
 
   private checkChallengeCrossings(prevMs: number, nextMs: number): ScrimChallenge | null {

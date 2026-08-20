@@ -19,6 +19,7 @@ import {
 } from '../types/scrim';
 import { cloneWorkspace, generateSnapshots } from './eventLog';
 import { saveStudioDraft } from './persistence';
+import { CursorSampler } from './cursor/cursorSampler';
 
 export type RecorderStatus = 'idle' | 'recording' | 'paused' | 'stopped';
 
@@ -44,6 +45,7 @@ export class RecorderEngine {
   private audioBlob: Blob | null = null;
   private audioMimeType = 'audio/webm';
   private lastDraftSaveTime = 0;
+  private pointerSampler = new CursorSampler();
 
   constructor(initialWorkspace: WorkspaceSnapshot, callbacks: RecorderCallbacks) {
     this.initialWorkspace = cloneWorkspace(initialWorkspace);
@@ -59,6 +61,7 @@ export class RecorderEngine {
     this.audioChunks = [];
     this.audioBlob = null;
     this.pausedDuration = 0;
+    this.pointerSampler.reset();
 
     if (withMicrophone && typeof navigator !== 'undefined' && navigator.mediaDevices) {
       try {
@@ -277,9 +280,22 @@ export class RecorderEngine {
   public recordPointerMove(x: number, y: number, targetArea: 'editor' | 'preview' | 'files', clicked = false): void {
     if (this.status !== 'recording') return;
 
+    const timestamp = this.getCurrentTimeMs();
+    if (
+      !this.pointerSampler.shouldRecord({
+        time: timestamp,
+        x,
+        y,
+        targetArea,
+        clicked,
+      })
+    ) {
+      return;
+    }
+
     const event: PointerMoveEvent = {
       id: `evt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-      timestamp: this.getCurrentTimeMs(),
+      timestamp,
       type: 'pointer-move',
       x,
       y,

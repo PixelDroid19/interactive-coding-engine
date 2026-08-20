@@ -11,7 +11,7 @@ export const LESSON_09 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson09Workspace,
-  concepts: ['objeto', 'clave', 'punto', 'método'],
+  concepts: ['Objeto { }', 'item.nombre'],
   teachNotes: [
     {
       title: 'Nombre, no posición',

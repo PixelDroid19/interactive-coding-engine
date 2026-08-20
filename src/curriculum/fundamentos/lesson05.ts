@@ -11,7 +11,7 @@ export const LESSON_05 = compileLesson({
   language: 'es',
   durationMs: AUDIO_MS,
   initialWorkspace: lesson05Workspace,
-  concepts: ['if', 'else', 'else if', 'true', 'false'],
+  concepts: ['if / else', 'else if'],
   teachNotes: [
     {
       title: 'Un camino, no todos',

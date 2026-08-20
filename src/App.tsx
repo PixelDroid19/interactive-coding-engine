@@ -3,9 +3,7 @@ import { Course, CurriculumItem, UserProgressRecord } from './types/curriculum';
 import { ScrimLessonData } from './types/scrim';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './curriculum/fundamentos/course';
 import { loadUserProgress, loadCustomCourses, loadCustomScrims, updateRecentPosition } from './engine/persistence';
-import { Header } from './components/navigation/Header';
-import { CourseOverview } from './components/curriculum/CourseOverview';
-import { ContinueLearningCard } from './components/curriculum/ContinueLearningCard';
+import { RoadmapHome } from './components/curriculum/RoadmapHome';
 import { ScrimPlayer } from './components/player/ScrimPlayer';
 import { DebuggingView } from './components/challenges/DebuggingView';
 import { SoloProjectView } from './components/challenges/SoloProjectView';
@@ -124,32 +122,15 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#0d0d0d] text-slate-200 font-sans selection:bg-blue-600/30 selection:text-white">
-      {/* Show header on top-level views */}
+    <div className={currentView === 'scrim' ? 'app-screen' : undefined}>
       {currentView === 'home' && (
-        <Header
-          currentView={currentView}
-          onNavigate={(view) => setCurrentView(view)}
+        <RoadmapHome
+          course={course}
           progress={progress}
+          scrims={scrimsMap}
+          onEnterLesson={(item, modId, timeMs) => handleSelectItem(item, modId, timeMs ?? 0)}
+          onPlayground={() => setCurrentView('playground')}
         />
-      )}
-
-      {/* View Router */}
-      {currentView === 'home' && (
-        <main className="px-4 sm:px-6 lg:px-8 py-8">
-          <div className="max-w-4xl mx-auto space-y-6">
-            <ContinueLearningCard
-              progress={progress}
-              onResume={handleResumeRecent}
-            />
-
-            <CourseOverview
-              course={course}
-              progress={progress}
-              onSelectItem={(item, modId) => handleSelectItem(item, modId, 0)}
-            />
-          </div>
-        </main>
       )}
 
       {currentView === 'scrim' && activeItem && (
