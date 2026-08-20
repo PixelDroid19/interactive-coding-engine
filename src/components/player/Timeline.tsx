@@ -7,6 +7,33 @@ export interface Chapter {
   title: string;
 }
 
+export function getClosestChallenge(
+  challenges: ScrimChallenge[],
+  hoveredTimeMs: number,
+  durationMs: number
+): ScrimChallenge | null {
+  const thresholdMs = Math.max(1200, durationMs * 0.05);
+
+  return challenges.reduce<{ challenge: ScrimChallenge; distanceMs: number } | null>((closest, challenge) => {
+    const distanceMs = Math.abs(challenge.timestamp - hoveredTimeMs);
+    if (distanceMs >= thresholdMs) return closest;
+    if (!closest || distanceMs < closest.distanceMs) {
+      return { challenge, distanceMs };
+    }
+    return closest;
+  }, null)?.challenge ?? null;
+}
+
+export function getSeekTarget(
+  clientX: number,
+  rect: Pick<DOMRect, 'left' | 'width'>,
+  durationMs: number
+): number {
+  if (durationMs <= 0 || rect.width <= 0) return 0;
+  const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  return ratio * durationMs;
+}
+
 interface TimelineProps {
   currentTimeMs: number;
   durationMs: number;
@@ -45,6 +72,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   onToggleCaptions,
 }) => {
   const scrubberRef = useRef<HTMLDivElement>(null);
+  const isScrubbingRef = useRef(false);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [hoveredTimeMs, setHoveredTimeMs] = useState<number | null>(null);
 
@@ -56,6 +84,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   };
 
   const progressPercent = durationMs > 0 ? Math.min(100, Math.max(0, (currentTimeMs / durationMs) * 100)) : 0;
+  const clampedCurrentTimeMs = durationMs > 0 ? Math.min(durationMs, Math.max(0, currentTimeMs)) : 0;
 
   // Find active chapter
   const currentChapter = [...chapters]
@@ -73,41 +102,68 @@ export const Timeline: React.FC<TimelineProps> = ({
 
   // Find hovered challenge
   const hoveredChallenge = hoveredTimeMs !== null
-    ? challenges.find((ch) => Math.abs(ch.timestamp - hoveredTimeMs) < Math.max(1200, durationMs * 0.05))
+    ? getClosestChallenge(challenges, hoveredTimeMs, durationMs)
     : null;
 
-  const handleScrubberMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const seekFromClientX = (clientX: number) => {
     if (!scrubberRef.current || durationMs <= 0) return;
-    setIsScrubbing(true);
     const rect = scrubberRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
-    onSeek(ratio * durationMs);
-
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      const currentRect = scrubberRef.current?.getBoundingClientRect();
-      if (!currentRect) return;
-      const x = moveEvent.clientX - currentRect.left;
-      const r = Math.max(0, Math.min(1, x / currentRect.width));
-      onSeek(r * durationMs);
-    };
-
-    const onMouseUp = () => {
-      setIsScrubbing(false);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+    const targetMs = getSeekTarget(clientX, rect, durationMs);
+    setHoveredTimeMs(targetMs);
+    onSeek(targetMs);
   };
 
-  const handleScrubberMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleScrubberPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!scrubberRef.current || durationMs <= 0) return;
+    event.preventDefault();
+    isScrubbingRef.current = true;
+    setIsScrubbing(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+    seekFromClientX(event.clientX);
+  };
+
+  const handleScrubberPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
     if (!scrubberRef.current || durationMs <= 0) return;
     const rect = scrubberRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const ratio = Math.max(0, Math.min(1, x / rect.width));
-    setHoveredTimeMs(ratio * durationMs);
+    const targetMs = getSeekTarget(event.clientX, rect, durationMs);
+    setHoveredTimeMs(targetMs);
+    if (isScrubbingRef.current) onSeek(targetMs);
+  };
+
+  const handleScrubberPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isScrubbingRef.current) return;
+    isScrubbingRef.current = false;
+    setIsScrubbing(false);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  const handleScrubberKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (durationMs <= 0) return;
+
+    let targetMs: number | null = null;
+    switch (event.key) {
+      case 'ArrowLeft':
+      case 'ArrowDown':
+        targetMs = Math.max(0, clampedCurrentTimeMs - 5000);
+        break;
+      case 'ArrowRight':
+      case 'ArrowUp':
+        targetMs = Math.min(durationMs, clampedCurrentTimeMs + 5000);
+        break;
+      case 'Home':
+        targetMs = 0;
+        break;
+      case 'End':
+        targetMs = durationMs;
+        break;
+      default:
+        return;
+    }
+
+    event.preventDefault();
+    onSeek(targetMs);
   };
 
   const availableSpeeds = [0.75, 1, 1.25, 1.5];
@@ -116,14 +172,16 @@ export const Timeline: React.FC<TimelineProps> = ({
     <footer className="player-bar">
       <div className="player-left">
         <button
+          type="button"
           onClick={isPlaying ? onPause : onPlay}
           className="play-main-btn"
+          aria-label={isPlaying ? 'Pausar la clase' : 'Reproducir la clase'}
           title={isPlaying ? 'Pausa (Espacio)' : 'Reproducir (Espacio)'}
         >
           {isPlaying ? (
-            <Pause className="h-3.5 w-3.5" fill="currentColor" />
+            <Pause className="h-5 w-5" fill="currentColor" />
           ) : (
-            <Play className="h-3.5 w-3.5 ml-0.5" fill="currentColor" />
+            <Play className="h-5 w-5 ml-0.5" fill="currentColor" />
           )}
         </button>
         <div className="timestamp-text" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -141,10 +199,23 @@ export const Timeline: React.FC<TimelineProps> = ({
       <div className="player-center">
         <div
           ref={scrubberRef}
-          onMouseDown={handleScrubberMouseDown}
-          onMouseMove={handleScrubberMouseMove}
-          onMouseLeave={() => setHoveredTimeMs(null)}
-          className="relative h-2 w-full rounded-full group cursor-pointer transition-colors"
+          role="slider"
+          tabIndex={durationMs > 0 ? 0 : -1}
+          aria-label="Progreso de la clase"
+          aria-valuemin={0}
+          aria-valuemax={Math.max(0, durationMs)}
+          aria-valuenow={clampedCurrentTimeMs}
+          aria-valuetext={formatTime(clampedCurrentTimeMs)}
+          aria-orientation="horizontal"
+          onKeyDown={handleScrubberKeyDown}
+          onPointerDown={handleScrubberPointerDown}
+          onPointerMove={handleScrubberPointerMove}
+          onPointerUp={handleScrubberPointerUp}
+          onPointerCancel={handleScrubberPointerUp}
+          onPointerLeave={() => {
+            if (!isScrubbingRef.current) setHoveredTimeMs(null);
+          }}
+          className={`relative h-2 w-full rounded-full group transition-colors ${isScrubbing ? 'cursor-grabbing' : 'cursor-pointer'}`}
           style={{ background: '#cbd5e1', border: '1.5px solid #232733' }}
         >
           {/* Progress filled bar */}
@@ -160,15 +231,18 @@ export const Timeline: React.FC<TimelineProps> = ({
             if (posPercent > 99) return null;
 
             return (
-              <div
+              <button
+                type="button"
                 key={`chap-${idx}`}
+                aria-label={`Ir al capítulo ${chap.title}`}
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSeek(chap.timestamp);
                 }}
-                className="absolute inset-y-0 w-0.5 z-10 cursor-pointer"
+                className="absolute inset-y-0 z-10 w-0.5 cursor-pointer appearance-none border-0 p-0"
                 style={{ background: '#1e2433', left: `${posPercent}%` }}
-                title={`Chapter: ${chap.title} (${formatTime(chap.timestamp)})`}
+                title={`Capítulo: ${chap.title} (${formatTime(chap.timestamp)})`}
               />
             );
           })}
@@ -185,8 +259,11 @@ export const Timeline: React.FC<TimelineProps> = ({
             const isPassed = currentTimeMs >= ch.timestamp;
 
             return (
-              <div
+              <button
+                type="button"
                 key={ch.id}
+                aria-label={`Ir al reto ${ch.title}`}
+                onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
                   onSeek(ch.timestamp);
@@ -197,13 +274,13 @@ export const Timeline: React.FC<TimelineProps> = ({
                     : 'bg-amber-500/80 border border-amber-300 ring-2 ring-amber-500/30'
                 }`}
                 style={{ left: `${markerPercent}%` }}
-                title={`Challenge: ${ch.title} (${formatTime(ch.timestamp)})`}
+                title={`Reto: ${ch.title} (${formatTime(ch.timestamp)})`}
               >
                 {/* Subtle beacon pulse on active challenge */}
                 {Math.abs(currentTimeMs - ch.timestamp) < 1500 && (
                   <span className="absolute inset-0 rounded-sm bg-amber-300 animate-ping opacity-75" />
                 )}
-              </div>
+              </button>
             );
           })}
 
@@ -231,7 +308,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                 <>
                   <span>•</span>
                   <span className="font-bold flex items-center gap-0.5" style={{ color: '#b45309' }}>
-                    <Sparkles className="h-2.5 w-2.5 inline" /> Challenge
+                    <Sparkles className="h-2.5 w-2.5 inline" /> Reto
                   </span>
                 </>
               )}
@@ -246,7 +323,9 @@ export const Timeline: React.FC<TimelineProps> = ({
           <div className="flex items-center gap-1.5">
             {onToggleMute && (
               <button
+                type="button"
                 onClick={onToggleMute}
+                aria-label={isMuted || volume <= 0 ? 'Activar sonido' : 'Silenciar explicación'}
                 className="p-1 rounded transition-colors"
                 style={{ color: isMuted || volume <= 0 ? 'var(--color-text-subtle)' : 'var(--color-text-main)' }}
                 title={isMuted || volume <= 0 ? 'Activar sonido' : 'Silenciar'}
@@ -275,14 +354,17 @@ export const Timeline: React.FC<TimelineProps> = ({
         {/* Captions Toggle */}
         {onToggleCaptions && (
           <button
+            type="button"
             onClick={onToggleCaptions}
+            aria-label="Activar o desactivar subtítulos"
+            aria-pressed={showCaptions}
             className="px-1.5 py-0.5 text-[9px] font-mono font-bold"
             style={
               showCaptions
                 ? { background: 'var(--color-highlighter-yellow)', color: '#0f172a', border: '1.5px solid #232733', borderRadius: 6 }
                 : { color: 'var(--color-text-muted)' }
             }
-            title="Toggle Live Subtitles / Voice Transcript"
+            title="Activar o desactivar subtítulos"
           >
             CC
           </button>
@@ -290,20 +372,24 @@ export const Timeline: React.FC<TimelineProps> = ({
 
         <div className="flex items-center gap-0.5">
           <button
+            type="button"
             onClick={() => onSeek(Math.max(0, currentTimeMs - 5000))}
+            aria-label="Retroceder 5 segundos"
             className="text-[10px] font-mono px-1 py-0.5 rounded"
             style={{ color: 'var(--color-text-muted)' }}
-            title="Step Back 5s"
+            title="Retroceder 5 s"
           >
-            -5s
+            -5 s
           </button>
           <button
+            type="button"
             onClick={() => onSeek(Math.min(durationMs, currentTimeMs + 5000))}
+            aria-label="Avanzar 5 segundos"
             className="text-[10px] font-mono px-1 py-0.5 rounded"
             style={{ color: 'var(--color-text-muted)' }}
-            title="Step Forward 5s"
+            title="Avanzar 5 s"
           >
-            +5s
+            +5 s
           </button>
         </div>
 
@@ -312,8 +398,10 @@ export const Timeline: React.FC<TimelineProps> = ({
         <div className="flex p-0.5 text-xs font-mono" style={{ border: '1.5px solid #232733', borderRadius: 8, background: 'var(--bg-surface)' }}>
           {availableSpeeds.map((rate) => (
             <button
+              type="button"
               key={rate}
               onClick={() => onRateChange(rate)}
+              aria-pressed={playbackRate === rate}
               className="px-1 py-0.5 text-[9px] font-medium"
               style={
                 playbackRate === rate
@@ -328,10 +416,12 @@ export const Timeline: React.FC<TimelineProps> = ({
 
         {/* Restart */}
         <button
+          type="button"
           onClick={() => onSeek(0)}
+          aria-label="Repetir desde el principio"
           className="p-1 rounded"
           style={{ color: 'var(--color-text-muted)' }}
-          title="Replay from beginning"
+          title="Repetir desde el principio"
         >
           <RotateCcw className="h-3 w-3" />
         </button>

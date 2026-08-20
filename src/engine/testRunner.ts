@@ -119,7 +119,7 @@ async function evaluateSingleTest(
               value: '',
               addEventListener() {},
             }),
-            querySelectorAll: () => [],
+            querySelectorAll: (): unknown[] => [],
           };
           const evalScope = new Function(
             'document',

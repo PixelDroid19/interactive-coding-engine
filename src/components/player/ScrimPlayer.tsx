@@ -24,6 +24,7 @@ import {
   Lightbulb,
   Pin,
   PinOff,
+  Play,
 } from 'lucide-react';
 
 interface ScrimPlayerProps {
@@ -68,6 +69,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const [showFileTree, setShowFileTree] = useState(true);
   const [isFloatingBrowser, setIsFloatingBrowser] = useState(true);
   const [isExplainOpen, setIsExplainOpen] = useState(false);
+  const [awaitingStart, setAwaitingStart] = useState(true);
 
   const engineRef = useRef<PlaybackEngine | null>(null);
   const previewRef = useRef<FloatingBrowserRef | null>(null);
@@ -113,6 +115,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     setCurrentTimeMs(initialTimeMs);
     setDurationMs(lessonData.durationMs);
     setActiveSubtitle(null);
+    setAwaitingStart(true);
 
     const engine = new PlaybackEngine({
       onWorkspaceChange: (newWs) => {
@@ -155,6 +158,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       onPlaybackStateChange: (status) => {
         setPlaybackStatus(status);
         setCurrentTimeMs(timeRef.current);
+        if (status === 'playing') setAwaitingStart(false);
       },
       onRunTriggered: () => {
         previewRef.current?.reloadPreview();
@@ -199,6 +203,14 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  const startPlayback = () => {
+    if (isForkedRef.current) {
+      handleReturnToLesson();
+      return;
+    }
+    engineRef.current?.play();
+  };
 
   const toggleMute = () => {
     const next = !isMuted;
@@ -371,6 +383,41 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         </div>
       </header>
 
+      <div className="lesson-body">
+      {awaitingStart && !isForked && !activeChallenge && (
+        <div
+          className="lesson-start-gate"
+          onClick={startPlayback}
+          onKeyDown={(event) => {
+            if (event.code === 'Space' || event.key === 'Enter') {
+              event.preventDefault();
+              startPlayback();
+            }
+          }}
+        >
+          <span className="lesson-start-kicker">Clase con explicación</span>
+          <h2 className="lesson-start-title">{lessonData.title}</h2>
+          <p className="lesson-start-hint">
+            El instructor escribe, señala y explica. Para oírlo y ver el código moverse, pulsa aquí.
+          </p>
+          <button
+            type="button"
+            className="lesson-start-play"
+            autoFocus
+            onClick={(event) => {
+              event.stopPropagation();
+              startPlayback();
+            }}
+          >
+            <Play size={22} fill="currentColor" />
+            Empezar la clase
+          </button>
+          <p className="lesson-start-space">
+            o pulsa <kbd>Espacio</kbd>
+          </p>
+        </div>
+      )}
+
       {/* Main Workspace using CSS Grid System (allocating ≥80% viewport to editor & preview) */}
       <main className="workspace-container">
         {showFileTree && (
@@ -532,13 +579,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         onToggleMute={toggleMute}
         onVolumeChange={handleVolumeChange}
         onToggleCaptions={toggleCaptions}
-        onPlay={() => {
-          if (isForkedRef.current) {
-            handleReturnToLesson();
-          } else {
-            engineRef.current?.play();
-          }
-        }}
+        onPlay={startPlayback}
         onPause={() => {
           engineRef.current?.pause();
         }}
@@ -557,6 +598,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           engineRef.current?.setPlaybackRate(rate);
         }}
       />
+      </div>
       </div>
     </div>
   );
