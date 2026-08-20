@@ -1,0 +1,195 @@
+{
+  "id": "fundamentos-04",
+  "durationMs": 98960,
+  "language": "es",
+  "engine": "faster-whisper-small-realign",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 9240,
+      "text": "Ya sabes guardar datos. Ahora hay que hacer algo con ellos. Los operadores son los símbolos que calculan, comparan o combinan."
+    },
+    {
+      "timestamp": 10180,
+      "end": 20440,
+      "text": "Mira la página. Hay dos números. Diez y tres. Vamos a sumarlos, restarlos, multiplicarlos y dividirlos."
+    },
+    {
+      "timestamp": 21020,
+      "end": 38800,
+      "text": "Más, menos, por, dividido. Y este: el porcentaje. No es un descuento. Es el resto. Diez dividido tres es tres y sobra uno. Por eso diez por ciento tres da uno."
+    },
+    {
+      "timestamp": 39560,
+      "end": 45440,
+      "text": "Eso sirve para saber si un número es par. Si el resto al dividir entre dos es cero, es par."
+    },
+    {
+      "timestamp": 46440,
+      "end": 54620,
+      "text": "Comparar es otra cosa. Mayor, menor, igual. El resultado no es un número. Es true o false."
+    },
+    {
+      "timestamp": 55400,
+      "end": 68600,
+      "text": "Ojo con el igual. Un igual solo, asigna. Tres iguales comparan en serio: mismo valor y mismo tipo. Usa siempre tres iguales. El texto diez no es el número diez."
+    },
+    {
+      "timestamp": 69520,
+      "end": 83000,
+      "text": "Y luego están y, y o. La lámpara se enciende si hay corriente y el interruptor está arriba. Las dos cosas tienen que ser verdad. Puedes entrar con llave o con el código. Con una de las dos alcanza."
+    },
+    {
+      "timestamp": 83700,
+      "end": 98160,
+      "text": "Tu turno. Escribe una función esPar que reciba un número y devuelva true si el resto entre dos es cero. Y otra, puedeEntrar, que sea true si la edad es mayor o igual a dieciocho y tieneEntrada es true."
+    }
+  ],
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 3.84,
+      "text": "Ya sabes guardar datos. Ahora hay que hacer algo con ellos."
+    },
+    {
+      "start": 4.56,
+      "end": 9.24,
+      "text": "Los operadores son los símbolos que calculan, comparan o combinan."
+    },
+    {
+      "start": 10.18,
+      "end": 12.64,
+      "text": "Mira la página. Hay dos números."
+    },
+    {
+      "start": 13.36,
+      "end": 14.66,
+      "text": "10 y 3."
+    },
+    {
+      "start": 15.48,
+      "end": 20.44,
+      "text": "Vamos a sumarlos, restarlos, multiplicarlos y dividirlos."
+    },
+    {
+      "start": 21.02,
+      "end": 25.16,
+      "text": "Más, menos, por, dividido."
+    },
+    {
+      "start": 25.94,
+      "end": 27.82,
+      "text": "Y este, el porcentaje."
+    },
+    {
+      "start": 28.38,
+      "end": 30.7,
+      "text": "No es un descuento, es el resto."
+    },
+    {
+      "start": 31.66,
+      "end": 35.02,
+      "text": "10 dividido 3 es 3 y sobra 1."
+    },
+    {
+      "start": 35.72,
+      "end": 38.8,
+      "text": "Por eso, 10 por ciento 3 da 1."
+    },
+    {
+      "start": 39.56,
+      "end": 41.8,
+      "text": "Eso sirve para saber si un número es par."
+    },
+    {
+      "start": 42.52,
+      "end": 45.44,
+      "text": "Si el resto al dividir entre 2 es 0, es par."
+    },
+    {
+      "start": 46.44,
+      "end": 47.6,
+      "text": "Comparar es otra cosa."
+    },
+    {
+      "start": 48.36,
+      "end": 50.54,
+      "text": "Mayor, menor, igual."
+    },
+    {
+      "start": 51.48,
+      "end": 54.62,
+      "text": "El resultado no es un número, es true o false."
+    },
+    {
+      "start": 55.4,
+      "end": 56.4,
+      "text": "Ojo con el igual."
+    },
+    {
+      "start": 57.06,
+      "end": 58.68,
+      "text": "Un igual solo, asigna."
+    },
+    {
+      "start": 59.24,
+      "end": 61.24,
+      "text": "3 iguales, comparan en serio."
+    },
+    {
+      "start": 61.82,
+      "end": 63.52,
+      "text": "Mismo valor y mismo tipo."
+    },
+    {
+      "start": 64.42,
+      "end": 65.84,
+      "text": "Usa siempre 3 iguales."
+    },
+    {
+      "start": 66.46,
+      "end": 68.6,
+      "text": "El texto 10 no es el número 10."
+    },
+    {
+      "start": 69.52,
+      "end": 71.42,
+      "text": "Y luego están y y o."
+    },
+    {
+      "start": 72.14,
+      "end": 75.68,
+      "text": "La lámpara se enciende si hay corriente y el interruptor está arriba."
+    },
+    {
+      "start": 76.38,
+      "end": 78.0,
+      "text": "Las dos cosas tienen que ser verdad."
+    },
+    {
+      "start": 78.86,
+      "end": 80.98,
+      "text": "Puedes entrar con llave o con el código."
+    },
+    {
+      "start": 81.66,
+      "end": 83.0,
+      "text": "Con una de las dos alcanza."
+    },
+    {
+      "start": 83.7,
+      "end": 84.7,
+      "text": "Tu turno."
+    },
+    {
+      "start": 85.3,
+      "end": 90.82,
+      "text": "Escribe una función es par que reciba un número y devuelva true si el resto entre 2 es 0."
+    },
+    {
+      "start": 91.56,
+      "end": 98.16,
+      "text": "Y otra puede entrar que sea true si la edad es mayor o igual a 18 y tiene entrada es true o igual a true."
+    }
+  ]
+}

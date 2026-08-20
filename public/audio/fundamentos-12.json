@@ -1,0 +1,155 @@
+{
+  "id": "fundamentos-12",
+  "durationMs": 65680,
+  "language": "es",
+  "engine": "faster-whisper-small-realign",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 14620,
+      "text": "Un array no es la única forma de guardar cosas. A veces importa el orden de llegada. A veces importa encontrar rápido por nombre. Hoy tres formas. Pila. Cola. Y un mapa de claves."
+    },
+    {
+      "timestamp": 15680,
+      "end": 29000,
+      "text": "Una pila solo se toca por arriba. El último que entra es el primero que sale. Deshacer en un editor es una pila. Control Z saca lo último que hiciste. push pone arriba. pop saca de arriba."
+    },
+    {
+      "timestamp": 29000,
+      "end": 38440,
+      "text": "Una cola es al revés. El primero que llega es el primero que atiende. Como un trámite. Entras atrás, sales adelante."
+    },
+    {
+      "timestamp": 39060,
+      "end": 53400,
+      "text": "Un mapa no busca por posición. Busca por nombre. Ana, veinticinco. Eso es casi lo que ya hiciste con objetos. Acceder por clave es inmediato. No recorres toda la lista."
+    },
+    {
+      "timestamp": 53860,
+      "end": 62300,
+      "text": "Cuando elijas cómo guardar datos, pregunta: ¿me importa el orden, o me importa el nombre? Esa pregunta evita código lento."
+    }
+  ],
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 3.24,
+      "text": "Una RAI no es la única forma de guardar cosas."
+    },
+    {
+      "start": 3.92,
+      "end": 5.74,
+      "text": "A veces importa el orden de llegada."
+    },
+    {
+      "start": 6.28,
+      "end": 8.66,
+      "text": "A veces importa encontrar rápido por nombre."
+    },
+    {
+      "start": 9.56,
+      "end": 10.78,
+      "text": "Hoy, tres formas."
+    },
+    {
+      "start": 11.56,
+      "end": 14.62,
+      "text": "Pila, cola y un mapa de claves."
+    },
+    {
+      "start": 15.68,
+      "end": 17.9,
+      "text": "Una pila solo se toca por arriba."
+    },
+    {
+      "start": 18.66,
+      "end": 21.06,
+      "text": "El último que entra es el primero que sale."
+    },
+    {
+      "start": 21.9,
+      "end": 23.92,
+      "text": "Deshacer en un editor es una pila."
+    },
+    {
+      "start": 24.42,
+      "end": 26.92,
+      "text": "Control-Z saca lo último que hiciste."
+    },
+    {
+      "start": 27.56,
+      "end": 29.0,
+      "text": "Push pone arriba."
+    },
+    {
+      "start": 29.0,
+      "end": 31.18,
+      "text": "Pop, saca de arriba."
+    },
+    {
+      "start": 32.06,
+      "end": 33.98,
+      "text": "Una cola es al revés."
+    },
+    {
+      "start": 34.66,
+      "end": 37.06,
+      "text": "El primero que llega es el primero que atiende."
+    },
+    {
+      "start": 37.68,
+      "end": 38.44,
+      "text": "Como un trámite."
+    },
+    {
+      "start": 39.06,
+      "end": 41.0,
+      "text": "Entras atrás, sales adelante."
+    },
+    {
+      "start": 42.36,
+      "end": 44.18,
+      "text": "Un mapa no busca por posición."
+    },
+    {
+      "start": 44.8,
+      "end": 45.62,
+      "text": "Busca por nombre."
+    },
+    {
+      "start": 46.4,
+      "end": 47.64,
+      "text": "Ana, 25."
+    },
+    {
+      "start": 48.64,
+      "end": 50.68,
+      "text": "Eso es casi lo que ya hiciste con objetos."
+    },
+    {
+      "start": 51.5,
+      "end": 53.4,
+      "text": "Acceder por clave es inmediato."
+    },
+    {
+      "start": 53.86,
+      "end": 55.28,
+      "text": "No recorres toda la lista."
+    },
+    {
+      "start": 56.04,
+      "end": 58.98,
+      "text": "Cuando elijas cómo guardar datos, pregunta."
+    },
+    {
+      "start": 59.86,
+      "end": 62.3,
+      "text": "¿Me importa el orden o me importa el nombre?"
+    },
+    {
+      "start": 63.18,
+      "end": 65.18,
+      "text": "Esa pregunta evita código lento."
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+{
+  "id": "fundamentos-06",
+  "durationMs": 82000,
+  "language": "es",
+  "engine": "faster-whisper-small-realign",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 9700,
+      "text": "Si tienes que saludar a cien personas, no escribes cien líneas. Usas un bucle. Un bucle repite un bloque mientras una condición sea verdad."
+    },
+    {
+      "timestamp": 10360,
+      "end": 20340,
+      "text": "Mira esto. Quiero pintar cinco estrellas. for, let i igual a cero, mientras i sea menor que cinco, i más más."
+    },
+    {
+      "timestamp": 21120,
+      "end": 32020,
+      "text": "Tres piezas. Dónde empiezo: i vale cero. Hasta cuándo: mientras i sea menor que cinco. Qué hago al final de cada vuelta: i más uno."
+    },
+    {
+      "timestamp": 32980,
+      "end": 43840,
+      "text": "while es más suelto. Mientras la condición sea true, sigue. Úsalo cuando no sabes cuántas vueltas van a ser. Un for es mejor cuando sí lo sabes."
+    },
+    {
+      "timestamp": 45100,
+      "end": 57740,
+      "text": "Cuidado. Si la condición nunca se vuelve false, no para. Eso es un bucle infinito. Por eso i más más es importante. Sin eso, i nunca crece, y el for no termina."
+    },
+    {
+      "timestamp": 58680,
+      "end": 64680,
+      "text": "break corta el bucle ya. continue se salta solo esta vuelta y sigue con la siguiente."
+    },
+    {
+      "timestamp": 65500,
+      "end": 81660,
+      "text": "Tu turno. Del uno al veinte. Si el número se divide entre tres, escribe Fizz. Si entre cinco, Buzz. Si entre tres y cinco, FizzBuzz. Si no, el número. Eso se llama FizzBuzz. Hoy lo escribes tú."
+    }
+  ],
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 5.48,
+      "text": "Si tienes que saludar a 100 personas, no escribes 100 líneas, usas un bucle."
+    },
+    {
+      "start": 6.0,
+      "end": 9.7,
+      "text": "Un bucle repite un bloque mientras una condición sea verdad."
+    },
+    {
+      "start": 10.36,
+      "end": 13.46,
+      "text": "Mira esto. Quiero pintar 5 estrellas."
+    },
+    {
+      "start": 14.1,
+      "end": 20.34,
+      "text": "4, let I igual a 0, mientras I sea menor que 5, I más más."
+    },
+    {
+      "start": 21.12,
+      "end": 24.72,
+      "text": "3 piezas, donde empiezo, I vale 0."
+    },
+    {
+      "start": 25.24,
+      "end": 28.24,
+      "text": "Hasta cuando, mientras I sea menor que 5."
+    },
+    {
+      "start": 28.24,
+      "end": 32.02,
+      "text": "¿Qué hago al final de cada vuelta? I más 1."
+    },
+    {
+      "start": 32.98,
+      "end": 37.7,
+      "text": "While es más suelto, mientras la condición sea true, sigue."
+    },
+    {
+      "start": 38.56,
+      "end": 41.1,
+      "text": "Úsalo cuando no sabes cuántas vueltas van a hacer."
+    },
+    {
+      "start": 41.78,
+      "end": 43.84,
+      "text": "Un for es mejor cuando sí lo sabes."
+    },
+    {
+      "start": 45.1,
+      "end": 49.0,
+      "text": "Cuidado, si la condición nunca se vuelve false, no para."
+    },
+    {
+      "start": 49.54,
+      "end": 53.84,
+      "text": "Eso es un bucle infinito. Por eso, I más más es importante."
+    },
+    {
+      "start": 54.48,
+      "end": 57.74,
+      "text": "Sin eso, I nunca crece y el for no termina."
+    },
+    {
+      "start": 58.68,
+      "end": 60.54,
+      "text": "Break corta el bucle ya."
+    },
+    {
+      "start": 61.2,
+      "end": 64.68,
+      "text": "Continúe, se salta solo esta vuelta y sigue con la siguiente."
+    },
+    {
+      "start": 65.5,
+      "end": 67.86,
+      "text": "Tu turno, del 1 al 20."
+    },
+    {
+      "start": 68.54,
+      "end": 71.52,
+      "text": "Si el número se divide entre 3, escribe FIZ."
+    },
+    {
+      "start": 72.02,
+      "end": 73.56,
+      "text": "Si entre 5, BAS."
+    },
+    {
+      "start": 74.14,
+      "end": 76.44,
+      "text": "Si entre 3 y 5, FIZ BAS."
+    },
+    {
+      "start": 76.98,
+      "end": 78.14,
+      "text": "Si no, el número."
+    },
+    {
+      "start": 78.86,
+      "end": 81.66,
+      "text": "Eso se llama FIZ BAS. Hoy lo escribes tú."
+    }
+  ]
+}

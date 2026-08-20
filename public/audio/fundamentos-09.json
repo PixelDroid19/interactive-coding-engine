@@ -1,0 +1,155 @@
+{
+  "id": "fundamentos-09",
+  "durationMs": 68960,
+  "language": "es",
+  "engine": "faster-whisper-small-realign",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 7120,
+      "text": "Un array es una fila. Un objeto es una ficha. Cada dato tiene nombre, no número."
+    },
+    {
+      "timestamp": 8100,
+      "end": 17220,
+      "text": "Una persona no es posición cero, posición uno. Es nombre, edad, si está activa. Eso se agrupa en un objeto."
+    },
+    {
+      "timestamp": 18120,
+      "end": 26740,
+      "text": "const persona igual, llaves. nombre Ana, edad 25, activo true."
+    },
+    {
+      "timestamp": 27720,
+      "end": 37220,
+      "text": "persona punto nombre es Ana. El punto entra a un campo. También puedes usar corchetes si el nombre del campo está en una variable."
+    },
+    {
+      "timestamp": 38040,
+      "end": 45080,
+      "text": "Puedes meter funciones adentro. Entonces se llaman métodos. Hacen algo con los datos de esa ficha."
+    },
+    {
+      "timestamp": 45960,
+      "end": 56440,
+      "text": "Los objetos se combinan con arrays. Una lista de personas. Cada elemento es una ficha. Así se construyen apps de verdad: listas de cosas con nombre."
+    },
+    {
+      "timestamp": 57220,
+      "end": 68540,
+      "text": "Tu turno. Crea un objeto producto con nombre y precio. Y una función que reciba ese producto y devuelva un texto: el nombre, una raya, y el precio."
+    }
+  ],
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 2.24,
+      "text": "Una rey es una fila."
+    },
+    {
+      "start": 2.42,
+      "end": 4.1,
+      "text": "Un objeto es una ficha."
+    },
+    {
+      "start": 4.82,
+      "end": 7.12,
+      "text": "Cada dato tiene nombre, no número."
+    },
+    {
+      "start": 8.1,
+      "end": 11.26,
+      "text": "Una persona no es posición cero, posición uno."
+    },
+    {
+      "start": 11.8,
+      "end": 17.22,
+      "text": "Es nombre, edad, si está activa, eso se agrupa en un objeto."
+    },
+    {
+      "start": 18.12,
+      "end": 21.16,
+      "text": "Const persona igual llaves."
+    },
+    {
+      "start": 22.04,
+      "end": 26.74,
+      "text": "Nombre, ana, edad, 25, activo, true."
+    },
+    {
+      "start": 27.72,
+      "end": 30.24,
+      "text": "Persona punto, nombre, es ana."
+    },
+    {
+      "start": 30.9,
+      "end": 32.72,
+      "text": "El punto entra a un campo."
+    },
+    {
+      "start": 33.36,
+      "end": 37.22,
+      "text": "También puedes usar corchetes si el nombre del campo está en una variable."
+    },
+    {
+      "start": 38.04,
+      "end": 39.92,
+      "text": "Puedes meter funciones adentro."
+    },
+    {
+      "start": 40.32,
+      "end": 42.4,
+      "text": "Entonces se llaman métodos."
+    },
+    {
+      "start": 43.02,
+      "end": 45.08,
+      "text": "Hacen algo con los datos de esa ficha."
+    },
+    {
+      "start": 45.96,
+      "end": 47.82,
+      "text": "Los objetos se combinan con arrays."
+    },
+    {
+      "start": 48.4,
+      "end": 49.62,
+      "text": "Una lista de personas."
+    },
+    {
+      "start": 50.3,
+      "end": 51.94,
+      "text": "Cada elemento es una ficha."
+    },
+    {
+      "start": 52.64,
+      "end": 54.42,
+      "text": "Así se construyen apps de verdad."
+    },
+    {
+      "start": 54.42,
+      "end": 56.44,
+      "text": "Listas de cosas con nombre."
+    },
+    {
+      "start": 57.22,
+      "end": 58.1,
+      "text": "Tu turno."
+    },
+    {
+      "start": 58.5,
+      "end": 61.58,
+      "text": "Crea un objeto producto, con nombre y precio."
+    },
+    {
+      "start": 62.2,
+      "end": 65.58,
+      "text": "Y una función que reciba ese producto y devuelva un texto."
+    },
+    {
+      "start": 66.22,
+      "end": 68.54,
+      "text": "El nombre, una raya y el precio."
+    }
+  ]
+}

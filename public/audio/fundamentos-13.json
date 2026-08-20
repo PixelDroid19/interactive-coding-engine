@@ -1,0 +1,145 @@
+{
+  "id": "fundamentos-13",
+  "durationMs": 59240,
+  "language": "es",
+  "engine": "faster-whisper-small-realign",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 13660,
+      "text": "Con diez datos, casi todo es rápido. Con diez millones, un algoritmo malo se siente eterno. Big O no es una nota. Es una forma de decir cómo crece el tiempo cuando crecen los datos."
+    },
+    {
+      "timestamp": 14680,
+      "end": 21800,
+      "text": "O de uno. Tiempo fijo. Da igual diez o diez millones. Leer la primera casilla de un array es así."
+    },
+    {
+      "timestamp": 22620,
+      "end": 28400,
+      "text": "O log n. Crece muy despacio. Cada paso tira la mitad. Búsqueda binaria."
+    },
+    {
+      "timestamp": 29020,
+      "end": 35920,
+      "text": "O de n. Crece con los datos. Si hay el doble, tarda el doble. Recorrer la lista una vez."
+    },
+    {
+      "timestamp": 36660,
+      "end": 47620,
+      "text": "O de n al cuadrado. Por cada elemento, recorres todos otra vez. Con mil datos, un millón de comparaciones. Por eso un for dentro de otro for duele."
+    },
+    {
+      "timestamp": 48420,
+      "end": 57940,
+      "text": "No memorices la tabla. Pregunta: si mañana hay diez veces más datos, ¿esto sigue vivo? Si la respuesta es que se muere, hay que cambiar el algoritmo, no la máquina."
+    }
+  ],
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 2.66,
+      "text": "Con 10 datos, casi todo es rápido."
+    },
+    {
+      "start": 3.18,
+      "end": 7.4,
+      "text": "Con 10 millones, un algoritmo malo se siente eterno."
+    },
+    {
+      "start": 7.88,
+      "end": 9.58,
+      "text": "Big O no es una nota."
+    },
+    {
+      "start": 9.98,
+      "end": 13.66,
+      "text": "Es una forma de decir cómo crece el tiempo cuando crecen los datos."
+    },
+    {
+      "start": 14.68,
+      "end": 16.38,
+      "text": "O de 1, tiempo fijo."
+    },
+    {
+      "start": 16.88,
+      "end": 18.7,
+      "text": "Da igual 10 o 10 millones."
+    },
+    {
+      "start": 19.3,
+      "end": 21.8,
+      "text": "Leer la primera casilla de una RAI es así."
+    },
+    {
+      "start": 22.62,
+      "end": 25.38,
+      "text": "O log n, crece muy despacio."
+    },
+    {
+      "start": 25.82,
+      "end": 27.08,
+      "text": "Cada paso tira la mitad."
+    },
+    {
+      "start": 27.7,
+      "end": 28.4,
+      "text": "Busque de binaria."
+    },
+    {
+      "start": 29.02,
+      "end": 31.62,
+      "text": "O de n, crece con los datos."
+    },
+    {
+      "start": 32.04,
+      "end": 33.88,
+      "text": "Si hay el doble, tarda el doble."
+    },
+    {
+      "start": 34.36,
+      "end": 35.92,
+      "text": "Recorrer la lista una vez."
+    },
+    {
+      "start": 36.66,
+      "end": 38.32,
+      "text": "O de n al cuadrado."
+    },
+    {
+      "start": 38.84,
+      "end": 41.6,
+      "text": "Por cada elemento, recorres todos otra vez."
+    },
+    {
+      "start": 42.08,
+      "end": 44.3,
+      "text": "Con 1000 datos, un millón de comparaciones."
+    },
+    {
+      "start": 44.88,
+      "end": 47.62,
+      "text": "Por eso un for dentro de otro for duele."
+    },
+    {
+      "start": 48.42,
+      "end": 49.74,
+      "text": "No memorices la tabla."
+    },
+    {
+      "start": 50.18,
+      "end": 54.36,
+      "text": "Pregunta, si mañana hay 10 veces más datos, esto sigue vivo?"
+    },
+    {
+      "start": 54.98,
+      "end": 57.94,
+      "text": "Si la respuesta es que se muere, hay que cambiar el algoritmo."
+    },
+    {
+      "start": 57.94,
+      "end": 58.8,
+      "text": "No la máquina."
+    }
+  ]
+}

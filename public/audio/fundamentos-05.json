@@ -1,0 +1,215 @@
+{
+  "id": "fundamentos-05",
+  "durationMs": 80080,
+  "language": "es",
+  "engine": "faster-whisper-small-realign",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 6240,
+      "text": "Hasta ahora el programa hace siempre lo mismo, de arriba a abajo. Hoy va a decidir."
+    },
+    {
+      "timestamp": 7000,
+      "end": 14660,
+      "text": "En la puerta de un edificio hay un portero. Si tienes credencial, pasas. Si no, no pasas. Eso es un if."
+    },
+    {
+      "timestamp": 15420,
+      "end": 23500,
+      "text": "Voy a escribir una edad. Si es mayor o igual a dieciocho, el mensaje dice que puedes votar. Si no, dice que todavía no."
+    },
+    {
+      "timestamp": 24180,
+      "end": 30260,
+      "text": "La condición va entre paréntesis. Si es true, entra al primer bloque. Si no, al else."
+    },
+    {
+      "timestamp": 31180,
+      "end": 45760,
+      "text": "A veces hay más de dos caminos. else if. Si la nota es noventa o más, A. Si no, pero es ochenta o más, B. Si no, C. El orden importa. JavaScript se queda con el primer sí."
+    },
+    {
+      "timestamp": 46540,
+      "end": 58160,
+      "text": "Hay un atajo de una línea. Condición, signo de pregunta, valor si sí, dos puntos, valor si no. Sirve para cosas cortas. Si se pone largo, vuelve al if."
+    },
+    {
+      "timestamp": 58840,
+      "end": 67480,
+      "text": "Cambia la edad en el código y pulsa Run. Mira cómo cambia el mensaje. El programa no adivina. Pregunta, y elige un camino."
+    },
+    {
+      "timestamp": 68240,
+      "end": 79640,
+      "text": "Tu turno. Recibe una nota del cero al cien. Si es noventa o más, devuelve A. Si es ochenta o más, B. Si es setenta o más, C. Si no, F."
+    }
+  ],
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 4.24,
+      "text": "Hasta ahora el programa hace siempre lo mismo, de arriba a abajo."
+    },
+    {
+      "start": 4.88,
+      "end": 6.24,
+      "text": "Hoy va a decidir."
+    },
+    {
+      "start": 7.0,
+      "end": 9.44,
+      "text": "En la puerta de un edificio hay un portero."
+    },
+    {
+      "start": 9.84,
+      "end": 11.66,
+      "text": "Si tienes credencial, pasas."
+    },
+    {
+      "start": 12.06,
+      "end": 13.36,
+      "text": "Si no, no pasas."
+    },
+    {
+      "start": 13.82,
+      "end": 14.66,
+      "text": "Eso es un if."
+    },
+    {
+      "start": 15.42,
+      "end": 16.76,
+      "text": "Voy a escribir una edad."
+    },
+    {
+      "start": 17.34,
+      "end": 21.14,
+      "text": "Si es mayor o igual a 18, el mensaje dice que puedes votar."
+    },
+    {
+      "start": 21.5,
+      "end": 23.5,
+      "text": "Si no, dice que todavía no."
+    },
+    {
+      "start": 24.18,
+      "end": 25.98,
+      "text": "La condición va entre paréntesis."
+    },
+    {
+      "start": 26.52,
+      "end": 28.6,
+      "text": "Si es true, entra al primer bloque."
+    },
+    {
+      "start": 28.6,
+      "end": 30.26,
+      "text": "Si no, al else."
+    },
+    {
+      "start": 31.18,
+      "end": 32.9,
+      "text": "A veces hay más de dos caminos."
+    },
+    {
+      "start": 33.44,
+      "end": 34.04,
+      "text": "Else if."
+    },
+    {
+      "start": 34.72,
+      "end": 36.98,
+      "text": "Si la nota es 90 o más, a."
+    },
+    {
+      "start": 37.54,
+      "end": 39.94,
+      "text": "Si no, pero es 80 o más, b."
+    },
+    {
+      "start": 40.42,
+      "end": 41.38,
+      "text": "Si no, c."
+    },
+    {
+      "start": 42.2,
+      "end": 43.02,
+      "text": "El orden importa."
+    },
+    {
+      "start": 43.68,
+      "end": 45.76,
+      "text": "JavaScript se queda con el primer si."
+    },
+    {
+      "start": 46.54,
+      "end": 48.12,
+      "text": "Hay un atajo de una línea."
+    },
+    {
+      "start": 48.72,
+      "end": 53.92,
+      "text": "Condición, signo de pregunta, valor si sí, dos puntos, valor si no."
+    },
+    {
+      "start": 54.52,
+      "end": 55.88,
+      "text": "Sirve para cosas cortas."
+    },
+    {
+      "start": 56.38,
+      "end": 58.16,
+      "text": "Si se pone largo, vuelve al if."
+    },
+    {
+      "start": 58.84,
+      "end": 61.46,
+      "text": "Cambia la edad en el código y pulsa run."
+    },
+    {
+      "start": 61.98,
+      "end": 63.48,
+      "text": "Mira cómo cambia el mensaje."
+    },
+    {
+      "start": 64.12,
+      "end": 65.3,
+      "text": "El programa no adivina."
+    },
+    {
+      "start": 65.7,
+      "end": 67.48,
+      "text": "Pregunta y elige un camino."
+    },
+    {
+      "start": 68.24,
+      "end": 68.84,
+      "text": "Tuturno."
+    },
+    {
+      "start": 69.32,
+      "end": 71.22,
+      "text": "Recibe una nota del cero al cien."
+    },
+    {
+      "start": 71.78,
+      "end": 73.84,
+      "text": "Si es 90 o más, devuelve a."
+    },
+    {
+      "start": 74.36,
+      "end": 76.0,
+      "text": "Si es 80 o más, b."
+    },
+    {
+      "start": 76.5,
+      "end": 78.18,
+      "text": "Si es 70 o más, c."
+    },
+    {
+      "start": 78.64,
+      "end": 79.64,
+      "text": "Si no, f."
+    }
+  ]
+}

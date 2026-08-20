@@ -1,0 +1,6 @@
+{
+  "name": "Aula viva",
+  "description": "Interactive programming platform where learners code directly inside live recorded lessons, tackle auto-pausing challenges, debug code, and build solo projects.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
