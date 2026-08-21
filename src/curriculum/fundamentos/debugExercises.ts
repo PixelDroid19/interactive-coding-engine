@@ -299,12 +299,12 @@ document.getElementById("salida").textContent = ficha(nombre, edad);
     'Entra quien no debería',
     'El descuento y el múltiplo usan mal los operadores que viste.',
     'Descuento solo si el precio es mayor que 50 y además es socio. esMultiplo usa el resto, no la división.',
-    'Un precio de 80 sin ser socio se rebaja igual. esMultiplo(9, 3) da false.',
+    'Un precio de 80 sin ser socio se rebaja y el porcentaje tampoco coincide. esMultiplo(9, 3) da false.',
     `<p class="hint">=== compara. % es el resto. && pide las dos condiciones.</p>
     <p id="salida" class="salida"></p>`,
     `function aplicaDescuento(precio, esSocio) {
   if (precio > 50 || esSocio) {
-    return precio * 0.9;
+    return precio * 0.8;
   }
   return precio;
 }
@@ -320,12 +320,12 @@ salida.textContent =
 `,
     [
       fn('sin-socio', '80 sin socio no tiene descuento', 'aplicaDescuento', [80, false], 80, '|| se conforma con una de las dos. && pide las dos.'),
-      fn('con-socio', '80 con socio sí rebaja', 'aplicaDescuento', [80, true], 72, 'Las dos condiciones juntas: precio alto y socio.'),
+      fn('con-socio', '80 con socio sí rebaja', 'aplicaDescuento', [80, true], 72, 'Revisa tanto las dos condiciones como el porcentaje aplicado.'),
       fn('barato-socio', '30 aunque sea socio no rebaja', 'aplicaDescuento', [30, true], 30, 'El precio también tiene que pasar el corte.'),
       fn('multiplo', '9 es múltiplo de 3', 'esMultiplo', [9, 3], true, '% da el resto. Si el resto es 0, cabe exacto.'),
     ],
     [
-      { level: 1, text: 'Hay dos funciones. Prueba cada una con un ejemplo de la clase: un caso que debería ser true y uno false.' },
+      { level: 1, text: 'Hay dos funciones. En el descuento revisa por separado la condición y la cuenta; después prueba esMultiplo.' },
       { level: 2, text: '|| y && no son lo mismo. Una se conforma con un sí. La otra exige los dos.' },
       { level: 3, text: 'n / 3 === 0 casi nunca es cierto (9 / 3 es 3). El resto de una división es otro operador.' },
     ],
@@ -337,17 +337,17 @@ salida.textContent =
 
   exercise(
     'fundamentos-05',
-    'El 95 da C',
-    'La letra de la nota elige mal el camino.',
+    'Las letras se cruzan',
+    'La letra de la nota elige mal el camino y devuelve categorías equivocadas.',
     'letra(95) es A, letra(80) es B, letra(70) es C, letra(50) es F.',
-    'Un 95 sale C. Las preguntas no están en el orden que gana primero.',
+    'Las cuatro notas de ejemplo reciben una letra incorrecta. Las preguntas y sus resultados no están alineados.',
     `<p class="hint">if elige un camino. El primero que se cumple gana y el resto no se mira.</p>
     <p id="salida" class="salida"></p>`,
     `function letra(nota) {
-  if (nota >= 70) return "C";
-  if (nota >= 80) return "B";
-  if (nota >= 90) return "A";
-  return "F";
+  if (nota >= 70) return "D";
+  if (nota >= 80) return "A";
+  if (nota >= 90) return "F";
+  return "C";
 }
 
 document.getElementById("salida").textContent =
@@ -360,9 +360,9 @@ document.getElementById("salida").textContent =
       fn('f', '50 es F', 'letra', [50], 'F', 'Si no entra en A, B ni C, queda el último camino.'),
     ],
     [
-      { level: 1, text: 'Un 95 cumple más de una condición. ¿Cuál se pregunta primero?' },
-      { level: 2, text: 'Si preguntas lo más fácil de cumplir al principio, los otros if nunca corren.' },
-      { level: 3, text: 'En la clase iba de la nota más alta a la más baja, o usabas else if para encadenar.' },
+      { level: 1, text: 'Un 95 cumple más de una condición. Sigue el recorrido y anota qué letra recibe cada nota de ejemplo.' },
+      { level: 2, text: 'Si preguntas lo más fácil de cumplir al principio, los otros if nunca corren. Comprueba también qué categoría devuelve cada camino.' },
+      { level: 3, text: 'Ordena los cortes desde el más exigente y verifica la letra asociada a cada rango.' },
     ],
     [
       'Prueba mentalmente 95, 80, 70 y 50 en el orden actual de los if.',
@@ -375,14 +375,14 @@ document.getElementById("salida").textContent =
     'El 15 no dice FizzBuzz',
     'La etiqueta del número 15 se queda a medias.',
     'etiqueta(3) es Fizz, etiqueta(5) es Buzz, etiqueta(15) es FizzBuzz, etiqueta(1) es "1".',
-    'El 15 sale Fizz. El caso de los dos múltiplos nunca gana.',
+    'El 3 y el 5 reciben la palabra contraria, el 15 se queda en una sola y el caso normal devuelve un número.',
     `<p class="hint">El orden de las preguntas importa tanto como las preguntas.</p>
     <p id="salida" class="salida"></p>`,
     `function etiqueta(n) {
-  if (n % 3 === 0) return "Fizz";
-  if (n % 5 === 0) return "Buzz";
+  if (n % 3 === 0) return "Buzz";
+  if (n % 5 === 0) return "Fizz";
   if (n % 3 === 0 && n % 5 === 0) return "FizzBuzz";
-  return String(n);
+  return n;
 }
 
 const lineas = [];
@@ -398,9 +398,9 @@ document.getElementById("salida").textContent = lineas.join("\\n");
       fn('numero', '1 se queda en número', 'etiqueta', [1], '1', 'Si no es múltiplo, devuelve el número como texto.'),
     ],
     [
-      { level: 1, text: '15 es múltiplo de 3 y de 5. ¿Qué if se cumple primero en el código actual?' },
-      { level: 2, text: 'Un return corta la función. Lo que está debajo no se ejecuta.' },
-      { level: 3, text: 'El caso de las dos condiciones tiene que preguntarse antes que el de una sola.' },
+      { level: 1, text: 'Prueba 3, 5, 15 y 1 por separado. Compara el valor y también su tipo con lo que pide el enunciado.' },
+      { level: 2, text: 'Un return corta la función. Además, cada múltiplo debe conservar su etiqueta correcta.' },
+      { level: 3, text: 'El caso que cumple las dos condiciones necesita prioridad; el caso normal debe tener el mismo tipo que el resultado esperado.' },
     ],
     [
       'No borres el bucle. El fallo está en etiqueta(), no en el for.',
@@ -555,17 +555,17 @@ salida.textContent = "a, a, a y un b → " + pruebaDosContadores().join(", ");
 
   exercise(
     'fundamentos-11',
-    'No encuentra el primero',
-    'La búsqueda lineal se salta un hueco.',
+    'Los índices quedan corridos',
+    'La búsqueda lineal se salta un hueco y devuelve posiciones desplazadas.',
     'buscar([7, 3, 9], 7) es 0. buscar([7, 3, 9], 9) es 2. Si no está, -1.',
-    'El 7 está en la lista y aun así devuelve -1.',
+    'El 7 devuelve una posición que no corresponde, el 9 queda desplazado y un ausente tampoco devuelve -1.',
     `<p class="hint">Lineal mira uno por uno. Si empiezas en el segundo, el primero no existe para el programa.</p>
     <p id="salida" class="salida"></p>`,
     `function buscar(lista, objetivo) {
   for (let i = 1; i < lista.length; i++) {
-    if (lista[i] === objetivo) return i;
+    if (lista[i] === objetivo) return i - 1;
   }
-  return -1;
+  return lista.length;
 }
 
 document.getElementById("salida").textContent =
@@ -574,12 +574,12 @@ document.getElementById("salida").textContent =
     [
       fn('cabeza', 'Encuentra el que está al principio', 'buscar', [[7, 3, 9], 7], 0, 'El for no puede empezar en 1 si el 0 también cuenta.'),
       fn('cola', 'Encuentra el del final', 'buscar', [[7, 3, 9], 9], 2, 'El último índice es length - 1, y el for ya llega ahí.'),
-      fn('no-esta', 'Si no está, -1', 'buscar', [[7, 3, 9], 4], -1, 'Ese camino ya funciona. No lo rompas al arreglar el inicio.'),
+      fn('no-esta', 'Si no está, -1', 'buscar', [[7, 3, 9], 4], -1, 'Al terminar el recorrido sin coincidencias debe devolver el valor que representa “no encontrado”.'),
     ],
     [
-      { level: 1, text: 'El 7 está en la posición 0. ¿El for mira esa posición?' },
-      { level: 2, text: 'let i = 1 salta el primero. En un array eso es grave.' },
-      { level: 3, text: 'La búsqueda lineal empieza en el primer elemento y sigue hasta length.' },
+      { level: 1, text: 'El 7 está en la posición 0. Sigue el for y anota qué devuelve cuando encuentra algo y cuando no lo encuentra.' },
+      { level: 2, text: 'El recorrido se salta el índice 0 y la posición devuelta tampoco coincide con la visitada.' },
+      { level: 3, text: 'Una búsqueda lineal recorre desde el primer índice y usa un valor especial fuera del bucle cuando no encuentra nada.' },
     ],
     [
       'Escribe los índices 0, 1, 2 al lado de 7, 3, 9. Marca cuáles visita el for ahora.',
@@ -622,14 +622,14 @@ document.getElementById("salida").textContent = "Atiende → " + atender(cola);
     'Solo detecta vecinos',
     'La función dice que no hay duplicados si no están juntos.',
     'tieneDuplicados([1, 2, 1]) es true. tieneDuplicados([1, 1, 2]) es true. tieneDuplicados([1, 2, 3]) es false.',
-    '[1, 2, 1] da false. Solo mira al de al lado, no a toda la lista.',
+    'Solo mira al de al lado; los duplicados vecinos dan false y los demás casos terminan sin un booleano útil.',
     `<p class="hint">Si duplicas los datos, un algoritmo que solo mira vecinos se queda corto. Eso también es complejidad: hace de menos.</p>
     <p id="salida" class="salida"></p>`,
     `function tieneDuplicados(lista) {
   for (let i = 0; i < lista.length; i++) {
-    if (lista[i] === lista[i + 1]) return true;
+    if (lista[i] === lista[i + 1]) return false;
   }
-  return false;
+  return null;
 }
 
 document.getElementById("salida").textContent =
@@ -638,13 +638,13 @@ document.getElementById("salida").textContent =
 `,
     [
       fn('lejos', 'Duplicado no vecino', 'tieneDuplicados', [[1, 2, 1]], true, '1 aparece dos veces aunque no estén juntos.'),
-      fn('juntos', 'Duplicado vecino', 'tieneDuplicados', [[1, 1, 2]], true, 'Este caso ya pasaba. No lo rompas.'),
+      fn('juntos', 'Duplicado vecino', 'tieneDuplicados', [[1, 1, 2]], true, 'Cuando encuentra dos valores repetidos debe comunicar que sí hay duplicado.'),
       fn('unicos', 'Sin duplicados es false', 'tieneDuplicados', [[1, 2, 3]], false, 'Si todo es distinto, no hay duplicado.'),
     ],
     [
-      { level: 1, text: 'lista[i] === lista[i + 1] solo pregunta al vecino. [1, 2, 1] no son vecinos.' },
-      { level: 2, text: 'Para cada i, tienes que comparar con otros índices, no solo con i + 1.' },
-      { level: 3, text: 'Un segundo for (u otra forma de recordar lo ya visto) cubre los que no están al lado.' },
+      { level: 1, text: 'Sigue los dos caminos de retorno con una lista repetida y otra única. ¿El booleano describe lo que ocurrió?' },
+      { level: 2, text: 'Aunque corrijas los booleanos, comparar solo con i + 1 sigue sin ver duplicados separados.' },
+      { level: 3, text: 'Compara cada valor con los demás o recuerda cuáles ya viste; devuelve el resultado que corresponda a encontrar una repetición.' },
     ],
     [
       'El fallo no es de sintaxis: el programa hace menos trabajo del que el problema pide.',
@@ -657,12 +657,12 @@ document.getElementById("salida").textContent =
     'Cambia la lista original',
     'conIva debería devolver números nuevos sin tocar la lista de entrada.',
     'conIva([100, 200]) devuelve [121, 242] y la lista original sigue siendo [100, 200].',
-    'La lista de entrada termina modificada. En el estilo de map, entra una lista y sale otra.',
+    'La lista de entrada termina modificada y el porcentaje aplicado tampoco llega al 21 %. En el estilo de map, entra una lista y sale otra.',
     `<p class="hint">map arma una lista nueva. Si escribes sobre precios[i], mutas la original.</p>
     <p id="salida" class="salida"></p>`,
     `function conIva(precios) {
   for (let i = 0; i < precios.length; i++) {
-    precios[i] = precios[i] * 1.21;
+    precios[i] = precios[i] * 1.2;
   }
   return precios;
 }
@@ -677,11 +677,11 @@ document.getElementById("salida").textContent =
   "resultado → " + conIva([100, 200]).join(", ");
 `,
     [
-      fn('valores', 'Aplica el 21 % y devuelve números nuevos', 'conIva', [[100, 200]], [121, 242], 'Cada precio * 1.21.'),
+      fn('valores', 'Aplica el 21 % y devuelve números nuevos', 'conIva', [[100, 200]], [121, 242], 'El enunciado pide añadir 21 %, no 20 %.'),
       fn('no-muta', 'La lista de entrada no se reescribe', 'originalIntacto', [], true, 'Si conIva escribe en precios[i], datos[0] deja de ser 100.'),
     ],
     [
-      { level: 1, text: 'Después de llamar conIva(datos), ¿datos sigue siendo [100, 50]?' },
+      { level: 1, text: 'Comprueba por separado el porcentaje calculado y si datos conserva sus valores después de llamar conIva.' },
       { level: 2, text: 'precios[i] = ... cambia el array que te pasaron. En la clase, map no hacía eso.' },
       { level: 3, text: 'Arma otra lista (map, o un array nuevo que vas llenando) y deja la original en paz.' },
     ],

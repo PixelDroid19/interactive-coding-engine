@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { runChallengeValidation } from './testRunner';
-import { WorkspaceSnapshot } from '../types/scrim';
+import { ScrimChallenge, WorkspaceSnapshot } from '../types/scrim';
 import { file, workspaceOf } from './lessonCompiler';
 import { LESSON1_HTML } from '../curriculum/fundamentos/workspaces';
 
@@ -93,6 +93,62 @@ describe('testRunner lesson01 behavioral', () => {
 });
 
 describe('testRunner hardening', () => {
+  it('trata una función aún no escrita como reto pendiente, no como error interno', async () => {
+    const ws = wsFromJs('// El alumno todavía no empezó la función.');
+    const reto: ScrimChallenge = {
+      id: 'funcion-pendiente',
+      title: 'Función pendiente',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'falta-suma',
+        description: 'suma(2, 3) devuelve 5',
+        validatorType: 'function-call' as const,
+        targetFunction: 'suma',
+        args: [2, 3],
+        expectedReturn: 5,
+      }],
+      hints: [],
+    };
+
+    const result = await runChallengeValidation(reto, ws, null);
+
+    expect(result.tests[0].status).toBe('failed');
+    expect(result.tests[0].isEvaluationError).not.toBe(true);
+    expect(result.feedbackMessage).toContain("No encontramos la función 'suma'");
+    expect(result.feedbackMessage).not.toContain('error interno');
+  });
+
+  it('tolera la UI ya renderizada al comprobar una función que falta', async () => {
+    const ws = wsFromJs(`
+      const caja = document.getElementById('lista');
+      const fila = document.createElement('div');
+      fila.classList.add('activa');
+      caja.appendChild(fila);
+    `);
+    const reto = {
+      id: 'funcion-tras-dom',
+      title: 'Función tras DOM',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'falta-etiqueta',
+        description: 'etiqueta(3) devuelve Fizz',
+        validatorType: 'function-call' as const,
+        targetFunction: 'etiqueta',
+        args: [3],
+        expectedReturn: 'Fizz',
+      }],
+      hints: [],
+    };
+
+    const result = await runChallengeValidation(reto, ws, null);
+
+    expect(result.tests[0].status).toBe('failed');
+    expect(result.tests[0].isEvaluationError).not.toBe(true);
+    expect(result.feedbackMessage).toContain("No encontramos la función 'etiqueta'");
+  });
+
   it('console-check no aprueba incondicionalmente', async () => {
     const ws = wsFromJs('let x=1');
     const reto = {
@@ -133,6 +189,34 @@ describe('testRunner hardening', () => {
     const result2 = await runChallengeValidation(reto2 as any, ws, null);
     expect(result2.tests[0].passed).toBe(false);
     expect(result2.tests[0].errorMessage).toContain('Esperábamos');
+  });
+
+  it('comprueba secuencias e independencia cuando la función devuelve otra función', async () => {
+    const reto = {
+      id: 'closure',
+      title: 'Contadores independientes',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'secuencias',
+        description: 'Dos contadores conservan estados separados',
+        validatorType: 'function-call' as const,
+        targetFunction: 'crearContador',
+        args: [],
+        returnedFunctionCallCounts: [3, 1],
+        expectedReturn: [[1, 2, 3], [1]],
+      }],
+      hints: [],
+    };
+    const correct = wsFromJs('function crearContador(){ let n=0; return function(){ n++; return n; }; }');
+    const shared = wsFromJs('let n=0; function crearContador(){ return function(){ n++; return n; }; }');
+
+    const correctResult = await runChallengeValidation(reto, correct, null);
+    const sharedResult = await runChallengeValidation(reto, shared, null);
+
+    expect(correctResult.allPassed).toBe(true);
+    expect(sharedResult.allPassed).toBe(false);
+    expect(sharedResult.tests[0].receivedValue).toEqual([[1, 2, 3], [4]]);
   });
 
   it('dom-check mensajes en español', async () => {

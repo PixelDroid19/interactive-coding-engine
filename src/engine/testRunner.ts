@@ -26,6 +26,73 @@ function stringContainsAll(result: string, expectedContains: string[], opts: { c
   });
 }
 
+function createEvaluationElement(): any {
+  const children: any[] = [];
+  const classes = new Set<string>();
+  const element: any = {
+    textContent: '',
+    innerText: '',
+    innerHTML: '',
+    value: '',
+    className: '',
+    style: {},
+    dataset: {},
+    children,
+    classList: {
+      add: (...names: string[]) => names.forEach((name) => classes.add(name)),
+      remove: (...names: string[]) => names.forEach((name) => classes.delete(name)),
+      contains: (name: string) => classes.has(name),
+      toggle(name: string) {
+        if (classes.has(name)) {
+          classes.delete(name);
+          return false;
+        }
+        classes.add(name);
+        return true;
+      },
+    },
+    addEventListener() {},
+    removeEventListener() {},
+    appendChild(child: any) {
+      children.push(child);
+      return child;
+    },
+    removeChild(child: any) {
+      const index = children.indexOf(child);
+      if (index >= 0) children.splice(index, 1);
+      return child;
+    },
+    setAttribute(name: string, value: unknown) {
+      element[name] = String(value);
+    },
+    getAttribute(name: string) {
+      return element[name] ?? null;
+    },
+  };
+  return element;
+}
+
+function createEvaluationDocument(): any {
+  const elements: Record<string, any> = {};
+  const documentStub: any = {
+    body: createEvaluationElement(),
+    head: createEvaluationElement(),
+    getElementById(id: string) {
+      if (!elements[id]) elements[id] = createEvaluationElement();
+      return elements[id];
+    },
+    querySelector(selector: string) {
+      const idMatch = selector.match(/#([\w-]+)/);
+      return idMatch ? documentStub.getElementById(idMatch[1]) : createEvaluationElement();
+    },
+    querySelectorAll: () => [],
+    createElement: () => createEvaluationElement(),
+    addEventListener() {},
+    removeEventListener() {},
+  };
+  return documentStub;
+}
+
 function isStringMatch(result: any, test: ChallengeTest): { passed: boolean; error?: string } {
   if (typeof result !== 'string') {
     return { passed: false, error: `Se esperaba texto pero se obtuvo ${typeof result}: ${JSON.stringify(result)}` };
@@ -166,35 +233,7 @@ async function evaluateSingleTest(
       let targetFn: any;
       try {
         // Deterministic: always evaluate current workspace via Function, not iframe
-        const stubDocument: any = {
-          _els: {} as Record<string, any>,
-          getElementById: (id: string) => {
-            if (!stubDocument._els[id]) {
-              stubDocument._els[id] = {
-                textContent: '',
-                innerText: '',
-                innerHTML: '',
-                value: '',
-                className: '',
-                addEventListener() {},
-              };
-            }
-            return stubDocument._els[id];
-          },
-          querySelector: (sel: string) => {
-            const idMatch = sel.match(/#([\w-]+)/);
-            if (idMatch) return stubDocument.getElementById(idMatch[1]);
-            return {
-              textContent: '',
-              innerText: '',
-              innerHTML: '',
-              value: '',
-              addEventListener() {},
-            };
-          },
-          querySelectorAll: (): unknown[] => [],
-          createElement: () => ({ textContent: '', className: '', classList: { add() {} }, appendChild() {} }),
-        };
+        const stubDocument = createEvaluationDocument();
         const evalScope = new Function(
           'document',
           'window',
@@ -218,14 +257,65 @@ async function evaluateSingleTest(
           id: test.id,
           description: test.description,
           passed: false,
-          status: 'evaluation-error',
-          isEvaluationError: true,
+          status: 'failed',
           errorMessage: `No encontramos la función '${test.targetFunction}'. Revisa el nombre y que esté definida.`,
           hint: test.hintTip,
         };
       }
 
       try {
+        if (test.returnedFunctionCallCounts) {
+          const counts = test.returnedFunctionCallCounts;
+          if (
+            counts.length === 0
+            || counts.some((count) => !Number.isInteger(count) || count < 0)
+            || test.expectedReturn === undefined
+          ) {
+            return {
+              id: test.id,
+              description: test.description,
+              passed: false,
+              status: 'evaluation-error',
+              isEvaluationError: true,
+              errorMessage: 'Prueba mal configurada: la secuencia de llamadas no es válida.',
+              hint: test.hintTip,
+            };
+          }
+
+          const args = test.args || [];
+          const sequences: unknown[][] = [];
+          for (const count of counts) {
+            const returnedFunction = targetFn(...args);
+            if (typeof returnedFunction !== 'function') {
+              return {
+                id: test.id,
+                description: test.description,
+                passed: false,
+                status: 'failed',
+                receivedValue: returnedFunction,
+                expectedValue: test.expectedReturn,
+                errorMessage: test.errorMessage || `'${test.targetFunction}' debe devolver una función.`,
+                hint: test.hintTip,
+              };
+            }
+            const values: unknown[] = [];
+            for (let call = 0; call < count; call++) values.push(returnedFunction());
+            sequences.push(values);
+          }
+
+          const isMatch = JSON.stringify(sequences) === JSON.stringify(test.expectedReturn);
+          return {
+            id: test.id,
+            description: test.description,
+            passed: isMatch,
+            status: isMatch ? 'passed' : 'failed',
+            receivedValue: sequences,
+            expectedValue: test.expectedReturn,
+            errorMessage: isMatch ? undefined : (test.errorMessage || `Esperábamos '${JSON.stringify(test.expectedReturn)}' pero obtuvimos '${JSON.stringify(sequences)}'.`),
+            hint: test.hintTip,
+          };
+        }
+
         // Special handling for semantic string matchers
         if (test.matcher === 'contains-all' || test.matcher === 'string-contains-all' || test.matcher === 'contains' || test.expectedContains || test.requireArgInResult !== undefined) {
           const args = test.args || [];

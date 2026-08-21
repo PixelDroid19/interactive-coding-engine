@@ -76,13 +76,9 @@ export const LESSON_08 = compileLesson({
       challenge: {
         id: 'reto-suma',
         title: 'Reto: suma del array',
-        instructions: `function suma(numeros) {
-  let total = 0;
-  for (let i = 0; i < numeros.length; i++) {
-    total = total + numeros[i];
-  }
-  return total;
-}`,
+        instructions: `Escribe suma(numeros).
+
+Recorre todo el array, acumula sus valores desde cero y devuelve el total. Un array vacío debe devolver 0.`,
         tests: [
           {
             id: 'suma-1-2-3',

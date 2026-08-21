@@ -86,9 +86,10 @@ export const LESSON_04 = compileLesson({
       challenge: {
         id: 'reto-espar-entrar',
         title: 'Reto: esPar y puedeEntrar',
-        instructions: `1. function esPar(n) { return n % 2 === 0; }
-2. function puedeEntrar(edad, tieneEntrada) { return edad >= 18 && tieneEntrada; }
-3. Pulsa Run.`,
+        instructions: `Crea dos funciones y pulsa Ejecutar:
+
+1. esPar(n) devuelve true solo cuando n es divisible entre 2.
+2. puedeEntrar(edad, tieneEntrada) devuelve true solo si la persona es mayor de edad y además tiene entrada.`,
         tests: [
           {
             id: 'esPar-par',
@@ -98,7 +99,7 @@ export const LESSON_04 = compileLesson({
             args: [4],
             expectedReturn: true,
             errorMessage: 'esPar(4) debería ser true. ¿Usa n % 2 === 0?',
-            hintTip: 'return n % 2 === 0;',
+            hintTip: 'Comprueba el resto de dividir n entre 2.',
           },
           {
             id: 'esPar-impar',
@@ -118,7 +119,7 @@ export const LESSON_04 = compileLesson({
             args: [20, true],
             expectedReturn: true,
             errorMessage: 'Con 20 años y entrada, debe ser true.',
-            hintTip: 'return edad >= 18 && tieneEntrada;',
+            hintTip: 'Une la comprobación de edad y la entrada de modo que ambas sean obligatorias.',
           },
           {
             id: 'puedeEntrar-menor',

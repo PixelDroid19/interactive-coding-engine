@@ -80,11 +80,9 @@ export const LESSON_07 = compileLesson({
       challenge: {
         id: 'reto-area',
         title: 'Reto: areaRectangulo',
-        instructions: `function areaRectangulo(ancho, alto) {
-  return ancho * alto;
-}
+        instructions: `Escribe areaRectangulo(ancho, alto).
 
-Luego llámala dos veces, con números distintos, y pinta los dos resultados.`,
+Debe calcular el área usando los dos parámetros y devolver el resultado. Después llámala dos veces con medidas distintas y muestra ambos valores.`,
         tests: [
           {
             id: 'area-3-4',
@@ -94,7 +92,7 @@ Luego llámala dos veces, con números distintos, y pinta los dos resultados.`,
             args: [3, 4],
             expectedReturn: 12,
             errorMessage: 'Con 3 y 4 debería ser 12. Revisa que uses ancho * alto.',
-            hintTip: 'return ancho * alto;',
+            hintTip: 'El resultado depende de combinar ancho y alto dentro de la función.',
           },
           {
             id: 'area-10-2',

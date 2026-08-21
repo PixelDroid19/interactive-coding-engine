@@ -87,17 +87,11 @@ export const LESSON_10 = compileLesson({
       challenge: {
         id: 'reto-contador',
         title: 'Reto: crearContador',
-        instructions: `function crearContador() {
-  let n = 0;
-  return function () {
-    n = n + 1;
-    return n;
-  };
-}
+        instructions: `Escribe crearContador sin argumentos.
 
-const a = crearContador();
-const b = crearContador();
-// a() y b() no se pisan`,
+- Debe devolver otra función.
+- Esa función devuelve 1, luego 2, luego 3 en llamadas sucesivas.
+- Dos contadores creados por separado deben empezar cada uno desde 1.`,
         tests: [
           {
             id: 'contador-solo',
@@ -105,8 +99,10 @@ const b = crearContador();
             validatorType: 'function-call',
             targetFunction: 'crearContador',
             args: [],
+            returnedFunctionCallCounts: [3],
+            expectedReturn: [[1, 2, 3]],
             errorMessage: 'crearContador debe devolver una función que cuente.',
-            hintTip: 'let n=0; return function(){ n++; return n; }',
+            hintTip: 'La función exterior prepara el estado y devuelve la función que lo incrementa.',
           },
           {
             id: 'contador-independiente',
@@ -114,6 +110,8 @@ const b = crearContador();
             validatorType: 'function-call',
             targetFunction: 'crearContador',
             args: [],
+            returnedFunctionCallCounts: [3, 1],
+            expectedReturn: [[1, 2, 3], [1]],
             errorMessage: 'a() tres veces debe dar 3 y b() una vez 1. ¿Comparten la misma n?',
             hintTip: 'Cada crearContador() debe tener su propio n con let dentro.',
           },

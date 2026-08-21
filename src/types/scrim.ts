@@ -135,6 +135,7 @@ export interface ChallengeTest {
   validatorType: 'function-call' | 'dom-check' | 'source-regex' | 'console-check';
   targetFunction?: string;
   args?: any[];
+  returnedFunctionCallCounts?: number[];
   expectedReturn?: any;
   domSelector?: string;
   domProperty?: 'innerText' | 'innerHTML' | 'value' | 'className' | 'style' | 'exists' | 'count';

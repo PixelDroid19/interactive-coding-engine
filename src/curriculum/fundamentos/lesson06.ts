@@ -130,7 +130,7 @@ Pregunta primero el caso de los dos, si no FizzBuzz nunca gana.`,
             args: [7],
             expectedReturn: '7',
             errorMessage: 'Con 7 debería ser "7". Si no es múltiplo, devuelve el número como texto.',
-            hintTip: 'return String(n) si no es múltiplo.',
+            hintTip: 'Si no es múltiplo, conserva el número pero devuélvelo como texto.',
           },
         ],
         hints: [

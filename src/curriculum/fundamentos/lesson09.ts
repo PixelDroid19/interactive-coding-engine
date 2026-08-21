@@ -73,11 +73,9 @@ export const LESSON_09 = compileLesson({
       challenge: {
         id: 'reto-producto',
         title: 'Reto: producto y etiqueta',
-        instructions: `const producto = { nombre: "Café", precio: 12 };
+        instructions: `Crea un producto con nombre y precio.
 
-function etiqueta(item) {
-  return item.nombre + " — " + item.precio;
-}`,
+Después escribe etiqueta(item): debe leer esos dos campos y devolver un texto con el formato “Nombre — precio”. Debe funcionar con cualquier producto.`,
         tests: [
           {
             id: 'etiqueta-te',
@@ -87,7 +85,7 @@ function etiqueta(item) {
             args: [{ nombre: 'Té', precio: 4 }],
             expectedReturn: 'Té — 4',
             errorMessage: 'Con {nombre:"Té",precio:4} debe devolver "Té — 4".',
-            hintTip: 'return item.nombre + " — " + item.precio;',
+            hintTip: 'Lee los dos campos por su nombre y júntalos con la raya del formato pedido.',
           },
           {
             id: 'etiqueta-cafe',

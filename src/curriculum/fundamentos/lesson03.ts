@@ -160,7 +160,7 @@ export const LESSON_03 = compileLesson({
             domProperty: 'innerText',
             regexPattern: '[^—\\s]{2,}',
             errorMessage: 'No vemos el nombre en #val-nombre. ¿Asignaste textContent?',
-            hintTip: 'document.getElementById("val-nombre").textContent = nombre;',
+            hintTip: 'Busca el elemento de nombre y asigna el valor de la variable a su texto.',
           },
         ],
         hints: [
