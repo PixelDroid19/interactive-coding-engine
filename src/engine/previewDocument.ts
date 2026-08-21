@@ -60,10 +60,52 @@ function collectByLanguage(files: WorkspaceFile[], language: WorkspaceFile['lang
   });
 }
 
-function stripLinkedAssets(html: string): string {
+function normalizeLocalAssetPath(path: string): string | null {
+  const trimmed = path.trim();
+  if (/^(?:[a-z][a-z\d+.-]*:|\/\/)/i.test(trimmed)) return null;
+  return trimmed
+    .split(/[?#]/, 1)[0]
+    .replace(/^\/+/, '')
+    .replace(/^(?:\.\/)+/, '');
+}
+
+function stripLinkedAssets(html: string, files: WorkspaceFile[]): string {
+  const localAssetPaths = new Set(
+    files.flatMap((file) => {
+      const path = normalizeLocalAssetPath(file.path);
+      const name = normalizeLocalAssetPath(file.name);
+      return [path, name].filter((value): value is string => Boolean(value));
+    }),
+  );
+
+  const referencesLocalAsset = (reference: string) => {
+    const normalized = normalizeLocalAssetPath(reference);
+    return normalized !== null && localAssetPaths.has(normalized);
+  };
+
   return html
-    .replace(/<link\b[^>]*\bhref=["'][^"']*\.css["'][^>]*\/?>/gi, '')
-    .replace(/<script\b[^>]*\bsrc=["'][^"']+\.(js|jsx|ts|tsx)["'][^>]*>\s*<\/script>/gi, '');
+    .replace(/<link\b[^>]*\bhref=["']([^"']+)["'][^>]*\/?>/gi, (tag, href: string) =>
+      referencesLocalAsset(href) ? '' : tag)
+    .replace(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>\s*<\/script>/gi, (tag, src: string) =>
+      referencesLocalAsset(src) ? '' : tag);
+}
+
+function hasModuleSyntax(source: string): boolean {
+  return /(?:^|\n)\s*(?:import(?:\s|\{|\*)|export\s)/m.test(source);
+}
+
+function buildReactDependencies(html: string): string {
+  const scriptSources = Array.from(html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi))
+    .map((match) => match[1].toLowerCase());
+  const hasReact = scriptSources.some((src) => /(?:^|\/)react(?:@|\/|\.(?:development|production(?:\.min)?)\.js)/.test(src));
+  const hasReactDom = scriptSources.some((src) => /(?:^|\/)react-dom(?:@|\/|\.)/.test(src));
+  const hasBabel = scriptSources.some((src) => src.includes('@babel/standalone') || /(?:^|\/)babel(?:\.min)?\.js/.test(src));
+
+  return [
+    hasReact ? '' : '<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>',
+    hasReactDom ? '' : '<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>',
+    hasBabel ? '' : '<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>',
+  ].filter(Boolean).join('\n');
 }
 
 export function buildPreviewDocument(workspace: WorkspaceSnapshot): string {
@@ -73,18 +115,20 @@ export function buildPreviewDocument(workspace: WorkspaceSnapshot): string {
   const jsFiles = collectByLanguage(files, 'javascript');
   const jsContent = jsFiles.map((file) => file.content).join('\n\n');
   const useJsx = shouldTranspileJsx(workspace);
-  const scriptType = useJsx ? 'text/babel' : 'text/javascript';
+  const useModules = !useJsx && hasModuleSyntax(jsContent);
+  const scriptType = useJsx ? 'text/babel' : useModules ? 'module' : 'text/javascript';
 
   const styleTag = cssContent ? `<style>\n${cssContent}\n</style>` : '';
-  const reactCdns = useJsx
-    ? `
-<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>`
-    : '';
+  const sourceHtml = htmlFile?.content ?? '';
+  const reactCdns = useJsx ? `\n${buildReactDependencies(sourceHtml)}` : '';
 
   const userScript = jsContent
-    ? `
+    ? useModules
+      ? `
+<script type="${scriptType}">
+${jsContent}
+</script>`
+      : `
 <script type="${scriptType}">
 try {
 ${jsContent}
@@ -95,7 +139,7 @@ ${jsContent}
     : '';
 
   if (htmlFile) {
-    let html = stripLinkedAssets(htmlFile.content).trim();
+    let html = stripLinkedAssets(htmlFile.content, files).trim();
     if (!/^<!doctype html>/i.test(html)) {
       html = `<!DOCTYPE html>\n${html}`;
     }

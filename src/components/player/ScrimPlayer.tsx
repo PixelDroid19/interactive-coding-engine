@@ -117,7 +117,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   timeRef.current = currentTimeMs;
   onPositionChangeRef.current = onPositionChange;
 
-  const forkLearnerBranch = useCallback((baseTime: number) => {
+  const forkLearnerBranch = useCallback((baseTime: number, activeChallengeId?: string) => {
     if (isForkedRef.current) return;
     const branch: LearnerBranch = {
       id: `branch-${lessonData.id}-${Date.now()}`,
@@ -126,6 +126,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       baseSequence: 0,
       workspace: cloneWorkspace(workspaceRef.current),
       isForked: true,
+      ...(activeChallengeId ? { activeChallengeId } : {}),
       lastSavedAt: Date.now(),
       executionCount: 0,
     };
@@ -220,7 +221,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         setIsChallengeMinimized(false);
         setValidationResult(null);
         const base = engineRef.current?.getCurrentTime() ?? timeRef.current;
-        forkLearnerBranch(base);
+        forkLearnerBranch(base, challenge.id);
         dispatch({ type: 'CHALLENGE_TRIGGER', challengeId: challenge.id, baseTime: base });
       },
       onPlaybackStateChange: (status) => {
@@ -573,6 +574,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const handleSkipChallenge = () => {
     if (activeChallenge) markChallengeSkipped(activeChallenge.id);
     const skipTime = (activeChallenge?.timestamp || timeRef.current) + 500;
+    flushBranchSave(lessonData.id);
+    clearBranchesForLesson(lessonData.id);
     isForkedRef.current = false;
     dispatch({ type: 'CHALLENGE_SKIP' });
     setLearnerBranch(null);
@@ -590,6 +593,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
   const handleContinueAfterChallenge = () => {
     const nextTime = (activeChallenge?.timestamp || timeRef.current) + 1000;
+    flushBranchSave(lessonData.id);
+    clearBranchesForLesson(lessonData.id);
     isForkedRef.current = false;
     dispatch({ type: 'CHALLENGE_CONTINUE' });
     setLearnerBranch(null);
@@ -668,9 +673,9 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       setWorkspace(cloneWorkspace(last.workspace));
       setLearnerBranch(last);
       isForkedRef.current = true;
-      dispatch({ type: 'RESTORE_BRANCH', baseTime: last.baseTime, challengeId: (last as any).activeChallengeId || null });
-      if ((last as any).activeChallengeId) {
-        const ch = lessonData.challenges.find((c) => c.id === (last as any).activeChallengeId) || null;
+      dispatch({ type: 'RESTORE_BRANCH', baseTime: last.baseTime, challengeId: last.activeChallengeId || null });
+      if (last.activeChallengeId) {
+        const ch = lessonData.challenges.find((c) => c.id === last.activeChallengeId) || null;
         setActiveChallenge(ch);
         setIsChallengeDrawerOpen(!!ch);
       }
@@ -684,6 +689,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   };
 
   const handleDiscardBranchRecovery = () => {
+    flushBranchSave(lessonData.id);
+    clearBranchesForLesson(lessonData.id);
     setShowBranchRecovery(false);
   };
 
@@ -824,15 +831,6 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         <div
           className="lesson-start-gate"
           onClick={startPlayback}
-          onKeyDown={(event) => {
-            if (event.code === 'Space' || event.key === 'Enter') {
-              event.preventDefault();
-              startPlayback();
-            }
-          }}
-          role="button"
-          tabIndex={0}
-          aria-label="Empezar la clase"
         >
           <span className="lesson-start-kicker">Clase con explicación</span>
           <h2 className="lesson-start-title">{lessonData.title}</h2>

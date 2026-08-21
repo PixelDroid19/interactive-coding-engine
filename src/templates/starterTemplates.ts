@@ -13,20 +13,20 @@ export const STARTER_TEMPLATES: Record<string, TemplateDefinition> = {
         path: 'index.html',
         language: 'html',
         content: `<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive App</title>
+  <title>Aplicación interactiva</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h1 id="title">Interactive Scrim</h1>
-    <p id="description">Click the button to test dynamic events.</p>
+    <h1 id="title">Práctica interactiva</h1>
+    <p id="description">Pulsa los botones para probar los eventos dinámicos.</p>
     <div class="card">
-      <button id="counter-btn" class="btn">Count: 0</button>
-      <button id="reset-btn" class="btn secondary">Reset</button>
+      <button id="counter-btn" class="btn">Conteo: 0</button>
+      <button id="reset-btn" class="btn secondary">Reiniciar</button>
     </div>
   </div>
   <script src="app.js"></script>
@@ -106,25 +106,25 @@ p {
         name: 'app.js',
         path: 'app.js',
         language: 'javascript',
-        content: `// Interactive JavaScript logic
+        content: `// Lógica interactiva en JavaScript
 let count = 0;
 
 const counterBtn = document.getElementById('counter-btn');
 const resetBtn = document.getElementById('reset-btn');
 
 if (counterBtn) {
-  counterBtn.addEventListener('click', (event) => {
+  counterBtn.addEventListener('click', () => {
     count += 1;
-    counterBtn.textContent = \`Count: \${count}\`;
-    console.log('Button clicked! New count:', count);
+    counterBtn.textContent = \`Conteo: \${count}\`;
+    console.log('Nuevo conteo:', count);
   });
 }
 
 if (resetBtn) {
   resetBtn.addEventListener('click', () => {
     count = 0;
-    if (counterBtn) counterBtn.textContent = 'Count: 0';
-    console.log('Counter reset to 0');
+    if (counterBtn) counterBtn.textContent = 'Conteo: 0';
+    console.log('Conteo reiniciado');
   });
 }`
       }
@@ -143,7 +143,7 @@ if (resetBtn) {
         path: 'main.js',
         language: 'javascript',
         content: `/**
- * Pure JavaScript Algorithm & Data Logic
+ * Práctica de algoritmos y datos con JavaScript puro
  */
 
 function calculateTotal(items, discountRate = 0) {
@@ -152,17 +152,17 @@ function calculateTotal(items, discountRate = 0) {
   return Number((subtotal - discount).toFixed(2));
 }
 
-// Test data
+// Datos de prueba
 const cart = [
-  { name: 'Mechanical Keyboard', price: 89.99, quantity: 1 },
-  { name: 'USB-C Cable', price: 12.50, quantity: 2 },
-  { name: 'Mousepad', price: 15.00, quantity: 1 }
+  { name: 'Teclado mecánico', price: 89.99, quantity: 1 },
+  { name: 'Cable USB-C', price: 12.50, quantity: 2 },
+  { name: 'Alfombrilla', price: 15.00, quantity: 1 }
 ];
 
-console.log('--- Order Calculation ---');
-console.log('Items in Cart:', cart.length);
+console.log('--- Cálculo del pedido ---');
+console.log('Artículos en el carrito:', cart.length);
 const total = calculateTotal(cart, 0.1);
-console.log('Final Total (with 10% discount):', total);`
+console.log('Total con 10 % de descuento:', total);`
       }
     }
   },
@@ -179,10 +179,10 @@ console.log('Final Total (with 10% discount):', total);`
         path: 'index.html',
         language: 'html',
         content: `<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Lit Component</title>
+  <title>Componente Lit</title>
   <script type="module" src="https://esm.sh/lit@3.1.2"></script>
   <style>
     body {
@@ -251,14 +251,14 @@ export class MyCounter extends LitElement {
 
   increment() {
     this.count++;
-    console.log('Lit counter incremented:', this.count);
+    console.log('Conteo de Lit incrementado:', this.count);
   }
 
   render() {
     return html\`
-      <h2>Lit Component</h2>
-      <p>Current count: <strong>\${this.count}</strong></p>
-      <button @click=\${this.increment}>Increment (+1)</button>
+      <h2>Componente Lit</h2>
+      <p>Conteo actual: <strong>\${this.count}</strong></p>
+      <button @click=\${this.increment}>Incrementar (+1)</button>
     \`;
   }
 }
@@ -280,11 +280,11 @@ customElements.define('my-counter', MyCounter);`
         path: 'index.html',
         language: 'html',
         content: `<!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>React Playground</title>
-  <!-- Load React 18 and Babel standalone for JSX -->
+  <title>Playground de React</title>
+  <!-- React 18 y Babel permiten ejecutar JSX en el navegador -->
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -333,12 +333,12 @@ function App() {
       padding: '24px',
       width: '320px'
     }}>
-      <h2 style={{ margin: '0 0 16px', color: '#60a5fa', fontSize: '18px' }}>Interactive Task List</h2>
+      <h2 style={{ margin: '0 0 16px', color: '#60a5fa', fontSize: '18px' }}>Lista interactiva de tareas</h2>
       <form onSubmit={addItem} style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
         <input
           value={inputVal}
           onChange={(e) => setInputVal(e.target.value)}
-          placeholder="New task..."
+          placeholder="Nueva tarea..."
           style={{
             flex: 1,
             padding: '8px 12px',
@@ -361,7 +361,7 @@ function App() {
             fontWeight: 600
           }}
         >
-          Add
+          Agregar
         </button>
       </form>
       <ul style={{ paddingLeft: '20px', margin: 0, color: '#cbd5e1', fontSize: '14px' }}>

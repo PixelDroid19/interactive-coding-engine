@@ -10,9 +10,6 @@ import {
   ArrowLeft,
   FolderTree,
   RotateCcw,
-  Sparkles,
-  LayoutTemplate,
-  Terminal,
   Code2
 } from 'lucide-react';
 
