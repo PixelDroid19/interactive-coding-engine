@@ -19,6 +19,7 @@ export type RoadmapNodeKind = 'main' | 'checkpoint' | 'concept';
 export interface RoadmapNode {
   id: string;
   kind: RoadmapNodeKind;
+  itemType?: CurriculumItem['type'];
   label: string;
   lessonId: string;
   moduleId: string;
@@ -251,6 +252,7 @@ export function buildRoadmap(course: Course, scrims: Record<string, ScrimLessonD
           last.checkpoint = {
             id: `cp-${item.id}`,
             kind: 'checkpoint',
+            itemType: item.type,
             label: item.title,
             lessonId: item.id,
             moduleId: mod.id,

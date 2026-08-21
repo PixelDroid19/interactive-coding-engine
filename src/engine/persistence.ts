@@ -1,4 +1,4 @@
-import { Course, UserProgressRecord } from '../types/curriculum';
+import { Course, ItemType, UserProgressRecord } from '../types/curriculum';
 import { ScrimLessonData, LearnerBranch, WorkspaceSnapshot } from '../types/scrim';
 import { TemplateDefinition } from '../types/runtime';
 
@@ -118,7 +118,7 @@ export function saveDebuggingDraft(exerciseId: string, draft: DebuggingDraft): v
   }
 }
 
-export type AppNavigationView = 'home' | 'scrim' | 'debugging' | 'solo-project' | 'playground' | 'studio';
+export type AppNavigationView = 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'playground' | 'studio';
 
 export interface AppNavigationState {
   view: AppNavigationView;
@@ -133,6 +133,7 @@ const APP_NAVIGATION_VIEWS: AppNavigationView[] = [
   'scrim',
   'debugging',
   'solo-project',
+  'reading',
   'playground',
   'studio',
 ];
@@ -243,7 +244,7 @@ export function updateRecentPosition(
   moduleId: string,
   itemId: string,
   itemTitle: string,
-  type: 'scrim' | 'challenge' | 'debugging' | 'solo-project',
+  type: ItemType,
   timestampMs?: number
 ): UserProgressRecord {
   const current = loadUserProgress();

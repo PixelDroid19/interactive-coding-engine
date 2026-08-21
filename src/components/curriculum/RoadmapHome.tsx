@@ -151,10 +151,10 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
                           type="button"
                           className={`rm-node-cp ${isCurrent(row.checkpoint.lessonId) ? 'is-current' : ''} ${
                             isDone(row.checkpoint.lessonId) ? 'is-done' : ''
-                          }`}
+                          } ${row.checkpoint.itemType === 'reading' ? 'is-reading' : ''}`}
                           onClick={() => enterLesson(row.checkpoint!.lessonId)}
                         >
-                          <em className="rm-cp-tag">Depura</em>
+                          <em className="rm-cp-tag">{row.checkpoint.itemType === 'reading' ? 'Lee' : 'Depura'}</em>
                           <span>{row.checkpoint.label}</span>
                         </button>
                       )}

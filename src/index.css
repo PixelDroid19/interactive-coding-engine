@@ -2426,6 +2426,9 @@ body.dark {
 .rm-node-cp:hover { transform: translateY(-2px); box-shadow: 5px 5px 0 #000; background: #1e293b; }
 .rm-node-cp.is-current { outline: 3px solid #2563eb; }
 .rm-node-cp.is-done { background: #14532d; }
+.rm-node-cp.is-reading { background: #fff; color: #171717; }
+.rm-node-cp.is-reading:hover { background: #f5f5f5; }
+.rm-node-cp.is-reading.is-done { background: #bbf7d0; color: #14532d; }
 .rm-cp-tag {
   background: #ffe600;
   color: #000;

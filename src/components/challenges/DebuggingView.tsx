@@ -330,6 +330,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                 <CodeEditor
                   file={activeFile}
                   readOnly={false}
+                  lessonId={exercise.relatedLessonId}
                   onCodeChange={(content) => {
                     generationRef.current++;
                     setWorkspace((prev) => ({
@@ -415,43 +416,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                     <h3 className="debug-panel-title">Objetivo</h3>
                     <p className="text-sm text-zinc-700">{exercise.description}</p>
 
-                    {exercise.reading && (
-                      <details className="debug-details" open>
-                        <summary className="debug-summary">
-                          <BookOpen size={12} style={{ display: 'inline', marginRight: 4 }} />
-                          Lectura: {exercise.reading.title}
-                        </summary>
-                        <div className="mt-2 space-y-2">
-                          <p className="text-[11px] text-zinc-600">{exercise.reading.summary}</p>
-                          {exercise.reading.sections.map((section) => (
-                            <details key={section.title} className="debug-details" style={{ background: 'var(--bg-surface)' }}>
-                              <summary className="debug-summary">{section.title}</summary>
-                              <div className="mt-1.5 space-y-1.5">
-                                <p className="text-[11px] leading-relaxed text-zinc-700">{section.content}</p>
-                                {section.example && (
-                                  <pre className="rounded border border-zinc-300 bg-[#12151e] p-2 font-mono text-[10px] leading-relaxed text-slate-200 overflow-x-auto whitespace-pre-wrap">{section.example}</pre>
-                                )}
-                                {section.exampleCaption && (
-                                  <p className="text-[10px] italic text-zinc-500">{section.exampleCaption}</p>
-                                )}
-                              </div>
-                            </details>
-                          ))}
-                          {exercise.reading.keyPoints.length > 0 && (
-                            <div className="rounded border border-yellow-400 bg-[#fffbe6] p-2">
-                              <span className="debug-kicker" style={{ marginBottom: 2 }}>Lo esencial</span>
-                              <ul className="list-disc list-inside space-y-0.5 text-[11px] text-zinc-800">
-                                {exercise.reading.keyPoints.map((point) => (
-                                  <li key={point}>{point}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      </details>
-                    )}
-
-                    <details className="debug-details" open={!exercise.reading}>
+                    <details className="debug-details" open>
                       <summary className="debug-summary">Esperado</summary>
                       <div className="debug-card is-expected mt-2">
                         <p>{exercise.expectedBehavior}</p>

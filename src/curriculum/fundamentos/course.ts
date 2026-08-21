@@ -14,6 +14,7 @@ import { LESSON_11 } from './lesson11';
 import { LESSON_12 } from './lesson12';
 import { LESSON_13 } from './lesson13';
 import { LESSON_14 } from './lesson14';
+import { READING_01 } from './reading01';
 import { conceptLabels } from './roadmap';
 import { DEBUG_BY_LESSON } from './debugExercises';
 
@@ -52,7 +53,8 @@ function itemOf(lesson: ScrimLessonData): ScrimCurriculumItem {
 
 function withPractice(lesson: ScrimLessonData): CurriculumItem[] {
   const debug = DEBUG_BY_LESSON[lesson.id];
-  return debug ? [itemOf(lesson), debug] : [itemOf(lesson)];
+  const reading = lesson.id === 'fundamentos-01' ? [READING_01] : [];
+  return [...[itemOf(lesson)], ...reading, ...(debug ? [debug] : [])];
 }
 
 export const FUNDAMENTOS_COURSE: Course = {

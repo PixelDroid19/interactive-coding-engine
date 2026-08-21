@@ -9,7 +9,7 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import { autocompletion, closeBrackets } from '@codemirror/autocomplete';
 import { WorkspaceFile } from '../../types/scrim';
 import { InstructorCursor } from '../player/InstructorCursor';
-import { spanishCompletionSource, spanishHoverTooltip } from '../../editor/spanishLsp';
+import { createSpanishCompletionSource, createSpanishHoverTooltip } from '../../editor/spanishLsp';
 
 interface CodeEditorProps {
   file: WorkspaceFile | null;
@@ -18,6 +18,7 @@ interface CodeEditorProps {
   onCursorMove?: (position: { line: number; ch: number }) => void;
   onSelectionChange?: (from: number, to: number) => void;
   instructorCursor?: { line: number; ch: number };
+  lessonId?: string;
 }
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
@@ -27,6 +28,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   onCursorMove,
   onSelectionChange,
   instructorCursor,
+  lessonId,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -63,9 +65,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         highlightActiveLine(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         getLanguageExtension(file.name),
-        autocompletion({ override: [spanishCompletionSource] }),
+        autocompletion({ override: [createSpanishCompletionSource(lessonId)] }),
         closeBrackets(),
-        spanishHoverTooltip(),
+        createSpanishHoverTooltip(lessonId),
         oneDark,
         EditorView.editable.of(!readOnly),
         EditorState.readOnly.of(readOnly),
@@ -133,7 +135,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       view.destroy();
       viewRef.current = null;
     };
-  }, [file?.path, readOnly]);
+  }, [file?.path, readOnly, lessonId]);
 
   // Sync incoming content changes during playback replay
   useEffect(() => {

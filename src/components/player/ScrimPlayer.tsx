@@ -988,6 +988,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
               <CodeEditor
                 file={activeFile}
                 readOnly={false}
+                lessonId={lessonData.id}
                 onCodeChange={handleCodeChange}
                 instructorCursor={workspace.cursorPosition}
               />
@@ -1036,10 +1037,10 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       {/* Closure pedagógico */}
       {showClosure && !closureConfirmed && (
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-white border-2 border-black rounded-xl shadow-[4px_4px_0_#000] p-4 max-w-lg w-[90%]">
-          <h4 className="font-bold text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Probaste el botón?</h4>
-          <p className="text-xs text-gray-600 mt-1">En la vista previa pulsa el botón y comprueba que el saludo cambia. Luego confirma para completar la clase.</p>
+          <h4 className="font-bold text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Ejecutaste tus dos líneas?</h4>
+          <p className="text-xs text-gray-600 mt-1">Comprueba que linea1 y linea2 muestren texto en la página. Después confirma para completar la clase.</p>
           <div className="flex gap-2 mt-3">
-            <button onClick={handleClosureConfirm} className="flex-1 neu-pill-btn bg-[#ffe600] text-sm" aria-label="He probado el botón, completar clase">He probado el botón</button>
+            <button onClick={handleClosureConfirm} className="flex-1 neu-pill-btn bg-[#ffe600] text-sm" aria-label="He ejecutado mi programa, completar clase">He ejecutado mi programa</button>
             <button onClick={() => previewRef.current?.reloadPreview()} className="neu-pill-btn text-sm" aria-label="Recargar vista previa">Recargar</button>
           </div>
         </div>

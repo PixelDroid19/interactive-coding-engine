@@ -42,15 +42,26 @@ describe('navigation', () => {
     expect(nav.hasPrevious).toBe(true);
   });
 
-  it('transición lección → depuración', () => {
-    // In fundamentals, each scrim is followed by its debug item
+  it('transición lección → lectura', () => {
+    // Lesson 1 now inserts a standalone reading before its practice.
     const ordered = getOrderedItems(FUNDAMENTOS_COURSE);
-    // Find first scrim
     const firstScrimIdx = ordered.findIndex(o => o.item.type === 'scrim');
     const next = ordered[firstScrimIdx + 1];
-    expect(next.item.type).toBe('debugging');
+    expect(next.item.id).toBe('fundamentos-01-lectura');
+    expect(next.item.type).toBe('reading');
+
     const nav = getNavigationState(FUNDAMENTOS_COURSE, ordered[firstScrimIdx].item.id);
     expect(nav.next?.item.id).toBe(next.item.id);
+  });
+
+  it('transición lectura → depuración', () => {
+    const ordered = getOrderedItems(FUNDAMENTOS_COURSE);
+    const readingIdx = ordered.findIndex(o => o.item.type === 'reading');
+    const next = ordered[readingIdx + 1];
+    expect(next.item.type).toBe('debugging');
+    
+    const nav = getNavigationState(FUNDAMENTOS_COURSE, ordered[readingIdx].item.id);
+    expect(nav.current?.item.id).toBe(ordered[readingIdx].item.id);
   });
 
   it('transición depuración → siguiente lección', () => {
