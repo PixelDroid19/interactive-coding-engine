@@ -3,8 +3,8 @@ import { TemplateDefinition } from '../types/runtime';
 export const STARTER_TEMPLATES: Record<string, TemplateDefinition> = {
   'vanilla-js': {
     id: 'vanilla-js',
-    name: 'Vanilla HTML/CSS/JS',
-    description: 'Clean standard web stack with instant DOM rendering & hot reload',
+    name: 'HTML, CSS y JavaScript',
+    description: 'Entorno web estándar con renderizado inmediato y recarga automática',
     iconName: 'Code2',
     entrypoint: 'index.html',
     files: {
@@ -133,8 +133,8 @@ if (resetBtn) {
 
   'js-only': {
     id: 'js-only',
-    name: 'JavaScript Pure',
-    description: 'Pure algorithmic and function-based JavaScript environment with rich console output',
+    name: 'JavaScript puro',
+    description: 'Entorno de JavaScript para practicar algoritmos y funciones con salida en consola',
     iconName: 'Braces',
     entrypoint: 'main.js',
     files: {
@@ -169,8 +169,8 @@ console.log('Final Total (with 10% discount):', total);`
 
   'lit': {
     id: 'lit',
-    name: 'Lit Web Components',
-    description: 'Modern lightweight reactive web components with custom elements',
+    name: 'Componentes web con Lit',
+    description: 'Componentes web reactivos y ligeros basados en elementos personalizados',
     iconName: 'Component',
     entrypoint: 'index.html',
     files: {
@@ -271,7 +271,7 @@ customElements.define('my-counter', MyCounter);`
   'react': {
     id: 'react',
     name: 'React 18 + JSX',
-    description: 'Component-driven reactive UI using standalone React & Babel in-browser transformation',
+    description: 'Interfaz reactiva por componentes con React y transformación JSX en el navegador',
     iconName: 'Atom',
     entrypoint: 'index.html',
     files: {

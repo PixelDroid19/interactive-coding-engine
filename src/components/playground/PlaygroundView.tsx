@@ -67,18 +67,23 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 px-2 py-0.5 text-xs font-semibold">
               <Code2 className="h-3.5 w-3.5" />
-              <span>Independent Playground</span>
+              <span>Playground independiente</span>
             </span>
           </div>
         </div>
 
         {/* Template Selector & Controls */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-0.5 rounded-md text-xs">
+          <div
+            className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-0.5 rounded-md text-xs"
+            role="group"
+            aria-label="Plantilla inicial"
+          >
             {Object.values(STARTER_TEMPLATES).map((tpl) => (
               <button
                 key={tpl.id}
                 onClick={() => handleSelectTemplate(tpl.id as any)}
+                aria-pressed={selectedTemplateId === tpl.id}
                 className={`px-2.5 py-1 rounded text-xs transition-colors ${
                   selectedTemplateId === tpl.id
                     ? 'bg-zinc-100 text-zinc-900 font-semibold'
@@ -93,10 +98,11 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
           <button
             onClick={handleReset}
             className="flex items-center gap-1 rounded bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 text-xs text-zinc-300 transition-colors"
-            title="Reset code to clean template"
+            aria-label="Reiniciar código"
+            title="Restaurar la plantilla inicial"
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            <span>Reset</span>
+            <span>Reiniciar</span>
           </button>
         </div>
       </header>
@@ -136,6 +142,8 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setShowFileTree(!showFileTree)}
+                aria-label={showFileTree ? 'Ocultar archivos' : 'Mostrar archivos'}
+                aria-expanded={showFileTree}
                 className={`p-1 rounded text-zinc-400 hover:text-zinc-200 ${showFileTree ? 'bg-zinc-800 text-zinc-200' : ''}`}
               >
                 <FolderTree className="h-3.5 w-3.5" />

@@ -206,7 +206,10 @@ export default function App() {
           progress={progress}
           scrims={scrimsMap}
           onEnterLesson={(item, modId, timeMs) => handleSelectItem(item, modId, timeMs ?? 0)}
-          onPlayground={() => setCurrentView('playground')}
+          onPlayground={() => {
+            saveRoute({ view: 'playground' });
+            setCurrentView('playground');
+          }}
         />
       )}
 
