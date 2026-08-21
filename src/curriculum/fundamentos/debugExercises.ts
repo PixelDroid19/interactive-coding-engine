@@ -114,7 +114,8 @@ function exercise(
   js: string,
   tests: ChallengeTest[],
   hints: { level: number; text: string }[],
-  troubleshootingTips: string[]
+  troubleshootingTips: string[],
+  reading?: DebuggingExerciseItem['reading']
 ): DebuggingExerciseItem {
   return {
     id: `${relatedLessonId}-debug`,
@@ -130,106 +131,109 @@ function exercise(
     tests,
     hints,
     troubleshootingTips,
+    reading,
   };
 }
 
 export const DEBUG_EXERCISES: DebuggingExerciseItem[] = [
   exercise(
     'fundamentos-01',
-    'El saludo no dice Hola',
-    'El programa corre, pero no saluda como en la clase.',
-    'armarSaludo("Alex") debe devolver un saludo con la palabra Hola y el nombre. alPulsar("Alex") también debe seguir usando el nombre.',
-    'A la derecha solo aparece el nombre. Si pulsas el botón, el nombre desaparece.',
-    `<p class="hint">Algo no junta bien el texto. Mira app.js, no el HTML.</p>
-    <p id="saludo" class="salida"></p>
-    <button id="boton" type="button">Púlsame</button>`,
-    `function armarSaludo(nombre) {
-  return nombre;
-}
-
-function alPulsar(nombre) {
-  return "Pulsaste el botón.";
-}
-
-const caja = document.getElementById("saludo");
-caja.textContent = armarSaludo("Alex");
-
-const boton = document.getElementById("boton");
-boton.addEventListener("click", function () {
-  caja.textContent = alPulsar("Alex");
-});
+    'Dos recuadros, un solo texto',
+    'El programa debería llenar los dos recuadros de la página, pero uno queda vacío.',
+    '#linea1 debe mostrar “Me llamo Ana” y #linea2 debe mostrar “Y me gusta el helado”. Cada recuadro con su propio texto.',
+    'Solo se ve “Y me gusta el helado” en el primer recuadro. El segundo quedó vacío y el nombre desapareció.',
+    `<p class="hint">Revisa app.js. La página tiene dos recuadros: #linea1 y #linea2.</p>
+    <p id="linea1" class="salida"></p>
+    <p id="linea2" class="salida"></p>`,
+    `document.getElementById("linea1").textContent = "Me llamo Ana";
+document.getElementById("linea1").textContent = "Y me gusta el helado";
 `,
     [
       {
-        id: 'saludo-hola-alex',
-        description: 'armarSaludo("Alex") contiene Hola y el nombre',
-        validatorType: 'function-call',
-        targetFunction: 'armarSaludo',
-        args: ['Alex'],
-        expectedContains: ['Hola', 'Alex'],
+        id: 'linea1-con-nombre',
+        description: '#linea1 muestra el nombre',
+        validatorType: 'dom-check',
+        domSelector: '#linea1',
+        domProperty: 'innerText',
+        expectedContains: ['Ana'],
         matcher: 'contains-all',
         caseInsensitive: true,
         normalizeSpaces: true,
         ignorePunctuation: true,
-        requireArgInResult: true,
-        errorMessage: 'Debe devolver un texto que contenga “Hola” y el nombre recibido.',
-        hintTip: 'En la clase juntabas textos con + y comillas.',
+        errorMessage: '#linea1 ya no muestra “Me llamo Ana”. Revisa qué instrucción escribe ahí.',
+        hintTip: 'Cada recuadro necesita su propia instrucción.',
       },
       {
-        id: 'saludo-hola-maria',
-        description: 'armarSaludo("María") contiene Hola y el nombre',
-        validatorType: 'function-call',
-        targetFunction: 'armarSaludo',
-        args: ['María'],
-        expectedContains: ['Hola', 'María'],
+        id: 'linea2-con-helado',
+        description: '#linea2 muestra la comida favorita',
+        validatorType: 'dom-check',
+        domSelector: '#linea2',
+        domProperty: 'innerText',
+        expectedContains: ['helado'],
         matcher: 'contains-all',
         caseInsensitive: true,
         normalizeSpaces: true,
         ignorePunctuation: true,
-        requireArgInResult: true,
-        errorMessage: 'Debe funcionar con cualquier nombre, no solo con Alex.',
-        hintTip: 'No hardcodees Alex; usa el parámetro.',
+        errorMessage: '#linea2 sigue vacío. La segunda instrucción está escribiendo en otro recuadro.',
+        hintTip: 'Mira el id que aparece entre comillas en cada línea.',
       },
       {
-        id: 'clic-nombre-alex',
-        description: 'alPulsar("Alex") conserva el nombre',
-        validatorType: 'function-call',
-        targetFunction: 'alPulsar',
-        args: ['Alex'],
-        expectedContains: ['Alex', 'pulsaste'],
-        matcher: 'contains-all',
-        caseInsensitive: true,
-        normalizeSpaces: true,
-        ignorePunctuation: true,
-        requireArgInResult: true,
-        errorMessage: 'El clic debe seguir usando el nombre y mencionar que se pulsó.',
-        hintTip: 'El clic también usa el dato que guardaste.',
-      },
-      {
-        id: 'clic-nombre-maria',
-        description: 'alPulsar("María") conserva el nombre',
-        validatorType: 'function-call',
-        targetFunction: 'alPulsar',
-        args: ['María'],
-        expectedContains: ['María', 'pulsaste'],
-        matcher: 'contains-all',
-        caseInsensitive: true,
-        normalizeSpaces: true,
-        ignorePunctuation: true,
-        requireArgInResult: true,
-        errorMessage: 'Con otro nombre también debe conservarlo.',
-        hintTip: 'Usa el parámetro nombre dentro de alPulsar.',
+        id: 'usa-ambos-recuadros',
+        description: 'El código busca los recuadros linea1 y linea2',
+        validatorType: 'source-regex',
+        // Acepta ambos órdenes: el requisito es apuntar a los dos recuadros,
+        // no el orden en que están escritas las instrucciones.
+        regexPattern: 'getElementById\\(\\s*["\']linea1["\']\\s*\\)[\\s\\S]*getElementById\\(\\s*["\']linea2["\']\\s*\\)|getElementById\\(\\s*["\']linea2["\']\\s*\\)[\\s\\S]*getElementById\\(\\s*["\']linea1["\']\\s*\\)',
+        errorMessage: 'Necesitamos una instrucción para linea1 y otra para linea2.',
+        hintTip: 'El segundo recuadro se llama linea2.',
       },
     ],
     [
-      { level: 1, text: 'Mira la página. ¿Falta alguna palabra que sí salía en la clase?' },
-      { level: 2, text: 'armarSaludo ahora mismo solo devuelve el nombre. Un saludo es más de una pieza de texto.' },
-      { level: 3, text: 'alPulsar construye otro texto. Si no usa nombre, el dato se pierde al pulsar.' },
+      { level: 1, text: 'Ejecuta y mira la página: hay dos recuadros, ¿cuántos tienen texto? ¿Cuál falta?' },
+      { level: 2, text: 'Las dos instrucciones del programa apuntan al mismo recuadro. Recuerda: cada id identifica un recuadro distinto.' },
+      { level: 3, text: 'Próximo paso: la segunda instrucción debería escribir en el otro recuadro. Cambia el id entre comillas, no el texto.' },
     ],
     [
-      'Lee armarSaludo y alPulsar en voz alta: ¿qué devuelve cada una?',
-      'El HTML está bien. El fallo está en cómo se arma el texto.',
-    ]
+      'Compara los ids de la página (linea1, linea2) con los ids que aparecen en app.js.',
+      'No cambies los textos: solo hay que apuntar cada instrucción a su recuadro.',
+    ],
+    {
+      title: 'Antes de depurar: repaso de tu primer programa',
+      summary: 'Repaso rápido de la clase para que arregles el programa sin adivinar.',
+      sections: [
+        {
+          title: 'Qué es un programa',
+          content: 'Un programa es una lista de instrucciones que la computadora ejecuta de arriba abajo, una tras otra, como una receta. Cada línea es una instrucción. Si cambias el orden, cambia el resultado.',
+          example: 'document.getElementById("linea1").textContent = "Hola";\ndocument.getElementById("linea2").textContent = "Adiós";',
+          exampleCaption: 'Una instrucción por línea. Se ejecutan en orden.',
+        },
+        {
+          title: 'El patrón busca-y-escribe',
+          content: 'Cada instrucción tiene dos partes: document.getElementById("...") busca el recuadro cuyo id coincida, y .textContent = "..." escribe texto dentro. El id va entre comillas y debe ser exactamente igual al de la página.',
+          example: 'document.getElementById("linea2").textContent = "Escrito con JavaScript";',
+          exampleCaption: 'Busca el recuadro por su id, luego escribe.',
+        },
+        {
+          title: 'Un recuadro, una instrucción',
+          content: 'Si dos instrucciones escriben en el mismo recuadro, la última pisa a la primera y el otro recuadro queda vacío. Para llenar dos recuadros necesitas dos instrucciones, cada una con su id.',
+          example: 'Antes: dos líneas con "linea1"\nDespués: una para "linea1" y otra para "linea2"',
+          exampleCaption: 'El id entre comillas decide a qué recuadro escribe cada línea.',
+        },
+        {
+          title: 'Qué vas a arreglar',
+          content: 'En app.js las dos instrucciones escriben en linea1. Por eso el nombre desaparece y linea2 queda vacío. No cambies los textos: cambia el id de la segunda instrucción para que apunte al otro recuadro.',
+          example: 'Antes: getElementById("linea1") ... dos veces\nDespués: getElementById("linea1") y getElementById("linea2")',
+          exampleCaption: 'Un cambio pequeño: el id correcto en cada línea.',
+        },
+      ],
+      keyPoints: [
+        'JavaScript ejecuta las líneas de arriba abajo',
+        'getElementById("id") busca el recuadro con ese id',
+        'textContent = "texto" escribe dentro del recuadro',
+        'El id entre comillas debe coincidir exactamente con el de la página',
+        'La última instrucción sobre un mismo recuadro gana',
+      ],
+    }
   ),
 
   exercise(

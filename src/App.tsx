@@ -5,13 +5,14 @@ import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './curriculum/fundamentos
 import { AppNavigationState, loadAppNavigationState, loadUserProgress, loadCustomCourses, loadCustomScrims, saveAppNavigationState, saveCustomCourse, updateRecentPosition } from './engine/persistence';
 import { getNavigationState } from './engine/navigation';
 import { RoadmapHome } from './components/curriculum/RoadmapHome';
+import { ReadingView } from './components/curriculum/ReadingView';
 import { ScrimPlayer } from './components/player/ScrimPlayer';
 import { DebuggingView } from './components/challenges/DebuggingView';
 import { SoloProjectView } from './components/challenges/SoloProjectView';
 import { PlaygroundView } from './components/playground/PlaygroundView';
 import { CreatorStudio } from './components/studio/CreatorStudio';
 
-type AppView = 'home' | 'scrim' | 'debugging' | 'solo-project' | 'playground' | 'studio';
+type AppView = 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'playground' | 'studio';
 
 interface InitialAppState {
   view: AppView;
@@ -22,6 +23,7 @@ interface InitialAppState {
 
 function viewForItem(item: CurriculumItem): AppView {
   if (item.type === 'scrim' || item.type === 'challenge') return 'scrim';
+  if (item.type === 'reading') return 'reading';
   return item.type;
 }
 
@@ -321,6 +323,17 @@ export default function App() {
         <DebuggingView
           exercise={activeItem}
           courseTitle={course.title}
+          onBack={handleBackToRoadmap}
+          onBackToRoadmap={handleBackToRoadmap}
+          onPrevious={navigationState.hasPrevious ? handlePrevious : undefined}
+          onNext={navigationState.hasNext ? handleNext : handleBackToRoadmap}
+          navigationState={navigationState}
+        />
+      )}
+
+      {currentView === 'reading' && activeItem && activeItem.type === 'reading' && (
+        <ReadingView
+          reading={activeItem}
           onBack={handleBackToRoadmap}
           onBackToRoadmap={handleBackToRoadmap}
           onPrevious={navigationState.hasPrevious ? handlePrevious : undefined}

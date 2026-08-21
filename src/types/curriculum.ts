@@ -1,6 +1,6 @@
 import { ChallengeTest, ScrimChallenge, ScrimLessonData, WorkspaceSnapshot } from './scrim';
 
-export type ItemType = 'scrim' | 'challenge' | 'debugging' | 'solo-project';
+export type ItemType = 'scrim' | 'challenge' | 'debugging' | 'solo-project' | 'reading';
 
 export type ProgressStatus = 'not-started' | 'in-progress' | 'completed';
 
@@ -24,6 +24,13 @@ export interface StandaloneChallengeItem extends BaseCurriculumItem {
   challenge: ScrimChallenge;
 }
 
+export interface ReadingSection {
+  title: string;
+  content: string;
+  example?: string;
+  exampleCaption?: string;
+}
+
 export interface DebuggingExerciseItem extends BaseCurriculumItem {
   type: 'debugging';
   relatedLessonId?: string;
@@ -34,6 +41,22 @@ export interface DebuggingExerciseItem extends BaseCurriculumItem {
   hints: { level: number; text: string }[];
   tests: ChallengeTest[];
   troubleshootingTips?: string[];
+  reading?: {
+    title: string;
+    summary: string;
+    sections: ReadingSection[];
+    keyPoints: string[];
+  };
+}
+
+export interface ReadingItem extends BaseCurriculumItem {
+  type: 'reading';
+  relatedLessonId?: string;
+  title: string;
+  summary: string;
+  sections: ReadingSection[];
+  keyPoints: string[];
+  practiceItemId?: string;
 }
 
 export interface SoloProjectItem extends BaseCurriculumItem {
@@ -56,6 +79,7 @@ export type CurriculumItem =
   | ScrimCurriculumItem
   | StandaloneChallengeItem
   | DebuggingExerciseItem
+  | ReadingItem
   | SoloProjectItem;
 
 export interface CourseModule {

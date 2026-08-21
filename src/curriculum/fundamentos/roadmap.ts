@@ -66,11 +66,11 @@ const LESSON_TERMS: Record<string, { label: string; desc: string }[]> = {
   'fundamentos-01': [
     {
       label: 'Qué es un programa',
-      desc: 'Una lista de instrucciones en orden. JavaScript las lee de arriba a abajo: primero guarda un dato, después lo usa. Si cambias el dato, cambia lo que ves a la derecha.',
+      desc: 'Una lista de instrucciones en orden. JavaScript las lee de arriba abajo y ejecuta cada línea una tras otra. Si cambias el orden, cambia el resultado.',
     },
     {
       label: 'Texto entre comillas',
-      desc: 'Lo que va entre comillas es texto. Sin comillas, JavaScript cree que es un nombre de dato o un número. En esta clase escribes "Alex" y lo pones en la página.',
+      desc: 'Lo que va entre comillas es texto. En esta clase escribes instrucciones que buscan un recuadro de la página y ponen texto dentro.',
     },
   ],
   'fundamentos-02': [
@@ -245,6 +245,17 @@ export function buildRoadmap(course: Course, scrims: Record<string, ScrimLessonD
             moduleId: mod.id,
           };
         }
+      } else if (item.type === 'reading') {
+        const last = rows[rows.length - 1];
+        if (last) {
+          last.checkpoint = {
+            id: `cp-${item.id}`,
+            kind: 'checkpoint',
+            label: item.title,
+            lessonId: item.id,
+            moduleId: mod.id,
+          };
+        }
       }
     }
 
@@ -310,7 +321,7 @@ export function briefingFor(
 
   const hook =
     kind === 'checkpoint'
-      ? 'Antes de seguir, asegura el concepto con un reto dentro de la clase. Si te trabas, hay pistas.'
+      ? 'Refuerza lo que acabas de ver antes de practicar. Esta lectura prepara el ejercicio sin dar la respuesta.'
       : kind === 'concept'
         ? `Esto es lo que vas a ver en acción cuando el instructor escriba «${focusTerm ?? 'este concepto'}».`
         : item.description ?? 'Mira el código en vivo, pausa cuando quieras y prueba el cambio tú.';

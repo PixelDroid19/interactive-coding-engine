@@ -153,6 +153,9 @@ export interface ChallengeTest {
   expectedContains?: string[];
   // For DOM with generic
   evaluationMode?: 'single' | 'multiple';
+  // For DOM tests that need to trigger an interaction before checking
+  triggerClick?: string;
+  triggerSelector?: string;
 }
 
 export interface Hint {

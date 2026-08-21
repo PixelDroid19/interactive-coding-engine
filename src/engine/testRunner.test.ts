@@ -3,6 +3,7 @@ import { runChallengeValidation } from './testRunner';
 import { ScrimChallenge, WorkspaceSnapshot } from '../types/scrim';
 import { file, workspaceOf } from './lessonCompiler';
 import { LESSON1_HTML } from '../curriculum/fundamentos/workspaces';
+import { LESSON_01 } from '../curriculum/fundamentos/lesson01';
 
 function wsFromJs(js: string): WorkspaceSnapshot {
   return workspaceOf('app.js', {
@@ -12,83 +13,67 @@ function wsFromJs(js: string): WorkspaceSnapshot {
   });
 }
 
-describe('testRunner lesson01 behavioral', () => {
-  const reto = {
-    id: 'reto-tu-nombre',
-    title: 'Reto: pon tu nombre',
-    timestamp: 109400,
-    instructions: '...',
-    tests: [
-      {
-        id: 'nombre-cambiado',
-        description: 'Cambiaste "Alex" por otro nombre',
-        validatorType: 'source-regex' as const,
-        regexPattern: 'nombre\\s*=\\s*["\'](?!Alex["\'])[^"\']+["\']',
-        errorMessage: 'Sigue siendo "Alex".',
-        hintTip: 'Ejemplo: let nombre = "Ana";',
-      },
-      {
-        id: 'saludo-muestra-hola',
-        description: 'El saludo se muestra en la página',
-        validatorType: 'dom-check' as const,
-        domSelector: '#saludo',
-        domProperty: 'innerText' as const,
-        expectedValue: 'Hola',
-        errorMessage: 'No muestra Hola',
-      },
-      {
-        id: 'saludo-usa-nuevo-nombre',
-        description: 'El saludo usa tu nombre nuevo',
-        validatorType: 'dom-check' as const,
-        domSelector: '#saludo',
-        domProperty: 'innerText' as const,
-        errorMessage: 'No usa nombre',
-      },
-    ],
-    hints: [],
-  };
+// El reto real de la lección 01 reescrita (dos instrucciones busca-y-escribe)
+const retoLeccion1: ScrimChallenge = LESSON_01.challenges[0];
 
-  it('starter falla (sigue siendo Alex o vacío)', async () => {
+describe('testRunner reto lección 01 (busca-y-escribe)', () => {
+  it('el starter vacío falla', async () => {
     const ws = wsFromJs(`// notas\n`);
-    const result = await runChallengeValidation(reto as any, ws, null);
+    const result = await runChallengeValidation(retoLeccion1, ws, null);
     expect(result.allPassed).toBe(false);
-    expect(result.passedCount).toBeLessThan(3);
+    expect(result.passedCount).toBe(0);
   });
 
-  it('con Alex original falla nombre-cambiado pero Hola puede pasar si simula', async () => {
-    const ws = wsFromJs(`let nombre = "Alex";\ndocument.getElementById("saludo").textContent = "Hola, " + nombre + ".";`);
-    const result = await runChallengeValidation(reto as any, ws, null);
-    // nombre-cambiado debe fallar porque es Alex
-    const nombreTest = result.tests.find(t => t.id === 'nombre-cambiado');
-    expect(nombreTest?.passed).toBe(false);
-  });
-
-  it('solución Ana pasa las 3 pruebas', async () => {
-    const ws = wsFromJs(`let nombre = "Ana";\ndocument.getElementById("saludo").textContent = "Hola, " + nombre + ".";`);
-    const result = await runChallengeValidation(reto as any, ws, null);
+  it('una solución del alumno pasa las 4 pruebas', async () => {
+    const ws = wsFromJs(
+      `document.getElementById("linea1").textContent = "Damien";
+document.getElementById("linea2").textContent = "Pizza";`
+    );
+    const result = await runChallengeValidation(retoLeccion1, ws, null);
     expect(result.allPassed).toBe(true);
-    expect(result.passedCount).toBe(3);
+    expect(result.passedCount).toBe(4);
   });
 
-  it('solución con comillas simples también pasa (segunda solución razonable)', async () => {
-    const ws = wsFromJs(`let nombre = 'Carlos';\ndocument.getElementById("saludo").textContent = "Hola, " + nombre + ".";`);
-    const result = await runChallengeValidation(reto as any, ws, null);
+  it('una segunda solución razonable también pasa', async () => {
+    const ws = wsFromJs(
+      `document.getElementById("linea1").textContent = 'María';
+document.getElementById("linea2").textContent = 'Sushi';`
+    );
+    const result = await runChallengeValidation(retoLeccion1, ws, null);
     expect(result.allPassed).toBe(true);
   });
 
-  it('manteniendo palabra Alex pero sin cambiar nombre falla aunque haya Hola', async () => {
-    const ws = wsFromJs(`let nombre = "Alex";\n// Hola\n document.getElementById("saludo").textContent = "Hola, " + nombre + ".";`);
-    const result = await runChallengeValidation(reto as any, ws, null);
+  it('escribir todo en un solo recuadro falla', async () => {
+    const ws = wsFromJs(
+      `document.getElementById("linea1").textContent = "Damien";
+document.getElementById("linea1").textContent = "Pizza";`
+    );
+    const result = await runChallengeValidation(retoLeccion1, ws, null);
+    expect(result.allPassed).toBe(false);
+    const linea2 = result.tests.find(t => t.id === 'linea2-tiene-texto');
+    expect(linea2?.passed).toBe(false);
+  });
+
+  it('con id equivocado falla la comprobación del recuadro', async () => {
+    const ws = wsFromJs(
+      `document.getElementById("linea3").textContent = "Damien";
+document.getElementById("linea4").textContent = "Pizza";`
+    );
+    const result = await runChallengeValidation(retoLeccion1, ws, null);
     expect(result.allPassed).toBe(false);
   });
 
-  it('source-regex solo no basta: si borra línea saludo falla dom', async () => {
-    const ws = wsFromJs(`let nombre = "Ana";\n// sin saludo`);
-    const result = await runChallengeValidation(reto as any, ws, null);
-    // aunque nombre-cambiado pasa, los dom fallan
+  it('la demo de orden del instructor pasa el patrón (última gana)', async () => {
+    // Comportamiento clave enseñado: dos escrituras al mismo recuadro → la última gana
+    const ws = wsFromJs(
+      `document.getElementById("linea1").textContent = "Hola";
+document.getElementById("linea1").textContent = "Adiós";`
+    );
+    const result = await runChallengeValidation(retoLeccion1, ws, null);
+    const linea1 = result.tests.find(t => t.id === 'linea1-tiene-texto');
+    // linea1 tiene texto (Adiós), así que esa comprobación pasa aunque el reto completo no
+    expect(linea1?.passed).toBe(true);
     expect(result.allPassed).toBe(false);
-    const saludoHola = result.tests.find(t => t.id === 'saludo-muestra-hola');
-    expect(saludoHola?.passed).toBe(false);
   });
 });
 
@@ -177,7 +162,6 @@ describe('testRunner hardening', () => {
     };
     const result = await runChallengeValidation(reto as any, ws, null);
     expect(result.allPassed).toBe(true);
-    // ahora falla
     const reto2 = {
       id: 'test',
       title: 't',
@@ -231,5 +215,20 @@ describe('testRunner hardening', () => {
     };
     const result = await runChallengeValidation(reto as any, ws, null);
     expect(result.tests[0].errorMessage).toContain('No encontramos');
+  });
+
+  it('función que lanza error produce evaluation-error, no fallo normal', async () => {
+    const ws = wsFromJs('function explota(){ throw new Error("boom"); }');
+    const reto = {
+      id: 'test',
+      title: 't',
+      timestamp: 0,
+      instructions: '',
+      tests: [{ id: 'e', description: 'explota', validatorType: 'function-call' as const, targetFunction: 'explota', args: [] }],
+      hints: [],
+    };
+    const result = await runChallengeValidation(reto as any, ws, null);
+    expect(result.tests[0].isEvaluationError).toBe(true);
+    expect(result.feedbackMessage).toContain('No pudimos evaluar');
   });
 });

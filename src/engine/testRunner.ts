@@ -143,7 +143,36 @@ export async function runChallengeValidation(
   let passedCount = 0;
   let evaluationErrors = 0;
 
+  // Chequeo previo de sintaxis: si el programa no compila, no lo evaluamos.
+  // Así un error de sintaxis se reporta como "no pudimos evaluar" y no como
+  // "tu respuesta es incorrecta".
+  const jsFilesPre = Object.values(workspace.files).filter(
+    (f) => f.language === 'javascript' || f.language === 'typescript' || f.name.endsWith('.js') || f.name.endsWith('.jsx')
+  );
+  const combinedJsPre = jsFilesPre.map((f) => f.content).join('\n\n');
+  let syntaxError: string | null = null;
+  if (combinedJsPre.trim().length > 0) {
+    try {
+      new Function(combinedJsPre);
+    } catch (e: any) {
+      syntaxError = e.message || 'Error de sintaxis';
+    }
+  }
+
   for (const test of challenge.tests) {
+    if (syntaxError) {
+      testResults.push({
+        id: test.id,
+        description: test.description,
+        passed: false,
+        status: 'evaluation-error',
+        isEvaluationError: true,
+        errorMessage: `No pudimos evaluar el código: hay un error de sintaxis (${syntaxError}). Corrígelo y vuelve a pulsar Comprobar.`,
+        hint: test.hintTip,
+      });
+      evaluationErrors++;
+      continue;
+    }
     try {
       const result = await evaluateSingleTest(test, workspace, iframeElement, generation);
       testResults.push(result);
@@ -449,9 +478,33 @@ async function evaluateSingleTest(
             // Node env fallback: create mock
             const ids = [...combinedHtml.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
             const elements = new Map<string, any>();
-            for (const id of ids) elements.set(id, { textContent: '', innerText: '', innerHTML: '', value: '', id, className: '' });
+            const makeEl = (id: string, initial: string = '') => {
+              const el: any = {
+                textContent: initial,
+                innerText: initial,
+                innerHTML: '',
+                value: '',
+                id,
+                className: '',
+                _handlers: {} as Record<string, Function>,
+                addEventListener: function (evt: string, fn: Function) {
+                  this._handlers[evt] = fn;
+                },
+                click: function () {
+                  if (this._handlers['click']) {
+                    try { this._handlers['click'](); } catch {}
+                  }
+                },
+                dispatchEvent: function (e: any) {
+                  const h = this._handlers[e.type];
+                  if (h) try { h(e); } catch {}
+                },
+              };
+              return el;
+            };
+            for (const id of ids) elements.set(id, makeEl(id, ''));
             for (const id of ['saludo', 'salida', 'boton', 'val-nombre', 'val-edad', 'val-ciudad', 'val-listo', 'tipos', 'celsius', 'ops', 'mensaje', 'extra']) {
-              if (!elements.has(id)) elements.set(id, { textContent: '—', innerText: '—', innerHTML: '', value: '', id, className: '' });
+              if (!elements.has(id)) elements.set(id, makeEl(id, '—'));
             }
             doc = {
               querySelector: (sel: string) => {
@@ -471,20 +524,20 @@ async function evaluateSingleTest(
               const stub: any = {
                 _els: elements,
                 getElementById: (id: string) => {
-                  if (!elements.has(id)) elements.set(id, { textContent: '', innerText: '', innerHTML: '', value: '', className: '', addEventListener() {} });
+                  if (!elements.has(id)) elements.set(id, makeEl(id, ''));
                   return elements.get(id);
                 },
                 querySelector: (sel: string) => {
                   const m = sel.match(/#([\w-]+)/);
                   if (m) {
                     const id = m[1];
-                    if (!elements.has(id)) elements.set(id, { textContent: '', innerText: '', innerHTML: '', value: '', className: '', addEventListener() {} });
+                    if (!elements.has(id)) elements.set(id, makeEl(id, ''));
                     return elements.get(id);
                   }
-                  return { textContent: '', innerText: '', innerHTML: '', value: '', addEventListener() {} };
+                  return makeEl('__dummy', '');
                 },
                 querySelectorAll: () => [],
-                createElement: () => ({ textContent: '', innerText: '', innerHTML: '', className: '', classList: { add() {} }, appendChild() {}, setAttribute() {} }),
+                createElement: () => makeEl('__created', ''),
               };
               try { new Function('document', combinedJs)(stub); } catch {}
             } catch {}
@@ -496,6 +549,32 @@ async function evaluateSingleTest(
 
       if (!doc) {
         return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'No se pudo acceder a la vista previa.', hint: test.hintTip };
+      }
+
+      // Handle triggerClick for tests that need to simulate a click before checking
+      if (test.triggerClick) {
+        const triggerEl = doc.querySelector(test.triggerClick) as any;
+        if (triggerEl) {
+          try {
+            const EventCtor = (globalThis as any).Event;
+            let clickEvent: any = null;
+            if (typeof EventCtor === 'function') {
+              clickEvent = new EventCtor('click', { bubbles: true });
+            }
+            if (typeof triggerEl.click === 'function') {
+              triggerEl.click();
+            } else if (clickEvent && typeof triggerEl.dispatchEvent === 'function') {
+              triggerEl.dispatchEvent(clickEvent);
+            }
+            // For mock with stored handler
+            if (triggerEl.__clickHandler) {
+              try { triggerEl.__clickHandler(); } catch {}
+            }
+            if (triggerEl._clickHandler) {
+              try { triggerEl._clickHandler(); } catch {}
+            }
+          } catch {}
+        }
       }
 
       const el = doc.querySelector(test.domSelector);

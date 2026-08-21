@@ -3,44 +3,63 @@ titulo: "Lección 1: Qué es programar"
 modulo: Primeros pasos
 tipo: scrim
 archivo: fundamentos-01.mp3
-estado: grabado
-duracion_audio: "2:13"
-visuales:
-  - preview de la página (título, hueco, botón)
-  - cambiar a index.html / style.css / app.js al nombrarlos
-  - escribir let nombre y el saludo
-  - reto: cambiar Alex por tu nombre
-  - conectar el botón Púlsame
+estado: pendiente_grabar
 ---
 
-# Guion para grabar
+Hola. Bienvenido. Hoy vas a escribir tu primer programa. Y antes de tocar nada, te voy a dar una sola idea. La más importante.
 
-Hola. Si nunca has programado, estás bien. Hoy no vas a memorizar nada. Vas a ver cómo una página cambia cuando escribes unas líneas.
+Un programa es una lista de instrucciones que la computadora sigue en orden, de arriba abajo. Una tras otra. Como una receta de cocina: primero un paso, luego el siguiente. Si cambias el orden, cambia el resultado.
 
-A la derecha tienes una página de verdad. Hay un título, un espacio vacío y un botón. El botón todavía no hace nada. Eso lo vamos a cambiar nosotros.
+Eso es todo lo que necesitas saber para empezar. Lo demás lo vas a ver haciendo.
 
-Hay tres archivos. HTML es la página. CSS es el aspecto. JavaScript es lo que hace que ocurra algo. Si quieres que la página haga algo, tocas JavaScript.
+A la derecha tienes una página de verdad. Un título, un espacio vacío y un botón. El botón todavía no hace nada. Eso lo vamos a arreglar nosotros hoy.
 
-Mira app.js. Está casi vacío. Las líneas con dos barras son notas para ti. JavaScript las ignora. No se ejecutan.
+A la izquierda hay tres archivos. HTML es la página: qué hay dentro. CSS es el aspecto: cómo se ve. Y JavaScript es lo que hace que ocurra algo. Nosotros vamos a trabajar solo en app.js. Los otros dos ya están listos.
 
-Primero vamos a guardar un nombre. Se escribe let, luego el nombre del dato, luego igual, y el texto entre comillas.
+Mira app.js. Está casi vacío. Las líneas que empiezan con dos barras son notas para ti. JavaScript las ignora, no las ejecuta.
 
-let crea un dato que puedes usar después. Eso se llama variable. Las comillas dicen: esto es texto. Si las quitas, JavaScript no entiende.
+Vamos con lo primero: guardar un dato.
 
-Ahora usamos ese dato. Le pedimos a la página el recuadro que se llama saludo, y le ponemos Hola, más el nombre.
+Se escribe así: let, un espacio, el nombre del dato, un signo igual, y el valor entre comillas.
 
-El más junta textos. getElementById busca un pedazo de la página por su nombre. textContent es lo que se lee en pantalla. JavaScript lee de arriba a abajo: primero guarda Alex, después arma el saludo. Vamos a ejecutarlo.
+let significa guarda esto con este nombre. Las comillas dicen esto es texto. Sin comillas, JavaScript buscaría otra cosa.
 
-Mira. Dice Hola, Alex. Eso no estaba ahí antes. Salió de las dos líneas que escribimos.
+Escribamos un nombre.
 
-Ahora te toca a ti. Cambia Alex por tu nombre. Deja las comillas. Pulsa Run. El saludo tiene que usar tu nombre.
+let nombre = "Alex";
 
-Bien. Guardaste un dato y lo mostraste. Si cambias el dato, cambia lo que ves. Eso es un programa.
+Esta línea crea una caja llamada nombre, y dentro está el texto Alex. A esa caja se le llama variable. Ya la puedes usar cuando quieras.
 
-El botón todavía no hace nada. Vamos a decirle: cuando alguien lo pulse, cambia el saludo otra vez.
+Ahora, segundo paso: mostrar ese dato en la página.
 
-addEventListener significa quédate escuchando. click es el toque. Entonces corre las líneas de adentro.
+La página tiene un recuadro con id saludo. Para escribir dentro usamos tres piezas.
 
-Pulsa el botón a la derecha. El programa esperó. Tú hiciste clic. Entonces cambió el texto. Eso también es programar: escribir pasos y dejar que la máquina los siga.
+document.getElementById("saludo") busca el recuadro. textContent pone texto dentro. Y el signo más junta textos.
 
-Cuando quieras, pausa, cambia el texto, pulsa Run y mira qué pasa. Así se aprende. Escribiendo, y viendo el resultado.
+Vamos a juntar Hola coma, espacio, el nombre, y punto.
+
+document.getElementById("saludo").textContent = "Hola, " + nombre + ".";
+
+Fíjate en algo. nombre va sin comillas, porque ya existe. Es la caja que guardamos hace un momento. Si lo pusieras entre comillas, escribiría la palabra nombre literalmente.
+
+JavaScript lee de arriba abajo. Primero guarda Alex. Después arma el saludo. Vamos a ejecutarlo.
+
+Mira. Dice Hola, Alex. Eso salió de las dos líneas que escribimos. Nada más.
+
+Ahora te toca a ti. Cambia Alex por tu nombre. Deja las comillas donde están. Pulsa Ejecutar.
+
+El saludo tiene que aparecer con tu nombre. Si sale bien, acabas de modificar un programa de verdad.
+
+Bien. Guardaste un dato y lo mostraste. Si cambias el dato, cambia lo que se ve. Eso es un programa.
+
+Última pieza. Vamos a combinar lo que ya sabes con algo nuevo: hacer que el programa reaccione a ti.
+
+El botón todavía no hace nada. Le vamos a decir: cuando alguien te pulse, cambia el saludo otra vez.
+
+addEventListener significa quédate escuchando. click es el toque. Y las líneas de adentro corren cuando eso pasa.
+
+Ejecutamos.
+
+Pulsa el botón de la derecha. El programa te está esperando.
+
+Y con esto ya sabes tres cosas: guardar datos, mostrarlos en la página, y reaccionar cuando el usuario hace algo. Eso es programar. Nos vemos en la siguiente.

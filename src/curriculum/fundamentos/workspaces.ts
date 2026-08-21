@@ -12,9 +12,8 @@ export const LESSON1_HTML = `<!DOCTYPE html>
   <main>
     <p class="eyebrow">Lección 1</p>
     <h1>Tu primer programa</h1>
-    <p class="hint">El mensaje va a aparecer aquí abajo.</p>
-    <p id="saludo" class="saludo"></p>
-    <button id="boton" type="button">Púlsame</button>
+    <p id="linea1" class="linea"></p>
+    <p id="linea2" class="linea"></p>
   </main>
   <script src="app.js"></script>
 </body>
@@ -44,60 +43,40 @@ h1 {
   font-weight: 650;
   letter-spacing: -0.03em;
 }
-.hint { margin: 0 0 16px; color: #404040; font-size: 15px; }
-.saludo {
+.linea {
   min-height: 1.5em;
-  margin: 0 0 20px;
-  padding-top: 12px;
-  border-top: 1px solid #e5e5e5;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin: 0 0 10px;
   font-size: 18px;
   font-weight: 600;
 }
-button {
-  padding: 8px 14px;
-  border: 1px solid #171717;
-  background: #fff;
-  color: #171717;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-button:hover { background: #f5f5f5; }
 `;
 
-export const LESSON1_JS_START = `// Las líneas que empiezan con // son notas.
-// JavaScript no las ejecuta.
+// El primer programa del alumno: una instrucción por recuadro.
+// Sin variables, sin concatenar, sin eventos: eso llega después.
+export const LESSON1_JS_START = `// Las líneas que empiezan con // son notas para ti.
+// JavaScript no las ejecuta. Escribe tus instrucciones debajo.
 
 `;
 
-export const LESSON1_JS_NAME = `// Las líneas que empiezan con // son notas.
-// JavaScript no las ejecuta.
+export const LESSON1_JS_UNA_LINEA = `// Las líneas que empiezan con // son notas para ti.
+// JavaScript no las ejecuta. Escribe tus instrucciones debajo.
 
-let nombre = "Alex";
+document.getElementById("linea1").textContent = "Mi primer programa";
 `;
 
-export const LESSON1_JS_GREETING = `// Las líneas que empiezan con // son notas.
-// JavaScript no las ejecuta.
+export const LESSON1_JS_DOS_LINEAS = `// Las líneas que empiezan con // son notas para ti.
+// JavaScript no las ejecuta. Escribe tus instrucciones debajo.
 
-let nombre = "Alex";
-
-document.getElementById("saludo").textContent = "Hola, " + nombre + ".";
+document.getElementById("linea1").textContent = "Mi primer programa";
+document.getElementById("linea2").textContent = "Escrito con JavaScript";
 `;
 
-export const LESSON1_JS_BUTTON = `// Las líneas que empiezan con // son notas.
-// JavaScript no las ejecuta.
+// Demostración de que el orden manda: la última instrucción pisa a la anterior.
+export const LESSON1_JS_ORDEN = `// Dos instrucciones para el mismo recuadro. ¿Cuál gana?
 
-let nombre = "Alex";
-
-document.getElementById("saludo").textContent = "Hola, " + nombre + ".";
-
-const boton = document.getElementById("boton");
-boton.addEventListener("click", function () {
-  document.getElementById("saludo").textContent =
-    "Hola, " + nombre + ". Pulsaste el botón.";
-});
+document.getElementById("linea1").textContent = "Hola";
+document.getElementById("linea1").textContent = "Adiós";
+document.getElementById("linea2").textContent = "La última instrucción gana.";
 `;
 
 export const lesson1Workspace = workspaceOf('app.js', {

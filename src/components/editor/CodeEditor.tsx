@@ -6,8 +6,10 @@ import { javascript } from '@codemirror/lang-javascript';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { autocompletion, closeBrackets } from '@codemirror/autocomplete';
 import { WorkspaceFile } from '../../types/scrim';
 import { InstructorCursor } from '../player/InstructorCursor';
+import { spanishCompletionSource, spanishHoverTooltip } from '../../editor/spanishLsp';
 
 interface CodeEditorProps {
   file: WorkspaceFile | null;
@@ -61,6 +63,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         highlightActiveLine(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         getLanguageExtension(file.name),
+        autocompletion({ override: [spanishCompletionSource] }),
+        closeBrackets(),
+        spanishHoverTooltip(),
         oneDark,
         EditorView.editable.of(!readOnly),
         EditorState.readOnly.of(readOnly),

@@ -66,13 +66,14 @@ describe('DebuggingView integración', () => {
     expect(screen.getByText(`Pistas 1/${exercise.hints.length}`)).toBeTruthy();
   });
 
-  it('edición + Comprobar → Resultado con 2/2 y Resuelto (simulado)', async () => {
-    const validJs = `function armarSaludo(nombre){ return "Hola, " + nombre + "."; } function alPulsar(nombre){ return "Hola, " + nombre + ". Pulsaste el botón."; }`;
+  it('edición + Comprobar → Resultado con todas las comprobaciones y Resuelto (simulado)', async () => {
+    const fixedJs = `document.getElementById("linea1").textContent = "Me llamo Ana";
+document.getElementById("linea2").textContent = "Y me gusta el helado";`;
     const { runChallengeValidation } = await import('../../engine/testRunner');
     const ws = {
       files: {
-        'app.js': { name: 'app.js', path: 'app.js', content: validJs, language: 'javascript' as const },
-        'index.html': { name: 'index.html', path: 'index.html', content: '<p id="saludo"></p>', language: 'html' as const },
+        'app.js': { name: 'app.js', path: 'app.js', content: fixedJs, language: 'javascript' as const },
+        'index.html': { name: 'index.html', path: 'index.html', content: '<p id="linea1"></p><p id="linea2"></p>', language: 'html' as const },
         'style.css': { name: 'style.css', path: 'style.css', content: '', language: 'css' as const },
       },
       activeFilePath: 'app.js',
@@ -106,10 +107,20 @@ describe('DebuggingView integración', () => {
 
   it('editar y pulsar Comprobar rápido evalúa la última versión', async () => {
     const { runChallengeValidation } = await import('../../engine/testRunner');
-    const ws1 = { files: { 'app.js': { name: 'app.js', path: 'app.js', content: 'function armarSaludo(nombre){ return "Hola"; } function alPulsar(nombre){ return "Hola"; }', language: 'javascript' as const } }, activeFilePath: 'app.js' };
-    const ws2 = { files: { 'app.js': { name: 'app.js', path: 'app.js', content: 'function armarSaludo(nombre){ return "Hola, "+nombre; } function alPulsar(nombre){ return nombre + ", pulsaste"; }', language: 'javascript' as const } }, activeFilePath: 'app.js' };
-    const result1 = await runChallengeValidation({ id: exercise.id, title: exercise.title, timestamp: 0, instructions: '', tests: exercise.tests as any, hints: [] }, ws1 as any, null);
-    const result2 = await runChallengeValidation({ id: exercise.id, title: exercise.title, timestamp: 0, instructions: '', tests: exercise.tests as any, hints: [] }, ws2 as any, null);
+    const jsRoto = `document.getElementById("linea1").textContent = "Me llamo Ana";
+document.getElementById("linea1").textContent = "Y me gusta el helado";`;
+    const jsArreglado = `document.getElementById("linea1").textContent = "Me llamo Ana";
+document.getElementById("linea2").textContent = "Y me gusta el helado";`;
+    const mkWs = (content: string) => ({
+      files: {
+        'app.js': { name: 'app.js', path: 'app.js', content, language: 'javascript' as const },
+        'index.html': { name: 'index.html', path: 'index.html', content: exercise.initialWorkspace.files['index.html'].content, language: 'html' as const },
+        'style.css': { name: 'style.css', path: 'style.css', content: '', language: 'css' as const },
+      },
+      activeFilePath: 'app.js',
+    });
+    const result1 = await runChallengeValidation({ id: exercise.id, title: exercise.title, timestamp: 0, instructions: '', tests: exercise.tests as any, hints: [] }, mkWs(jsRoto) as any, null);
+    const result2 = await runChallengeValidation({ id: exercise.id, title: exercise.title, timestamp: 0, instructions: '', tests: exercise.tests as any, hints: [] }, mkWs(jsArreglado) as any, null);
     expect(result1.allPassed).toBe(false);
     expect(result2.allPassed).toBe(true);
   });
