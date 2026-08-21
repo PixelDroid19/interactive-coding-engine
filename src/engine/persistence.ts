@@ -15,6 +15,9 @@ const STORAGE_KEYS = {
   CHALLENGE_STATES: 'aula_challenge_states_v1',
 };
 
+const CUSTOM_AUDIO_DATABASE = 'aula_custom_audio_v1';
+const CUSTOM_AUDIO_STORE = 'recordings';
+
 export interface PlaygroundDraft {
   templateId: TemplateDefinition['id'];
   workspace: WorkspaceSnapshot;
@@ -577,21 +580,102 @@ export function saveCustomCourse(course: Course): void {
 /**
  * Custom Scrims Persistence
  */
-export function loadCustomScrims(): Record<string, ScrimLessonData> {
+function loadCustomScrimMetadata(): Record<string, ScrimLessonData> {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_SCRIMS);
     return raw ? JSON.parse(raw) : {};
-  } catch (e) {
+  } catch {
     return {};
   }
 }
 
-export function saveCustomScrim(scrim: ScrimLessonData): void {
+function openCustomAudioDatabase(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(CUSTOM_AUDIO_DATABASE, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(CUSTOM_AUDIO_STORE)) {
+        request.result.createObjectStore(CUSTOM_AUDIO_STORE);
+      }
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error ?? new Error('No se pudo abrir el almacenamiento de audio.'));
+  });
+}
+
+async function writeCustomAudio(key: string, blob: Blob): Promise<void> {
+  const database = await openCustomAudioDatabase();
   try {
-    const existing = loadCustomScrims();
-    existing[scrim.id] = scrim;
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction(CUSTOM_AUDIO_STORE, 'readwrite');
+      transaction.objectStore(CUSTOM_AUDIO_STORE).put(blob, key);
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error ?? new Error('No se pudo guardar el audio.'));
+      transaction.onabort = () => reject(transaction.error ?? new Error('Se canceló el guardado del audio.'));
+    });
+  } finally {
+    database.close();
+  }
+}
+
+async function readCustomAudio(key: string): Promise<Blob | null> {
+  const database = await openCustomAudioDatabase();
+  try {
+    return await new Promise<Blob | null>((resolve, reject) => {
+      const transaction = database.transaction(CUSTOM_AUDIO_STORE, 'readonly');
+      const request = transaction.objectStore(CUSTOM_AUDIO_STORE).get(key);
+      request.onsuccess = () => resolve(request.result instanceof Blob ? request.result : null);
+      request.onerror = () => reject(request.error ?? new Error('No se pudo recuperar el audio.'));
+    });
+  } finally {
+    database.close();
+  }
+}
+
+export async function loadCustomScrims(): Promise<Record<string, ScrimLessonData>> {
+  const scrims = loadCustomScrimMetadata();
+  await Promise.all(Object.values(scrims).map(async (scrim) => {
+    const storageKey = scrim.audioTrack?.audioStorageKey;
+    if (!storageKey) {
+      if (scrim.audioTrack?.audioBlob !== undefined && !(scrim.audioTrack.audioBlob instanceof Blob)) {
+        scrim.audioTrack = {
+          ...scrim.audioTrack,
+          audioBlob: undefined,
+          audioError: 'El audio de esta grabación antigua no se puede recuperar. Vuelve a grabar la clase para publicarla con audio.',
+        };
+      }
+      return;
+    }
+    try {
+      const audioBlob = await readCustomAudio(storageKey);
+      scrim.audioTrack = audioBlob
+        ? { ...scrim.audioTrack, audioBlob, audioError: undefined }
+        : { ...scrim.audioTrack, audioError: 'El audio guardado no se encontró. Vuelve a grabar la clase para recuperar la narración.' };
+    } catch {
+      scrim.audioTrack = {
+        ...scrim.audioTrack,
+        audioError: 'No se pudo acceder al almacenamiento del audio. Recarga la aplicación e inténtalo de nuevo.',
+      };
+    }
+  }));
+  return scrims;
+}
+
+export async function saveCustomScrim(scrim: ScrimLessonData): Promise<void> {
+  const audioBlob = scrim.audioTrack?.audioBlob;
+  const audioStorageKey = audioBlob ? scrim.id : scrim.audioTrack?.audioStorageKey;
+
+  if (audioBlob) await writeCustomAudio(audioStorageKey!, audioBlob);
+
+  try {
+    const existing = loadCustomScrimMetadata();
+    existing[scrim.id] = {
+      ...scrim,
+      audioTrack: scrim.audioTrack
+        ? { ...scrim.audioTrack, audioBlob: undefined, audioStorageKey }
+        : undefined,
+    };
     localStorage.setItem(STORAGE_KEYS.CUSTOM_SCRIMS, JSON.stringify(existing));
-  } catch (e) {
-    console.error('Error saving custom scrim:', e);
+  } catch (error) {
+    throw new Error('No se pudo guardar la clase personalizada.', { cause: error });
   }
 }

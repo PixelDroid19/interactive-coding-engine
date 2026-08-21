@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { WorkspaceSnapshot } from '../types/scrim';
-import { saveLearnerBranch, loadLearnerBranch, loadLastBranchForLesson, clearBranch, clearBranchesForLesson, saveLearnerBranchDebounced, flushBranchSave, markChallengeCompleted, markChallengeSkipped, markChallengeSolutionViewed, getChallengeState, clearChallengeState, getChallengeStates, saveAppNavigationState, loadAppNavigationState, loadDebuggingDraft, saveDebuggingDraft } from './persistence';
+import 'fake-indexeddb/auto';
+import { ScrimLessonData, WorkspaceSnapshot } from '../types/scrim';
+import { saveLearnerBranch, loadLearnerBranch, loadLastBranchForLesson, clearBranch, clearBranchesForLesson, saveLearnerBranchDebounced, flushBranchSave, markChallengeCompleted, markChallengeSkipped, markChallengeSolutionViewed, getChallengeState, clearChallengeState, getChallengeStates, saveAppNavigationState, loadAppNavigationState, loadDebuggingDraft, saveDebuggingDraft, loadCustomScrims, saveCustomScrim } from './persistence';
 import { createInitialState } from './playerMachine';
 import { cloneWorkspace } from './eventLog';
 
@@ -43,6 +44,92 @@ describe('persistence branches', () => {
     expect(loaded).not.toBeNull();
     expect(loaded?.workspace.files['app.js'].content).toBe('let nombre="Ana"');
     expect(loaded?.baseTime).toBe(1000);
+  });
+
+  it('conserva el audio binario de una clase personalizada después de recargar', async () => {
+    vi.useRealTimers();
+    const lesson: ScrimLessonData = {
+      id: 'scrim-custom-with-audio',
+      title: 'Clase grabada',
+      description: 'Prueba de persistencia',
+      templateId: 'vanilla-js',
+      durationMs: 1200,
+      initialWorkspace: makeWs(),
+      events: [],
+      snapshots: [],
+      challenges: [],
+      audioTrack: {
+        audioBlob: new Blob(['voz persistida'], { type: 'audio/webm' }),
+        mimeType: 'audio/webm',
+        durationMs: 1200,
+      },
+      createdAt: 1,
+      updatedAt: 1,
+    };
+
+    await saveCustomScrim(lesson);
+    const restored = (await loadCustomScrims())[lesson.id];
+
+    expect(restored.audioTrack?.audioBlob).toBeInstanceOf(Blob);
+    expect(await restored.audioTrack?.audioBlob?.text()).toBe('voz persistida');
+    expect(restored.audioTrack?.audioBlob?.type).toBe('audio/webm');
+  });
+
+  it('identifica una grabación antigua cuyo audio JSON ya no se puede reproducir', async () => {
+    localStorage.setItem('aula_custom_scrims_v1', JSON.stringify({
+      'scrim-custom-legacy': {
+        id: 'scrim-custom-legacy',
+        title: 'Clase antigua',
+        description: '',
+        templateId: 'vanilla-js',
+        durationMs: 1000,
+        initialWorkspace: makeWs(),
+        events: [],
+        snapshots: [],
+        challenges: [],
+        audioTrack: { audioBlob: {}, mimeType: 'audio/webm', durationMs: 1000 },
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    }));
+
+    const restored = (await loadCustomScrims())['scrim-custom-legacy'];
+
+    expect(restored.audioTrack?.audioBlob).toBeUndefined();
+    expect(restored.audioTrack?.audioError).toContain('no se puede recuperar');
+  });
+
+  it('mantiene disponibles las demás clases cuando falta un audio de IndexedDB', async () => {
+    vi.useRealTimers();
+    const baseLesson = {
+      description: '',
+      templateId: 'vanilla-js',
+      durationMs: 1000,
+      initialWorkspace: makeWs(),
+      events: [],
+      snapshots: [],
+      challenges: [],
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    localStorage.setItem('aula_custom_scrims_v1', JSON.stringify({
+      'scrim-custom-missing-audio': {
+        ...baseLesson,
+        id: 'scrim-custom-missing-audio',
+        title: 'Audio perdido',
+        audioTrack: { audioStorageKey: 'blob-inexistente', mimeType: 'audio/webm', durationMs: 1000 },
+      },
+      'scrim-custom-without-audio': {
+        ...baseLesson,
+        id: 'scrim-custom-without-audio',
+        title: 'Clase sin micrófono',
+      },
+    }));
+
+    const restored = await loadCustomScrims();
+
+    expect(restored['scrim-custom-without-audio'].title).toBe('Clase sin micrófono');
+    expect(restored['scrim-custom-missing-audio'].audioTrack?.audioError).toContain('no se encontró');
   });
 
   it('no muta objetos de estado: save clona', () => {

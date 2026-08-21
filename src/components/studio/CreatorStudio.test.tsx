@@ -10,7 +10,10 @@ describe('CreatorStudio', () => {
     localStorage.clear();
   });
 
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
 
   it('permite elegir una plantilla con controles accesibles y texto en español', () => {
     render(<CreatorStudio onBack={() => {}} onLessonPublished={() => {}} />);
@@ -37,6 +40,27 @@ describe('CreatorStudio', () => {
     view.unmount();
 
     expect(cancelRecording).toHaveBeenCalledTimes(1);
-    cancelRecording.mockRestore();
+  });
+
+  it('mantiene la revisión y muestra el error cuando no puede publicar', async () => {
+    const onLessonPublished = vi.fn();
+    render(<CreatorStudio onBack={() => {}} onLessonPublished={onLessonPublished} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Usar plantilla HTML, CSS y JavaScript' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Desactivar micrófono' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Empezar grabación' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Detener y revisar' }));
+
+    const originalSetItem = localStorage.setItem.bind(localStorage);
+    vi.spyOn(localStorage, 'setItem').mockImplementation((key, value) => {
+      if (key === 'aula_custom_scrims_v1') throw new DOMException('Sin espacio', 'QuotaExceededError');
+      originalSetItem(key, value);
+    });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Publicar lección en el curso' }));
+
+    expect((await screen.findByRole('alert')).textContent).toContain('No se pudo publicar la clase');
+    expect(onLessonPublished).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Publicar lección en el curso' })).toBeTruthy();
   });
 });

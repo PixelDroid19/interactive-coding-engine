@@ -178,6 +178,8 @@ export interface ScrimChallenge {
 export interface AudioTrackInfo {
   url?: string;
   audioBlob?: Blob;
+  audioStorageKey?: string;
+  audioError?: string;
   mimeType?: string;
   durationMs: number;
   language?: string;

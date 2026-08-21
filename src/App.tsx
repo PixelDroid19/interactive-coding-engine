@@ -113,17 +113,32 @@ export default function App() {
   const [activeItem, setActiveItem] = useState<CurriculumItem | null>(initialAppState.item);
   const [activeModuleId, setActiveModuleId] = useState<string>(initialAppState.moduleId);
   const [scrimsMap, setScrimsMap] = useState<Record<string, ScrimLessonData>>(FUNDAMENTOS_SCRIMS);
+  const [customScrimsStatus, setCustomScrimsStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [customScrimsError, setCustomScrimsError] = useState('');
   const [progress, setProgress] = useState<UserProgressRecord>(() => loadUserProgress());
   const [scrimInitialTimeMs, setScrimInitialTimeMs] = useState(initialAppState.timestampMs);
 
   // Sync custom scrims and progress from storage on mount
   useEffect(() => {
+    let isMounted = true;
     const savedProgress = loadUserProgress();
     setProgress(savedProgress);
 
-    const customScrims = loadCustomScrims();
-    setScrimsMap((prev) => ({ ...prev, ...customScrims }));
+    loadCustomScrims()
+      .then((customScrims) => {
+        if (!isMounted) return;
+        setScrimsMap((prev) => ({ ...prev, ...customScrims }));
+        setCustomScrimsStatus('ready');
+      })
+      .catch((error: unknown) => {
+        if (!isMounted) return;
+        setCustomScrimsError(error instanceof Error ? error.message : 'No se pudieron recuperar las clases guardadas.');
+        setCustomScrimsStatus('error');
+      });
 
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const refreshProgress = () => {
@@ -216,6 +231,10 @@ export default function App() {
   };
 
   const navigationState = getNavigationState(course, activeItem?.id || null);
+  const activeScrimData = activeItem?.type === 'scrim' ? scrimsMap[activeItem.scrimDataId] : undefined;
+  const activeScrimIsUnavailable = currentView === 'scrim' && activeItem?.type === 'scrim' && !activeScrimData;
+  const activeScrimError = activeScrimData?.audioTrack?.audioError;
+  const activeScrimCannotPlay = activeScrimIsUnavailable || Boolean(activeScrimError);
 
   return (
     <div className={currentView === 'scrim' ? 'app-screen' : undefined}>
@@ -232,12 +251,35 @@ export default function App() {
         />
       )}
 
-      {currentView === 'scrim' && activeItem && (
+      {activeScrimCannotPlay && (
+        <main className="app-screen flex items-center justify-center bg-[var(--bg-main)] p-6">
+          <section
+            className="max-w-lg border-2 border-black bg-[var(--paper)] p-6 shadow-[6px_6px_0_#111]"
+            aria-live="polite"
+            role={activeScrimError || customScrimsStatus === 'error' ? 'alert' : 'status'}
+          >
+            <h1 className="text-xl font-bold">{activeItem.title}</h1>
+            <p className="mt-3 text-sm">
+              {activeScrimError
+                || (customScrimsStatus === 'loading'
+                ? 'Cargando la clase guardada…'
+                : customScrimsError || 'No se encontró el contenido de esta clase.')}
+            </p>
+            {(activeScrimError || customScrimsStatus !== 'loading') && (
+              <button type="button" className="neu-pill-btn mt-5" onClick={handleBackToRoadmap}>
+                Volver al roadmap
+              </button>
+            )}
+          </section>
+        </main>
+      )}
+
+      {currentView === 'scrim' && activeItem && !activeScrimCannotPlay && (
         <ScrimPlayer
           key={activeItem.id}
           lessonData={
-            activeItem.type === 'scrim' && scrimsMap[activeItem.scrimDataId]
-              ? scrimsMap[activeItem.scrimDataId]
+            activeItem.type === 'scrim' && activeScrimData
+              ? activeScrimData
               : activeItem.type === 'challenge'
               ? {
                   id: activeItem.id,

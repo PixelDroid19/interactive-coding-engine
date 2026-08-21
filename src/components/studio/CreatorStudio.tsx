@@ -66,6 +66,8 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
   const [challengeInstructions, setChallengeInstructions] = useState('Implementa la función o el evento solicitado.');
 
   const [showFileTree, setShowFileTree] = useState(true);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishError, setPublishError] = useState('');
 
   const recorderRef = useRef<RecorderEngine | null>(null);
   const previewRef = useRef<PreviewPaneRef | null>(null);
@@ -179,10 +181,19 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
     }
   };
 
-  const handlePublish = () => {
-    if (!finishedLessonData) return;
-    saveCustomScrim(finishedLessonData);
-    onLessonPublished(finishedLessonData);
+  const handlePublish = async () => {
+    if (!finishedLessonData || isPublishing) return;
+    setIsPublishing(true);
+    setPublishError('');
+    try {
+      await saveCustomScrim(finishedLessonData);
+      onLessonPublished(finishedLessonData);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'No se pudo guardar la grabación.';
+      setPublishError(`No se pudo publicar la clase. ${detail} Revisa el espacio disponible e inténtalo de nuevo.`);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const formatTime = (ms: number) => {
@@ -293,15 +304,22 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={handlePublish}
+                disabled={isPublishing}
                 className="flex items-center gap-1.5 rounded bg-emerald-600 hover:bg-emerald-500 px-3.5 py-1 text-white text-xs font-semibold shadow-sm transition-colors"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Publicar lección en el curso</span>
+                <span>{isPublishing ? 'Guardando clase…' : 'Publicar lección en el curso'}</span>
               </button>
             </div>
           )}
         </div>
       </header>
+
+      {publishError && (
+        <div role="alert" className="border-b border-rose-800 bg-rose-950 px-4 py-2 text-xs text-rose-100">
+          {publishError}
+        </div>
+      )}
 
       {/* Step 1: Template Selection Screen */}
       {step === 'template' ? (
