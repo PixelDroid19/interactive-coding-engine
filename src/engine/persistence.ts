@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   STUDIO_DRAFT: 'aula_studio_draft_v1',
   LEARNER_BRANCHES: 'aula_learner_branches_v1',
   VOICE_VOLUME: 'aula_voice_volume_v1',
+  CHALLENGE_STATES: 'aula_challenge_states_v1',
 };
 
 export const DEFAULT_VOICE_VOLUME = 0.5;
@@ -130,17 +131,90 @@ export function markChallengeCompleted(challengeId: string): UserProgressRecord 
     current.completedChallenges.push(challengeId);
     saveUserProgress(current);
   }
+  // Also update detailed state
+  setChallengeState(challengeId, 'completed');
   return current;
 }
 
+export type ChallengeStateValue = 'completed' | 'skipped' | 'solutionViewed' | 'in_progress';
+
+export interface ChallengeStateRecord {
+  status: ChallengeStateValue;
+  updatedAt: number;
+}
+
+export function getChallengeStates(): Record<string, ChallengeStateRecord> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CHALLENGE_STATES);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (typeof parsed !== 'object' || parsed === null) return {};
+    return parsed;
+  } catch {
+    return {};
+  }
+}
+
+export function getChallengeState(challengeId: string): ChallengeStateRecord | null {
+  const all = getChallengeStates();
+  return all[challengeId] || null;
+}
+
+export function setChallengeState(challengeId: string, status: ChallengeStateValue): void {
+  try {
+    const all = getChallengeStates();
+    all[challengeId] = { status, updatedAt: Date.now() };
+    localStorage.setItem(STORAGE_KEYS.CHALLENGE_STATES, JSON.stringify(all));
+  } catch {}
+}
+
+export function markChallengeSkipped(challengeId: string): void {
+  // Skip should not overwrite completed
+  const existing = getChallengeState(challengeId);
+  if (existing?.status === 'completed') return;
+  setChallengeState(challengeId, 'skipped');
+}
+
+export function markChallengeSolutionViewed(challengeId: string): void {
+  const existing = getChallengeState(challengeId);
+  if (existing?.status === 'completed') return;
+  setChallengeState(challengeId, 'solutionViewed');
+}
+
+export function clearChallengeState(challengeId: string): void {
+  try {
+    const all = getChallengeStates();
+    if (all[challengeId]) {
+      delete all[challengeId];
+      localStorage.setItem(STORAGE_KEYS.CHALLENGE_STATES, JSON.stringify(all));
+    }
+  } catch {}
+}
+
 /**
- * Saves or updates a LearnerBranch
+ * Saves or updates a LearnerBranch — clones deeply, no mutation, coherent timestamps
  */
 export function saveLearnerBranch(branch: LearnerBranch): void {
   try {
+    const clone: LearnerBranch = {
+      ...branch,
+      workspace: {
+        ...branch.workspace,
+        files: Object.fromEntries(Object.entries(branch.workspace.files).map(([k, v]) => [k, { ...v }])),
+        cursorPosition: branch.workspace.cursorPosition ? { ...branch.workspace.cursorPosition } : undefined,
+        selection: branch.workspace.selection ? { ...branch.workspace.selection } : undefined,
+      },
+      lastSavedAt: Date.now(),
+    };
     const raw = localStorage.getItem(STORAGE_KEYS.LEARNER_BRANCHES);
-    const branches: Record<string, LearnerBranch> = raw ? JSON.parse(raw) : {};
-    branches[branch.id] = branch;
+    let branches: Record<string, LearnerBranch> = {};
+    try {
+      branches = raw ? JSON.parse(raw) : {};
+      if (typeof branches !== 'object' || branches === null) branches = {};
+    } catch {
+      branches = {};
+    }
+    branches[clone.id] = clone;
     localStorage.setItem(STORAGE_KEYS.LEARNER_BRANCHES, JSON.stringify(branches));
   } catch (e) {
     console.error('Error saving learner branch:', e);
@@ -148,16 +222,139 @@ export function saveLearnerBranch(branch: LearnerBranch): void {
 }
 
 /**
- * Loads a LearnerBranch by ID
+ * Loads a LearnerBranch by ID — safe against corruption
  */
 export function loadLearnerBranch(branchId: string): LearnerBranch | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.LEARNER_BRANCHES);
     if (!raw) return null;
-    const branches: Record<string, LearnerBranch> = JSON.parse(raw);
-    return branches[branchId] || null;
-  } catch (e) {
+    let branches: Record<string, LearnerBranch> = {};
+    try {
+      branches = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+    if (typeof branches !== 'object' || branches === null) return null;
+    const found = branches[branchId];
+    if (!found || typeof found !== 'object') return null;
+    // Basic validation
+    if (!found.id || !found.lessonId || !found.workspace || typeof found.baseTime !== 'number') return null;
+    return found;
+  } catch {
     return null;
+  }
+}
+
+/**
+ * Latest branch for a lesson — deterministic recovery, safe against corruption
+ */
+export function loadLastBranchForLesson(lessonId: string): LearnerBranch | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.LEARNER_BRANCHES);
+    if (!raw) return null;
+    let branches: Record<string, LearnerBranch>;
+    try {
+      branches = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+    if (typeof branches !== 'object' || branches === null) return null;
+    const candidates = Object.values(branches).filter(
+      (b: any) => b && b.lessonId === lessonId && b.workspace && typeof b.baseTime === 'number'
+    ) as LearnerBranch[];
+    if (candidates.length === 0) return null;
+    candidates.sort((a, b) => (b.lastSavedAt || 0) - (a.lastSavedAt || 0));
+    return candidates[0] || null;
+  } catch {
+    return null;
+  }
+}
+
+export function loadAllBranchesForLesson(lessonId: string): LearnerBranch[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.LEARNER_BRANCHES);
+    if (!raw) return [];
+    let branches: Record<string, LearnerBranch>;
+    try {
+      branches = JSON.parse(raw);
+    } catch {
+      return [];
+    }
+    if (typeof branches !== 'object' || branches === null) return [];
+    return Object.values(branches).filter((b: any) => b && b.lessonId === lessonId) as LearnerBranch[];
+  } catch {
+    return [];
+  }
+}
+
+export function clearBranch(branchId: string): void {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.LEARNER_BRANCHES);
+    if (!raw) return;
+    let branches: Record<string, LearnerBranch> = {};
+    try {
+      branches = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    if (branches[branchId]) {
+      delete branches[branchId];
+      localStorage.setItem(STORAGE_KEYS.LEARNER_BRANCHES, JSON.stringify(branches));
+    }
+  } catch {}
+}
+
+export function clearBranchesForLesson(lessonId: string): void {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.LEARNER_BRANCHES);
+    if (!raw) return;
+    let branches: Record<string, LearnerBranch> = {};
+    try {
+      branches = JSON.parse(raw);
+    } catch {
+      return;
+    }
+    let changed = false;
+    for (const key of Object.keys(branches)) {
+      if ((branches[key] as any)?.lessonId === lessonId) {
+        delete branches[key];
+        changed = true;
+      }
+    }
+    if (changed) localStorage.setItem(STORAGE_KEYS.LEARNER_BRANCHES, JSON.stringify(branches));
+  } catch {}
+}
+
+// Debounce helper for branch saves — avoids excessive writes per keystroke
+const branchDebounceTimers = new Map<string, number>();
+const pendingBranches = new Map<string, LearnerBranch>();
+
+export function saveLearnerBranchDebounced(branch: LearnerBranch, delayMs = 400): void {
+  const key = branch.lessonId;
+  pendingBranches.set(key, branch);
+  const existing = branchDebounceTimers.get(key);
+  if (existing) clearTimeout(existing as unknown as NodeJS.Timeout);
+  const timer = setTimeout(() => {
+    branchDebounceTimers.delete(key);
+    const pending = pendingBranches.get(key);
+    if (pending) {
+      pendingBranches.delete(key);
+      saveLearnerBranch(pending);
+    }
+  }, delayMs);
+  branchDebounceTimers.set(key, timer as unknown as number);
+}
+
+export function flushBranchSave(lessonId: string): void {
+  const timer = branchDebounceTimers.get(lessonId);
+  if (timer) {
+    clearTimeout(timer as unknown as NodeJS.Timeout);
+    branchDebounceTimers.delete(lessonId);
+  }
+  const pending = pendingBranches.get(lessonId);
+  if (pending) {
+    pendingBranches.delete(lessonId);
+    saveLearnerBranch(pending);
   }
 }
 

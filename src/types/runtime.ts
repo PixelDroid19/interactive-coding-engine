@@ -25,6 +25,8 @@ export interface TestResultItem {
   expectedValue?: any;
   errorMessage?: string;
   hint?: string;
+  status?: 'passed' | 'failed' | 'evaluation-error';
+  isEvaluationError?: boolean;
 }
 
 export interface ChallengeValidationResult {

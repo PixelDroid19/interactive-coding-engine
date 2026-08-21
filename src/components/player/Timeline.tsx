@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Sparkles } from 'lucide-react';
 import { ScrimChallenge } from '../../types/scrim';
 
@@ -75,6 +75,17 @@ export const Timeline: React.FC<TimelineProps> = ({
   const isScrubbingRef = useRef(false);
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [hoveredTimeMs, setHoveredTimeMs] = useState<number | null>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (mql) {
+      setPrefersReducedMotion(mql.matches);
+      const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+      mql.addEventListener('change', handler);
+      return () => mql.removeEventListener('change', handler);
+    }
+  }, []);
 
   const formatTime = (ms: number): string => {
     const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -190,7 +201,7 @@ export const Timeline: React.FC<TimelineProps> = ({
           <span>{formatTime(durationMs)}</span>
         </div>
         {currentChapter && (
-          <span className="category-tag" style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span className="category-tag hidden sm:inline-flex" style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {currentChapter.title}
           </span>
         )}
@@ -215,8 +226,8 @@ export const Timeline: React.FC<TimelineProps> = ({
           onPointerLeave={() => {
             if (!isScrubbingRef.current) setHoveredTimeMs(null);
           }}
-          className={`relative h-2 w-full rounded-full group transition-colors ${isScrubbing ? 'cursor-grabbing' : 'cursor-pointer'}`}
-          style={{ background: '#cbd5e1', border: '1.5px solid #232733' }}
+          className={`relative h-3 w-full rounded-full group transition-colors ${isScrubbing ? 'cursor-grabbing' : 'cursor-pointer'}`}
+          style={{ background: '#cbd5e1', border: '1.5px solid #232733', minHeight: 12 }}
         >
           {/* Progress filled bar */}
           <div
@@ -240,20 +251,20 @@ export const Timeline: React.FC<TimelineProps> = ({
                   e.stopPropagation();
                   onSeek(chap.timestamp);
                 }}
-                className="absolute inset-y-0 z-10 w-0.5 cursor-pointer appearance-none border-0 p-0"
-                style={{ background: '#1e2433', left: `${posPercent}%` }}
+                className="absolute inset-y-0 z-10 w-1 cursor-pointer appearance-none border-0 p-0"
+                style={{ background: '#1e2433', left: `${posPercent}%`, minWidth: 4, minHeight: 16 }}
                 title={`Capítulo: ${chap.title} (${formatTime(chap.timestamp)})`}
               />
             );
           })}
 
-          {/* Current playhead knob */}
+          {/* Current playhead knob - larger for touch */}
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-4 h-4 z-30"
-            style={{ background: '#0284c7', border: '2px solid #1e2433', boxShadow: '2px 2px 0 #232733', borderRadius: 6, left: `calc(${progressPercent}% - 6px)` }}
+            className="absolute top-1/2 -translate-y-1/2 w-5 h-5 z-30"
+            style={{ background: '#0284c7', border: '2px solid #1e2433', boxShadow: '2px 2px 0 #232733', borderRadius: 6, left: `calc(${progressPercent}% - 8px)` }}
           />
 
-          {/* Challenge Markers (Interactive Diamond Badges ◆) */}
+          {/* Challenge Markers (Interactive Diamond Badges ◆) - larger hit area */}
           {challenges.map((ch) => {
             const markerPercent = durationMs > 0 ? (ch.timestamp / durationMs) * 100 : 0;
             const isPassed = currentTimeMs >= ch.timestamp;
@@ -268,16 +279,16 @@ export const Timeline: React.FC<TimelineProps> = ({
                   e.stopPropagation();
                   onSeek(ch.timestamp);
                 }}
-                className={`absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rotate-45 cursor-pointer transition-all duration-150 hover:scale-150 z-20 shadow-md ${
+                className={`absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rotate-45 cursor-pointer transition-all duration-150 hover:scale-125 z-20 shadow-md ${
                   isPassed
                     ? 'bg-amber-400 border-2 border-zinc-950'
                     : 'bg-amber-500/80 border border-amber-300 ring-2 ring-amber-500/30'
                 }`}
-                style={{ left: `${markerPercent}%` }}
+                style={{ left: `${markerPercent}%`, minWidth: 16, minHeight: 16 }}
                 title={`Reto: ${ch.title} (${formatTime(ch.timestamp)})`}
               >
-                {/* Subtle beacon pulse on active challenge */}
-                {Math.abs(currentTimeMs - ch.timestamp) < 1500 && (
+                {/* Subtle beacon pulse on active challenge - respects reduced motion */}
+                {Math.abs(currentTimeMs - ch.timestamp) < 1500 && !prefersReducedMotion && (
                   <span className="absolute inset-0 rounded-sm bg-amber-300 animate-ping opacity-75" />
                 )}
               </button>
@@ -317,20 +328,20 @@ export const Timeline: React.FC<TimelineProps> = ({
         </div>
       </div>
 
-      <div className="player-right">
+      <div className="player-right flex-wrap sm:flex-nowrap gap-1 sm:gap-2">
         {/* Voice Audio Mute Toggle */}
         {(onToggleMute || onVolumeChange) && (
-          <div className="flex items-center gap-1.5">
+          <div className="hidden sm:flex items-center gap-1.5">
             {onToggleMute && (
               <button
                 type="button"
                 onClick={onToggleMute}
                 aria-label={isMuted || volume <= 0 ? 'Activar sonido' : 'Silenciar explicación'}
-                className="p-1 rounded transition-colors"
-                style={{ color: isMuted || volume <= 0 ? 'var(--color-text-subtle)' : 'var(--color-text-main)' }}
+                className="p-2 rounded transition-colors"
+                style={{ color: isMuted || volume <= 0 ? 'var(--color-text-subtle)' : 'var(--color-text-main)', minWidth: 36, minHeight: 36 }}
                 title={isMuted || volume <= 0 ? 'Activar sonido' : 'Silenciar'}
               >
-                {isMuted || volume <= 0 ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                {isMuted || volume <= 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
               </button>
             )}
             {onVolumeChange && (
@@ -342,7 +353,7 @@ export const Timeline: React.FC<TimelineProps> = ({
                 value={isMuted ? 0 : volume}
                 onChange={(event) => onVolumeChange(Number(event.target.value))}
                 onMouseDown={(event) => event.stopPropagation()}
-                className="h-1 w-16 sm:w-20 cursor-pointer appearance-none rounded-full"
+                className="h-2 w-16 sm:w-20 cursor-pointer appearance-none rounded-full"
                 style={{ background: '#d6d0c2', accentColor: '#0284c7' }}
                 title={`Volumen ${Math.round((isMuted ? 0 : volume) * 100)}%`}
                 aria-label="Volumen de la explicación"
@@ -358,11 +369,11 @@ export const Timeline: React.FC<TimelineProps> = ({
             onClick={onToggleCaptions}
             aria-label="Activar o desactivar subtítulos"
             aria-pressed={showCaptions}
-            className="px-1.5 py-0.5 text-[9px] font-mono font-bold"
+            className="px-2 py-1 text-xs font-mono font-bold"
             style={
               showCaptions
                 ? { background: 'var(--color-highlighter-yellow)', color: '#0f172a', border: '1.5px solid #232733', borderRadius: 6 }
-                : { color: 'var(--color-text-muted)' }
+                : { color: 'var(--color-text-muted)', minWidth: 36, minHeight: 32 }
             }
             title="Activar o desactivar subtítulos"
           >
@@ -370,13 +381,13 @@ export const Timeline: React.FC<TimelineProps> = ({
           </button>
         )}
 
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => onSeek(Math.max(0, currentTimeMs - 5000))}
             aria-label="Retroceder 5 segundos"
-            className="text-[10px] font-mono px-1 py-0.5 rounded"
-            style={{ color: 'var(--color-text-muted)' }}
+            className="text-xs font-mono px-2 py-1 rounded"
+            style={{ color: 'var(--color-text-muted)', minWidth: 44, minHeight: 32 }}
             title="Retroceder 5 s"
           >
             -5 s
@@ -385,28 +396,29 @@ export const Timeline: React.FC<TimelineProps> = ({
             type="button"
             onClick={() => onSeek(Math.min(durationMs, currentTimeMs + 5000))}
             aria-label="Avanzar 5 segundos"
-            className="text-[10px] font-mono px-1 py-0.5 rounded"
-            style={{ color: 'var(--color-text-muted)' }}
+            className="text-xs font-mono px-2 py-1 rounded"
+            style={{ color: 'var(--color-text-muted)', minWidth: 44, minHeight: 32 }}
             title="Avanzar 5 s"
           >
             +5 s
           </button>
         </div>
 
-        <div className="h-3.5 w-px" style={{ background: '#232733' }} />
+        <div className="h-6 w-px hidden sm:block" style={{ background: '#232733' }} />
 
-        <div className="flex p-0.5 text-xs font-mono" style={{ border: '1.5px solid #232733', borderRadius: 8, background: 'var(--bg-surface)' }}>
+        <div className="hidden sm:flex p-0.5 text-xs font-mono" style={{ border: '1.5px solid #232733', borderRadius: 8, background: 'var(--bg-surface)' }}>
           {availableSpeeds.map((rate) => (
             <button
               type="button"
               key={rate}
               onClick={() => onRateChange(rate)}
+              aria-label={`Velocidad ${rate} por`}
               aria-pressed={playbackRate === rate}
-              className="px-1 py-0.5 text-[9px] font-medium"
+              className="px-2 py-1 text-xs font-medium"
               style={
                 playbackRate === rate
                   ? { background: 'var(--color-highlighter-cyan)', color: '#0f172a', fontWeight: 700, borderRadius: 6 }
-                  : { color: 'var(--color-text-muted)' }
+                  : { color: 'var(--color-text-muted)', minWidth: 36 }
               }
             >
               {rate}x
@@ -419,11 +431,11 @@ export const Timeline: React.FC<TimelineProps> = ({
           type="button"
           onClick={() => onSeek(0)}
           aria-label="Repetir desde el principio"
-          className="p-1 rounded"
-          style={{ color: 'var(--color-text-muted)' }}
+          className="p-2 rounded"
+          style={{ color: 'var(--color-text-muted)', minWidth: 36, minHeight: 36 }}
           title="Repetir desde el principio"
         >
-          <RotateCcw className="h-3 w-3" />
+          <RotateCcw className="h-4 w-4" />
         </button>
       </div>
     </footer>

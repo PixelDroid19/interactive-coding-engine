@@ -110,6 +110,14 @@ export class PlaybackEngine {
     this.syncEngine?.seek(targetMs);
   }
 
+  public clearTriggeredChallenge(challengeId: string): void {
+    this.syncEngine?.clearTriggeredChallenge(challengeId);
+  }
+
+  public markChallengeTriggered(challengeId: string): void {
+    this.syncEngine?.markChallengeTriggered(challengeId);
+  }
+
   public setPlaybackRate(rate: number): void {
     this.playbackRate = rate;
     this.audioNarrator.setPlaybackRate(rate);

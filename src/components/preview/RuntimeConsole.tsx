@@ -43,24 +43,35 @@ export const RuntimeConsole: React.FC<RuntimeConsoleProps> = ({
     }
   };
 
+  const filterLabels: Record<string, string> = {
+    all: 'Todo',
+    log: 'Mensajes',
+    warn: 'Avisos',
+    error: 'Errores',
+  };
+
   return (
     <div className={`flex flex-col bg-[#111111] border-t border-slate-800 text-xs font-mono transition-all duration-200 ${isOpen ? 'h-48' : 'h-8'}`}>
       {/* Header bar */}
       <div
         onClick={onToggle}
         className="flex h-8 items-center justify-between px-3 bg-[#151515] hover:bg-[#1a1a1a] cursor-pointer border-b border-slate-800 select-none"
+        role="button"
+        aria-label={isOpen ? 'Ocultar consola' : 'Mostrar consola'}
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
       >
         <div className="flex items-center gap-2 text-slate-300 font-semibold text-[11px]">
           <Terminal className="h-3.5 w-3.5 text-blue-400" />
-          <span>Console</span>
+          <span>Consola</span>
           {errorCount > 0 && (
             <span className="rounded-full bg-rose-950/90 text-rose-300 border border-rose-700/50 px-1.5 py-0.2 text-[10px]">
-              {errorCount} {errorCount === 1 ? 'error' : 'errors'}
+              {errorCount} {errorCount === 1 ? 'error' : 'errores'}
             </span>
           )}
           {warnCount > 0 && (
             <span className="rounded-full bg-amber-950/90 text-amber-300 border border-amber-700/50 px-1.5 py-0.2 text-[10px]">
-              {warnCount}
+              {warnCount} {warnCount === 1 ? 'aviso' : 'avisos'}
             </span>
           )}
         </div>
@@ -72,11 +83,13 @@ export const RuntimeConsole: React.FC<RuntimeConsoleProps> = ({
                 <button
                   key={mode}
                   onClick={() => setFilter(mode)}
+                  aria-label={`Filtrar ${filterLabels[mode]}`}
+                  aria-pressed={filter === mode}
                   className={`px-2 py-0.5 rounded capitalize transition-colors ${
                     filter === mode ? 'bg-zinc-700 text-white font-medium shadow-sm' : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  {mode}
+                  {filterLabels[mode]}
                 </button>
               ))}
             </div>
@@ -84,7 +97,8 @@ export const RuntimeConsole: React.FC<RuntimeConsoleProps> = ({
             <button
               onClick={onClearLogs}
               className="p-1 text-slate-400 hover:text-slate-200 hover:bg-white/5 rounded transition-colors"
-              title="Clear console"
+              aria-label="Limpiar consola"
+              title="Limpiar consola"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
@@ -97,7 +111,7 @@ export const RuntimeConsole: React.FC<RuntimeConsoleProps> = ({
         <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-[#111111] selection:bg-slate-800">
           {filteredLogs.length === 0 ? (
             <div className="flex h-full items-center justify-center text-slate-600 italic text-[11px]">
-              No console output yet. Execute your code or interact with the preview.
+              Sin salida aún. Ejecuta tu código o interactúa con la vista previa.
             </div>
           ) : (
             filteredLogs.map((log) => (

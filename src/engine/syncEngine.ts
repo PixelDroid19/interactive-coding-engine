@@ -166,6 +166,14 @@ export class HighPrecisionSyncEngine {
     this.smoothedDriftMs = 0;
     this.currentSyncState = 'locked';
 
+    // Allow revisiting a challenge by clearing future triggers when seeking backwards.
+    // A challenge at exactly the seek target stays considered triggered (e.g. reset to challenge timestamp).
+    for (const ch of this.challenges) {
+      if (ch.timestamp > clamped) {
+        this.triggeredChallenges.delete(ch.id);
+      }
+    }
+
     // Full state reconstruction at seek point
     this.reconstructFullStateAt(clamped);
     this.audioNarrator.seek(clamped);
@@ -177,6 +185,15 @@ export class HighPrecisionSyncEngine {
       this.stopFrameLoop();
       this.callbacks.onCompleted?.();
     }
+  }
+
+  /** Exposed for explicit challenge lifecycle control from the player. */
+  public clearTriggeredChallenge(challengeId: string): void {
+    this.triggeredChallenges.delete(challengeId);
+  }
+
+  public markChallengeTriggered(challengeId: string): void {
+    this.triggeredChallenges.add(challengeId);
   }
 
   public setPlaybackRate(rate: number): void {

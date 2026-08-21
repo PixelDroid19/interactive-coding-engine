@@ -83,43 +83,60 @@ export const LESSON_06 = compileLesson({
       challenge: {
         id: 'reto-fizzbuzz',
         title: 'Reto: FizzBuzz',
-        instructions: `Del 1 al 20:
-- múltiplo de 3 y 5 → FizzBuzz
-- múltiplo de 3 → Fizz
-- múltiplo de 5 → Buzz
-- si no, el número
+        instructions: `Crea una función etiqueta(n) y úsala del 1 al 20:
+- múltiplo de 3 y 5 → "FizzBuzz"
+- múltiplo de 3 → "Fizz"
+- múltiplo de 5 → "Buzz"
+- si no, String(n)
 
+Ejemplo: function etiqueta(n) { ... }
 Pregunta primero el caso de los dos, si no FizzBuzz nunca gana.`,
         tests: [
           {
-            id: 'bucle-20',
-            description: 'Hay un for hasta 20',
-            validatorType: 'source-regex',
-            regexPattern: 'for\\s*\\([\\s\\S]*20',
-            errorMessage: 'Necesito un for que llegue hasta 20.',
-            hintTip: 'for (let i = 1; i <= 20; i++)',
+            id: 'etiqueta-3',
+            description: 'etiqueta(3) es "Fizz"',
+            validatorType: 'function-call',
+            targetFunction: 'etiqueta',
+            args: [3],
+            expectedReturn: 'Fizz',
+            errorMessage: 'Con 3 debería ser "Fizz". ¿Usa n % 3 === 0?',
+            hintTip: 'Si n % 3 === 0 devuelve "Fizz".',
           },
           {
-            id: 'fizzbuzz',
-            description: 'Escribe FizzBuzz cuando toca 3 y 5',
-            validatorType: 'source-regex',
-            regexPattern: 'FizzBuzz',
-            errorMessage: 'Falta el texto FizzBuzz.',
-            hintTip: 'if (i % 3 === 0 && i % 5 === 0)',
+            id: 'etiqueta-5',
+            description: 'etiqueta(5) es "Buzz"',
+            validatorType: 'function-call',
+            targetFunction: 'etiqueta',
+            args: [5],
+            expectedReturn: 'Buzz',
+            errorMessage: 'Con 5 debería ser "Buzz".',
+            hintTip: 'Si n % 5 === 0 devuelve "Buzz".',
           },
           {
-            id: 'mod-3',
-            description: 'Usa el resto entre 3',
-            validatorType: 'source-regex',
-            regexPattern: '%\\s*3',
-            errorMessage: 'Usa i % 3 === 0 para Fizz.',
-            hintTip: 'i % 3 === 0',
+            id: 'etiqueta-15',
+            description: 'etiqueta(15) es "FizzBuzz"',
+            validatorType: 'function-call',
+            targetFunction: 'etiqueta',
+            args: [15],
+            expectedReturn: 'FizzBuzz',
+            errorMessage: 'Con 15 debería ser "FizzBuzz". ¿Preguntas los dos múltiplos primero?',
+            hintTip: '15 cumple 3 y 5, debe ganar FizzBuzz.',
+          },
+          {
+            id: 'etiqueta-7',
+            description: 'etiqueta(7) es "7"',
+            validatorType: 'function-call',
+            targetFunction: 'etiqueta',
+            args: [7],
+            expectedReturn: '7',
+            errorMessage: 'Con 7 debería ser "7". Si no es múltiplo, devuelve el número como texto.',
+            hintTip: 'return String(n) si no es múltiplo.',
           },
         ],
         hints: [
           { level: 1, title: 'Orden', text: 'Pregunta 3 y 5 juntos ANTES que solo 3 o solo 5.' },
           { level: 2, title: 'Resto', text: 'i % 3 === 0 significa múltiplo de 3.' },
-          { level: 3, title: 'for', text: 'for (let i = 1; i <= 20; i++) { ... }' },
+          { level: 3, title: 'Estructura', text: 'Recorre del 1 al 20 con for y dentro decide el texto con tu función etiqueta.' },
         ],
         solutionExplanation: 'Un for recorre. Los if eligen el texto de cada vuelta.',
       },

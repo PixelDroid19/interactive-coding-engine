@@ -18,7 +18,8 @@ import {
 
 export interface FloatingBrowserRef {
   getIframeElement: () => HTMLIFrameElement | null;
-  reloadPreview: () => void;
+  reloadPreview: () => Promise<void>;
+  getGeneration: () => number;
 }
 
 interface FloatingBrowserProps {
@@ -32,13 +33,14 @@ interface FloatingBrowserProps {
 export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserProps>(({
   workspace,
   onRunClick,
-  autoReload = true,
+  autoReload = false,
   isFloating,
   onToggleFloating,
 }, ref) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const workspaceRef = useRef(workspace);
   workspaceRef.current = workspace;
+  const generationRef = useRef(0);
   const [logs, setLogs] = useState<ConsoleMessage[]>([]);
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -74,6 +76,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
   useImperativeHandle(ref, () => ({
     getIframeElement: () => iframeRef.current,
     reloadPreview: () => compileAndRun(),
+    getGeneration: () => generationRef.current,
   }));
 
   // Handle Dragging
@@ -114,6 +117,24 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
     window.addEventListener('mouseup', handleMouseUp);
   };
 
+  // Keyboard support for moving floating browser
+  const handleHeaderKeyDown = (e: React.KeyboardEvent) => {
+    if (!isFloating || isMaximized) return;
+    let dx = 0, dy = 0;
+    switch (e.key) {
+      case 'ArrowLeft': dx = -20; break;
+      case 'ArrowRight': dx = 20; break;
+      case 'ArrowUp': dy = -20; break;
+      case 'ArrowDown': dy = 20; break;
+      default: return;
+    }
+    e.preventDefault();
+    setPos((prev) => ({
+      x: Math.max(8, Math.min(window.innerWidth - 88, prev.x + dx)),
+      y: Math.max(44, Math.min(window.innerHeight - 64, prev.y + dy)),
+    }));
+  };
+
   // Handle Resizing
   const handleMouseDownResize = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -133,8 +154,8 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
       const dy = moveEvent.clientY - resizeStartRef.current.mouseY;
 
       setSize({
-        width: Math.max(300, Math.min(window.innerWidth - pos.x - 16, resizeStartRef.current.startW + dx)),
-        height: Math.max(240, Math.min(window.innerHeight - pos.y - 56, resizeStartRef.current.startH + dy)),
+        width: Math.max(340, Math.min(window.innerWidth - pos.x - 16, resizeStartRef.current.startW + dx)),
+        height: Math.max(260, Math.min(window.innerHeight - pos.y - 56, resizeStartRef.current.startH + dy)),
       });
     };
 
@@ -167,10 +188,11 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
         const errorMsg: ConsoleMessage = {
           id: `err-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
           type: 'error',
-          args: [event.data.message || 'Unhandled Runtime Error'],
+          args: [event.data.message || 'Error en la ejecución'],
           timestamp: Date.now(),
         };
         setLogs((prev) => [...prev.slice(-150), errorMsg]);
+        setIsConsoleOpen(true);
       }
     };
 
@@ -178,17 +200,33 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  const compileAndRun = () => {
-    if (!iframeRef.current) return;
+  const compileAndRun = useCallback(() => {
+    if (!iframeRef.current) return Promise.resolve();
+    const gen = ++generationRef.current;
+    (iframeRef.current as any).__generation = gen;
     setIsExecuting(true);
-    setLogs([]);
-    iframeRef.current.srcdoc = buildPreviewDocument(workspaceRef.current);
-    setTimeout(() => setIsExecuting(false), 200);
-  };
+    return new Promise<void>((resolve) => {
+      const iframe = iframeRef.current!;
+      const onLoad = () => {
+        setIsExecuting(false);
+        iframe.removeEventListener('load', onLoad);
+        // Small delay to let JS execute
+        setTimeout(() => resolve(), 50);
+      };
+      iframe.addEventListener('load', onLoad);
+      iframe.srcdoc = buildPreviewDocument(workspaceRef.current);
+      // Fallback if load doesn't fire (srcdoc)
+      setTimeout(() => {
+        iframe.removeEventListener('load', onLoad);
+        setIsExecuting(false);
+        resolve();
+      }, 350);
+    });
+  }, []);
 
   useEffect(() => {
     compileAndRun();
-  }, []);
+  }, [compileAndRun]);
 
   useEffect(() => {
     if (!autoReload) return;
@@ -199,8 +237,11 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
   }, [workspace.files, autoReload]);
 
   const handleManualRun = () => {
-    compileAndRun();
-    onRunClick?.();
+    if (onRunClick) {
+      onRunClick();
+    } else {
+      compileAndRun();
+    }
   };
 
   const mapPreviewPointer = useCallback((x: number, y: number) => {
@@ -221,7 +262,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
   if (isFloating && isMinimized) {
     return (
       <div className="fixed top-14 right-5 z-40">
-        <button onClick={() => setIsMinimized(false)} className="floating-preview-trigger">
+        <button onClick={() => setIsMinimized(false)} className="floating-preview-trigger" aria-label="Abrir vista previa">
           <Globe size={14} />
           <span>Abrir navegador</span>
         </button>
@@ -253,29 +294,33 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
       {/* Top Browser Chrome Header */}
       <div
         onMouseDown={handleMouseDownHeader}
+        onKeyDown={handleHeaderKeyDown}
+        tabIndex={isFloating && !isMaximized ? 0 : -1}
+        role={isFloating ? 'toolbar' : undefined}
+        aria-label={isFloating ? 'Barra de vista previa, usa flechas para mover' : undefined}
         className={`browser-header-clean ${isFloating ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : ''}`}
-        title={isFloating ? 'Arrastra para mover' : undefined}
+        title={isFloating ? 'Arrastra para mover (o flechas)' : undefined}
       >
         <div className="browser-header-title">
           <span>Vista previa</span>
-          <span className="browser-preview-badge">live</span>
+          <span className="browser-preview-badge">{autoReload ? 'En vivo' : 'Ejecutado'}</span>
         </div>
         <div className="browser-window-actions">
-          <button onClick={compileAndRun} className="browser-btn" title="Recargar">
+          <button onClick={compileAndRun} className="browser-btn" aria-label="Recargar vista previa" title="Recargar">
             <RotateCw size={13} className={isExecuting ? 'animate-spin' : ''} />
           </button>
-          <button onClick={handleManualRun} className="browser-btn" title="Ejecutar">
+          <button onClick={handleManualRun} className="browser-btn" aria-label="Ejecutar código" title="Ejecutar">
             <Play size={13} />
           </button>
-          <button onClick={onToggleFloating} className="browser-btn" title={isFloating ? 'Fijar al lado' : 'Soltar flotante'}>
+          <button onClick={onToggleFloating} className="browser-btn" aria-label={isFloating ? 'Fijar al lado' : 'Soltar flotante'} title={isFloating ? 'Fijar al lado' : 'Soltar flotante'}>
             {isFloating ? <Pin size={13} /> : <PinOff size={13} />}
           </button>
           {isFloating && (
             <>
-              <button onClick={() => setIsMinimized(true)} className="browser-btn" title="Minimizar">
+              <button onClick={() => setIsMinimized(true)} className="browser-btn" aria-label="Minimizar vista previa" title="Minimizar">
                 <Minimize2 size={13} />
               </button>
-              <button onClick={() => setIsMaximized(!isMaximized)} className="browser-btn" title={isMaximized ? 'Restaurar' : 'Ampliar'}>
+              <button onClick={() => setIsMaximized(!isMaximized)} className="browser-btn" aria-label={isMaximized ? 'Restaurar tamaño' : 'Ampliar vista previa'} title={isMaximized ? 'Restaurar' : 'Ampliar'}>
                 <Maximize2 size={13} />
               </button>
             </>
@@ -283,10 +328,10 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
         </div>
       </div>
       <div className="browser-navbar">
-        <button className="browser-btn" title="Atrás"><ArrowLeft size={13} /></button>
-        <button className="browser-btn" title="Adelante"><ArrowRight size={13} /></button>
-        <div className="browser-url-box">
-          <input className="browser-url-input" readOnly value="/index.html" />
+        <button className="browser-btn" aria-label="Atrás (no disponible)" title="Navegación no disponible" disabled aria-disabled="true" style={{ opacity: 0.4, cursor: 'not-allowed' }}><ArrowLeft size={13} /></button>
+        <button className="browser-btn" aria-label="Adelante (no disponible)" title="Navegación no disponible" disabled aria-disabled="true" style={{ opacity: 0.4, cursor: 'not-allowed' }}><ArrowRight size={13} /></button>
+        <div className="browser-url-box" aria-label="Ruta actual">
+          <span className="browser-url-text">/index.html</span>
         </div>
       </div>
 
@@ -320,7 +365,8 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
         <div
           onMouseDown={handleMouseDownResize}
           className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize z-50 flex items-end justify-end p-0.5 opacity-60 hover:opacity-100"
-          title="Resize browser"
+          aria-label="Redimensionar vista previa"
+          title="Arrastrar para redimensionar"
         >
           <div className="w-2 h-2 border-r-2 border-b-2 border-zinc-500 rounded-br-sm" />
         </div>

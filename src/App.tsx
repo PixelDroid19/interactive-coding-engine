@@ -3,6 +3,7 @@ import { Course, CurriculumItem, UserProgressRecord } from './types/curriculum';
 import { ScrimLessonData } from './types/scrim';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './curriculum/fundamentos/course';
 import { loadUserProgress, loadCustomCourses, loadCustomScrims, updateRecentPosition } from './engine/persistence';
+import { getOrderedItems, getNavigationState } from './engine/navigation';
 import { RoadmapHome } from './components/curriculum/RoadmapHome';
 import { ScrimPlayer } from './components/player/ScrimPlayer';
 import { DebuggingView } from './components/challenges/DebuggingView';
@@ -59,6 +60,38 @@ export default function App() {
     }
   };
 
+  const handleBackToRoadmap = () => {
+    refreshProgress();
+    setCurrentView('home');
+  };
+
+  // Linear navigation using real curriculum order
+  const getNav = () => getNavigationState(course, activeItem?.id || null);
+
+  const handlePrevious = () => {
+    const nav = getNav();
+    if (!nav.hasPrevious || !nav.previous) return;
+    // Preserve recent position before leaving
+    if (activeItem) {
+      updateRecentPosition(course.title, activeModuleId, activeItem.id, activeItem.title, activeItem.type, scrimInitialTimeMs);
+    }
+    handleSelectItem(nav.previous.item, nav.previous.moduleId, 0);
+  };
+
+  const handleNext = () => {
+    const nav = getNav();
+    if (!nav.hasNext || !nav.next) {
+      // Last element: coherent finalization
+      refreshProgress();
+      setCurrentView('home');
+      return;
+    }
+    if (activeItem) {
+      updateRecentPosition(course.title, activeModuleId, activeItem.id, activeItem.title, activeItem.type, scrimInitialTimeMs);
+    }
+    handleSelectItem(nav.next.item, nav.next.moduleId, 0);
+  };
+
   const handleResumeRecent = (courseId: string, moduleId: string, itemId: string, timeMs?: number) => {
     // Find item across modules
     for (const mod of course.modules) {
@@ -75,22 +108,8 @@ export default function App() {
   };
 
   const handleNextLesson = () => {
-    if (!activeItem) return;
-    refreshProgress();
-
-    // Flatten all items across modules
-    const allItems: { item: CurriculumItem; moduleId: string }[] = [];
-    course.modules.forEach((mod) => {
-      mod.items.forEach((it) => allItems.push({ item: it, moduleId: mod.id }));
-    });
-
-    const currentIndex = allItems.findIndex((x) => x.item.id === activeItem.id);
-    if (currentIndex >= 0 && currentIndex < allItems.length - 1) {
-      const next = allItems[currentIndex + 1];
-      handleSelectItem(next.item, next.moduleId, 0);
-    } else {
-      setCurrentView('home');
-    }
+    // Keep for backward compat, delegate to handleNext
+    handleNext();
   };
 
   const handleLessonPublished = (newLesson: ScrimLessonData) => {
@@ -120,6 +139,8 @@ export default function App() {
     refreshProgress();
     setCurrentView('home');
   };
+
+  const navigationState = getNavigationState(course, activeItem?.id || null);
 
   return (
     <div className={currentView === 'scrim' ? 'app-screen' : undefined}>
@@ -157,12 +178,13 @@ export default function App() {
           }
           courseTitle={course.title}
           moduleTitle={course.modules.find((m) => m.id === activeModuleId)?.title || ''}
-          onBack={() => {
-            refreshProgress();
-            setCurrentView('home');
-          }}
-          onNextLesson={handleNextLesson}
+          onBack={handleBackToRoadmap}
+          onBackToRoadmap={handleBackToRoadmap}
+          onPrevious={navigationState.hasPrevious ? handlePrevious : undefined}
+          onNext={navigationState.hasNext ? handleNext : undefined}
+          onNextLesson={handleNext}
           initialTimeMs={scrimInitialTimeMs}
+          navigationState={navigationState}
         />
       )}
 
@@ -170,11 +192,11 @@ export default function App() {
         <DebuggingView
           exercise={activeItem}
           courseTitle={course.title}
-          onBack={() => {
-            refreshProgress();
-            setCurrentView('home');
-          }}
-          onNext={handleNextLesson}
+          onBack={handleBackToRoadmap}
+          onBackToRoadmap={handleBackToRoadmap}
+          onPrevious={navigationState.hasPrevious ? handlePrevious : undefined}
+          onNext={navigationState.hasNext ? handleNext : handleBackToRoadmap}
+          navigationState={navigationState}
         />
       )}
 
@@ -182,11 +204,11 @@ export default function App() {
         <SoloProjectView
           project={activeItem}
           courseTitle={course.title}
-          onBack={() => {
-            refreshProgress();
-            setCurrentView('home');
-          }}
-          onNext={handleNextLesson}
+          onBack={handleBackToRoadmap}
+          onBackToRoadmap={handleBackToRoadmap}
+          onPrevious={navigationState.hasPrevious ? handlePrevious : undefined}
+          onNext={navigationState.hasNext ? handleNext : handleBackToRoadmap}
+          navigationState={navigationState}
         />
       )}
 

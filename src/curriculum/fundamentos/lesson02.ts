@@ -119,7 +119,17 @@ export const LESSON_02 = compileLesson({
             validatorType: 'source-regex',
             regexPattern: 'fahrenheit\\s*=\\s*celsius\\s*\\*\\s*(9\\s*\\/\\s*5|1\\.8)\\s*\\+\\s*32',
             errorMessage: 'Todavía no veo celsius * 9 / 5 + 32.',
-            hintTip: 'const fahrenheit = celsius * 9 / 5 + 32;',
+            hintTip: 'Revisa la línea de fahrenheit.',
+          },
+          {
+            id: 'convierte-20-es-68',
+            description: '20 °C se convierte en 68 °F',
+            validatorType: 'dom-check',
+            domSelector: '#salida',
+            domProperty: 'innerText',
+            expectedValue: '68',
+            errorMessage: 'Con 20 °C el resultado debe contener 68. ¿Probaste con Ejecutar?',
+            hintTip: 'Después de corregir la fórmula, pulsa Ejecutar y verifica #salida.',
           },
           {
             id: 'escribe-salida',
@@ -127,7 +137,7 @@ export const LESSON_02 = compileLesson({
             validatorType: 'source-regex',
             regexPattern: 'salida\\.textContent\\s*=',
             errorMessage: 'No borres la línea que pinta el resultado.',
-            hintTip: 'salida.textContent = celsius + " °C = " + fahrenheit + " °F";',
+            hintTip: 'Deja salida.textContent = ...',
           },
         ],
         hints: [
@@ -143,8 +153,8 @@ export const LESSON_02 = compileLesson({
           },
           {
             level: 3,
-            title: 'En JavaScript',
-            text: 'const fahrenheit = celsius * 9 / 5 + 32;',
+            title: 'Siguiente paso',
+            text: 'A la derecha del igual usa la operación con * 9 / 5 + 32. No borres el resto de la línea.',
           },
         ],
         solutionExplanation: 'La cuenta es el paso que faltaba. Sin ella, el programa solo copia el número.',

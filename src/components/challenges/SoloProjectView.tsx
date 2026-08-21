@@ -16,22 +16,30 @@ import {
   RotateCcw,
   CheckSquare,
   Square,
-  ChevronRight
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { NavigationState } from '../../engine/navigation';
 
 interface SoloProjectViewProps {
   project: SoloProjectItem;
   courseTitle?: string;
   onBack: () => void;
+  onBackToRoadmap?: () => void;
+  onPrevious?: () => void;
   onNext?: () => void;
+  navigationState?: NavigationState;
 }
 
 export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
   project,
   courseTitle = 'JavaScript Events',
   onBack,
+  onBackToRoadmap,
+  onPrevious,
   onNext,
+  navigationState,
 }) => {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() => cloneWorkspace(project.initialWorkspace));
   const [checkedRequirements, setCheckedRequirements] = useState<Record<string, boolean>>({});
@@ -73,12 +81,24 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
       <header className="flex h-11 items-center justify-between px-4 bg-[#141416] border-b border-zinc-800/80 z-30">
         <div className="flex items-center gap-3">
           <button
-            onClick={onBack}
+            onClick={onBackToRoadmap || onBack}
             className="flex items-center gap-1.5 rounded bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 text-xs text-zinc-300 font-medium transition-colors"
+            aria-label="Volver al roadmap"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span className="text-[11px]">Roadmap</span>
           </button>
+          {onPrevious && (
+            <button
+              onClick={onPrevious}
+              disabled={navigationState ? !navigationState.hasPrevious : false}
+              className="flex items-center gap-1 rounded bg-zinc-800 hover:bg-zinc-700 px-2 py-1 text-xs text-zinc-300 disabled:opacity-40"
+              aria-label="Anterior"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+              <span className="text-[11px] hidden sm:inline">Anterior</span>
+            </button>
+          )}
 
           <div className="h-3.5 w-px bg-zinc-800" />
 
@@ -104,13 +124,25 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
           )}
 
           {onNext && (
-            <button
-              onClick={onNext}
-              className="flex items-center gap-1 rounded bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-200 transition-colors"
-            >
-              <span>Finish Course</span>
-              <ChevronRight className="h-3.5 w-3.5" />
-            </button>
+            navigationState?.isLast ? (
+              <button
+                onClick={onBackToRoadmap || onBack}
+                className="flex items-center gap-1 rounded bg-emerald-800 hover:bg-emerald-700 px-2.5 py-1 text-xs font-medium text-white"
+                aria-label="Finalizar"
+              >
+                <span>Finalizar</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            ) : (
+              <button
+                onClick={onNext}
+                className="flex items-center gap-1 rounded bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-200 transition-colors"
+                aria-label="Siguiente"
+              >
+                <span>Siguiente</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+            )
           )}
         </div>
       </header>

@@ -168,17 +168,21 @@ for (let i = 0; i < 5; i++) {
 }
 document.getElementById("salida").textContent = "Cinco vueltas. i valió 0, 1, 2, 3 y 4.";
 `;
-export const L06_SOLUTION = `${NOTE}const caja = document.getElementById("estrellas");
+export const L06_SOLUTION = `${NOTE}function etiqueta(n) {
+  if (n % 3 === 0 && n % 5 === 0) return "FizzBuzz";
+  if (n % 3 === 0) return "Fizz";
+  if (n % 5 === 0) return "Buzz";
+  return String(n);
+}
+
+const caja = document.getElementById("estrellas");
 const salida = document.getElementById("salida");
 caja.innerHTML = "";
 let texto = "";
 for (let i = 1; i <= 20; i++) {
-  let pieza = i;
-  if (i % 3 === 0 && i % 5 === 0) pieza = "FizzBuzz";
-  else if (i % 3 === 0) pieza = "Fizz";
-  else if (i % 5 === 0) pieza = "Buzz";
+  const pieza = etiqueta(i);
   const chip = document.createElement("div");
-  chip.className = pieza === i ? "chip" : "chip on";
+  chip.className = pieza === String(i) ? "chip" : "chip on";
   chip.textContent = pieza;
   caja.appendChild(chip);
   texto += pieza + " ";

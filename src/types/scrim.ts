@@ -143,6 +143,15 @@ export interface ChallengeTest {
   customValidatorScript?: string;
   errorMessage?: string;
   hintTip?: string;
+  // Extended contract for semantic string matching
+  matcher?: 'exact' | 'contains' | 'contains-all' | 'string-contains-all';
+  caseInsensitive?: boolean;
+  normalizeSpaces?: boolean;
+  ignorePunctuation?: boolean;
+  requireArgInResult?: boolean | number;
+  expectedContains?: string[];
+  // For DOM with generic
+  evaluationMode?: 'single' | 'multiple';
 }
 
 export interface Hint {

@@ -197,23 +197,35 @@ export const LESSON_01 = compileLesson({
 
 1. En app.js busca let nombre = "Alex";
 2. Cambia Alex por tu nombre. Deja las comillas.
-3. Pulsa Run. A la derecha ya no debe decir Alex.`,
+3. Pulsa Ejecutar. A la derecha ya no debe decir Alex.`,
         tests: [
           {
-            id: 'nombre-personalizado',
-            description: 'nombre ya no vale "Alex"',
+            id: 'nombre-cambiado',
+            description: 'Cambiaste "Alex" por otro nombre',
             validatorType: 'source-regex',
             regexPattern: 'nombre\\s*=\\s*["\'](?!Alex["\'])[^"\']+["\']',
             errorMessage: 'Sigue siendo "Alex". Cambia solo el texto entre comillas.',
             hintTip: 'Ejemplo: let nombre = "Ana";',
           },
           {
-            id: 'sigue-saludando',
-            description: 'El programa sigue escribiendo en #saludo',
-            validatorType: 'source-regex',
-            regexPattern: 'getElementById\\(\\s*["\']saludo["\']\\s*\\)',
-            errorMessage: 'No borres la línea que pinta el saludo.',
-            hintTip: 'Deja document.getElementById("saludo").textContent = ...',
+            id: 'saludo-muestra-hola',
+            description: 'El saludo se muestra en la página',
+            validatorType: 'dom-check',
+            domSelector: '#saludo',
+            domProperty: 'innerText',
+            expectedValue: 'Hola',
+            errorMessage: 'La página no muestra "Hola". Pulsa Ejecutar tras cambiar el nombre.',
+            hintTip: 'Pulsa Ejecutar y revisa que #saludo contenga Hola.',
+          },
+          {
+            id: 'saludo-usa-nuevo-nombre',
+            description: 'El saludo usa tu nombre nuevo',
+            validatorType: 'dom-check',
+            domSelector: '#saludo',
+            domProperty: 'innerText',
+            // special handling in testRunner extracts nombre and validates
+            errorMessage: 'El saludo no contiene tu nombre nuevo.',
+            hintTip: 'Verifica que el texto en #saludo incluya el valor de nombre.',
           },
         ],
         hints: [

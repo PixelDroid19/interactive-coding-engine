@@ -1,48 +1,119 @@
 import { ChallengeTest, ScrimChallenge, WorkspaceSnapshot } from '../types/scrim';
 import { ChallengeValidationResult, TestResultItem } from '../types/runtime';
+import { buildPreviewDocument } from './previewDocument';
 
-/**
- * Validates a challenge against the student's current workspace state and runtime iframe
- */
+function normalizeForMatch(str: string, opts: { caseInsensitive?: boolean; normalizeSpaces?: boolean; ignorePunctuation?: boolean }): string {
+  let s = str;
+  if (opts.normalizeSpaces) {
+    s = s.replace(/\s+/g, ' ').trim();
+  }
+  if (opts.ignorePunctuation) {
+    // Remove punctuation except letters, numbers, spaces
+    s = s.replace(/[.,/#!$%^&*;:{}=\-_`~()¿?¡!"']/g, '');
+    if (opts.normalizeSpaces) s = s.replace(/\s+/g, ' ').trim();
+  }
+  if (opts.caseInsensitive) {
+    s = s.toLowerCase();
+  }
+  return s;
+}
+
+function stringContainsAll(result: string, expectedContains: string[], opts: { caseInsensitive?: boolean; normalizeSpaces?: boolean; ignorePunctuation?: boolean }): boolean {
+  const normResult = normalizeForMatch(result, opts);
+  return expectedContains.every((exp) => {
+    const normExp = normalizeForMatch(exp, opts);
+    return normResult.includes(normExp);
+  });
+}
+
+function isStringMatch(result: any, test: ChallengeTest): { passed: boolean; error?: string } {
+  if (typeof result !== 'string') {
+    return { passed: false, error: `Se esperaba texto pero se obtuvo ${typeof result}: ${JSON.stringify(result)}` };
+  }
+  const expectedContains = test.expectedContains || [];
+  const requireArg = test.requireArgInResult;
+  let toCheck: string[] = [...expectedContains];
+  // If requireArgInResult true or number, add the arg value
+  if (requireArg !== undefined && requireArg !== false) {
+    const argIndex = typeof requireArg === 'number' ? requireArg : 0;
+    const args = test.args || [];
+    const argVal = args[argIndex];
+    if (argVal !== undefined) {
+      toCheck.push(String(argVal));
+    }
+  }
+  // If expectedReturn is string and matcher is contains-all, use it
+  if (test.expectedReturn !== undefined && typeof test.expectedReturn === 'string' && (test.matcher === 'contains-all' || test.matcher === 'string-contains-all' || test.matcher === 'contains')) {
+    toCheck.push(test.expectedReturn);
+  }
+  // If toCheck empty, fallback to expectedReturn string
+  if (toCheck.length === 0 && typeof test.expectedReturn === 'string') {
+    toCheck = [test.expectedReturn];
+  }
+  if (toCheck.length === 0) {
+    return { passed: true };
+  }
+  const opts = {
+    caseInsensitive: test.caseInsensitive ?? true,
+    normalizeSpaces: test.normalizeSpaces ?? true,
+    ignorePunctuation: test.ignorePunctuation ?? true,
+  };
+  const passed = stringContainsAll(result, toCheck, opts);
+  if (!passed) {
+    const missing = toCheck.filter((exp) => !normalizeForMatch(result, opts).includes(normalizeForMatch(exp, opts)));
+    return { passed: false, error: `Falta "${missing.join('", "')}" en "${result}"` };
+  }
+  return { passed: true };
+}
+
 export async function runChallengeValidation(
   challenge: ScrimChallenge,
   workspace: WorkspaceSnapshot,
-  iframeElement?: HTMLIFrameElement | null
+  iframeElement?: HTMLIFrameElement | null,
+  generation?: number
 ): Promise<ChallengeValidationResult> {
   const testResults: TestResultItem[] = [];
   let passedCount = 0;
+  let evaluationErrors = 0;
 
   for (const test of challenge.tests) {
     try {
-      const result = await evaluateSingleTest(test, workspace, iframeElement);
+      const result = await evaluateSingleTest(test, workspace, iframeElement, generation);
       testResults.push(result);
       if (result.passed) {
         passedCount++;
       }
+      if (result.isEvaluationError) evaluationErrors++;
     } catch (err: any) {
       testResults.push({
         id: test.id,
         description: test.description,
         passed: false,
-        errorMessage: err.message || 'Execution error during test evaluation',
+        status: 'evaluation-error',
+        isEvaluationError: true,
+        errorMessage: err.message || 'Error interno al evaluar',
         hint: test.hintTip,
       });
+      evaluationErrors++;
     }
   }
 
-  const allPassed = passedCount === challenge.tests.length && challenge.tests.length > 0;
+  const allPassed = passedCount === challenge.tests.length && challenge.tests.length > 0 && evaluationErrors === 0;
 
-  // Generate intelligent diagnostic feedback message
   let feedbackMessage = '';
-  if (allPassed) {
+  if (evaluationErrors > 0) {
+    feedbackMessage = `No pudimos evaluar el código (${evaluationErrors} comprobación${evaluationErrors>1?'es':''} con error interno). Revisa la consola y vuelve a pulsar Comprobar.`;
+  } else if (allPassed) {
     feedbackMessage = 'Muy bien. Pasaste las pruebas. Sigue con la lección.';
   } else {
-    const failedTests = testResults.filter((t) => !t.passed);
+    const failedTests = testResults.filter((t) => !t.passed && !t.isEvaluationError);
     const firstFailed = failedTests[0];
-
-    if (firstFailed.errorMessage) {
+    if (firstFailed?.errorMessage) {
       feedbackMessage = `${firstFailed.description}: ${firstFailed.errorMessage}`;
-    } else if (firstFailed.hint) {
+      if (firstFailed.receivedValue !== undefined) {
+        feedbackMessage += ` (recibido: ${JSON.stringify(firstFailed.receivedValue)})`;
+      }
+    } else if (firstFailed?.hint) {
       feedbackMessage = `${firstFailed.description} no coincide. Pista: ${firstFailed.hint}`;
     } else {
       feedbackMessage = `Sigue. ${passedCount} de ${challenge.tests.length} pruebas pasaron. Revisa lo que falta.`;
@@ -58,28 +129,23 @@ export async function runChallengeValidation(
   };
 }
 
-/**
- * Evaluates a single test rule against code source or runtime iframe document/window
- */
 async function evaluateSingleTest(
   test: ChallengeTest,
   workspace: WorkspaceSnapshot,
-  iframeElement?: HTMLIFrameElement | null
+  iframeElement?: HTMLIFrameElement | null,
+  generation?: number
 ): Promise<TestResultItem> {
-  // Combine all JavaScript source code
   const jsFiles = Object.values(workspace.files).filter(
     (f) => f.language === 'javascript' || f.language === 'typescript' || f.name.endsWith('.js') || f.name.endsWith('.jsx')
   );
   const combinedJs = jsFiles.map((f) => f.content).join('\n\n');
-
-  // Combine HTML files
   const htmlFiles = Object.values(workspace.files).filter((f) => f.language === 'html' || f.name.endsWith('.html'));
   const combinedHtml = htmlFiles.map((f) => f.content).join('\n\n');
 
   switch (test.validatorType) {
     case 'source-regex': {
       if (!test.regexPattern) {
-        return { id: test.id, description: test.description, passed: true };
+        return { id: test.id, description: test.description, passed: false, status: 'failed', errorMessage: 'Prueba mal configurada: falta patrón.', hint: test.hintTip };
       }
       const regex = new RegExp(test.regexPattern, 'i');
       const passed = regex.test(combinedJs) || regex.test(combinedHtml);
@@ -87,54 +153,64 @@ async function evaluateSingleTest(
         id: test.id,
         description: test.description,
         passed,
-        errorMessage: passed ? undefined : (test.errorMessage || 'Required syntax or pattern not found in code.'),
+        status: passed ? 'passed' : 'failed',
+        errorMessage: passed ? undefined : (test.errorMessage || 'No se encontró el patrón esperado en el código.'),
         hint: test.hintTip,
       };
     }
 
     case 'function-call': {
       if (!test.targetFunction) {
-        return { id: test.id, description: test.description, passed: false, errorMessage: 'No target function specified.' };
+        return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'Prueba mal configurada: falta función objetivo.', hint: test.hintTip };
       }
-
-      // Check in iframe window if available, or evaluate in isolated Function sandbox
       let targetFn: any;
-      if (iframeElement && iframeElement.contentWindow && (iframeElement.contentWindow as any)[test.targetFunction]) {
-        targetFn = (iframeElement.contentWindow as any)[test.targetFunction];
-      } else {
-        try {
-          const stubDocument = {
-            getElementById: () => ({
+      try {
+        // Deterministic: always evaluate current workspace via Function, not iframe
+        const stubDocument: any = {
+          _els: {} as Record<string, any>,
+          getElementById: (id: string) => {
+            if (!stubDocument._els[id]) {
+              stubDocument._els[id] = {
+                textContent: '',
+                innerText: '',
+                innerHTML: '',
+                value: '',
+                className: '',
+                addEventListener() {},
+              };
+            }
+            return stubDocument._els[id];
+          },
+          querySelector: (sel: string) => {
+            const idMatch = sel.match(/#([\w-]+)/);
+            if (idMatch) return stubDocument.getElementById(idMatch[1]);
+            return {
               textContent: '',
               innerText: '',
               innerHTML: '',
               value: '',
-              className: '',
               addEventListener() {},
-            }),
-            querySelector: () => ({
-              textContent: '',
-              innerText: '',
-              innerHTML: '',
-              value: '',
-              addEventListener() {},
-            }),
-            querySelectorAll: (): unknown[] => [],
-          };
-          const evalScope = new Function(
-            'document',
-            `${combinedJs}\n; return typeof ${test.targetFunction} === "function" ? ${test.targetFunction} : null;`
-          );
-          targetFn = evalScope(stubDocument);
-        } catch (e: any) {
-          return {
-            id: test.id,
-            description: test.description,
-            passed: false,
-            errorMessage: `Function '${test.targetFunction}' error: ${e.message}`,
-            hint: test.hintTip,
-          };
-        }
+            };
+          },
+          querySelectorAll: (): unknown[] => [],
+          createElement: () => ({ textContent: '', className: '', classList: { add() {} }, appendChild() {} }),
+        };
+        const evalScope = new Function(
+          'document',
+          'window',
+          `${combinedJs}\n; return typeof ${test.targetFunction} === "function" ? ${test.targetFunction} : null;`
+        );
+        targetFn = evalScope(stubDocument, { document: stubDocument });
+      } catch (e: any) {
+        return {
+          id: test.id,
+          description: test.description,
+          passed: false,
+          status: 'evaluation-error',
+          isEvaluationError: true,
+          errorMessage: `No se pudo evaluar '${test.targetFunction}': ${e.message}`,
+          hint: test.hintTip,
+        };
       }
 
       if (typeof targetFn !== 'function') {
@@ -142,102 +218,326 @@ async function evaluateSingleTest(
           id: test.id,
           description: test.description,
           passed: false,
-          errorMessage: `Function '${test.targetFunction}' is not defined or is not a function.`,
+          status: 'evaluation-error',
+          isEvaluationError: true,
+          errorMessage: `No encontramos la función '${test.targetFunction}'. Revisa el nombre y que esté definida.`,
           hint: test.hintTip,
         };
       }
 
-      const args = test.args || [];
-      const result = targetFn(...args);
+      try {
+        // Special handling for semantic string matchers
+        if (test.matcher === 'contains-all' || test.matcher === 'string-contains-all' || test.matcher === 'contains' || test.expectedContains || test.requireArgInResult !== undefined) {
+          const args = test.args || [];
+          let result: any;
+          try {
+            result = targetFn(...args);
+          } catch (e: any) {
+            return {
+              id: test.id,
+              description: test.description,
+              passed: false,
+              status: 'evaluation-error',
+              isEvaluationError: true,
+              errorMessage: `La función '${test.targetFunction}' lanzó un error: ${e.message}`,
+              hint: test.hintTip,
+            };
+          }
+          const match = isStringMatch(result, test);
+          return {
+            id: test.id,
+            description: test.description,
+            passed: match.passed,
+            status: match.passed ? 'passed' : 'failed',
+            receivedValue: result,
+            expectedValue: test.expectedContains || test.expectedReturn,
+            errorMessage: match.passed ? undefined : (test.errorMessage || match.error || `El resultado "${result}" no contiene lo esperado.`),
+            hint: test.hintTip,
+          };
+        }
 
-      if (test.expectedReturn !== undefined) {
-        const isMatch = JSON.stringify(result) === JSON.stringify(test.expectedReturn) || result === test.expectedReturn;
+        const args = test.args || [];
+        let result: any;
+        try {
+          result = targetFn(...args);
+        } catch (e: any) {
+          return {
+            id: test.id,
+            description: test.description,
+            passed: false,
+            status: 'evaluation-error',
+            isEvaluationError: true,
+            errorMessage: `La función '${test.targetFunction}' lanzó un error: ${e.message}`,
+            hint: test.hintTip,
+          };
+        }
+
+        if (test.expectedReturn !== undefined) {
+          // For strings, if no explicit matcher, use exact/deep-equal for numbers/booleans/arrays, but for strings be a bit lenient? Keep exact for now unless matcher specified
+          const isMatch = JSON.stringify(result) === JSON.stringify(test.expectedReturn) || result === test.expectedReturn;
+          return {
+            id: test.id,
+            description: test.description,
+            passed: isMatch,
+            status: isMatch ? 'passed' : 'failed',
+            receivedValue: result,
+            expectedValue: test.expectedReturn,
+            errorMessage: isMatch ? undefined : (test.errorMessage || `Esperábamos '${JSON.stringify(test.expectedReturn)}' pero obtuvimos '${JSON.stringify(result)}'.`),
+            hint: test.hintTip,
+          };
+        }
+
+        return { id: test.id, description: test.description, passed: true, status: 'passed' };
+      } catch (e: any) {
         return {
           id: test.id,
           description: test.description,
-          passed: isMatch,
-          receivedValue: result,
-          expectedValue: test.expectedReturn,
-          errorMessage: isMatch
-            ? undefined
-            : `Expected '${JSON.stringify(test.expectedReturn)}', but received '${JSON.stringify(result)}'.`,
+          passed: false,
+          status: 'evaluation-error',
+          isEvaluationError: true,
+          errorMessage: `La función '${test.targetFunction}' lanzó un error: ${e.message}`,
           hint: test.hintTip,
         };
       }
-
-      return { id: test.id, description: test.description, passed: true };
     }
 
     case 'dom-check': {
       if (!test.domSelector) {
-        return { id: test.id, description: test.description, passed: false, errorMessage: 'No DOM selector specified.' };
+        return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'Prueba mal configurada: falta selector del DOM.', hint: test.hintTip };
       }
 
-      let iframeDoc: Document | null = null;
-      if (iframeElement && iframeElement.contentDocument) {
-        iframeDoc = iframeElement.contentDocument;
+      // For deterministic evaluation, build preview document from current workspace and simulate, not iframe
+      // If iframe is provided and generation matches, we could use it, but to avoid race, prefer workspace evaluation
+      // However for preview that requires JS execution, we simulate via building document and running JS in stub
+      let doc: Document | null = null;
+      let useIframe = false;
+      if (iframeElement && iframeElement.contentDocument && generation !== undefined) {
+        // Check generation: if iframe's generation attribute matches, use it, otherwise treat as not ready
+        const iframeGen = (iframeElement as any).__generation;
+        if (iframeGen !== undefined && iframeGen !== generation) {
+          return {
+            id: test.id,
+            description: test.description,
+            passed: false,
+            status: 'evaluation-error',
+            isEvaluationError: true,
+            errorMessage: 'Vista previa no lista. Vuelve a pulsar Comprobar.',
+            hint: test.hintTip,
+          };
+        }
+        if (iframeElement.contentDocument) {
+          doc = iframeElement.contentDocument;
+          useIframe = true;
+        }
       }
 
-      if (!iframeDoc) {
-        // Fallback: parse HTML with DOMParser
-        const parser = new DOMParser();
-        iframeDoc = parser.parseFromString(combinedHtml, 'text/html');
+      if (!doc) {
+        // Deterministic fallback: build preview document and simulate
+        try {
+          const html = buildPreviewDocument(workspace);
+          // Use DOMParser if available, else mock
+          if (typeof DOMParser !== 'undefined') {
+            const parser = new DOMParser();
+            doc = parser.parseFromString(html, 'text/html');
+            // Execute JS in a sandboxed way to populate DOM where needed
+            // For simple cases, the HTML already contains the JS execution result? But JS in preview is not executed by DOMParser.
+            // We simulate by running the JS with a stub document that writes to the parsed doc
+            try {
+              const jsFiles = Object.values(workspace.files).filter(f => f.language === 'javascript' || f.name.endsWith('.js'));
+              const combinedJs = jsFiles.map(f => f.content).join('\n\n');
+              // Create a stub that mirrors the parsed doc's getElementById
+              const stubDoc: any = {
+                getElementById: (id: string) => doc!.getElementById(id) || { textContent: '', innerText: '', innerHTML: '', value: '', addEventListener() {} },
+                querySelector: (sel: string) => doc!.querySelector(sel),
+                querySelectorAll: (sel: string) => doc!.querySelectorAll(sel),
+                createElement: (tag: string) => doc!.createElement(tag),
+              };
+              // Try to run the JS to populate DOM (best effort)
+              try { new Function('document', combinedJs)(stubDoc); } catch {}
+            } catch {}
+          } else {
+            // Node env fallback: create mock
+            const ids = [...combinedHtml.matchAll(/id="([^"]+)"/g)].map((m) => m[1]);
+            const elements = new Map<string, any>();
+            for (const id of ids) elements.set(id, { textContent: '', innerText: '', innerHTML: '', value: '', id, className: '' });
+            for (const id of ['saludo', 'salida', 'boton', 'val-nombre', 'val-edad', 'val-ciudad', 'val-listo', 'tipos', 'celsius', 'ops', 'mensaje', 'extra']) {
+              if (!elements.has(id)) elements.set(id, { textContent: '—', innerText: '—', innerHTML: '', value: '', id, className: '' });
+            }
+            doc = {
+              querySelector: (sel: string) => {
+                const m = sel.match(/#([\w-]+)/);
+                if (m) return elements.get(m[1]) || null;
+                return null;
+              },
+              querySelectorAll: (sel: string) => {
+                const m = sel.match(/#([\w-]+)/);
+                if (m && elements.has(m[1])) return [elements.get(m[1])];
+                return [] as any;
+              },
+              getElementById: (id: string) => elements.get(id) || null,
+            } as unknown as Document;
+            // Simulate via stub
+            try {
+              const stub: any = {
+                _els: elements,
+                getElementById: (id: string) => {
+                  if (!elements.has(id)) elements.set(id, { textContent: '', innerText: '', innerHTML: '', value: '', className: '', addEventListener() {} });
+                  return elements.get(id);
+                },
+                querySelector: (sel: string) => {
+                  const m = sel.match(/#([\w-]+)/);
+                  if (m) {
+                    const id = m[1];
+                    if (!elements.has(id)) elements.set(id, { textContent: '', innerText: '', innerHTML: '', value: '', className: '', addEventListener() {} });
+                    return elements.get(id);
+                  }
+                  return { textContent: '', innerText: '', innerHTML: '', value: '', addEventListener() {} };
+                },
+                querySelectorAll: () => [],
+                createElement: () => ({ textContent: '', innerText: '', innerHTML: '', className: '', classList: { add() {} }, appendChild() {}, setAttribute() {} }),
+              };
+              try { new Function('document', combinedJs)(stub); } catch {}
+            } catch {}
+          }
+        } catch (e: any) {
+          return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'No se pudo preparar la vista previa.', hint: test.hintTip };
+        }
       }
 
-      const el = iframeDoc.querySelector(test.domSelector);
+      if (!doc) {
+        return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'No se pudo acceder a la vista previa.', hint: test.hintTip };
+      }
+
+      const el = doc.querySelector(test.domSelector);
       if (!el) {
         return {
           id: test.id,
           description: test.description,
           passed: false,
-          errorMessage: `Element matching '${test.domSelector}' was not found in the DOM.`,
+          status: 'failed',
+          errorMessage: `No encontramos el elemento '${test.domSelector}' en la página. ¿Lo borraste o cambiaste el id?`,
           hint: test.hintTip,
         };
       }
 
       if (test.domProperty === 'exists') {
-        return { id: test.id, description: test.description, passed: true };
+        return { id: test.id, description: test.description, passed: true, status: 'passed' };
       }
 
       if (test.domProperty === 'count') {
-        const count = iframeDoc.querySelectorAll(test.domSelector).length;
+        const count = doc.querySelectorAll(test.domSelector).length;
         const passed = count === test.expectedValue;
         return {
           id: test.id,
           description: test.description,
           passed,
+          status: passed ? 'passed' : 'failed',
           receivedValue: count,
           expectedValue: test.expectedValue,
-          errorMessage: passed ? undefined : `Expected ${test.expectedValue} elements, found ${count}.`,
+          errorMessage: passed ? undefined : (test.errorMessage || `Esperábamos ${test.expectedValue} elementos con '${test.domSelector}', encontramos ${count}.`),
           hint: test.hintTip,
         };
       }
 
-      if (test.domProperty === 'innerText' || test.domProperty === 'innerHTML' || test.domProperty === 'value') {
-        const propVal = (el as any)[test.domProperty]?.trim();
+      const propKey = test.domProperty || 'innerText';
+      if (['innerText', 'innerHTML', 'value', 'textContent', 'className'].includes(propKey)) {
+        let rawVal: any = (el as any)[propKey];
+        if (typeof rawVal === 'string' && rawVal.trim() === '' && typeof (el as any).textContent === 'string' && (el as any).textContent.trim() !== '') {
+          rawVal = (el as any).textContent;
+        }
+        if (typeof rawVal === 'string' && rawVal.trim() === '' && typeof (el as any).innerText === 'string' && (el as any).innerText.trim() !== '') {
+          rawVal = (el as any).innerText;
+        }
+        rawVal = rawVal ?? '';
+        const propVal = String(rawVal).trim();
+
+        if (test.regexPattern) {
+          try {
+            const re = new RegExp(test.regexPattern, 'i');
+            const passed = re.test(propVal);
+            return {
+              id: test.id,
+              description: test.description,
+              passed,
+              status: passed ? 'passed' : 'failed',
+              receivedValue: propVal,
+              errorMessage: passed ? undefined : (test.errorMessage || `El contenido "${propVal}" no cumple el patrón esperado.`),
+              hint: test.hintTip,
+            };
+          } catch {}
+        }
+
         if (test.expectedValue !== undefined) {
+          const expectedStr = String(test.expectedValue);
+          if (expectedStr.startsWith('!')) {
+            const notVal = expectedStr.slice(1);
+            const isMatch = !propVal.toLowerCase().includes(notVal.toLowerCase());
+            return {
+              id: test.id,
+              description: test.description,
+              passed: isMatch,
+              status: isMatch ? 'passed' : 'failed',
+              receivedValue: propVal,
+              expectedValue: test.expectedValue,
+              errorMessage: isMatch ? undefined : `No debería contener "${notVal}" pero encontramos "${propVal}".`,
+              hint: test.hintTip,
+            };
+          }
+          // Use matcher if specified
+          if (test.matcher === 'contains-all' || test.matcher === 'string-contains-all' || test.matcher === 'contains') {
+            const expectedContains = test.expectedContains || [expectedStr];
+            const opts = {
+              caseInsensitive: test.caseInsensitive ?? true,
+              normalizeSpaces: test.normalizeSpaces ?? true,
+              ignorePunctuation: test.ignorePunctuation ?? true,
+            };
+            const passed = stringContainsAll(propVal, expectedContains, opts);
+            return {
+              id: test.id,
+              description: test.description,
+              passed,
+              status: passed ? 'passed' : 'failed',
+              receivedValue: propVal,
+              expectedValue: test.expectedValue,
+              errorMessage: passed ? undefined : (test.errorMessage || `Esperábamos que "${test.domSelector}" contuviera "${expectedContains.join('", "')}" pero tiene "${propVal}".`),
+              hint: test.hintTip,
+            };
+          }
           const isMatch = typeof test.expectedValue === 'string'
-            ? propVal.toLowerCase().includes(test.expectedValue.toLowerCase())
-            : propVal === test.expectedValue;
+            ? propVal.toLowerCase().includes(expectedStr.toLowerCase())
+            : propVal === expectedStr;
 
           return {
             id: test.id,
             description: test.description,
             passed: isMatch,
+            status: isMatch ? 'passed' : 'failed',
             receivedValue: propVal,
             expectedValue: test.expectedValue,
-            errorMessage: isMatch ? undefined : `Element text is '${propVal}', expected to contain '${test.expectedValue}'.`,
+            errorMessage: isMatch ? undefined : (test.errorMessage || `Esperábamos que "${test.domSelector}" contuviera "${expectedStr}" pero tiene "${propVal}".`),
             hint: test.hintTip,
           };
         }
+        if (propVal.length === 0) {
+          return { id: test.id, description: test.description, passed: false, status: 'failed', errorMessage: `El elemento "${test.domSelector}" está vacío.`, hint: test.hintTip };
+        }
       }
 
-      return { id: test.id, description: test.description, passed: true };
+      return { id: test.id, description: test.description, passed: true, status: 'passed' };
     }
 
-    case 'console-check':
+    case 'console-check': {
+      return {
+        id: test.id,
+        description: test.description,
+        passed: false,
+        status: 'failed',
+        errorMessage: test.errorMessage || 'Esta validación requiere una comprobación de comportamiento real (función o DOM), no solo consola.',
+        hint: test.hintTip,
+      };
+    }
     default: {
-      return { id: test.id, description: test.description, passed: true };
+      return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'Tipo de validador no soportado.', hint: test.hintTip };
     }
   }
 }

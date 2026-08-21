@@ -134,7 +134,7 @@ export const LESSON_03 = compileLesson({
             validatorType: 'source-regex',
             regexPattern: 'const\\s+nombre\\s*=\\s*["\'][^"\']+["\']',
             errorMessage: 'Necesito const nombre = "algo";',
-            hintTip: 'const nombre = "Ana";',
+            hintTip: 'Revisa que el nombre lleve comillas.',
           },
           {
             id: 'let-edad',
@@ -142,7 +142,7 @@ export const LESSON_03 = compileLesson({
             validatorType: 'source-regex',
             regexPattern: 'let\\s+edad\\s*=\\s*-?\\d+',
             errorMessage: 'Necesito let edad = 25; (sin comillas).',
-            hintTip: 'let edad = 25;',
+            hintTip: 'La edad es número, sin comillas.',
           },
           {
             id: 'boolean-listo',
@@ -150,7 +150,17 @@ export const LESSON_03 = compileLesson({
             validatorType: 'source-regex',
             regexPattern: '(const|let)\\s+listo\\s*=\\s*(true|false)',
             errorMessage: 'Necesito const listo = true; o false.',
-            hintTip: 'const listo = true;',
+            hintTip: 'listo es true o false, sin comillas.',
+          },
+          {
+            id: 'nombre-se-muestra',
+            description: 'El nombre aparece en la página',
+            validatorType: 'dom-check',
+            domSelector: '#val-nombre',
+            domProperty: 'innerText',
+            regexPattern: '[^—\\s]{2,}',
+            errorMessage: 'No vemos el nombre en #val-nombre. ¿Asignaste textContent?',
+            hintTip: 'document.getElementById("val-nombre").textContent = nombre;',
           },
         ],
         hints: [
