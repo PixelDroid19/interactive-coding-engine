@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import React from 'react';
 import { DebuggingView } from './DebuggingView';
 import { DEBUG_EXERCISES } from '../../curriculum/fundamentos/debugExercises';
@@ -9,6 +9,7 @@ vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
 describe('DebuggingView integración', () => {
   beforeEach(() => {
+    localStorage.clear();
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
       value: vi.fn().mockImplementation((query) => ({
@@ -23,6 +24,8 @@ describe('DebuggingView integración', () => {
       })),
     });
   });
+
+  afterEach(cleanup);
 
   const exercise = DEBUG_EXERCISES.find(e => e.id === 'fundamentos-01-debug')!;
 
@@ -48,6 +51,19 @@ describe('DebuggingView integración', () => {
     const tablist = container.querySelector('[role="tablist"]');
     expect(tablist).toBeTruthy();
     expect(tablist?.getAttribute('aria-label')).toBe('Panel contextual');
+  });
+
+  it('restaura el archivo activo y las pistas reveladas después de recargar', () => {
+    const firstRender = render(<DebuggingView exercise={exercise} onBack={() => {}} />);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'index.html' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar siguiente pista' }));
+    firstRender.unmount();
+
+    render(<DebuggingView exercise={exercise} onBack={() => {}} />);
+
+    expect(screen.getByRole('tab', { name: 'index.html' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByText(`Pistas 1/${exercise.hints.length}`)).toBeTruthy();
   });
 
   it('edición + Comprobar → Resultado con 2/2 y Resuelto (simulado)', async () => {

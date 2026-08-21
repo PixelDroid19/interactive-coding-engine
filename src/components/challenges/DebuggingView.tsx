@@ -20,7 +20,7 @@ import { DebuggingExerciseItem } from '../../types/curriculum';
 import { ChallengeTest, WorkspaceFile, WorkspaceSnapshot } from '../../types/scrim';
 import { ChallengeValidationResult } from '../../types/runtime';
 import { cloneWorkspace } from '../../engine/eventLog';
-import { markItemCompleted, markChallengeSkipped, markChallengeSolutionViewed } from '../../engine/persistence';
+import { loadDebuggingDraft, markItemCompleted, markChallengeSkipped, markChallengeSolutionViewed, saveDebuggingDraft } from '../../engine/persistence';
 import { runChallengeValidation } from '../../engine/testRunner';
 import { CodeEditor } from '../editor/CodeEditor';
 import { FileTree } from '../editor/FileTree';
@@ -52,9 +52,10 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   onNext,
   navigationState,
 }) => {
-  const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() => cloneWorkspace(exercise.initialWorkspace));
+  const [initialDraft] = useState(() => loadDebuggingDraft(exercise.id));
+  const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() => initialDraft?.workspace ?? cloneWorkspace(exercise.initialWorkspace));
   const [validationResult, setValidationResult] = useState<ChallengeValidationResult | null>(null);
-  const [revealedHints, setRevealedHints] = useState(0);
+  const [revealedHints, setRevealedHints] = useState(initialDraft?.revealedHints ?? 0);
   const [showFileTree, setShowFileTree] = useState(false);
   const [showResolution, setShowResolution] = useState(false);
   const [activeTab, setActiveTab] = useState<'reto' | 'resultado' | 'preview'>('reto');
@@ -62,6 +63,10 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   const previewRef = useRef<PreviewPaneRef | null>(null);
   const resultSummaryRef = useRef<HTMLDivElement>(null);
   const generationRef = useRef(0);
+
+  useEffect(() => {
+    saveDebuggingDraft(exercise.id, { workspace, revealedHints });
+  }, [exercise.id, revealedHints, workspace]);
 
   const handleValidate = async () => {
     if (isEvaluating) return;

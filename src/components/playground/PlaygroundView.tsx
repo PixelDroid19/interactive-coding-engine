@@ -1,9 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { STARTER_TEMPLATES } from '../../templates/starterTemplates';
 import { WorkspaceSnapshot, WorkspaceFile } from '../../types/scrim';
 import { CodeEditor } from '../editor/CodeEditor';
 import { FileTree } from '../editor/FileTree';
 import { PreviewPane, PreviewPaneRef } from '../preview/PreviewPane';
+import { loadPlaygroundDraft, savePlaygroundDraft } from '../../engine/persistence';
+import { TemplateDefinition } from '../../types/runtime';
 import {
   ArrowLeft,
   FolderTree,
@@ -19,18 +21,24 @@ interface PlaygroundViewProps {
 }
 
 export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
-  const [selectedTemplateId, setSelectedTemplateId] = useState<'vanilla-js' | 'js-only' | 'lit' | 'react'>('vanilla-js');
+  const [initialDraft] = useState(() => loadPlaygroundDraft());
+  const [selectedTemplateId, setSelectedTemplateId] = useState<TemplateDefinition['id']>(initialDraft?.templateId ?? 'vanilla-js');
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() => {
+    if (initialDraft) return initialDraft.workspace;
     const tpl = STARTER_TEMPLATES['vanilla-js'];
     return {
       activeFilePath: tpl.entrypoint,
       files: { ...tpl.files },
     };
   });
-  const [showFileTree, setShowFileTree] = useState(true);
+  const [showFileTree, setShowFileTree] = useState(initialDraft?.showFileTree ?? true);
   const previewRef = useRef<PreviewPaneRef | null>(null);
 
-  const handleSelectTemplate = (tplId: 'vanilla-js' | 'js-only' | 'lit' | 'react') => {
+  useEffect(() => {
+    savePlaygroundDraft({ templateId: selectedTemplateId, workspace, showFileTree });
+  }, [selectedTemplateId, showFileTree, workspace]);
+
+  const handleSelectTemplate = (tplId: TemplateDefinition['id']) => {
     setSelectedTemplateId(tplId);
     const tpl = STARTER_TEMPLATES[tplId];
     setWorkspace({
@@ -82,7 +90,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
             {Object.values(STARTER_TEMPLATES).map((tpl) => (
               <button
                 key={tpl.id}
-                onClick={() => handleSelectTemplate(tpl.id as any)}
+                onClick={() => handleSelectTemplate(tpl.id)}
                 aria-pressed={selectedTemplateId === tpl.id}
                 className={`px-2.5 py-1 rounded text-xs transition-colors ${
                   selectedTemplateId === tpl.id

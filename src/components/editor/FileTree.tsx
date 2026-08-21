@@ -115,7 +115,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
         <span className="tree-title">Archivos</span>
         {!readOnly && onFileCreate && (
           <div className="ml-auto flex items-center gap-1">
-            <button onClick={() => setIsCreating(true)} className="round-icon-btn" title="Nuevo archivo" style={{ width: 28, height: 28 }}>
+            <button onClick={() => setIsCreating(true)} className="round-icon-btn" aria-label="Nuevo archivo" title="Nuevo archivo" style={{ width: 28, height: 28 }}>
               <FilePlus size={13} />
             </button>
           </div>
@@ -128,11 +128,12 @@ export const FileTree: React.FC<FileTreeProps> = ({
             autoFocus
             type="text"
             placeholder="filename.js"
+            aria-label="Nombre del archivo"
             value={newFileName}
             onChange={(e) => setNewFileName(e.target.value)}
             className="w-full bg-zinc-950 px-1.5 py-0.5 text-zinc-200 border border-zinc-700 rounded text-xs outline-none focus:border-zinc-500 font-mono"
           />
-          <button type="submit" className="text-emerald-400 hover:text-emerald-300">
+          <button type="submit" className="text-emerald-400 hover:text-emerald-300" aria-label="Crear archivo">
             <Check className="h-3.5 w-3.5" />
           </button>
           <button
@@ -142,6 +143,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
               setNewFileName('');
             }}
             className="text-zinc-400 hover:text-zinc-200"
+            aria-label="Cancelar creación"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -169,6 +171,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
                   autoFocus
                   type="text"
                   value={renameValue}
+                  aria-label={`Nuevo nombre para ${file.name}`}
                   onChange={(e) => setRenameValue(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleRenameSubmit(file.path);
@@ -176,10 +179,10 @@ export const FileTree: React.FC<FileTreeProps> = ({
                   }}
                   className="w-full bg-zinc-950 px-1.5 py-0.5 text-zinc-200 border border-zinc-600 rounded text-xs outline-none font-mono"
                 />
-                <button onClick={() => handleRenameSubmit(file.path)} className="text-emerald-400">
+                <button onClick={() => handleRenameSubmit(file.path)} className="text-emerald-400" aria-label="Guardar nombre">
                   <Check className="h-3.5 w-3.5" />
                 </button>
-                <button onClick={() => setRenamingPath(null)} className="text-zinc-400">
+                <button onClick={() => setRenamingPath(null)} className="text-zinc-400" aria-label="Cancelar cambio de nombre">
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -190,16 +193,21 @@ export const FileTree: React.FC<FileTreeProps> = ({
             <div
               key={file.path}
               data-file-row
-              onClick={() => onFileSelect(file.path)}
-              className={`file-item-btn w-full ${isActive ? 'file-item-btn-active' : ''}`}
+              className={`file-item-btn group w-full ${isActive ? 'file-item-btn-active' : ''}`}
             >
-              <div className="flex items-center gap-2 min-w-0">
+              <button
+                type="button"
+                onClick={() => onFileSelect(file.path)}
+                className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                aria-label={`Abrir ${file.name}`}
+                aria-current={isActive ? 'true' : undefined}
+              >
                 {getFileBadge(file.name)}
                 <span>{file.name}</span>
-              </div>
+              </button>
 
               {!readOnly && (
-                <div className="hidden group-hover:flex items-center gap-1">
+                <div className="hidden items-center gap-1 group-hover:flex group-focus-within:flex">
                   {onFileRename && (
                     <button
                       onClick={(e) => {
@@ -208,7 +216,8 @@ export const FileTree: React.FC<FileTreeProps> = ({
                         setRenameValue(file.name);
                       }}
                       className="p-0.5 text-zinc-400 hover:text-zinc-200"
-                      title="Rename"
+                      aria-label={`Renombrar ${file.name}`}
+                      title={`Renombrar ${file.name}`}
                     >
                       <Edit2 className="h-3 w-3" />
                     </button>
@@ -220,7 +229,8 @@ export const FileTree: React.FC<FileTreeProps> = ({
                         onFileDelete(file.path);
                       }}
                       className="p-0.5 text-zinc-400 hover:text-rose-400"
-                      title="Delete"
+                      aria-label={`Eliminar ${file.name}`}
+                      title={`Eliminar ${file.name}`}
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>
@@ -237,12 +247,13 @@ export const FileTree: React.FC<FileTreeProps> = ({
       {depsList.length > 0 && (
       <div className="border-t border-zinc-800/80 bg-[#121214]">
         <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800/60 text-zinc-400 font-semibold tracking-wider uppercase text-[10px]">
-          <span>Dependencies</span>
+          <span>Dependencias</span>
           {!readOnly && (
             <button
               onClick={() => setIsAddingDep(true)}
               className="rounded p-1 hover:bg-white/5 text-zinc-400 hover:text-zinc-200 transition-colors"
-              title="Add Dependency"
+              aria-label="Añadir dependencia"
+              title="Añadir dependencia"
             >
               <Plus className="h-3.5 w-3.5" />
             </button>
@@ -255,11 +266,12 @@ export const FileTree: React.FC<FileTreeProps> = ({
               autoFocus
               type="text"
               placeholder="package@version"
+              aria-label="Nombre de la dependencia"
               value={depName}
               onChange={(e) => setDepName(e.target.value)}
               className="w-full bg-zinc-950 px-1.5 py-0.5 text-zinc-200 border border-zinc-700 rounded text-xs outline-none focus:border-zinc-500 font-mono"
             />
-            <button type="submit" className="text-emerald-400 hover:text-emerald-300">
+            <button type="submit" className="text-emerald-400 hover:text-emerald-300" aria-label="Confirmar dependencia">
               <Check className="h-3.5 w-3.5" />
             </button>
             <button
@@ -269,6 +281,7 @@ export const FileTree: React.FC<FileTreeProps> = ({
                 setDepName('');
               }}
               className="text-zinc-400 hover:text-zinc-200"
+              aria-label="Cancelar dependencia"
             >
               <X className="h-3.5 w-3.5" />
             </button>

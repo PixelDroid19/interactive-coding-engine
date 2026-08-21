@@ -58,14 +58,23 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
   const isResizingRef = useRef(false);
   const resizeStartRef = useRef({ mouseX: 0, mouseY: 0, startW: 0, startH: 0 });
 
+  const clampPosition = useCallback((nextX: number, nextY: number, nextSize = size) => ({
+    x: Math.max(8, Math.min(Math.max(8, window.innerWidth - nextSize.width - 8), nextX)),
+    y: Math.max(44, Math.min(Math.max(44, window.innerHeight - nextSize.height - 8), nextY)),
+  }), [size]);
+
   useEffect(() => {
     const place = () => {
-      const width = Math.min(420, Math.max(340, Math.round(window.innerWidth * 0.3)));
-      const height = Math.min(540, Math.max(380, window.innerHeight - 148));
+      const availableWidth = Math.max(160, window.innerWidth - 16);
+      const minimumWidth = Math.min(340, availableWidth);
+      const width = Math.min(availableWidth, 420, Math.max(minimumWidth, Math.round(window.innerWidth * 0.3)));
+      const availableHeight = Math.max(180, window.innerHeight - 52);
+      const minimumHeight = Math.min(380, availableHeight);
+      const height = Math.min(availableHeight, 540, Math.max(minimumHeight, window.innerHeight - 148));
       setSize({ width, height });
       setPos({
-        x: Math.max(24, window.innerWidth - width - 18),
-        y: 76,
+        x: Math.max(8, window.innerWidth - width - 18),
+        y: Math.max(44, Math.min(76, window.innerHeight - height - 8)),
       });
     };
     place();
@@ -100,10 +109,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
       const dx = moveEvent.clientX - dragStartRef.current.mouseX;
       const dy = moveEvent.clientY - dragStartRef.current.mouseY;
 
-      const newX = Math.max(8, Math.min(window.innerWidth - 88, dragStartRef.current.posX + dx));
-      const newY = Math.max(44, Math.min(window.innerHeight - 64, dragStartRef.current.posY + dy));
-
-      setPos({ x: newX, y: newY });
+      setPos(clampPosition(dragStartRef.current.posX + dx, dragStartRef.current.posY + dy));
     };
 
     const handleMouseUp = () => {
@@ -129,10 +135,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
       default: return;
     }
     e.preventDefault();
-    setPos((prev) => ({
-      x: Math.max(8, Math.min(window.innerWidth - 88, prev.x + dx)),
-      y: Math.max(44, Math.min(window.innerHeight - 64, prev.y + dy)),
-    }));
+    setPos((prev) => clampPosition(prev.x + dx, prev.y + dy));
   };
 
   // Handle Resizing
@@ -153,9 +156,11 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
       const dx = moveEvent.clientX - resizeStartRef.current.mouseX;
       const dy = moveEvent.clientY - resizeStartRef.current.mouseY;
 
+      const maxWidth = Math.max(160, window.innerWidth - pos.x - 8);
+      const maxHeight = Math.max(180, window.innerHeight - pos.y - 8);
       setSize({
-        width: Math.max(340, Math.min(window.innerWidth - pos.x - 16, resizeStartRef.current.startW + dx)),
-        height: Math.max(260, Math.min(window.innerHeight - pos.y - 56, resizeStartRef.current.startH + dy)),
+        width: Math.max(Math.min(340, maxWidth), Math.min(maxWidth, resizeStartRef.current.startW + dx)),
+        height: Math.max(Math.min(260, maxHeight), Math.min(maxHeight, resizeStartRef.current.startH + dy)),
       });
     };
 

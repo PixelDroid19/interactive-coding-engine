@@ -1,10 +1,14 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { PlaygroundView } from './PlaygroundView';
 
 describe('PlaygroundView', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   afterEach(() => {
     cleanup();
   });
@@ -45,5 +49,18 @@ describe('PlaygroundView', () => {
 
     const showFiles = screen.getByRole('button', { name: 'Mostrar archivos' });
     expect(showFiles.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('restaura la plantilla y el estado del explorador después de recargar', () => {
+    const firstRender = render(<PlaygroundView onBack={() => {}} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'JavaScript puro' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ocultar archivos' }));
+    firstRender.unmount();
+
+    render(<PlaygroundView onBack={() => {}} />);
+
+    expect(screen.getByRole('button', { name: 'JavaScript puro' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Mostrar archivos' }).getAttribute('aria-expanded')).toBe('false');
   });
 });

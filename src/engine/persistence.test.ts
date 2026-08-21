@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { WorkspaceSnapshot } from '../types/scrim';
-import { saveLearnerBranch, loadLearnerBranch, loadLastBranchForLesson, clearBranch, clearBranchesForLesson, saveLearnerBranchDebounced, flushBranchSave, markChallengeCompleted, markChallengeSkipped, markChallengeSolutionViewed, getChallengeState, clearChallengeState, getChallengeStates, saveAppNavigationState, loadAppNavigationState } from './persistence';
+import { saveLearnerBranch, loadLearnerBranch, loadLastBranchForLesson, clearBranch, clearBranchesForLesson, saveLearnerBranchDebounced, flushBranchSave, markChallengeCompleted, markChallengeSkipped, markChallengeSolutionViewed, getChallengeState, clearChallengeState, getChallengeStates, saveAppNavigationState, loadAppNavigationState, loadDebuggingDraft, saveDebuggingDraft } from './persistence';
 import { createInitialState } from './playerMachine';
 import { cloneWorkspace } from './eventLog';
 
@@ -233,5 +233,14 @@ describe('persistence branches', () => {
 
     localStorage.setItem('aula_app_navigation_v1', 'no-json');
     expect(loadAppNavigationState()).toBeNull();
+  });
+
+  it('recupera el guardado de un ejercicio después de encontrar almacenamiento corrupto', () => {
+    localStorage.setItem('aula_debugging_drafts_v1', 'no-json');
+    const draft = { workspace: makeWs('const respuesta = 42'), revealedHints: 2 };
+
+    saveDebuggingDraft('fundamentos-07-debug', draft);
+
+    expect(loadDebuggingDraft('fundamentos-07-debug')).toEqual(draft);
   });
 });

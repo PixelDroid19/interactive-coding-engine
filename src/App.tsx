@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Course, CurriculumItem, UserProgressRecord } from './types/curriculum';
 import { ScrimLessonData } from './types/scrim';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './curriculum/fundamentos/course';
-import { AppNavigationState, loadAppNavigationState, loadUserProgress, loadCustomCourses, loadCustomScrims, saveAppNavigationState, updateRecentPosition } from './engine/persistence';
+import { AppNavigationState, loadAppNavigationState, loadUserProgress, loadCustomCourses, loadCustomScrims, saveAppNavigationState, saveCustomCourse, updateRecentPosition } from './engine/persistence';
 import { getNavigationState } from './engine/navigation';
 import { RoadmapHome } from './components/curriculum/RoadmapHome';
 import { ScrimPlayer } from './components/player/ScrimPlayer';
@@ -25,12 +25,17 @@ function viewForItem(item: CurriculumItem): AppView {
   return item.type;
 }
 
-function getInitialAppState(): InitialAppState {
+function getInitialCourse(): Course {
+  const savedCourse = loadCustomCourses().find((course) => course.id === FUNDAMENTOS_COURSE.id);
+  return savedCourse ? mergeSavedCourseItems(FUNDAMENTOS_COURSE, savedCourse) : FUNDAMENTOS_COURSE;
+}
+
+function getInitialAppState(course: Course): InitialAppState {
   const persisted = loadAppNavigationState();
   const defaultState: InitialAppState = {
     view: 'home',
     item: null,
-    moduleId: FUNDAMENTOS_COURSE.modules[0]?.id || 'mod-primeros-pasos',
+    moduleId: course.modules[0]?.id || 'mod-primeros-pasos',
     timestampMs: 0,
   };
 
@@ -39,13 +44,13 @@ function getInitialAppState(): InitialAppState {
     return { ...defaultState, view: persisted.view };
   }
   if (!persisted.itemId) return defaultState;
-  if (persisted.courseId && persisted.courseId !== FUNDAMENTOS_COURSE.id && persisted.courseId !== FUNDAMENTOS_COURSE.title) {
+  if (persisted.courseId && persisted.courseId !== course.id && persisted.courseId !== course.title) {
     return defaultState;
   }
 
-  const module = FUNDAMENTOS_COURSE.modules.find((candidate) =>
+  const module = course.modules.find((candidate) =>
     candidate.id === persisted.moduleId && candidate.items.some((item) => item.id === persisted.itemId)
-  ) || FUNDAMENTOS_COURSE.modules.find((candidate) => candidate.items.some((item) => item.id === persisted.itemId));
+  ) || course.modules.find((candidate) => candidate.items.some((item) => item.id === persisted.itemId));
   const item = module?.items.find((candidate) => candidate.id === persisted.itemId);
   if (!module || !item || viewForItem(item) !== persisted.view) return defaultState;
 
@@ -66,10 +71,45 @@ function saveRoute(route: AppNavigationState): void {
   });
 }
 
+function mergeSavedCourseItems(baseCourse: Course, savedCourse: Course): Course {
+  const builtInItemIds = new Set(baseCourse.modules.flatMap((module) => module.items.map((item) => item.id)));
+  const mergedModules = baseCourse.modules.map((baseModule) => {
+    const savedModule = savedCourse.modules.find((module) => module.id === baseModule.id);
+    const customItems = savedModule?.items.filter((item) => !builtInItemIds.has(item.id)) ?? [];
+    return customItems.length > 0
+      ? { ...baseModule, items: [...baseModule.items, ...customItems] }
+      : baseModule;
+  });
+  const builtInModuleIds = new Set(baseCourse.modules.map((module) => module.id));
+  const customModules = savedCourse.modules.filter((module) => !builtInModuleIds.has(module.id));
+  return { ...baseCourse, modules: [...mergedModules, ...customModules] };
+}
+
+function appendPublishedLesson(course: Course, lesson: ScrimLessonData): Course {
+  if (course.modules.some((module) => module.items.some((item) => item.id === lesson.id))) return course;
+  const modules = course.modules.map((module, index) => index === 0
+    ? {
+        ...module,
+        items: [
+          ...module.items,
+          {
+            id: lesson.id,
+            title: lesson.title,
+            type: 'scrim' as const,
+            estimatedMinutes: Math.max(1, Math.ceil(lesson.durationMs / 60000)),
+            scrimDataId: lesson.id,
+          },
+        ],
+      }
+    : module);
+  return { ...course, modules };
+}
+
 export default function App() {
-  const [initialAppState] = useState(getInitialAppState);
+  const [initialCourse] = useState(getInitialCourse);
+  const [initialAppState] = useState(() => getInitialAppState(initialCourse));
   const [currentView, setCurrentView] = useState<AppView>(initialAppState.view);
-  const [course, setCourse] = useState<Course>(FUNDAMENTOS_COURSE);
+  const [course, setCourse] = useState<Course>(initialCourse);
   const [activeItem, setActiveItem] = useState<CurriculumItem | null>(initialAppState.item);
   const [activeModuleId, setActiveModuleId] = useState<string>(initialAppState.moduleId);
   const [scrimsMap, setScrimsMap] = useState<Record<string, ScrimLessonData>>(FUNDAMENTOS_SCRIMS);
@@ -84,10 +124,6 @@ export default function App() {
     const customScrims = loadCustomScrims();
     setScrimsMap((prev) => ({ ...prev, ...customScrims }));
 
-    const customCourses = loadCustomCourses();
-    if (customCourses.length > 0) {
-      // Merge custom courses if available
-    }
   }, []);
 
   const refreshProgress = () => {
@@ -170,26 +206,9 @@ export default function App() {
   const handleLessonPublished = (newLesson: ScrimLessonData) => {
     setScrimsMap((prev) => ({ ...prev, [newLesson.id]: newLesson }));
 
-    // Append new lesson to first module of course
-    setCourse((prevCourse) => {
-      const updatedModules = [...prevCourse.modules];
-      if (updatedModules[0]) {
-        updatedModules[0] = {
-          ...updatedModules[0],
-          items: [
-            ...updatedModules[0].items,
-            {
-              id: newLesson.id,
-              title: newLesson.title,
-              type: 'scrim',
-              estimatedMinutes: Math.max(1, Math.ceil(newLesson.durationMs / 60000)),
-              scrimDataId: newLesson.id,
-            },
-          ],
-        };
-      }
-      return { ...prevCourse, modules: updatedModules };
-    });
+    const updatedCourse = appendPublishedLesson(course, newLesson);
+    saveCustomCourse(updatedCourse);
+    setCourse(updatedCourse);
 
     refreshProgress();
     saveRoute({ view: 'home' });
@@ -294,6 +313,7 @@ export default function App() {
         <CreatorStudio
           onBack={() => {
             refreshProgress();
+            saveRoute({ view: 'home' });
             setCurrentView('home');
           }}
           onLessonPublished={handleLessonPublished}

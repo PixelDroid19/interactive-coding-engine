@@ -184,7 +184,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   if (!file) {
     return (
       <div className="flex h-full items-center justify-center bg-[#1e1e1e] text-slate-500 font-mono text-sm">
-        No file selected
+        Ningún archivo seleccionado
       </div>
     );
   }

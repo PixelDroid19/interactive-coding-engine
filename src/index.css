@@ -2940,7 +2940,7 @@ body.dark {
     left: 8px !important;
     right: 8px !important;
     width: auto !important;
-    min-width: 340px;
+    min-width: 0;
     max-width: calc(100vw - 16px);
   }
   .floating-browser-wrapper {

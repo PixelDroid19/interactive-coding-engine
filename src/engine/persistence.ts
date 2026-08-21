@@ -1,5 +1,6 @@
 import { Course, UserProgressRecord } from '../types/curriculum';
-import { ScrimLessonData, LearnerBranch } from '../types/scrim';
+import { ScrimLessonData, LearnerBranch, WorkspaceSnapshot } from '../types/scrim';
+import { TemplateDefinition } from '../types/runtime';
 
 const STORAGE_KEYS = {
   USER_PROGRESS: 'aula_user_progress_v1',
@@ -7,10 +8,112 @@ const STORAGE_KEYS = {
   CUSTOM_COURSES: 'aula_custom_courses_v1',
   CUSTOM_SCRIMS: 'aula_custom_scrims_v1',
   STUDIO_DRAFT: 'aula_studio_draft_v1',
+  PLAYGROUND_DRAFT: 'aula_playground_draft_v1',
+  DEBUGGING_DRAFTS: 'aula_debugging_drafts_v1',
   LEARNER_BRANCHES: 'aula_learner_branches_v1',
   VOICE_VOLUME: 'aula_voice_volume_v1',
   CHALLENGE_STATES: 'aula_challenge_states_v1',
 };
+
+export interface PlaygroundDraft {
+  templateId: TemplateDefinition['id'];
+  workspace: WorkspaceSnapshot;
+  showFileTree: boolean;
+}
+
+export interface DebuggingDraft {
+  workspace: WorkspaceSnapshot;
+  revealedHints: number;
+}
+
+const PLAYGROUND_TEMPLATE_IDS: TemplateDefinition['id'][] = ['vanilla-js', 'js-only', 'lit', 'react'];
+const WORKSPACE_LANGUAGES = ['javascript', 'html', 'css', 'typescript', 'json'];
+
+function isWorkspaceSnapshot(value: unknown): value is WorkspaceSnapshot {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<WorkspaceSnapshot>;
+  if (!candidate.files || typeof candidate.files !== 'object' || typeof candidate.activeFilePath !== 'string') return false;
+  const files = Object.values(candidate.files);
+  if (files.length === 0 || !candidate.files[candidate.activeFilePath]) return false;
+  return files.every((file) =>
+    Boolean(
+      file
+      && typeof file === 'object'
+      && typeof file.name === 'string'
+      && typeof file.path === 'string'
+      && typeof file.content === 'string'
+      && WORKSPACE_LANGUAGES.includes(file.language),
+    ),
+  );
+}
+
+export function loadPlaygroundDraft(): PlaygroundDraft | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.PLAYGROUND_DRAFT);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<PlaygroundDraft>;
+    if (
+      !PLAYGROUND_TEMPLATE_IDS.includes(parsed.templateId as TemplateDefinition['id'])
+      || typeof parsed.showFileTree !== 'boolean'
+      || !isWorkspaceSnapshot(parsed.workspace)
+    ) {
+      return null;
+    }
+    return parsed as PlaygroundDraft;
+  } catch {
+    return null;
+  }
+}
+
+export function savePlaygroundDraft(draft: PlaygroundDraft): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.PLAYGROUND_DRAFT, JSON.stringify(draft));
+  } catch {
+    // Draft persistence is best-effort and must not interrupt editing.
+  }
+}
+
+export function loadDebuggingDraft(exerciseId: string): DebuggingDraft | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.DEBUGGING_DRAFTS);
+    if (!raw) return null;
+    const drafts = JSON.parse(raw) as Record<string, Partial<DebuggingDraft>>;
+    const draft = drafts?.[exerciseId];
+    if (
+      !draft
+      || !isWorkspaceSnapshot(draft.workspace)
+      || typeof draft.revealedHints !== 'number'
+      || !Number.isInteger(draft.revealedHints)
+      || draft.revealedHints < 0
+    ) {
+      return null;
+    }
+    return draft as DebuggingDraft;
+  } catch {
+    return null;
+  }
+}
+
+export function saveDebuggingDraft(exerciseId: string, draft: DebuggingDraft): void {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.DEBUGGING_DRAFTS);
+    let drafts: Record<string, DebuggingDraft> = {};
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          drafts = parsed as Record<string, DebuggingDraft>;
+        }
+      } catch {
+        // A valid edit replaces a corrupted draft store.
+      }
+    }
+    drafts[exerciseId] = draft;
+    localStorage.setItem(STORAGE_KEYS.DEBUGGING_DRAFTS, JSON.stringify(drafts));
+  } catch {
+    // Draft persistence is best-effort and must not interrupt the exercise.
+  }
+}
 
 export type AppNavigationView = 'home' | 'scrim' | 'debugging' | 'solo-project' | 'playground' | 'studio';
 

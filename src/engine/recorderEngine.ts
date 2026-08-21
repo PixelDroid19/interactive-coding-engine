@@ -112,10 +112,9 @@ export class RecorderEngine {
   }
 
   public async stopRecording(): Promise<ScrimLessonData> {
+    const finalDurationMs = this.getCurrentTimeMs();
     this.status = 'stopped';
     this.stopTimer();
-
-    const finalDurationMs = this.getCurrentTimeMs();
 
     if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
       await new Promise<void>((resolve) => {
@@ -138,7 +137,7 @@ export class RecorderEngine {
 
     const lessonData: ScrimLessonData = {
       id: `scrim-custom-${Date.now()}`,
-      title: 'Untitled Lesson',
+      title: 'Lección sin título',
       description: 'Grabada en el estudio',
       templateId: 'vanilla-js',
       durationMs: Math.max(1000, finalDurationMs),
@@ -158,6 +157,22 @@ export class RecorderEngine {
     };
 
     return lessonData;
+  }
+
+  public cancelRecording(): void {
+    this.status = 'stopped';
+    this.stopTimer();
+
+    const recorder = this.mediaRecorder;
+    if (recorder) {
+      const tracks = recorder.stream.getTracks();
+      if (recorder.state !== 'inactive') recorder.stop();
+      tracks.forEach((track) => track.stop());
+    }
+
+    this.mediaRecorder = null;
+    this.audioChunks = [];
+    this.audioBlob = null;
   }
 
   public getCurrentTimeMs(): number {

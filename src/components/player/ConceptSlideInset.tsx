@@ -24,6 +24,8 @@ export const ConceptSlideInset: React.FC<ConceptSlideInsetProps> = ({
             <button
               onClick={() => setIsOpen(false)}
               className="p-1 text-zinc-400 hover:text-zinc-200 rounded hover:bg-zinc-800 transition-colors"
+              aria-label="Cerrar conceptos"
+              title="Cerrar conceptos"
             >
               <ChevronDown className="h-3 w-3" />
             </button>
@@ -54,7 +56,8 @@ export const ConceptSlideInset: React.FC<ConceptSlideInsetProps> = ({
         <button
           onClick={() => setIsOpen(true)}
           className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-[#18181b]/90 hover:bg-[#202024] px-2.5 py-1.5 text-xs text-zinc-300 shadow-xl backdrop-blur-sm transition-all hover:scale-105"
-          title="Open Concept Cloud & Notes"
+          aria-label="Abrir conceptos"
+          title="Abrir conceptos y notas"
         >
           <Layers className="h-3.5 w-3.5 text-cyan-400" />
           <span className="text-[11px] font-medium font-sans">Conceptos</span>

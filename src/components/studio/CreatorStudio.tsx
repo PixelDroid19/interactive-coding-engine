@@ -7,6 +7,7 @@ import { ScrimChallenge, ScrimLessonData, WorkspaceSnapshot, WorkspaceFile } fro
 import { CodeEditor } from '../editor/CodeEditor';
 import { FileTree } from '../editor/FileTree';
 import { PreviewPane, PreviewPaneRef } from '../preview/PreviewPane';
+import { TemplateDefinition } from '../../types/runtime';
 import {
   Mic,
   MicOff,
@@ -37,7 +38,7 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
 }) => {
   // Step: 1. choose-template, 2. prepare-workspace, 3. recording, 4. review-publish
   const [step, setStep] = useState<'template' | 'prepare' | 'recording' | 'review'>('template');
-  const [selectedTemplateId, setSelectedTemplateId] = useState<'vanilla-js' | 'js-only' | 'lit' | 'react'>('vanilla-js');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<TemplateDefinition['id']>('vanilla-js');
 
   // Metadata
   const [lessonTitle, setLessonTitle] = useState('Nueva lección');
@@ -61,16 +62,20 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
 
   // New challenge creation modal
   const [isAddingChallenge, setIsAddingChallenge] = useState(false);
-  const [challengeTitle, setChallengeTitle] = useState('New In-Scrim Challenge');
-  const [challengeInstructions, setChallengeInstructions] = useState('Implement the required function or event listener.');
+  const [challengeTitle, setChallengeTitle] = useState('Nuevo reto durante la clase');
+  const [challengeInstructions, setChallengeInstructions] = useState('Implementa la función o el evento solicitado.');
 
   const [showFileTree, setShowFileTree] = useState(true);
 
   const recorderRef = useRef<RecorderEngine | null>(null);
   const previewRef = useRef<PreviewPaneRef | null>(null);
 
+  useEffect(() => () => {
+    recorderRef.current?.cancelRecording();
+  }, []);
+
   // Switch template
-  const handleSelectTemplate = (templateId: 'vanilla-js' | 'js-only' | 'lit' | 'react') => {
+  const handleSelectTemplate = (templateId: TemplateDefinition['id']) => {
     setSelectedTemplateId(templateId);
     const tpl = STARTER_TEMPLATES[templateId];
     setWorkspace({
@@ -128,7 +133,7 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
       tests: [
         {
           id: 't-studio-1',
-          description: 'Code contains required implementation',
+          description: 'El código contiene la implementación solicitada',
           validatorType: 'source-regex',
           regexPattern: 'function|const|let|addEventListener',
         },
@@ -136,15 +141,15 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
       hints: [
         {
           level: 1,
-          title: 'Starter Hint',
-          text: 'Review the instructor code written up to this point.',
+          title: 'Primera pista',
+          text: 'Revisa el código que el instructor escribió hasta este punto.',
         },
       ],
     };
 
     recorderRef.current.insertChallenge(newChallenge);
     setIsAddingChallenge(false);
-    setChallengeTitle('New In-Scrim Challenge');
+    setChallengeTitle('Nuevo reto durante la clase');
   };
 
   // Track code changes during preparation or recording
@@ -197,9 +202,10 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
           <button
             onClick={onBack}
             className="flex items-center gap-1.5 rounded bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 text-xs text-zinc-300 font-medium transition-colors"
+            aria-label="Salir del estudio"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span className="text-[11px]">Exit Studio</span>
+            <span className="text-[11px]">Salir del estudio</span>
           </button>
 
           <div className="h-3.5 w-px bg-zinc-800" />
@@ -207,12 +213,13 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1.5 rounded bg-zinc-800 border border-zinc-700 text-zinc-300 px-2.5 py-0.5 text-xs font-semibold">
               <Radio className="h-3.5 w-3.5 text-rose-400" />
-              <span>Creator Studio</span>
+              <span>Estudio de creación</span>
             </span>
             <input
               type="text"
               value={lessonTitle}
               onChange={(e) => setLessonTitle(e.target.value)}
+              aria-label="Título de la lección"
               className="bg-transparent border-b border-transparent hover:border-zinc-700 focus:border-zinc-500 text-xs font-semibold text-zinc-100 px-1 py-0.5 outline-none"
             />
           </div>
@@ -224,6 +231,8 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
             <div className="flex items-center gap-2.5">
               <button
                 onClick={() => setUseMicrophone(!useMicrophone)}
+                aria-label={useMicrophone ? 'Desactivar micrófono' : 'Activar micrófono'}
+                aria-pressed={useMicrophone}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs border font-medium transition-colors ${
                   useMicrophone
                     ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300'
@@ -231,15 +240,16 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
                 }`}
               >
                 {useMicrophone ? <Mic className="h-3.5 w-3.5" /> : <MicOff className="h-3.5 w-3.5" />}
-                <span>Mic: {useMicrophone ? 'On' : 'Off'}</span>
+                <span>Micrófono: {useMicrophone ? 'activado' : 'desactivado'}</span>
               </button>
 
               <button
                 onClick={handleStartRecording}
+                aria-label="Empezar grabación"
                 className="flex items-center gap-2 rounded bg-rose-600 hover:bg-rose-500 px-3.5 py-1 text-white text-xs font-semibold shadow-sm transition-colors animate-pulse"
               >
                 <div className="h-2 w-2 rounded-full bg-white" />
-                <span>Start Recording</span>
+                <span>Empezar grabación</span>
               </button>
             </div>
           )}
@@ -249,7 +259,7 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
               <div className="flex items-center gap-2 bg-rose-950/80 border border-rose-800 px-2.5 py-0.5 rounded-full text-xs font-mono text-rose-200">
                 <span className="flex h-1.5 w-1.5 rounded-full bg-rose-500 animate-ping" />
                 <span>{formatTime(recordedElapsedMs)}</span>
-                <span className="text-rose-400 text-[10px]">({recordedEventsCount} events)</span>
+                <span className="text-rose-400 text-[10px]">({recordedEventsCount} eventos)</span>
               </div>
 
               <button
@@ -257,13 +267,14 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
                 className="flex items-center gap-1 rounded bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 px-2.5 py-1 text-xs font-medium text-amber-300 transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>Add Challenge Marker (◆)</span>
+                <span>Añadir marcador de reto (◆)</span>
               </button>
 
               <button
                 onClick={handleTogglePause}
                 className="p-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-200"
-                title={recorderStatus === 'recording' ? 'Pause Recording' : 'Resume Recording'}
+                aria-label={recorderStatus === 'recording' ? 'Pausar grabación' : 'Reanudar grabación'}
+                title={recorderStatus === 'recording' ? 'Pausar grabación' : 'Reanudar grabación'}
               >
                 {recorderStatus === 'recording' ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
               </button>
@@ -273,7 +284,7 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
                 className="flex items-center gap-1.5 rounded bg-zinc-100 hover:bg-white text-zinc-900 px-3 py-1 text-xs font-semibold shadow-sm transition-colors"
               >
                 <Square className="h-3 w-3 fill-zinc-900" />
-                <span>Stop & Review</span>
+                <span>Detener y revisar</span>
               </button>
             </div>
           )}
@@ -285,7 +296,7 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
                 className="flex items-center gap-1.5 rounded bg-emerald-600 hover:bg-emerald-500 px-3.5 py-1 text-white text-xs font-semibold shadow-sm transition-colors"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Publish Lesson to Course</span>
+                <span>Publicar lección en el curso</span>
               </button>
             </div>
           )}
@@ -296,18 +307,20 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
       {step === 'template' ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8 overflow-y-auto" style={{ background: 'var(--bg-main)' }}>
           <div className="max-w-2xl w-full text-center space-y-2 mb-8">
-            <h1 className="text-xl font-bold text-zinc-100 tracking-tight">Create a New Interactive Scrim</h1>
+            <h1 className="text-xl font-bold text-zinc-100 tracking-tight">Crear una clase interactiva</h1>
             <p className="text-xs text-zinc-400">
-              Select a starter template to prepare your workspace, then record voice and code simultaneously.
+              Elige una plantilla, prepara el espacio de trabajo y graba la voz junto con los cambios de código.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-w-2xl w-full">
             {Object.values(STARTER_TEMPLATES).map((tpl) => (
-              <div
+              <button
+                type="button"
                 key={tpl.id}
-                onClick={() => handleSelectTemplate(tpl.id as any)}
-                className="group flex flex-col p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 hover:border-zinc-600 hover:bg-zinc-900 cursor-pointer transition-all shadow-sm"
+                onClick={() => handleSelectTemplate(tpl.id)}
+                aria-label={`Usar plantilla ${tpl.name}`}
+                className="group flex flex-col p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 hover:border-zinc-600 hover:bg-zinc-900 cursor-pointer transition-all shadow-sm text-left"
               >
                 <div className="flex items-center justify-between mb-2.5">
                   <div className="flex items-center gap-2 font-semibold text-zinc-100 text-xs">
@@ -320,10 +333,10 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
                 </div>
                 <p className="text-xs text-zinc-400 leading-relaxed">{tpl.description}</p>
                 <div className="mt-3.5 pt-2.5 border-t border-zinc-800/80 flex items-center justify-between text-xs text-zinc-300 font-medium group-hover:text-white transition-colors">
-                  <span>Start Recording &rarr;</span>
-                  <span className="text-[11px] text-zinc-400 font-mono">{Object.keys(tpl.files).length} files</span>
+                  <span>Usar plantilla &rarr;</span>
+                  <span className="text-[11px] text-zinc-400 font-mono">{Object.keys(tpl.files).length} archivos</span>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -369,6 +382,8 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setShowFileTree(!showFileTree)}
+                  aria-label={showFileTree ? 'Ocultar archivos' : 'Mostrar archivos'}
+                  aria-expanded={showFileTree}
                   className={`p-1 rounded text-zinc-400 hover:text-zinc-200 ${
                     showFileTree ? 'bg-zinc-800 text-zinc-200' : ''
                   }`}
@@ -394,7 +409,7 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
               {recorderStatus === 'recording' && (
                 <span className="text-[11px] font-mono text-rose-400 animate-pulse flex items-center gap-1 pr-2">
                   <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-                  <span>Logging live events</span>
+                  <span>Registrando eventos</span>
                 </span>
               )}
             </div>
@@ -435,19 +450,20 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
 
       {/* Insert Challenge Modal */}
       {isAddingChallenge && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4" role="dialog" aria-modal="true" aria-label="Añadir reto">
           <div className="w-full max-w-md bg-zinc-900 border border-zinc-700 rounded-xl p-5 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
               <h3 className="font-semibold text-xs text-zinc-100 flex items-center gap-1.5">
-                <span className="text-amber-400">◆</span> Insert Challenge Marker
+                <span className="text-amber-400">◆</span> Añadir marcador de reto
               </h3>
               <span className="text-xs font-mono text-zinc-400">{formatTime(recordedElapsedMs)}</span>
             </div>
 
             <form onSubmit={handleInsertChallengeSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-zinc-400 font-medium mb-1">Challenge Title</label>
+                <label className="block text-zinc-400 font-medium mb-1" htmlFor="studio-challenge-title">Título del reto</label>
                 <input
+                  id="studio-challenge-title"
                   type="text"
                   value={challengeTitle}
                   onChange={(e) => setChallengeTitle(e.target.value)}
@@ -457,8 +473,9 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
               </div>
 
               <div>
-                <label className="block text-zinc-400 font-medium mb-1">Instructions for Student</label>
+                <label className="block text-zinc-400 font-medium mb-1" htmlFor="studio-challenge-instructions">Instrucciones para el estudiante</label>
                 <textarea
+                  id="studio-challenge-instructions"
                   rows={4}
                   value={challengeInstructions}
                   onChange={(e) => setChallengeInstructions(e.target.value)}
@@ -473,13 +490,13 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
                   onClick={() => setIsAddingChallenge(false)}
                   className="px-3 py-1.5 rounded text-zinc-400 hover:text-zinc-200"
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-1.5 rounded bg-zinc-100 hover:bg-white text-zinc-900 font-semibold"
                 >
-                  Insert Marker (◆)
+                  Añadir marcador (◆)
                 </button>
               </div>
             </form>
