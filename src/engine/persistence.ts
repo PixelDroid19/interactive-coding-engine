@@ -3,6 +3,7 @@ import { ScrimLessonData, LearnerBranch } from '../types/scrim';
 
 const STORAGE_KEYS = {
   USER_PROGRESS: 'aula_user_progress_v1',
+  APP_NAVIGATION: 'aula_app_navigation_v1',
   CUSTOM_COURSES: 'aula_custom_courses_v1',
   CUSTOM_SCRIMS: 'aula_custom_scrims_v1',
   STUDIO_DRAFT: 'aula_studio_draft_v1',
@@ -11,7 +12,60 @@ const STORAGE_KEYS = {
   CHALLENGE_STATES: 'aula_challenge_states_v1',
 };
 
+export type AppNavigationView = 'home' | 'scrim' | 'debugging' | 'solo-project' | 'playground' | 'studio';
+
+export interface AppNavigationState {
+  view: AppNavigationView;
+  courseId?: string;
+  moduleId?: string;
+  itemId?: string;
+  timestampMs?: number;
+}
+
+const APP_NAVIGATION_VIEWS: AppNavigationView[] = [
+  'home',
+  'scrim',
+  'debugging',
+  'solo-project',
+  'playground',
+  'studio',
+];
+
 export const DEFAULT_VOICE_VOLUME = 0.5;
+
+export function loadAppNavigationState(): AppNavigationState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.APP_NAVIGATION);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<AppNavigationState>;
+    if (!parsed || typeof parsed !== 'object' || !APP_NAVIGATION_VIEWS.includes(parsed.view as AppNavigationView)) {
+      return null;
+    }
+    if (parsed.courseId !== undefined && typeof parsed.courseId !== 'string') return null;
+    if (parsed.moduleId !== undefined && typeof parsed.moduleId !== 'string') return null;
+    if (parsed.itemId !== undefined && typeof parsed.itemId !== 'string') return null;
+    if (parsed.timestampMs !== undefined && (typeof parsed.timestampMs !== 'number' || !Number.isFinite(parsed.timestampMs))) {
+      return null;
+    }
+    return {
+      view: parsed.view as AppNavigationView,
+      ...(parsed.courseId ? { courseId: parsed.courseId } : {}),
+      ...(parsed.moduleId ? { moduleId: parsed.moduleId } : {}),
+      ...(parsed.itemId ? { itemId: parsed.itemId } : {}),
+      ...(parsed.timestampMs !== undefined ? { timestampMs: Math.max(0, parsed.timestampMs) } : {}),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function saveAppNavigationState(state: AppNavigationState): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.APP_NAVIGATION, JSON.stringify(state));
+  } catch {
+    // Navigation persistence is best-effort; it must never interrupt the lesson.
+  }
+}
 
 export function loadVoiceVolume(): number {
   try {

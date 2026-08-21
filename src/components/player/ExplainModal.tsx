@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Lightbulb, X, FileCode, Monitor } from 'lucide-react';
 import { WorkspaceSnapshot } from '../../types/scrim';
 
@@ -19,8 +19,37 @@ export const ExplainModal: React.FC<ExplainModalProps> = ({
   notes = [],
   concepts = [],
 }) => {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const restoreFocusTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (!isOpen) return;
+
+    if (restoreFocusTimerRef.current !== null) {
+      window.clearTimeout(restoreFocusTimerRef.current);
+      restoreFocusTimerRef.current = null;
+    }
+
+    const activeElement = document.activeElement;
+    previouslyFocusedRef.current = activeElement instanceof HTMLElement ? activeElement : null;
+    closeButtonRef.current?.focus();
+
+    return () => {
+      const previouslyFocused = previouslyFocusedRef.current;
+      if (previouslyFocused?.isConnected) {
+        restoreFocusTimerRef.current = window.setTimeout(() => {
+          if (previouslyFocused.isConnected) previouslyFocused.focus();
+          restoreFocusTimerRef.current = null;
+        }, 0);
+      }
+      previouslyFocusedRef.current = null;
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose();
     };
@@ -29,6 +58,31 @@ export const ExplainModal: React.FC<ExplainModalProps> = ({
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
+
+  const handlePanelKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Tab') return;
+
+    const focusable = Array.from(
+      event.currentTarget.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ),
+    );
+
+    if (focusable.length === 0) {
+      event.preventDefault();
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
 
   const activeFile = workspace.files[workspace.activeFilePath] || Object.values(workspace.files)[0];
   const guideNotes =
@@ -43,7 +97,15 @@ export const ExplainModal: React.FC<ExplainModalProps> = ({
 
   return (
     <div className="drawer-backdrop" onClick={onClose}>
-      <div className="drawer-panel" onClick={(event) => event.stopPropagation()} style={{ width: 420 }}>
+      <div
+        className="drawer-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Explicar lección"
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={handlePanelKeyDown}
+        style={{ width: 420 }}
+      >
         <div className="drawer-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <div className="lesson-num-badge lesson-num-badge-active" style={{ width: 34, height: 34 }}>
@@ -76,7 +138,7 @@ export const ExplainModal: React.FC<ExplainModalProps> = ({
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="round-icon-btn" aria-label="Cerrar">
+          <button ref={closeButtonRef} onClick={onClose} className="round-icon-btn" aria-label="Cerrar">
             <X size={16} />
           </button>
         </div>

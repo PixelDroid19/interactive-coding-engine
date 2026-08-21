@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Course, CurriculumItem, UserProgressRecord } from './types/curriculum';
 import { ScrimLessonData } from './types/scrim';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './curriculum/fundamentos/course';
-import { loadUserProgress, loadCustomCourses, loadCustomScrims, updateRecentPosition } from './engine/persistence';
-import { getOrderedItems, getNavigationState } from './engine/navigation';
+import { AppNavigationState, loadAppNavigationState, loadUserProgress, loadCustomCourses, loadCustomScrims, saveAppNavigationState, updateRecentPosition } from './engine/persistence';
+import { getNavigationState } from './engine/navigation';
 import { RoadmapHome } from './components/curriculum/RoadmapHome';
 import { ScrimPlayer } from './components/player/ScrimPlayer';
 import { DebuggingView } from './components/challenges/DebuggingView';
@@ -13,14 +13,68 @@ import { CreatorStudio } from './components/studio/CreatorStudio';
 
 type AppView = 'home' | 'scrim' | 'debugging' | 'solo-project' | 'playground' | 'studio';
 
+interface InitialAppState {
+  view: AppView;
+  item: CurriculumItem | null;
+  moduleId: string;
+  timestampMs: number;
+}
+
+function viewForItem(item: CurriculumItem): AppView {
+  if (item.type === 'scrim' || item.type === 'challenge') return 'scrim';
+  return item.type;
+}
+
+function getInitialAppState(): InitialAppState {
+  const persisted = loadAppNavigationState();
+  const defaultState: InitialAppState = {
+    view: 'home',
+    item: null,
+    moduleId: FUNDAMENTOS_COURSE.modules[0]?.id || 'mod-primeros-pasos',
+    timestampMs: 0,
+  };
+
+  if (!persisted) return defaultState;
+  if (persisted.view === 'home' || persisted.view === 'playground' || persisted.view === 'studio') {
+    return { ...defaultState, view: persisted.view };
+  }
+  if (!persisted.itemId) return defaultState;
+  if (persisted.courseId && persisted.courseId !== FUNDAMENTOS_COURSE.id && persisted.courseId !== FUNDAMENTOS_COURSE.title) {
+    return defaultState;
+  }
+
+  const module = FUNDAMENTOS_COURSE.modules.find((candidate) =>
+    candidate.id === persisted.moduleId && candidate.items.some((item) => item.id === persisted.itemId)
+  ) || FUNDAMENTOS_COURSE.modules.find((candidate) => candidate.items.some((item) => item.id === persisted.itemId));
+  const item = module?.items.find((candidate) => candidate.id === persisted.itemId);
+  if (!module || !item || viewForItem(item) !== persisted.view) return defaultState;
+
+  return {
+    view: persisted.view,
+    item,
+    moduleId: module.id,
+    timestampMs: persisted.timestampMs || 0,
+  };
+}
+
+function saveRoute(route: AppNavigationState): void {
+  saveAppNavigationState({
+    ...route,
+    ...(route.view === 'home' || route.view === 'playground' || route.view === 'studio'
+      ? { courseId: undefined, moduleId: undefined, itemId: undefined, timestampMs: undefined }
+      : {}),
+  });
+}
+
 export default function App() {
-  const [currentView, setCurrentView] = useState<AppView>('home');
+  const [initialAppState] = useState(getInitialAppState);
+  const [currentView, setCurrentView] = useState<AppView>(initialAppState.view);
   const [course, setCourse] = useState<Course>(FUNDAMENTOS_COURSE);
-  const [activeItem, setActiveItem] = useState<CurriculumItem | null>(null);
-  const [activeModuleId, setActiveModuleId] = useState<string>('mod-primeros-pasos');
+  const [activeItem, setActiveItem] = useState<CurriculumItem | null>(initialAppState.item);
+  const [activeModuleId, setActiveModuleId] = useState<string>(initialAppState.moduleId);
   const [scrimsMap, setScrimsMap] = useState<Record<string, ScrimLessonData>>(FUNDAMENTOS_SCRIMS);
   const [progress, setProgress] = useState<UserProgressRecord>(() => loadUserProgress());
-  const [scrimInitialTimeMs, setScrimInitialTimeMs] = useState(0);
+  const [scrimInitialTimeMs, setScrimInitialTimeMs] = useState(initialAppState.timestampMs);
 
   // Sync custom scrims and progress from storage on mount
   useEffect(() => {
@@ -41,27 +95,27 @@ export default function App() {
   };
 
   const handleSelectItem = (item: CurriculumItem, moduleId: string, initialTimeMs = 0) => {
+    const nextView = viewForItem(item);
     setActiveItem(item);
     setActiveModuleId(moduleId);
     setScrimInitialTimeMs(initialTimeMs);
 
     updateRecentPosition(course.title, moduleId, item.id, item.title, item.type, initialTimeMs);
+    saveRoute({
+      view: nextView,
+      courseId: course.id,
+      moduleId,
+      itemId: item.id,
+      timestampMs: initialTimeMs,
+    });
     refreshProgress();
 
-    if (item.type === 'scrim') {
-      setCurrentView('scrim');
-    } else if (item.type === 'debugging') {
-      setCurrentView('debugging');
-    } else if (item.type === 'solo-project') {
-      setCurrentView('solo-project');
-    } else if (item.type === 'challenge') {
-      // Standalone challenge can open in scrim player or direct test runner
-      setCurrentView('scrim');
-    }
+    setCurrentView(nextView);
   };
 
   const handleBackToRoadmap = () => {
     refreshProgress();
+    saveRoute({ view: 'home' });
     setCurrentView('home');
   };
 
@@ -83,6 +137,7 @@ export default function App() {
     if (!nav.hasNext || !nav.next) {
       // Last element: coherent finalization
       refreshProgress();
+      saveRoute({ view: 'home' });
       setCurrentView('home');
       return;
     }
@@ -137,6 +192,7 @@ export default function App() {
     });
 
     refreshProgress();
+    saveRoute({ view: 'home' });
     setCurrentView('home');
   };
 
@@ -185,6 +241,15 @@ export default function App() {
           onNextLesson={handleNext}
           initialTimeMs={scrimInitialTimeMs}
           navigationState={navigationState}
+          onPositionChange={(timeMs) => {
+            saveRoute({
+              view: 'scrim',
+              courseId: course.id,
+              moduleId: activeModuleId,
+              itemId: activeItem.id,
+              timestampMs: timeMs,
+            });
+          }}
         />
       )}
 
@@ -216,6 +281,7 @@ export default function App() {
         <PlaygroundView
           onBack={() => {
             refreshProgress();
+            saveRoute({ view: 'home' });
             setCurrentView('home');
           }}
         />

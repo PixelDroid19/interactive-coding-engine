@@ -42,6 +42,7 @@ interface ScrimPlayerProps {
   onNextLesson?: () => void;
   initialTimeMs?: number;
   navigationState?: NavigationState;
+  onPositionChange?: (timeMs: number) => void;
 }
 
 export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
@@ -55,6 +56,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   onNextLesson,
   initialTimeMs = 0,
   navigationState,
+  onPositionChange,
 }) => {
   const [playerState, dispatch] = useReducer(playerReducer, lessonData.id, createInitialState);
   // Playback & workspace state
@@ -107,10 +109,13 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   awaitingStartRef.current = awaitingStart;
   const closureConfirmedRef = useRef(closureConfirmed);
   closureConfirmedRef.current = closureConfirmed;
+  const branchRecoveryFirstActionRef = useRef<HTMLButtonElement | null>(null);
+  const onPositionChangeRef = useRef(onPositionChange);
 
   workspaceRef.current = workspace;
   isForkedRef.current = playerState.isForked;
   timeRef.current = currentTimeMs;
+  onPositionChangeRef.current = onPositionChange;
 
   const forkLearnerBranch = useCallback((baseTime: number) => {
     if (isForkedRef.current) return;
@@ -145,6 +150,11 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       // ignore corrupted
     }
   }, [lessonData.id]);
+
+  useEffect(() => {
+    if (!showBranchRecovery) return;
+    branchRecoveryFirstActionRef.current?.focus();
+  }, [showBranchRecovery]);
 
   useEffect(() => {
     // Reset on lesson change
@@ -192,6 +202,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             'scrim',
             current
           );
+          onPositionChangeRef.current?.(current);
         }
         // Show closure when near end (only for lesson 1)
         if (lessonData.id === 'fundamentos-01' && current >= duration - 1500 && !closureConfirmedRef.current) {
@@ -217,7 +228,10 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         setCurrentTimeMs(timeRef.current);
         if (status === 'playing') setAwaitingStart(false);
         if (status === 'playing') dispatch({ type: 'PLAY' });
-        if (status === 'paused') dispatch({ type: 'PAUSE' });
+        if (status === 'paused') {
+          dispatch({ type: 'PAUSE' });
+          onPositionChangeRef.current?.(timeRef.current);
+        }
         if (status === 'ended') {
           if (lessonData.id === 'fundamentos-01' && !closureConfirmedRef.current) {
             setShowClosure(true);
@@ -311,6 +325,11 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     }
     dispatch({ type: 'START' });
     engineRef.current?.play();
+  };
+
+  const handleExplainOpen = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.currentTarget.focus();
+    setIsExplainOpen(true);
   };
 
   const toggleMute = () => {
@@ -733,7 +752,12 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             {isFloatingBrowser ? <Pin size={13} /> : <PinOff size={13} />}
             <span>{isFloatingBrowser ? 'Flotante' : 'Al lado'}</span>
           </button>
-          <button onClick={() => setIsExplainOpen(true)} className="btn-explain neu-pill-btn" aria-label="Explicar lección">
+          <button
+            onClick={handleExplainOpen}
+            disabled={awaitingStart || showBranchRecovery}
+            className="btn-explain neu-pill-btn disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label="Explicar lección"
+          >
             <Lightbulb size={14} />
             <span>Explicar</span>
           </button>
@@ -796,7 +820,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       </header>
 
       <div className="lesson-body">
-      {awaitingStart && !playerState.isForked && !activeChallenge && (
+      {awaitingStart && !showBranchRecovery && !playerState.isForked && !activeChallenge && (
         <div
           className="lesson-start-gate"
           onClick={startPlayback}
@@ -840,7 +864,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             <h3 className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Continuar tu versión?</h3>
             <p className="text-sm text-gray-600 mt-2">Encontramos una versión guardada de esta lección con tus cambios. Puedes continuar donde lo dejaste o ver la clase desde el inicio.</p>
             <div className="flex gap-2 mt-4">
-              <button onClick={handleRestoreBranch} className="flex-1 neu-pill-btn bg-[#ffe600]" aria-label="Continuar mi versión">Continuar mi versión</button>
+              <button ref={branchRecoveryFirstActionRef} onClick={handleRestoreBranch} className="flex-1 neu-pill-btn bg-[#ffe600]" aria-label="Continuar mi versión">Continuar mi versión</button>
               <button onClick={handleDiscardBranchRecovery} className="flex-1 neu-pill-btn" aria-label="Ver la clase desde el inicio">Ver la clase</button>
             </div>
           </div>

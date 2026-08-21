@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { WorkspaceSnapshot } from '../types/scrim';
-import { saveLearnerBranch, loadLearnerBranch, loadLastBranchForLesson, clearBranch, clearBranchesForLesson, saveLearnerBranchDebounced, flushBranchSave, markChallengeCompleted, markChallengeSkipped, markChallengeSolutionViewed, getChallengeState, clearChallengeState, getChallengeStates } from './persistence';
+import { saveLearnerBranch, loadLearnerBranch, loadLastBranchForLesson, clearBranch, clearBranchesForLesson, saveLearnerBranchDebounced, flushBranchSave, markChallengeCompleted, markChallengeSkipped, markChallengeSolutionViewed, getChallengeState, clearChallengeState, getChallengeStates, saveAppNavigationState, loadAppNavigationState } from './persistence';
 import { createInitialState } from './playerMachine';
 import { cloneWorkspace } from './eventLog';
 
@@ -211,5 +211,27 @@ describe('persistence branches', () => {
     expect(loadLastBranchForLesson('fundamentos-01')).not.toBeNull();
     clearBranchesForLesson('fundamentos-01');
     expect(loadLastBranchForLesson('fundamentos-01')).toBeNull();
+  });
+
+  it('persiste la ruta actual para restaurar la lección después de recargar', () => {
+    const route = {
+      view: 'scrim' as const,
+      courseId: 'course-fundamentos',
+      moduleId: 'mod-estructuras',
+      itemId: 'fundamentos-07',
+      timestampMs: 18400,
+    };
+
+    saveAppNavigationState(route);
+
+    expect(loadAppNavigationState()).toEqual(route);
+  });
+
+  it('descarta una ruta persistida incompleta o corrupta', () => {
+    localStorage.setItem('aula_app_navigation_v1', JSON.stringify({ view: 'scrim', itemId: 42 }));
+    expect(loadAppNavigationState()).toBeNull();
+
+    localStorage.setItem('aula_app_navigation_v1', 'no-json');
+    expect(loadAppNavigationState()).toBeNull();
   });
 });
