@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { DebuggingView } from './DebuggingView';
 import { DEBUG_EXERCISES } from '../../curriculum/fundamentos/debugExercises';
@@ -86,12 +86,22 @@ describe('DebuggingView integración', () => {
     expect(result.passedCount).toBe(result.totalCount);
   });
 
-  it('Comprobar dispara una sola evaluación', async () => {
-    const testRunnerModule = await import('../../engine/testRunner');
-    const spy = vi.spyOn(testRunnerModule, 'runChallengeValidation');
-    expect(spy).toBeDefined();
-    expect(typeof testRunnerModule.runChallengeValidation).toBe('function');
-    spy.mockRestore();
+  it('Comprobar integra la vista previa con el evaluador sin falsos errores de generación', async () => {
+    render(<DebuggingView exercise={exercise} onBack={() => {}} />);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Vista previa' }));
+    const iframe = await screen.findByTitle('Vista previa') as HTMLIFrameElement & { __generation?: number };
+    await waitFor(() => expect(iframe.__generation).toBeGreaterThan(0));
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Reto' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Comprobar' }));
+
+    await waitFor(() => {
+      expect(screen.getByText(`0 de ${exercise.tests.length} comprobaciones superadas`)).toBeTruthy();
+    });
+    expect(screen.queryByText(/La vista previa no estaba lista/)).toBeNull();
+    expect(screen.queryAllByLabelText('error de evaluación')).toHaveLength(0);
   });
 
   it('editar y pulsar Comprobar rápido evalúa la última versión', async () => {

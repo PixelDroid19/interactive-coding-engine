@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { PlaygroundView } from './PlaygroundView';
 
 describe('PlaygroundView', () => {
@@ -62,5 +62,44 @@ describe('PlaygroundView', () => {
 
     expect(screen.getByRole('button', { name: 'JavaScript puro' }).getAttribute('aria-pressed')).toBe('true');
     expect(screen.getByRole('button', { name: 'Mostrar archivos' }).getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('compila en la vista previa el workspace persistido completo', async () => {
+    localStorage.setItem('aula_playground_draft_v1', JSON.stringify({
+      templateId: 'vanilla-js',
+      showFileTree: true,
+      workspace: {
+        activeFilePath: 'app.js',
+        files: {
+          'index.html': {
+            name: 'index.html',
+            path: 'index.html',
+            language: 'html',
+            content: '<!doctype html><html lang="es"><head><link rel="stylesheet" href="style.css"></head><body><h1 id="resultado">Integración</h1><script src="app.js"></script></body></html>',
+          },
+          'style.css': {
+            name: 'style.css',
+            path: 'style.css',
+            language: 'css',
+            content: '#resultado { color: tomato; }',
+          },
+          'app.js': {
+            name: 'app.js',
+            path: 'app.js',
+            language: 'javascript',
+            content: 'document.querySelector("#resultado").dataset.estado = "ejecutado";',
+          },
+        },
+      },
+    }));
+
+    render(<PlaygroundView onBack={() => {}} />);
+    const preview = screen.getByTitle('Vista previa') as HTMLIFrameElement;
+
+    await waitFor(() => expect(preview.srcdoc).toContain('Integración'));
+    expect(preview.srcdoc).toContain('#resultado { color: tomato; }');
+    expect(preview.srcdoc).toContain('dataset.estado = "ejecutado"');
+    expect(preview.srcdoc).not.toContain('href="style.css"');
+    expect(preview.srcdoc).not.toContain('src="app.js"');
   });
 });

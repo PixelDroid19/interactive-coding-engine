@@ -28,6 +28,45 @@ describe('App navigation persistence', () => {
     expect(screen.getByText('Playground independiente')).toBeTruthy();
   });
 
+  it('mantiene una lección intermedia y permite recorrer clase, depuración y módulo siguiente', async () => {
+    const lesson02 = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.id === 'fundamentos-02')!;
+    const debug02 = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.id === 'fundamentos-02-debug')!;
+    const lesson03 = FUNDAMENTOS_COURSE.modules[1].items.find((item) => item.id === 'fundamentos-03')!;
+    const firstRender = render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${lesson02.title}`) }));
+    expect(screen.getByRole('heading', { name: lesson02.title })).toBeTruthy();
+    expect(loadAppNavigationState()).toMatchObject({
+      view: 'scrim',
+      moduleId: FUNDAMENTOS_COURSE.modules[0].id,
+      itemId: lesson02.id,
+    });
+
+    firstRender.unmount();
+    render(<App />);
+    expect(screen.getByRole('heading', { name: lesson02.title })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+    expect(screen.getByText(debug02.title)).toBeTruthy();
+    expect(loadAppNavigationState()).toMatchObject({ view: 'debugging', itemId: debug02.id });
+
+    cleanup();
+    render(<App />);
+    expect(screen.getByText(debug02.title)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Anterior' }));
+    expect(screen.getByRole('heading', { name: lesson02.title })).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+    expect(screen.getByRole('heading', { name: lesson03.title })).toBeTruthy();
+    expect(loadAppNavigationState()).toMatchObject({
+      view: 'scrim',
+      moduleId: FUNDAMENTOS_COURSE.modules[1].id,
+      itemId: lesson03.id,
+    });
+  });
+
   it('al salir del estudio conserva el roadmap después de recargar', () => {
     localStorage.setItem('aula_app_navigation_v1', JSON.stringify({ view: 'studio' }));
     const firstRender = render(<App />);
