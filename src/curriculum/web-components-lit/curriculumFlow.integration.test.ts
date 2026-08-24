@@ -204,6 +204,14 @@ describe('curso profesional de Web Components y Lit', () => {
     }
   });
 
+  it('mantiene acotado el ciclo roto del laboratorio 23 para no congelar la práctica', () => {
+    const debugStarter = COMPONENT_COURSE_SPECS.find((spec) => spec.number === 23)?.debug.starter ?? '';
+    const updatedBody = debugStarter.match(/updated\s*\(\s*\)\s*\{([\s\S]*?)\n\s*\}/)?.[1] ?? '';
+
+    expect(updatedBody).toMatch(/\bif\s*\(/);
+    expect(debugStarter).toContain('evita congelar el laboratorio');
+  });
+
   it('usa 45 audios Gemini 3.1 TTS propios, completos y sincronizados', () => {
     const digest = (path: string) => createHash('sha256').update(readFileSync(path)).digest('hex');
     const foreignHashes = new Set<string>();

@@ -189,7 +189,7 @@ customElements.define('filter-summary', FilterSummary);`,
     commonErrors: 'crear bucles en updated, medir DOM antes de actualizar o almacenar cada valor derivable.',
     transfer: 'Ubica validación, ordenamiento, analytics y medición DOM en el hook correcto.',
     sources: [source('Reactive update cycle', 'https://lit.dev/docs/components/lifecycle/#reactive-update-cycle', 'Sigue cada fase.', 'Lit')],
-    debug: { title: 'updated crea un bucle de actualizaciones', expected: 'tax-total calcula total sin programarse infinitamente.', observed: 'updated incrementa la misma propiedad en cada ciclo.',
+    debug: { title: 'updated crea un bucle de actualizaciones', expected: 'tax-total calcula total sin programarse infinitamente.', observed: 'updated repite el cálculo varias veces; un tope de seguridad evita congelar el laboratorio.',
       starter: `import { LitElement, html } from 'lit';
 class TaxTotal extends LitElement {
   static properties = { subtotal: { type: Number }, total: { state: true } };
@@ -199,7 +199,10 @@ class TaxTotal extends LitElement {
     this.total = 0;
   }
   updated() {
-    this.total = this.total + this.subtotal * 0.1;
+    // Este tope evita congelar el laboratorio, pero no corrige el modelo.
+    if (this.total < 30) {
+      this.total = this.total + this.subtotal * 0.1;
+    }
   }
   render() {
     return html\`<p>\${this.total}</p>\`;
