@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-34",
+  "durationMs": 284520,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/34.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 36150,
+      "text": "Coordina animaciones con el DOM actualizado y respeta preferencias de movimiento sin convertirlas en requisito funcional. En esta clase construiremos una bandeja de avisos que anima sin bloquear ni marear. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 36300,
+      "end": 98810,
+      "text": "La animación explica un cambio que ya ocurrió en el estado. La aplicación debe seguir siendo correcta si dura cero milisegundos o si el navegador decide no ejecutarla. En términos concretos, Web Animations API significa aPI del navegador para animar y observar una secuencia En cambio, prefers-reduced-motion significa preferencia que pide reducir movimiento no esencial. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 98960,
+      "end": 135630,
+      "text": "No leas el ejemplo como una receta. Pausa en cada paso de una bandeja de avisos que anima sin bloquear ni marear y predice qué observará el navegador antes de continuar. Primero, una acción cambia notices. Después, lit actualiza el DOM. A continuación, updateComplete confirma el nodo. Por último, la preferencia decide animar o mostrar directamente. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 135780,
+      "end": 195410,
+      "text": "Anima para orientar atención o continuidad espacial; evita movimiento decorativo continuo y cualquier flujo que dependa de esperar una transición. La señal más útil para decidir es la frontera: pregunta si Web Animations API y prefers-reduced-motion reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 195560,
+      "end": 259250,
+      "text": "Respeta reduced motion, limita propiedades a transform/opacity, cancela animaciones obsoletas y mantiene foco y aria-live independientes. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: animar antes de que exista el nodo, usar setTimeout como reloj del DOM, ocultar información hasta animationend o ignorar preferencias. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 259400,
+      "end": 284240,
+      "text": "Te toca tomar las decisiones en una bandeja de avisos que anima sin bloquear ni marear. El starter prepara el escenario, pero la regla central sigue abierta; usa la vista previa como evidencia. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9734
+}

@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-37",
+  "durationMs": 281760,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/37.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 38150,
+      "text": "Construye una capacidad API completa con contrato de servicio, estados explícitos, transformación de datos y decisiones curatoriales. En esta clase construiremos una sala de museo consultable con servicio, filtros y favoritos. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 38300,
+      "end": 100150,
+      "text": "Una interfaz API no es una lista bonita: es una máquina de estados alrededor de un contrato propio. Curar implica decidir qué dato importa y qué hacer cuando falta. En términos concretos, Service layer significa frontera que consulta y normaliza datos externos En cambio, Estado remoto significa máquina de idle, loading, empty, ready y error. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 100300,
+      "end": 138550,
+      "text": "Fíjate en la frontera, no solo en la sintaxis. Mientras construimos una sala de museo consultable con servicio, filtros y favoritos, separa responsabilidades de plataforma, componente y consumidor. Primero, la búsqueda cambia query. Después, el servicio normaliza obras. A continuación, task representa la operación. Por último, la sala filtra y conserva favoritos por id. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 138700,
+      "end": 194490,
+      "text": "Aplica este corte a cualquier vista remota con búsqueda y acciones locales; reduce complejidad en demos estáticas sin red. La señal más útil para decidir es la frontera: pregunta si Service layer y Estado remoto reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 194640,
+      "end": 256290,
+      "text": "Inyecta cliente, cancela búsquedas, normaliza opcionales, ofrece vacíos útiles, conserva identidad y prueba con fixtures deterministas. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: renderizar respuestas crudas, asumir imágenes, confundir cero resultados con error, fetch en render o favoritos por índice. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 256440,
+      "end": 281520,
+      "text": "Lleva el modelo a una sala de museo consultable con servicio, filtros y favoritos. Si te atascas, vuelve al flujo de cuatro pasos; las pistas orientan la investigación, pero no entregan el programa. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.982
+}

@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-36",
+  "durationMs": 262600,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/36.md",
+  "cues": [
+    {
+      "timestamp": 620,
+      "end": 33850,
+      "text": "Protege los componentes de APIs externas mediante un contrato propio y adaptadores intercambiables. En esta clase construiremos un panel de pagos que cambia de proveedor sin cambiar la interfaz. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 34000,
+      "end": 95030,
+      "text": "El componente habla el idioma estable de la aplicación; cada adapter habla el idioma cambiante de un proveedor. Bridge aparece cuando puedes variar vista e implementación de servicio por separado. En términos concretos, Adapter significa traduce una interfaz externa al contrato que usa la aplicación En cambio, Bridge significa separa una abstracción de implementaciones que pueden variar. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 95180,
+      "end": 131330,
+      "text": "Ahora pondremos el modelo bajo presión con un panel de pagos que cambia de proveedor sin cambiar la interfaz. Primero identifica los datos; luego el ciclo que actúa sobre ellos; al final comprueba la interfaz. Primero, paymentPanel pide charge. Después, el puerto define resultado normalizado. A continuación, el adapter traduce proveedor A o B. Por último, la vista solo conoce success/message. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 131480,
+      "end": 183770,
+      "text": "Úsalo ante SDK, API o almacenamiento externo; evita una capa ceremonial si no existe una frontera cambiante. La señal más útil para decidir es la frontera: pregunta si Adapter y Bridge reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 183920,
+      "end": 239730,
+      "text": "Define el puerto desde las necesidades del consumidor, normaliza errores y datos, inyecta dependencias y prueba adapters con contratos comunes. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: filtrar respuestas crudas a la UI, llamar fetch en render, adapters que contienen reglas visuales o interfaces enormes por copiar el SDK. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 239880,
+      "end": 262320,
+      "text": "El siguiente paso ya no es copiar. Construye un panel de pagos que cambia de proveedor sin cambiar la interfaz, explica por qué funciona y busca un caso límite antes de enviar tu respuesta. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9691
+}

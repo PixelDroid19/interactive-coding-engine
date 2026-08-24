@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-38",
+  "durationMs": 273320,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/38.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 35670,
+      "text": "Gestiona varias consultas, unidades, actualización parcial y errores por ciudad sin perder datos útiles. En esta clase construiremos un tablero climático multiciudad que sobrevive a respuestas fuera de orden. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 35820,
+      "end": 96110,
+      "text": "Concurrencia significa que el reloj de la red no respeta el orden visual. La identidad y el estado por recurso impiden que una respuesta lenta sobrescriba o borre información ajena. En términos concretos, Concurrencia significa operaciones que progresan sin un orden de finalización garantizado En cambio, Actualización parcial significa una parte puede fallar sin borrar resultados válidos de las demás. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 96260,
+      "end": 135490,
+      "text": "Antes de ejecutar, haz una apuesta: ¿qué debería ocurrir en un tablero climático multiciudad que sobrevive a respuestas fuera de orden y por qué? Usa Concurrencia y Actualización parcial para justificar tu predicción. Primero, cada ciudad obtiene identidad. Después, el servicio normaliza temperatura. A continuación, promise.allSettled conserva éxitos y fallos. Por último, la vista representa resultado por ciudad. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 135640,
+      "end": 189390,
+      "text": "Úsalo cuando varias fuentes son independientes; una sola operación atómica puede tener un error global. La señal más útil para decidir es la frontera: pregunta si Concurrencia y Actualización parcial reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 189540,
+      "end": 249450,
+      "text": "Conserva ids, representa error por elemento, limita concurrencia si es necesario y separa unidades del dato base. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: Promise.all cuando toleras fallos parciales, usar índice como identidad, borrar datos previos al refrescar o convertir unidades varias veces. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 249600,
+      "end": 273140,
+      "text": "Es tu turno con un tablero climático multiciudad que sobrevive a respuestas fuera de orden. Haz primero el camino mínimo completo, compruébalo en el navegador y después añade el caso alternativo. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9672
+}

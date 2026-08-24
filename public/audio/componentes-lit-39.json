@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-39",
+  "durationMs": 308880,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/39.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 40810,
+      "text": "Distingue render de servidor, DOM disponible e hidratación para evitar componentes que solo funcionan después de cargar JavaScript. En esta clase construiremos una ficha de producto segura para render de servidor e hidratación. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 40960,
+      "end": 112030,
+      "text": "SSR responde con significado; hidratación añade comportamiento. Un componente universal mantiene su render puro respecto al entorno y confina APIs del navegador al ciclo apropiado. En términos concretos, SSR significa producción de HTML en servidor antes de ejecutar el cliente En cambio, Hidratación significa conexión de lógica e interacción con un árbol ya renderizado. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 112180,
+      "end": 156450,
+      "text": "Este ejemplo no es el ejercicio disfrazado. una ficha de producto segura para render de servidor e hidratación nos permitirá observar el mismo principio en un problema diferente y comparar decisiones. Primero, el servidor recibe datos serializables. Después, produce HTML significativo. A continuación, el navegador conserva ese contenido. Por último, la hidratación conecta eventos sin cambiar el contrato. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 156600,
+      "end": 218250,
+      "text": "Considera SSR para contenido inicial, indexación o arranque; una herramienta interna totalmente cliente puede no justificarlo. La señal más útil para decidir es la frontera: pregunta si SSR y Hidratación reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 218400,
+      "end": 282830,
+      "text": "Usa datos serializables, evita efectos en render, protege globals, conserva HTML estable y mide si la hidratación aporta valor. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: leer window en inicializadores, generar ids aleatorios durante render, depender de layout del cliente o producir HTML distinto entre entornos. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 282980,
+      "end": 308240,
+      "text": "Resuelve una ficha de producto segura para render de servidor e hidratación desde la API pública hacia dentro. El código inicial conserva contexto, no la respuesta; deja que las comprobaciones guíen tu diagnóstico. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9508
+}

@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-31",
+  "durationMs": 287480,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/31.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 37010,
+      "text": "Prepara componentes para trabajo real: pruebas en navegador, documentación, exportaciones, accesibilidad y build de producción. En esta clase construiremos una biblioteca de componentes con contrato verificable. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 37160,
+      "end": 100570,
+      "text": "Producción es mantener una promesa: API, semántica, pruebas, versión y artefacto deben contar la misma historia a otro equipo. En términos concretos, Paquete significa módulo versionado con exports y contratos públicos En cambio, Matriz de pruebas significa casos de API, interacción, ciclo y accesibilidad. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 100720,
+      "end": 140010,
+      "text": "Este ejemplo no es el ejercicio disfrazado. una biblioteca de componentes con contrato verificable nos permitirá observar el mismo principio en un problema diferente y comparar decisiones. Primero, define contrato público. Después, prueba en navegador y accesibilidad. A continuación, empaqueta exports estables. Por último, build/minificación producen artefacto consumible. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 140160,
+      "end": 196270,
+      "text": "Empaqueta cuando varios proyectos o equipos consumen el componente; una app única puede conservar módulos internos. La señal más útil para decidir es la frontera: pregunta si Paquete y Matriz de pruebas reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 196420,
+      "end": 261530,
+      "text": "Prueba en navegador, documenta propiedades/eventos/slots/parts, usa semver y publica artefactos sin fuentes accidentales. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: tests DOM simulados, exports ambiguos, breaking changes sin versión, CSS hooks sin documentar o bundle duplicando Lit. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 261680,
+      "end": 287220,
+      "text": "Resuelve una biblioteca de componentes con contrato verificable desde la API pública hacia dentro. El código inicial conserva contexto, no la respuesta; deja que las comprobaciones guíen tu diagnóstico. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.967
+}
