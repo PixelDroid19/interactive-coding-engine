@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { runChallengeValidation } from './testRunner';
 import { ScrimChallenge, WorkspaceSnapshot } from '../types/scrim';
 import { file, workspaceOf } from './lessonCompiler';
+import { Window } from 'happy-dom';
 import { LESSON1_HTML } from '../curriculum/fundamentos/workspaces';
 import { LESSON_01 } from '../curriculum/fundamentos/lesson01';
 
@@ -305,5 +306,85 @@ document.getElementById("linea2").textContent = "";`
     const result = await runChallengeValidation(reto as any, ws, null);
     expect(result.tests[0].isEvaluationError).toBe(true);
     expect(result.feedbackMessage).toContain('No pudimos evaluar');
+  });
+});
+
+describe('testRunner para componentes ejecutados en navegador', () => {
+  it('acepta una comprobación asíncrona contra la vista previa real', async () => {
+    const previewWindow = new Window();
+    const previewDocument = previewWindow.document;
+    previewDocument.body.innerHTML = '<estado-curso><span id="estado">listo</span></estado-curso>';
+    const iframe = {
+      contentDocument: previewDocument,
+      contentWindow: previewWindow,
+      __generation: 7,
+    } as unknown as HTMLIFrameElement;
+    const challenge = {
+      id: 'componente-real',
+      title: 'Componente real',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'estado-visible',
+        description: 'El componente muestra su estado',
+        validatorType: 'browser-script',
+        customValidatorScript: `async ({ document }) => {
+          await Promise.resolve();
+          return document.querySelector('#estado')?.textContent === 'listo';
+        }`,
+      }],
+      hints: [],
+    } as any;
+
+    const result = await runChallengeValidation(challenge, wsFromJs('// componente cargado en iframe'), iframe, 7);
+
+    expect(result.allPassed).toBe(true);
+    expect(result.tests[0].status).toBe('passed');
+  });
+
+  it('explica que la vista debe estar lista en vez de marcar la solución incorrecta', async () => {
+    const challenge = {
+      id: 'sin-vista',
+      title: 'Sin vista',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'componente',
+        description: 'El componente funciona',
+        validatorType: 'browser-script',
+        customValidatorScript: '() => true',
+      }],
+      hints: [],
+    } as any;
+
+    const result = await runChallengeValidation(challenge, wsFromJs('// todavía no hay vista'), null, 1);
+
+    expect(result.allPassed).toBe(false);
+    expect(result.tests[0].status).toBe('evaluation-error');
+    expect(result.tests[0].errorMessage).toContain('vista previa');
+  });
+
+  it('corta una comprobación que espera para siempre por un elemento no registrado', async () => {
+    const previewWindow = new Window();
+    const iframe = {
+      contentDocument: previewWindow.document,
+      contentWindow: previewWindow,
+      __generation: 3,
+    } as unknown as HTMLIFrameElement;
+    const challenge = {
+      id: 'registro-ausente', title: 'Registro ausente', timestamp: 0, instructions: '', hints: [],
+      tests: [{
+        id: 'espera-registro',
+        description: 'Registra el elemento',
+        validatorType: 'browser-script',
+        customValidatorScript: 'async () => new Promise(() => {})',
+      }],
+    } as any;
+
+    const result = await runChallengeValidation(challenge, wsFromJs('// sin registro'), iframe, 3);
+
+    expect(result.allPassed).toBe(false);
+    expect(result.tests[0].status).toBe('evaluation-error');
+    expect(result.tests[0].errorMessage).toContain('tiempo');
   });
 });

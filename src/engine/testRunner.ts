@@ -248,6 +248,90 @@ async function evaluateSingleTest(
   const combinedHtml = htmlFiles.map((f) => f.content).join('\n\n');
 
   switch (test.validatorType) {
+    case 'browser-script': {
+      if (!test.customValidatorScript) {
+        return {
+          id: test.id,
+          description: test.description,
+          passed: false,
+          status: 'evaluation-error',
+          isEvaluationError: true,
+          errorMessage: 'Prueba mal configurada: falta la comprobación del navegador.',
+          hint: test.hintTip,
+        };
+      }
+      const frameDocument = iframeElement?.contentDocument;
+      const frameWindow = iframeElement?.contentWindow;
+      if (!frameDocument || !frameWindow) {
+        return {
+          id: test.id,
+          description: test.description,
+          passed: false,
+          status: 'evaluation-error',
+          isEvaluationError: true,
+          errorMessage: 'La vista previa todavía no está lista. Ejecútala y vuelve a pulsar Comprobar.',
+          hint: test.hintTip,
+        };
+      }
+      if (generation !== undefined) {
+        const iframeGeneration = (iframeElement as HTMLIFrameElement & { __generation?: number }).__generation;
+        if (iframeGeneration !== undefined && iframeGeneration !== generation) {
+          return {
+            id: test.id,
+            description: test.description,
+            passed: false,
+            status: 'evaluation-error',
+            isEvaluationError: true,
+            errorMessage: 'La vista previa corresponde a una edición anterior. Vuelve a pulsar Comprobar.',
+            hint: test.hintTip,
+          };
+        }
+      }
+      try {
+        const validator = new Function(`return (${test.customValidatorScript});`)();
+        if (typeof validator !== 'function') throw new Error('la comprobación no es una función');
+        const rawResult = await Promise.race([
+          Promise.resolve(validator({
+            window: frameWindow,
+            document: frameDocument,
+            customElements: frameWindow.customElements,
+          HTMLElement: (frameWindow as any).HTMLElement,
+          Event: (frameWindow as any).Event,
+          CustomEvent: (frameWindow as any).CustomEvent,
+          })),
+          new Promise((_, reject) => setTimeout(
+            () => reject(new Error('la comprobación superó el tiempo de espera; revisa que el elemento se registre y termine de actualizar')),
+            1200,
+          )),
+        ]);
+        const normalized = typeof rawResult === 'boolean' ? { passed: rawResult } : rawResult;
+        if (!normalized || typeof normalized.passed !== 'boolean') {
+          throw new Error('la comprobación no devolvió true, false ni un resultado con passed');
+        }
+        return {
+          id: test.id,
+          description: test.description,
+          passed: normalized.passed,
+          status: normalized.passed ? 'passed' : 'failed',
+          receivedValue: normalized.receivedValue,
+          expectedValue: normalized.expectedValue,
+          errorMessage: normalized.passed ? undefined : (normalized.errorMessage || test.errorMessage || 'El componente ejecutado no cumple el comportamiento esperado.'),
+          hint: test.hintTip,
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return {
+          id: test.id,
+          description: test.description,
+          passed: false,
+          status: 'evaluation-error',
+          isEvaluationError: true,
+          errorMessage: `No pudimos comprobar el componente en la vista previa: ${message}`,
+          hint: test.hintTip,
+        };
+      }
+    }
+
     case 'source-regex': {
       if (!test.regexPattern) {
         return { id: test.id, description: test.description, passed: false, status: 'failed', errorMessage: 'Prueba mal configurada: falta patrón.', hint: test.hintTip };

@@ -26,6 +26,34 @@ describe('buildPreviewDocument', () => {
     expect(document).not.toMatch(/<script type="text\/javascript">[\s\S]*?import \{ LitElement/);
   });
 
+  it('resuelve imports profesionales de Lit mediante un import map fijado', () => {
+    const workspace: WorkspaceSnapshot = {
+      activeFilePath: 'app.js',
+      files: {
+        'index.html': {
+          name: 'index.html',
+          path: 'index.html',
+          language: 'html',
+          content: '<!doctype html><html lang="es"><head></head><body><curso-tarjeta></curso-tarjeta><script type="module" src="app.js"></script></body></html>',
+        },
+        'app.js': {
+          name: 'app.js',
+          path: 'app.js',
+          language: 'javascript',
+          content: "import { LitElement, html } from 'lit';\nimport { repeat } from 'lit/directives/repeat.js';\nimport { Task } from '@lit/task';\nimport { ContextProvider } from '@lit/context';",
+        },
+      },
+    };
+
+    const document = buildPreviewDocument(workspace);
+
+    expect(document).toContain('<script type="importmap">');
+    expect(document).toContain('"lit":"https://esm.sh/lit@3.3.3"');
+    expect(document).toContain('"lit/":"https://esm.sh/lit@3.3.3/"');
+    expect(document).toContain('"@lit/task":"https://esm.sh/@lit/task@1.0.3"');
+    expect(document).toContain('"@lit/context":"https://esm.sh/@lit/context@1.1.6"');
+  });
+
   it('conserva dependencias externas y solo sustituye archivos locales', () => {
     const workspace: WorkspaceSnapshot = {
       activeFilePath: 'index.html',

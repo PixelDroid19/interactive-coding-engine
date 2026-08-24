@@ -31,6 +31,8 @@ const CONSOLE_BRIDGE = `
 </script>
 `;
 
+const LIT_IMPORT_MAP = `<script type="importmap">{"imports":{"lit":"https://esm.sh/lit@3.3.3","lit/":"https://esm.sh/lit@3.3.3/","@lit/task":"https://esm.sh/@lit/task@1.0.3","@lit/context":"https://esm.sh/@lit/context@1.1.6"}}</script>`;
+
 export function shouldTranspileJsx(workspace: WorkspaceSnapshot): boolean {
   return Object.values(workspace.files).some((file) => {
     const path = file.path.toLowerCase();
@@ -116,6 +118,7 @@ export function buildPreviewDocument(workspace: WorkspaceSnapshot): string {
   const jsContent = jsFiles.map((file) => file.content).join('\n\n');
   const useJsx = shouldTranspileJsx(workspace);
   const useModules = !useJsx && hasModuleSyntax(jsContent);
+  const usesBareLitImport = /\bfrom\s+['"](?:lit(?:\/[^'"]*)?|@lit\/(?:task|context))['"]|\bimport\s*\(\s*['"](?:lit(?:\/[^'"]*)?|@lit\/(?:task|context))['"]\s*\)/.test(jsContent);
   const scriptType = useJsx ? 'text/babel' : useModules ? 'module' : 'text/javascript';
 
   const styleTag = cssContent ? `<style>\n${cssContent}\n</style>` : '';
@@ -146,7 +149,7 @@ ${jsContent}
     if (!html.includes('<head>')) {
       html = html.replace(/<html([^>]*)>/i, `<html$1><head></head>`);
     }
-    const headInject = `${CONSOLE_BRIDGE}${reactCdns}${styleTag}`;
+    const headInject = `${CONSOLE_BRIDGE}${usesBareLitImport ? LIT_IMPORT_MAP : ''}${reactCdns}${styleTag}`;
     if (html.includes('</head>')) {
       html = html.replace('</head>', `${headInject}</head>`);
     } else {
@@ -165,6 +168,7 @@ ${jsContent}
 <head>
   <meta charset="UTF-8" />
   ${CONSOLE_BRIDGE}
+  ${usesBareLitImport ? LIT_IMPORT_MAP : ''}
   ${reactCdns}
   <style>
     body { font-family: system-ui, sans-serif; margin: 0; padding: 24px; background: #0f172a; color: #f8fafc; }

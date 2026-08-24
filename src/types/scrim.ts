@@ -132,7 +132,7 @@ export interface SnapshotPoint {
 export interface ChallengeTest {
   id: string;
   description: string;
-  validatorType: 'function-call' | 'dom-check' | 'source-regex' | 'console-check';
+  validatorType: 'function-call' | 'dom-check' | 'source-regex' | 'console-check' | 'browser-script';
   targetFunction?: string;
   args?: any[];
   returnedFunctionCallCounts?: number[];
