@@ -31,7 +31,7 @@ export const JAVASCRIPT_COURSE: Course = {
   title: 'JavaScript: del lenguaje a aplicaciones',
   tagline: 'Domina JavaScript paso a paso, entendiendo cada contrato antes de usarlo.',
   description: 'Un recorrido independiente y progresivo: sintaxis, datos, control, colecciones, DOM, asincronía, arquitectura, componentes y un proyecto final. Cada clase explica, demuestra, amplía y después te deja practicar sin mostrarte la solución.',
-  level: 'Beginner',
+  level: 'Intermediate',
   tags: ['JavaScript', 'Lenguaje', 'Aplicaciones web'],
   instructor: { name: 'Kit', role: 'Instructor de JavaScript', bio: 'Explica los contratos del lenguaje y enseña a investigar sin convertir la programación en memorización.' },
   thumbnailGradient: 'from-sky-400 to-indigo-900',

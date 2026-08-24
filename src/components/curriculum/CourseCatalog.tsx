@@ -22,15 +22,17 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress,
         <p>Cada curso conserva su propio recorrido. Puedes volver cuando quieras y continuar desde la última actividad.</p>
       </section>
       <section className="course-catalog__grid" aria-label="Cursos disponibles">
-        {courses.map((course, index) => {
+        {courses.map((course) => {
           const items = course.modules.flatMap((module) => module.items);
           const completed = items.filter((item) => progress.completedItemIds.includes(item.id)).length;
           const lessons = items.filter((item) => item.type === 'scrim').length;
           const percent = items.length ? Math.round((completed / items.length) * 100) : 0;
+          const variant = course.level === 'Beginner' ? 'green' : course.level === 'Intermediate' ? 'yellow' : course.level === 'Advanced' ? 'red' : 'yellow';
+          const levelLabel = course.level === 'Beginner' ? 'Desde cero' : course.level === 'Intermediate' ? 'Intermedio' : course.level === 'Advanced' ? 'Avanzado' : course.level;
           return (
-            <article key={course.id} className={`course-card course-card--${index % 2 ? 'blue' : 'yellow'}`}>
+            <article key={course.id} className={`course-card course-card--${variant}`}>
               <div className="course-card__topline">
-                <span>{course.level === 'Beginner' ? 'Desde cero' : course.level}</span>
+                <span>{levelLabel}</span>
                 <span>{lessons} clases</span>
               </div>
               <div className="course-card__icon"><BookOpen size={25} /></div>
