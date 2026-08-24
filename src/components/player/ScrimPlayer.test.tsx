@@ -153,4 +153,22 @@ describe('ScrimPlayer overlay coordination', () => {
 
     expect(loadLastBranchForLesson(lesson.id)).toBeNull();
   });
+
+  it('abre el reto al pulsar su marcador en la línea de tiempo', async () => {
+    const challenge = { ...lesson.challenges[0], timestamp: 50_000 };
+    const markerLesson = {
+      ...lesson,
+      id: 'leccion-marcador-reto',
+      durationMs: 60_000,
+      audioTrack: undefined,
+      challenges: [challenge],
+    };
+
+    render(<ScrimPlayer lessonData={markerLesson} onBack={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Empezar la clase' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pausar la clase' }));
+    fireEvent.click(screen.getByRole('button', { name: `Ir al reto ${challenge.title}` }));
+
+    expect(await screen.findByRole('button', { name: 'Comprobar reto' })).toBeTruthy();
+  });
 });

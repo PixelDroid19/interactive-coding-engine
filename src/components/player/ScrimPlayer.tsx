@@ -94,6 +94,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const [awaitingStart, setAwaitingStart] = useState(true);
   const [showBranchRecovery, setShowBranchRecovery] = useState(false);
   const [pendingSeekMs, setPendingSeekMs] = useState<number | null>(null);
+  const [pendingChallengeId, setPendingChallengeId] = useState<string | null>(null);
   const [showReturnConfirm, setShowReturnConfirm] = useState(false);
   const [closureConfirmed, setClosureConfirmed] = useState(false);
   const [showClosure, setShowClosure] = useState(false);
@@ -189,6 +190,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     setAwaitingStart(true);
     setHasPendingEdits(false);
     setPendingSeekMs(null);
+    setPendingChallengeId(null);
     setShowReturnConfirm(false);
     setClosureConfirmed(false);
     setShowClosure(false);
@@ -669,6 +671,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   };
 
   const handleSeek = (targetMs: number) => {
+    setPendingChallengeId(null);
     if (isForkedRef.current && hasPendingEdits) {
       setPendingSeekMs(targetMs);
       return;
@@ -687,6 +690,39 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     engineRef.current?.seek(targetMs);
   };
 
+  const activateChallengeFromTimeline = (challenge: ScrimChallenge) => {
+    const engine = engineRef.current;
+    if (!engine) return;
+    engine.seek(challenge.timestamp);
+    engine.markChallengeTriggered(challenge.id);
+    engine.pause();
+    setActiveChallenge(challenge);
+    setIsChallengeDrawerOpen(true);
+    setIsChallengeMinimized(false);
+    setValidationResult(null);
+    forkLearnerBranch(challenge.timestamp, challenge.id);
+    dispatch({ type: 'CHALLENGE_TRIGGER', challengeId: challenge.id, baseTime: challenge.timestamp });
+  };
+
+  const handleChallengeSeek = (challenge: ScrimChallenge) => {
+    if (isForkedRef.current && hasPendingEdits) {
+      setPendingSeekMs(challenge.timestamp);
+      setPendingChallengeId(challenge.id);
+      return;
+    }
+    if (isForkedRef.current) {
+      flushBranchSave(lessonData.id);
+      clearBranchesForLesson(lessonData.id);
+      isForkedRef.current = false;
+      dispatch({ type: 'DISCARD_BRANCH', baseTime: challenge.timestamp });
+      setLearnerBranch(null);
+      setActiveChallenge(null);
+      setIsChallengeDrawerOpen(false);
+      setHasPendingEdits(false);
+    }
+    activateChallengeFromTimeline(challenge);
+  };
+
   const handleDiscardAndSeek = () => {
     if (pendingSeekMs !== null) {
       const target = pendingSeekMs;
@@ -699,12 +735,18 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       setActiveChallenge(null);
       setIsChallengeDrawerOpen(false);
       setHasPendingEdits(false);
-      engineRef.current?.seek(target);
+      const challenge = pendingChallengeId
+        ? lessonData.challenges.find((candidate) => candidate.id === pendingChallengeId)
+        : undefined;
+      setPendingChallengeId(null);
+      if (challenge) activateChallengeFromTimeline(challenge);
+      else engineRef.current?.seek(target);
     }
   };
 
   const handleKeepEditing = () => {
     setPendingSeekMs(null);
+    setPendingChallengeId(null);
   };
 
   const handleRestoreBranch = () => {
@@ -1181,6 +1223,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           engineRef.current?.pause();
         }}
         onSeek={handleSeek}
+        onChallengeSeek={handleChallengeSeek}
         onRateChange={(rate) => {
           setPlaybackRate(rate);
           engineRef.current?.setPlaybackRate(rate);

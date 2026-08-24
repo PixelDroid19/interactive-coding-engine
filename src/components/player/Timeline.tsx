@@ -47,6 +47,7 @@ interface TimelineProps {
   onPlay: () => void;
   onPause: () => void;
   onSeek: (targetMs: number) => void;
+  onChallengeSeek?: (challenge: ScrimChallenge) => void;
   onRateChange: (newRate: number) => void;
   onToggleMute?: () => void;
   onVolumeChange?: (volume: number) => void;
@@ -66,6 +67,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   onPlay,
   onPause,
   onSeek,
+  onChallengeSeek,
   onRateChange,
   onToggleMute,
   onVolumeChange,
@@ -317,7 +319,8 @@ export const Timeline: React.FC<TimelineProps> = ({
                 onPointerDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onSeek(ch.timestamp);
+                  if (onChallengeSeek) onChallengeSeek(ch);
+                  else onSeek(ch.timestamp);
                 }}
                 className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45"
                 style={{
