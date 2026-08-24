@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Sparkles, ChevronDown } from 'lucide-react';
 import { ScrimChallenge } from '../../types/scrim';
 
 export interface Chapter {
@@ -76,6 +76,8 @@ export const Timeline: React.FC<TimelineProps> = ({
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [hoveredTimeMs, setHoveredTimeMs] = useState<number | null>(null);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [speedOpen, setSpeedOpen] = useState(false);
+  const speedMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const mql = window.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -85,6 +87,14 @@ export const Timeline: React.FC<TimelineProps> = ({
       mql.addEventListener('change', handler);
       return () => mql.removeEventListener('change', handler);
     }
+  }, []);
+
+  useEffect(() => {
+    const onDocClick = (e: MouseEvent) => {
+      if (speedMenuRef.current && !speedMenuRef.current.contains(e.target as Node)) setSpeedOpen(false);
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
   }, []);
 
   const formatTime = (ms: number): string => {
@@ -97,13 +107,11 @@ export const Timeline: React.FC<TimelineProps> = ({
   const progressPercent = durationMs > 0 ? Math.min(100, Math.max(0, (currentTimeMs / durationMs) * 100)) : 0;
   const clampedCurrentTimeMs = durationMs > 0 ? Math.min(durationMs, Math.max(0, currentTimeMs)) : 0;
 
-  // Find active chapter
   const currentChapter = [...chapters]
     .sort((a, b) => a.timestamp - b.timestamp)
     .filter((ch) => currentTimeMs >= ch.timestamp)
     .pop();
 
-  // Find hovered chapter
   const hoveredChapter = hoveredTimeMs !== null
     ? [...chapters]
         .sort((a, b) => a.timestamp - b.timestamp)
@@ -111,7 +119,6 @@ export const Timeline: React.FC<TimelineProps> = ({
         .pop()
     : null;
 
-  // Find hovered challenge
   const hoveredChallenge = hoveredTimeMs !== null
     ? getClosestChallenge(challenges, hoveredTimeMs, durationMs)
     : null;
@@ -152,7 +159,6 @@ export const Timeline: React.FC<TimelineProps> = ({
 
   const handleScrubberKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (durationMs <= 0) return;
-
     let targetMs: number | null = null;
     switch (event.key) {
       case 'ArrowLeft':
@@ -172,15 +178,15 @@ export const Timeline: React.FC<TimelineProps> = ({
       default:
         return;
     }
-
     event.preventDefault();
     onSeek(targetMs);
   };
 
-  const availableSpeeds = [0.75, 1, 1.25, 1.5];
+  const availableSpeeds = [0.75, 1, 1.25, 1.5] as const;
 
   return (
     <footer className="player-bar">
+      {/* LEFT: play + time + chapter (reservado para no saltar) */}
       <div className="player-left">
         <button
           type="button"
@@ -189,24 +195,36 @@ export const Timeline: React.FC<TimelineProps> = ({
           aria-label={isPlaying ? 'Pausar la clase' : 'Reproducir la clase'}
           title={isPlaying ? 'Pausa (Espacio)' : 'Reproducir (Espacio)'}
         >
-          {isPlaying ? (
-            <Pause className="h-5 w-5" fill="currentColor" />
-          ) : (
-            <Play className="h-5 w-5 ml-0.5" fill="currentColor" />
-          )}
+          {isPlaying ? <Pause className="h-[14px] w-[14px]" fill="currentColor" /> : <Play className="h-[14px] w-[14px] ml-px" fill="currentColor" />}
         </button>
-        <div className="timestamp-text" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div className="timestamp-text" style={{ fontVariantNumeric: 'tabular-nums', minWidth: 88, display: 'flex', alignItems: 'center', gap: 4 }}>
           <span style={{ color: 'var(--color-text-main)', fontWeight: 700 }}>{formatTime(currentTimeMs)}</span>
-          <span>/</span>
-          <span>{formatTime(durationMs)}</span>
+          <span style={{ opacity: 0.5 }}>/</span>
+          <span style={{ opacity: 0.85 }}>{formatTime(durationMs)}</span>
         </div>
-        {currentChapter && (
-          <span className="category-tag hidden sm:inline-flex" style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {currentChapter.title}
+        <div className="hidden md:flex" style={{ width: 168, flexShrink: 0, alignItems: 'center' }}>
+          <span
+            className="category-tag"
+            style={{
+              maxWidth: 168,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              opacity: currentChapter ? 1 : 0,
+              pointerEvents: currentChapter ? 'auto' : 'none',
+              display: 'inline-flex',
+              fontSize: 11,
+              padding: '3px 8px',
+              transition: 'opacity 0.15s ease',
+            }}
+            title={currentChapter?.title ?? ''}
+          >
+            {currentChapter?.title ?? '—'}
           </span>
-        )}
+        </div>
       </div>
 
+      {/* CENTER: timeline estable, altura fija */}
       <div className="player-center">
         <div
           ref={scrubberRef}
@@ -226,49 +244,63 @@ export const Timeline: React.FC<TimelineProps> = ({
           onPointerLeave={() => {
             if (!isScrubbingRef.current) setHoveredTimeMs(null);
           }}
-          className={`relative h-3 w-full rounded-full group transition-colors ${isScrubbing ? 'cursor-grabbing' : 'cursor-pointer'}`}
-          style={{ background: '#cbd5e1', border: '1.5px solid #232733', minHeight: 12 }}
+          className={`relative w-full rounded-full group ${isScrubbing ? 'cursor-grabbing' : 'cursor-pointer'}`}
+          style={{
+            height: 14,
+            display: 'flex',
+            alignItems: 'center',
+            background: 'transparent',
+            flexShrink: 0,
+          }}
         >
-          {/* Progress filled bar */}
+          {/* track */}
           <div
-            className="absolute inset-y-0 left-0 rounded-full"
-            style={{ background: '#0284c7', width: `${progressPercent}%` }}
+            className="absolute left-0 right-0 rounded-full overflow-hidden"
+            style={{ height: 6, background: 'var(--bg-surface)', border: '1px solid var(--color-pencil)', top: '50%', transform: 'translateY(-50%)' }}
+          >
+            <div className="absolute inset-y-0 left-0" style={{ background: 'var(--color-primary)', width: `${progressPercent}%` }} />
+            {/* chapter notches dentro del track */}
+            {chapters.map((chap, idx) => {
+              if (chap.timestamp <= 0) return null;
+              const posPercent = durationMs > 0 ? (chap.timestamp / durationMs) * 100 : 0;
+              if (posPercent >= 99.5 || posPercent <= 0.5) return null;
+              return (
+                <button
+                  type="button"
+                  key={`chap-${idx}`}
+                  aria-label={`Ir al capítulo ${chap.title}`}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSeek(chap.timestamp);
+                  }}
+                  className="absolute top-0 bottom-0 p-0 border-0"
+                  style={{ left: `${posPercent}%`, width: 4, marginLeft: -1, background: 'var(--color-pencil)', opacity: 0.95, cursor: 'pointer' }}
+                  title={`Capítulo: ${chap.title} (${formatTime(chap.timestamp)})`}
+                />
+              );
+            })}
+          </div>
+
+          {/* thumb */}
+          <div
+            className="absolute top-1/2 -translate-y-1/2 z-20"
+            style={{
+              left: `calc(${progressPercent}% - 7px)`,
+              width: 14,
+              height: 14,
+              background: 'var(--color-primary)',
+              border: '1.5px solid var(--color-pencil)',
+              boxShadow: '1px 1px 0 var(--color-sketch-shadow)',
+              borderRadius: 4,
+              transition: isScrubbing ? 'none' : 'left 0.08s linear',
+            }}
           />
 
-          {/* Chapter Break Dividers / Notches */}
-          {chapters.map((chap, idx) => {
-            if (chap.timestamp <= 0) return null;
-            const posPercent = durationMs > 0 ? (chap.timestamp / durationMs) * 100 : 0;
-            if (posPercent > 99) return null;
-
-            return (
-              <button
-                type="button"
-                key={`chap-${idx}`}
-                aria-label={`Ir al capítulo ${chap.title}`}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSeek(chap.timestamp);
-                }}
-                className="absolute inset-y-0 z-10 w-1 cursor-pointer appearance-none border-0 p-0"
-                style={{ background: '#1e2433', left: `${posPercent}%`, minWidth: 4, minHeight: 16 }}
-                title={`Capítulo: ${chap.title} (${formatTime(chap.timestamp)})`}
-              />
-            );
-          })}
-
-          {/* Current playhead knob - larger for touch */}
-          <div
-            className="absolute top-1/2 -translate-y-1/2 w-5 h-5 z-30"
-            style={{ background: '#0284c7', border: '2px solid #1e2433', boxShadow: '2px 2px 0 #232733', borderRadius: 6, left: `calc(${progressPercent}% - 8px)` }}
-          />
-
-          {/* Challenge Markers (Interactive Diamond Badges ◆) - larger hit area */}
+          {/* challenge diamonds */}
           {challenges.map((ch) => {
             const markerPercent = durationMs > 0 ? (ch.timestamp / durationMs) * 100 : 0;
             const isPassed = currentTimeMs >= ch.timestamp;
-
             return (
               <button
                 type="button"
@@ -279,47 +311,52 @@ export const Timeline: React.FC<TimelineProps> = ({
                   e.stopPropagation();
                   onSeek(ch.timestamp);
                 }}
-                className={`absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rotate-45 cursor-pointer transition-all duration-150 hover:scale-125 z-20 shadow-md ${
-                  isPassed
-                    ? 'bg-amber-400 border-2 border-zinc-950'
-                    : 'bg-amber-500/80 border border-amber-300 ring-2 ring-amber-500/30'
-                }`}
-                style={{ left: `${markerPercent}%`, minWidth: 16, minHeight: 16 }}
+                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45"
+                style={{
+                  left: `${markerPercent}%`,
+                  width: 12,
+                  height: 12,
+                  background: isPassed ? 'var(--color-brand)' : '#f59e0b',
+                  border: '1.5px solid var(--color-black)',
+                  boxShadow: '1px 1px 0 var(--color-sketch-shadow)',
+                  zIndex: 10,
+                  borderRadius: 2,
+                }}
                 title={`Reto: ${ch.title} (${formatTime(ch.timestamp)})`}
               >
-                {/* Subtle beacon pulse on active challenge - respects reduced motion */}
-                {Math.abs(currentTimeMs - ch.timestamp) < 1500 && !prefersReducedMotion && (
-                  <span className="absolute inset-0 rounded-sm bg-amber-300 animate-ping opacity-75" />
+                {Math.abs(currentTimeMs - ch.timestamp) < 1200 && !prefersReducedMotion && (
+                  <span className="absolute inset-0 bg-[var(--color-brand)] animate-ping opacity-60" style={{ borderRadius: 2 }} />
                 )}
               </button>
             );
           })}
 
-          {/* Rich Hover Tooltip (Showing timestamp + Chapter + Challenge) */}
+          {/* hover tooltip */}
           {hoveredTimeMs !== null && (
             <div
-              className="pointer-events-none absolute -top-9 -translate-x-1/2 px-2 py-1 text-[10px] z-40 whitespace-nowrap flex items-center gap-1.5"
+              className="pointer-events-none absolute -top-9 -translate-x-1/2 px-2 py-1 text-[11px] z-30 whitespace-nowrap hidden sm:flex items-center gap-1.5"
               style={{
                 left: `${Math.min(92, Math.max(8, (hoveredTimeMs / durationMs) * 100))}%`,
                 background: 'var(--bg-surface-light)',
-                border: '1.5px solid #232733',
-                boxShadow: '2px 2px 0 #232733',
+                border: '1.5px solid var(--color-pencil)',
+                boxShadow: '2px 2px 0 var(--color-sketch-shadow)',
                 color: 'var(--color-text-main)',
                 borderRadius: 8,
+                fontWeight: 600,
               }}
             >
-              <span className="font-mono font-bold">{formatTime(hoveredTimeMs)}</span>
+              <span className="font-mono">{formatTime(hoveredTimeMs)}</span>
               {hoveredChapter && (
                 <>
-                  <span>•</span>
-                  <span className="font-medium">{hoveredChapter.title}</span>
+                  <span style={{ opacity: 0.4 }}>•</span>
+                  <span className="max-w-[140px] truncate">{hoveredChapter.title}</span>
                 </>
               )}
               {hoveredChallenge && (
                 <>
-                  <span>•</span>
-                  <span className="font-bold flex items-center gap-0.5" style={{ color: '#b45309' }}>
-                    <Sparkles className="h-2.5 w-2.5 inline" /> Reto
+                  <span style={{ opacity: 0.4 }}>•</span>
+                  <span className="flex items-center gap-1" style={{ color: '#92400e', fontWeight: 800 }}>
+                    <Sparkles className="h-3 w-3" /> Reto
                   </span>
                 </>
               )}
@@ -328,17 +365,23 @@ export const Timeline: React.FC<TimelineProps> = ({
         </div>
       </div>
 
-      <div className="player-right flex-wrap sm:flex-nowrap gap-1 sm:gap-2">
-        {/* Voice Audio Mute Toggle */}
+      {/* RIGHT: controles compactos, sin wrap */}
+      <div className="player-right">
+        {/* volumen: icono + slider compacto, slider oculto en mobile */}
         {(onToggleMute || onVolumeChange) && (
-          <div className="hidden sm:flex items-center gap-1.5">
+          <div className="hidden sm:flex items-center gap-1" style={{ flexShrink: 0 }}>
             {onToggleMute && (
               <button
                 type="button"
                 onClick={onToggleMute}
                 aria-label={isMuted || volume <= 0 ? 'Activar sonido' : 'Silenciar explicación'}
-                className="p-2 rounded transition-colors"
-                style={{ color: isMuted || volume <= 0 ? 'var(--color-text-subtle)' : 'var(--color-text-main)', minWidth: 36, minHeight: 36 }}
+                className="grid place-items-center rounded-md"
+                style={{
+                  width: 30,
+                  height: 28,
+                  color: isMuted || volume <= 0 ? 'var(--color-text-subtle)' : 'var(--color-text-main)',
+                  border: '1px solid transparent',
+                }}
                 title={isMuted || volume <= 0 ? 'Activar sonido' : 'Silenciar'}
               >
                 {isMuted || volume <= 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -353,8 +396,8 @@ export const Timeline: React.FC<TimelineProps> = ({
                 value={isMuted ? 0 : volume}
                 onChange={(event) => onVolumeChange(Number(event.target.value))}
                 onMouseDown={(event) => event.stopPropagation()}
-                className="h-2 w-16 sm:w-20 cursor-pointer appearance-none rounded-full"
-                style={{ background: '#d6d0c2', accentColor: '#0284c7' }}
+                className="cursor-pointer appearance-none rounded-full hidden lg:block"
+                style={{ width: 72, height: 4, background: 'var(--bg-surface)', accentColor: 'var(--color-primary)', border: '1px solid var(--color-pencil-light)' }}
                 title={`Volumen ${Math.round((isMuted ? 0 : volume) * 100)}%`}
                 aria-label="Volumen de la explicación"
               />
@@ -362,32 +405,33 @@ export const Timeline: React.FC<TimelineProps> = ({
           </div>
         )}
 
-        {/* Captions Toggle */}
+        {/* CC */}
         {onToggleCaptions && (
           <button
             type="button"
             onClick={onToggleCaptions}
             aria-label="Activar o desactivar subtítulos"
             aria-pressed={showCaptions}
-            className="px-2 py-1 text-xs font-mono font-bold"
+            className="grid place-items-center text-[11px] font-extrabold"
             style={
               showCaptions
-                ? { background: 'var(--color-highlighter-yellow)', color: '#0f172a', border: '1.5px solid #232733', borderRadius: 6 }
-                : { color: 'var(--color-text-muted)', minWidth: 36, minHeight: 32 }
+                ? { background: 'var(--color-brand)', color: 'var(--color-brand-contrast)', border: '1.5px solid var(--color-black)', borderRadius: 6, width: 30, height: 24 }
+                : { color: 'var(--color-text-muted)', border: '1px solid transparent', width: 30, height: 24, borderRadius: 6 }
             }
-            title="Activar o desactivar subtítulos"
+            title="Subtítulos"
           >
             CC
           </button>
         )}
 
-        <div className="flex items-center gap-1">
+        {/* -5s / +5s compactos */}
+        <div className="hidden sm:flex items-center" style={{ gap: 2, flexShrink: 0 }}>
           <button
             type="button"
             onClick={() => onSeek(Math.max(0, currentTimeMs - 5000))}
             aria-label="Retroceder 5 segundos"
-            className="text-xs font-mono px-2 py-1 rounded"
-            style={{ color: 'var(--color-text-muted)', minWidth: 44, minHeight: 32 }}
+            className="grid place-items-center rounded-md text-[11px] font-mono font-bold"
+            style={{ color: 'var(--color-text-muted)', width: 38, height: 28, border: '1px solid transparent' }}
             title="Retroceder 5 s"
           >
             -5 s
@@ -396,43 +440,73 @@ export const Timeline: React.FC<TimelineProps> = ({
             type="button"
             onClick={() => onSeek(Math.min(durationMs, currentTimeMs + 5000))}
             aria-label="Avanzar 5 segundos"
-            className="text-xs font-mono px-2 py-1 rounded"
-            style={{ color: 'var(--color-text-muted)', minWidth: 44, minHeight: 32 }}
+            className="grid place-items-center rounded-md text-[11px] font-mono font-bold"
+            style={{ color: 'var(--color-text-muted)', width: 38, height: 28, border: '1px solid transparent' }}
             title="Avanzar 5 s"
           >
             +5 s
           </button>
         </div>
 
-        <div className="h-6 w-px hidden sm:block" style={{ background: '#232733' }} />
+        <div className="hidden sm:block" style={{ width: 1, height: 18, background: 'var(--color-pencil)', opacity: 0.25 }} />
 
-        <div className="hidden sm:flex p-0.5 text-xs font-mono" style={{ border: '1.5px solid #232733', borderRadius: 8, background: 'var(--bg-surface)' }}>
-          {availableSpeeds.map((rate) => (
-            <button
-              type="button"
-              key={rate}
-              onClick={() => onRateChange(rate)}
-              aria-label={`Velocidad ${rate} por`}
-              aria-pressed={playbackRate === rate}
-              className="px-2 py-1 text-xs font-medium"
-              style={
-                playbackRate === rate
-                  ? { background: 'var(--color-highlighter-cyan)', color: '#0f172a', fontWeight: 700, borderRadius: 6 }
-                  : { color: 'var(--color-text-muted)', minWidth: 36 }
-              }
+        {/* Velocidad: un solo botón + menú */}
+        <div ref={speedMenuRef} className="relative hidden sm:block" style={{ flexShrink: 0 }}>
+          <button
+            type="button"
+            onClick={() => setSpeedOpen((v) => !v)}
+            aria-label={`Velocidad actual ${playbackRate}x, cambiar velocidad`}
+            aria-expanded={speedOpen}
+            className="flex items-center justify-center gap-1 rounded-md text-xs font-bold"
+            style={{
+              minWidth: 52,
+              height: 28,
+              padding: '0 8px',
+              background: speedOpen ? 'var(--color-highlighter-cyan)' : 'var(--bg-surface)',
+              color: speedOpen ? 'var(--color-brand-contrast)' : 'var(--color-text-muted)',
+              border: '1.5px solid var(--color-pencil)',
+              borderRadius: 8,
+              boxShadow: '1px 1px 0 var(--color-sketch-shadow)',
+            }}
+          >
+            {playbackRate}x <ChevronDown className="h-3 w-3 opacity-70" />
+          </button>
+          {speedOpen && (
+            <div
+              className="absolute right-0 bottom-[calc(100%+8px)] z-30 rounded-lg p-1 flex flex-col gap-1"
+              style={{ background: 'var(--bg-surface-light)', border: '1.5px solid var(--color-pencil)', boxShadow: '3px 3px 0 var(--color-sketch-shadow)', minWidth: 84 }}
             >
-              {rate}x
-            </button>
-          ))}
+              {availableSpeeds.map((rate) => (
+                <button
+                  type="button"
+                  key={rate}
+                  onClick={() => {
+                    onRateChange(rate);
+                    setSpeedOpen(false);
+                  }}
+                  aria-label={`Velocidad ${rate} por`}
+                  aria-pressed={playbackRate === rate}
+                  className="px-2 py-1.5 text-xs font-bold rounded-md text-left"
+                  style={
+                    playbackRate === rate
+                      ? { background: 'var(--color-brand)', color: 'var(--color-brand-contrast)', border: '1px solid var(--color-black)' }
+                      : { color: 'var(--color-text-main)', border: '1px solid transparent' }
+                  }
+                >
+                  {rate}x
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Restart */}
+        {/* Reiniciar */}
         <button
           type="button"
           onClick={() => onSeek(0)}
           aria-label="Repetir desde el principio"
-          className="p-2 rounded"
-          style={{ color: 'var(--color-text-muted)', minWidth: 36, minHeight: 36 }}
+          className="grid place-items-center rounded-md hidden sm:grid"
+          style={{ width: 30, height: 28, color: 'var(--color-text-muted)', border: '1px solid transparent' }}
           title="Repetir desde el principio"
         >
           <RotateCcw className="h-4 w-4" />
