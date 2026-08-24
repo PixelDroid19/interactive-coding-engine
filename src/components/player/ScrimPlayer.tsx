@@ -4,6 +4,7 @@ import { PlaybackEngine, PlaybackStatus } from '../../engine/playbackEngine';
 import { SyncTelemetry } from '../../engine/syncEngine';
 import { cloneWorkspace, reconstructWorkspaceAt } from '../../engine/eventLog';
 import { publishInstructorPointer } from '../../engine/instructorPointer';
+import { InstructorCursor } from './InstructorCursor';
 import { runChallengeValidation } from '../../engine/testRunner';
 import { markChallengeCompleted, markChallengeSkipped, markItemCompleted, saveLearnerBranch, saveLearnerBranchDebounced, loadLastBranchForLesson, flushBranchSave, clearBranchesForLesson, updateRecentPosition, loadVoiceVolume, saveVoiceVolume } from '../../engine/persistence';
 import { CodeEditor } from '../editor/CodeEditor';
@@ -973,6 +974,9 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           </div>
         </div>
       )}
+
+      {/* One global pointer crosses editor, files and preview without teleporting. */}
+      <InstructorCursor containerType="global" />
 
       {/* Main Workspace using CSS Grid System (allocating ≥80% viewport to editor & preview) */}
       <main className="workspace-container">

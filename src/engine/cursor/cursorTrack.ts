@@ -16,13 +16,14 @@ export interface CursorPose {
   targetArea: CursorArea;
   clicked: boolean;
   visible: boolean;
+  transition?: {
+    from: { x: number; y: number; targetArea: CursorArea };
+    to: { x: number; y: number; targetArea: CursorArea };
+    progress: number;
+  };
 }
 
 const CLICK_HOLD_MS = 180;
-/** Gaps this short are treated as continuous motion (full-interval lerp). */
-const CONTINUOUS_GAP_MS = 3200;
-/** After a rest, travel into the next keyframe over this window so we arrive on time. */
-const APPROACH_MS = 380;
 const DUPLICATE_EPS = 1e-6;
 
 function clamp01(t: number): number {
@@ -146,19 +147,25 @@ export class CursorTrack {
     }
 
     if (last.targetArea !== next.targetArea) {
-      if (time < next.time) {
-        return { x: last.x, y: last.y, targetArea: last.targetArea, clicked, visible: true };
+      const progress = easeInOutCubic((time - last.time) / gap);
+      if (progress >= 1) {
+        return { x: next.x, y: next.y, targetArea: next.targetArea, clicked, visible: true };
       }
-      return { x: next.x, y: next.y, targetArea: next.targetArea, clicked, visible: true };
+      return {
+        x: last.x,
+        y: last.y,
+        targetArea: last.targetArea,
+        clicked,
+        visible: true,
+        transition: {
+          from: { x: last.x, y: last.y, targetArea: last.targetArea },
+          to: { x: next.x, y: next.y, targetArea: next.targetArea },
+          progress,
+        },
+      };
     }
 
-    const { originTime, destTime } = this.travelWindow(last.time, next.time);
-    if (time <= originTime) {
-      return { x: last.x, y: last.y, targetArea: last.targetArea, clicked, visible: true };
-    }
-
-    const span = destTime - originTime;
-    const raw = span <= DUPLICATE_EPS ? 1 : (time - originTime) / span;
+    const raw = (time - last.time) / gap;
     const t = easeInOutCubic(raw);
     const { x, y } = this.interpolateSegment(i, t);
 
@@ -169,15 +176,6 @@ export class CursorTrack {
       clicked,
       visible: true,
     };
-  }
-
-  private travelWindow(fromTime: number, toTime: number): { originTime: number; destTime: number } {
-    const gap = toTime - fromTime;
-    if (gap <= CONTINUOUS_GAP_MS) {
-      return { originTime: fromTime, destTime: toTime };
-    }
-    const travel = Math.min(APPROACH_MS, gap * 0.4);
-    return { originTime: toTime - travel, destTime: toTime };
   }
 
   private interpolateSegment(i: number, t: number): { x: number; y: number } {
@@ -253,7 +251,13 @@ export class CursorTrack {
 export function poseFromTrack(
   track: CursorTrack,
   time: number
-): { x: number; y: number; targetArea: CursorArea; clicked?: boolean } | undefined {
+): {
+  x: number;
+  y: number;
+  targetArea: CursorArea;
+  clicked?: boolean;
+  transition?: CursorPose['transition'];
+} | undefined {
   const pose = track.getPositionAt(time);
   if (!pose || !pose.visible) return undefined;
   return {
@@ -261,5 +265,6 @@ export function poseFromTrack(
     y: pose.y,
     targetArea: pose.targetArea,
     clicked: pose.clicked || undefined,
+    transition: pose.transition,
   };
 }

@@ -7,6 +7,7 @@ import {
 import { applyEventToWorkspace, cloneWorkspace, reconstructWorkspaceAt } from './eventLog';
 import { AudioNarrator } from './audioNarrator';
 import { CursorTrack, poseFromTrack } from './cursor/cursorTrack';
+import { InstructorPointer } from './instructorPointer';
 
 export type SyncState = 'locked' | 'slewing' | 'resyncing' | 'stalled';
 
@@ -26,7 +27,7 @@ export interface SyncTelemetry {
 export interface SyncEngineCallbacks {
   onWorkspaceChange: (ws: WorkspaceSnapshot) => void;
   onTimeUpdate: (currentMs: number, durationMs: number) => void;
-  onPointerChange: (pointer?: { x: number; y: number; targetArea: 'editor' | 'preview' | 'files'; clicked?: boolean }) => void;
+  onPointerChange: (pointer?: InstructorPointer) => void;
   onChallengeTrigger: (challenge: ScrimChallenge) => void;
   onPlaybackStateChange: (status: 'idle' | 'playing' | 'paused' | 'ended') => void;
   onSubtitleChange?: (text: string | null) => void;
@@ -70,7 +71,7 @@ export class HighPrecisionSyncEngine {
   private eventsInLastFrame = 0;
 
   // Active state pointers
-  private activePointer?: { x: number; y: number; targetArea: 'editor' | 'preview' | 'files'; clicked?: boolean };
+  private activePointer?: InstructorPointer;
   private cursorTrack: CursorTrack;
   private lastRunTimestamp = -1;
   private triggeredChallenges = new Set<string>();

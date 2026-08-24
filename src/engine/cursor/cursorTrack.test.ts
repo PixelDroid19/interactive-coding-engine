@@ -69,15 +69,18 @@ describe('CursorTrack.getPositionAt', () => {
     expect(b?.y).toBeLessThan(70);
   });
 
-  it('holds after a rest then approaches the next keyframe instead of snapping', () => {
+  it('keeps travelling during a long explanation instead of freezing until the end', () => {
     const track = new CursorTrack([
       { time: 0, x: 10, y: 10, targetArea: 'editor', clicked: false },
       { time: 8000, x: 90, y: 80, targetArea: 'editor', clicked: false },
     ]);
-    const rest = track.getPositionAt(2000);
+    const middle = track.getPositionAt(4000);
     const late = track.getPositionAt(7900);
     const end = track.getPositionAt(8000);
-    expect(rest).toMatchObject({ x: 10, y: 10 });
+    expect(middle?.x).toBeGreaterThan(10);
+    expect(middle?.x).toBeLessThan(90);
+    expect(middle?.y).toBeGreaterThan(10);
+    expect(middle?.y).toBeLessThan(80);
     expect(late?.x).toBeGreaterThan(10);
     expect(late?.x).toBeLessThan(90);
     expect(end).toMatchObject({ x: 90, y: 80 });
@@ -116,13 +119,16 @@ describe('CursorTrack.getPositionAt', () => {
     expect(track.getPositionAt(5000)).toMatchObject({ x: 7, y: 9, visible: true });
   });
 
-  it('does not interpolate coordinates across target areas', () => {
+  it('describes a continuous transition when travelling across target areas', () => {
     const track = new CursorTrack([
       { time: 0, x: 50, y: 20, targetArea: 'files', clicked: true },
       { time: 400, x: 30, y: 40, targetArea: 'editor', clicked: false },
     ]);
-    expect(track.getPositionAt(200)?.targetArea).toBe('files');
-    expect(track.getPositionAt(200)?.x).toBe(50);
+    expect(track.getPositionAt(200)?.transition).toMatchObject({
+      from: { x: 50, y: 20, targetArea: 'files' },
+      to: { x: 30, y: 40, targetArea: 'editor' },
+      progress: 0.5,
+    });
     expect(track.getPositionAt(400)?.targetArea).toBe('editor');
     expect(track.getPositionAt(400)?.x).toBe(30);
   });

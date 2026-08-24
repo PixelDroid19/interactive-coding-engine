@@ -1,5 +1,6 @@
 import {
   AudioTrackInfo,
+  PointerMoveEvent,
   ScrimChallenge,
   ScrimEvent,
   ScrimLessonData,
@@ -115,6 +116,184 @@ function cursorFromContent(content: string): { line: number; ch: number } {
 
 function clampPct(n: number): number {
   return Math.max(0, Math.min(100, n));
+}
+
+type PointerSeed = Omit<PointerMoveEvent, 'id' | 'type'> & { priority: number };
+
+const POINTER_WANDER_MS = 2_500;
+const MIN_CROSS_AREA_MS = 1_600;
+const EDITOR_ROUTE = [
+  { x: 20, y: 18 },
+  { x: 42, y: 28 },
+  { x: 68, y: 44 },
+  { x: 34, y: 62 },
+  { x: 72, y: 74 },
+];
+
+/**
+ * Lessons authored before the live pointer existed still need a complete route.
+ * Build it from the same semantic actions the learner sees: files, narration,
+ * typing, execution and the challenge hand-off.
+ */
+function buildInstructorRoute(
+  events: ScrimEvent[],
+  narrationScript: { timestamp: number; text: string }[],
+  durationMs: number,
+  initialWorkspace: WorkspaceSnapshot,
+  nextId: () => string,
+): PointerMoveEvent[] {
+  const lastMoment = Math.max(1, durationMs - 1);
+  const filePaths = Object.keys(initialWorkspace.files);
+  const seeds: PointerSeed[] = [
+    { timestamp: 0, x: 54, y: 16, targetArea: 'files', clicked: false, priority: 1 },
+  ];
+
+  narrationScript.forEach((cue, index) => {
+    const point = EDITOR_ROUTE[index % EDITOR_ROUTE.length];
+    seeds.push({
+      timestamp: Math.min(lastMoment, Math.max(0, cue.timestamp)),
+      x: point.x,
+      y: point.y,
+      targetArea: 'editor',
+      clicked: false,
+      priority: 1,
+    });
+  });
+
+  for (const event of events) {
+    const timestamp = Math.min(lastMoment, Math.max(0, event.timestamp));
+    if (event.type === 'pointer-move') {
+      seeds.push({ ...event, timestamp, priority: 5 });
+      continue;
+    }
+    if (event.type === 'file-switch') {
+      const fileIndex = Math.max(0, filePaths.indexOf(event.filePath));
+      seeds.push({
+        timestamp,
+        x: 52,
+        y: Math.min(82, 18 + fileIndex * 14),
+        targetArea: 'files',
+        clicked: true,
+        priority: 4,
+      });
+      continue;
+    }
+    if (event.type === 'cursor-move') {
+      seeds.push({
+        timestamp,
+        x: Math.min(82, 18 + event.position.ch * 1.35),
+        y: Math.min(84, 10 + event.position.line * 4.8),
+        targetArea: 'editor',
+        clicked: false,
+        priority: 3,
+      });
+      continue;
+    }
+    if (event.type === 'code-change') {
+      const content = event.fullContent ?? '';
+      const lines = content.split('\n');
+      const lastLine = lines.at(-1) ?? '';
+      seeds.push({
+        timestamp,
+        x: Math.min(82, 20 + lastLine.length * 1.1),
+        y: Math.min(84, 10 + lines.length * 4.6),
+        targetArea: 'editor',
+        clicked: false,
+        priority: 2,
+      });
+      continue;
+    }
+    if (event.type === 'run-code') {
+      seeds.push({
+        timestamp,
+        x: 50,
+        y: 18,
+        targetArea: 'preview',
+        clicked: true,
+        priority: 4,
+      });
+      seeds.push({
+        timestamp: Math.min(lastMoment, timestamp + 700),
+        x: 58,
+        y: 54,
+        targetArea: 'preview',
+        clicked: false,
+        priority: 3,
+      });
+      continue;
+    }
+    if (event.type === 'challenge-marker') {
+      seeds.push({
+        timestamp,
+        x: 76,
+        y: 78,
+        targetArea: 'editor',
+        clicked: true,
+        priority: 4,
+      });
+    }
+  }
+
+  const byTimestamp = new Map<number, PointerSeed>();
+  for (const seed of seeds) {
+    const timestamp = Math.round(seed.timestamp);
+    const current = byTimestamp.get(timestamp);
+    if (!current || seed.priority >= current.priority) {
+      byTimestamp.set(timestamp, { ...seed, timestamp });
+    }
+  }
+  const anchors = [...byTimestamp.values()].sort((a, b) => a.timestamp - b.timestamp);
+  const last = anchors.at(-1) ?? seeds[0];
+  if (last.timestamp < lastMoment) {
+    anchors.push({
+      ...last,
+      timestamp: lastMoment,
+      x: clampPct(last.x + (last.x > 55 ? -9 : 9)),
+      y: clampPct(last.y + (last.y > 55 ? -7 : 7)),
+      clicked: false,
+      priority: 0,
+    });
+  }
+
+  const continuous: PointerSeed[] = [];
+  for (let index = 0; index < anchors.length; index++) {
+    const anchor = anchors[index];
+    continuous.push(anchor);
+    const next = anchors[index + 1];
+    if (!next) continue;
+    let step = 1;
+    for (let timestamp = anchor.timestamp + POINTER_WANDER_MS; timestamp < next.timestamp; timestamp += POINTER_WANDER_MS) {
+      continuous.push({
+        ...anchor,
+        timestamp,
+        x: clampPct(anchor.x + (step % 2 ? 7 : -5)),
+        y: clampPct(anchor.y + (step % 2 ? 5 : -6)),
+        clicked: false,
+        priority: 0,
+      });
+      step++;
+    }
+  }
+
+  const paced: PointerSeed[] = [];
+  for (const seed of continuous.sort((a, b) => a.timestamp - b.timestamp)) {
+    const previous = paced.at(-1);
+    const minimumTimestamp = previous && previous.targetArea !== seed.targetArea
+      ? previous.timestamp + MIN_CROSS_AREA_MS
+      : previous?.timestamp ?? 0;
+    const timestamp = Math.max(seed.timestamp, minimumTimestamp);
+    if (timestamp > lastMoment) continue;
+
+    const pacedSeed = { ...seed, timestamp };
+    if (previous && previous.timestamp === timestamp) {
+      if (pacedSeed.priority >= previous.priority) paced[paced.length - 1] = pacedSeed;
+      continue;
+    }
+    paced.push(pacedSeed);
+  }
+
+  return paced
+    .map(({ priority: _priority, ...seed }) => ({ ...seed, id: nextId(), type: 'pointer-move' }));
 }
 
 export function compileLesson(input: CompileLessonInput): ScrimLessonData {
@@ -310,6 +489,13 @@ export function compileLesson(input: CompileLessonInput): ScrimLessonData {
     for (const chapter of chapters) chapter.timestamp = Math.round(chapter.timestamp * scale);
     for (const challenge of challenges) challenge.timestamp = Math.round(challenge.timestamp * scale);
   }
+  const originalPointers = new Set(
+    events.filter((event) => event.type === 'pointer-move').map((event) => event.id),
+  );
+  const pointerRoute = buildInstructorRoute(events, narrationScript, durationMs, input.initialWorkspace, nextId);
+  const eventsWithoutOriginalPointers = events.filter((event) => !originalPointers.has(event.id));
+  events.splice(0, events.length, ...eventsWithoutOriginalPointers, ...pointerRoute);
+  events.sort((a, b) => a.timestamp - b.timestamp || a.id.localeCompare(b.id));
   const audioTrack: AudioTrackInfo = {
     url: input.audioUrl,
     durationMs,
