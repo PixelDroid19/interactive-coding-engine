@@ -43,6 +43,7 @@ describe('App navigation persistence', () => {
     const lesson03 = FUNDAMENTOS_COURSE.modules[1].items.find((item) => item.id === 'fundamentos-04')!;
     const firstRender = render(<App />);
 
+    fireEvent.click(screen.getByRole('button', { name: `Ver recorrido: ${FUNDAMENTOS_COURSE.title}` }));
     fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${lesson02.title}`) }));
     expect(screen.getByRole('heading', { name: lesson02.title })).toBeTruthy();
     expect(loadAppNavigationState()).toMatchObject({
@@ -104,7 +105,7 @@ describe('App navigation persistence', () => {
     const firstRender = render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Salir del estudio' }));
-    expect(loadAppNavigationState()).toEqual({ view: 'home' });
+    expect(loadAppNavigationState()).toEqual({ view: 'home', courseId: FUNDAMENTOS_COURSE.id });
 
     firstRender.unmount();
     render(<App />);

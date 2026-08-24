@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ChevronLeft, Lightbulb } from 'lucide-react';
+import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ChevronLeft, ExternalLink, Lightbulb } from 'lucide-react';
 import { ReadingItem } from '../../types/curriculum';
 import { NavigationState } from '../../engine/navigation';
 
@@ -164,6 +164,27 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                   <p className="mt-2 text-sm leading-relaxed text-zinc-200">{reading.transferPrompt}</p>
                   <p className="mt-2 text-xs text-zinc-400">Respóndelo con palabras o un diagrama antes de abrir el editor.</p>
                 </aside>
+              )}
+              {reading.sources && reading.sources.length > 0 && (
+                <section className="border-t-2 border-emerald-900 bg-emerald-950/25 px-5 py-5 sm:px-7 sm:py-6" aria-labelledby="reading-sources-title">
+                  <h2 id="reading-sources-title" className="text-lg font-bold text-emerald-100" style={{ fontFamily: 'Patrick Hand, cursive' }}>
+                    Aprende a consultar la documentación
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-300">
+                    No intentes memorizar la página. Busca el receptor, los parámetros, el retorno y si la operación modifica el valor original.
+                  </p>
+                  <ul className="mt-4 grid gap-3">
+                    {reading.sources.map((source) => (
+                      <li key={source.url} className="rounded-lg border border-emerald-900 bg-zinc-950 p-4">
+                        <a className="inline-flex items-center gap-2 font-bold text-emerald-200 underline decoration-emerald-700 underline-offset-4" href={source.url} target="_blank" rel="noreferrer">
+                          {source.title} <ExternalLink size={13} />
+                        </a>
+                        <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">{source.publisher}</p>
+                        <p className="mt-2 text-sm leading-relaxed text-zinc-300">{source.purpose}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               )}
             </div>
           </article>

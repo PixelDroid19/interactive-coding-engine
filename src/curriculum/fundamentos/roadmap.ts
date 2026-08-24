@@ -267,7 +267,7 @@ export function buildRoadmap(course: Course, scrims: Record<string, ScrimLessonD
     for (const item of mod.items) {
       if (item.type === 'scrim') {
         const scrim = scrims[item.scrimDataId];
-        const terms = LESSON_TERMS[item.id] ?? [];
+        const terms = course.conceptGlossary?.[item.id] ?? LESSON_TERMS[item.id] ?? [];
         rows.push({
           main: {
             id: `m-${item.id}`,
@@ -359,8 +359,8 @@ export function conceptLabels(lessonId: string): string[] {
   return (LESSON_TERMS[lessonId] ?? []).map((item) => item.label);
 }
 
-export function explainConcept(lessonId: string, term: string): { term: string; desc: string } {
-  const hit = (LESSON_TERMS[lessonId] ?? []).find((item) => item.label === term);
+export function explainConcept(course: Course, lessonId: string, term: string): { term: string; desc: string } {
+  const hit = (course.conceptGlossary?.[lessonId] ?? LESSON_TERMS[lessonId] ?? []).find((item) => item.label === term);
   if (hit) return { term: hit.label, desc: hit.desc };
   return {
     term,

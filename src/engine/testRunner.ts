@@ -155,10 +155,14 @@ export async function runChallengeValidation(
     (f) => f.language === 'javascript' || f.language === 'typescript' || f.name.endsWith('.js') || f.name.endsWith('.jsx')
   );
   const combinedJsPre = jsFilesPre.map((f) => f.content).join('\n\n');
+  const syntaxProbe = combinedJsPre
+    .replace(/^\s*import\s+[^;]+;?\s*$/gm, '')
+    .replace(/\bexport\s+default\s+/g, '')
+    .replace(/\bexport\s+(?=(?:async\s+)?(?:function|class|const|let|var)\b)/g, '');
   let syntaxError: string | null = null;
   if (combinedJsPre.trim().length > 0) {
     try {
-      new Function(combinedJsPre);
+      new Function(syntaxProbe);
     } catch (e: any) {
       syntaxError = e.message || 'Error de sintaxis';
     }
@@ -203,7 +207,7 @@ export async function runChallengeValidation(
 
   let feedbackMessage = '';
   if (evaluationErrors > 0) {
-    feedbackMessage = `No pudimos evaluar el código (${evaluationErrors} comprobación${evaluationErrors>1?'es':''} con error interno). Revisa la consola y vuelve a pulsar Comprobar.`;
+    feedbackMessage = `No pudimos evaluar el código en ${evaluationErrors} comprobación${evaluationErrors > 1 ? 'es' : ''}. Corrige el error indicado y vuelve a pulsar Comprobar.`;
   } else if (allPassed) {
     feedbackMessage = 'Muy bien. Pasaste las pruebas. Sigue con la lección.';
   } else {

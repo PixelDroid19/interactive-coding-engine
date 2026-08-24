@@ -32,6 +32,13 @@ export interface ReadingSection {
   kind?: 'core' | 'curiosity';
 }
 
+export interface ReadingSource {
+  title: string;
+  url: string;
+  publisher: string;
+  purpose: string;
+}
+
 export interface DebuggingExerciseItem extends BaseCurriculumItem {
   type: 'debugging';
   relatedLessonId?: string;
@@ -55,6 +62,7 @@ export interface ReadingItem extends BaseCurriculumItem {
   frequentQuestions?: { question: string; answer: string }[];
   transferPrompt?: string;
   practiceItemId?: string;
+  sources?: ReadingSource[];
 }
 
 export interface ReasoningNode {
@@ -166,6 +174,7 @@ export interface Course {
   modules: CourseModule[];
   thumbnailGradient?: string;
   isCustom?: boolean;
+  conceptGlossary?: Record<string, { label: string; desc: string }[]>;
 }
 
 export interface UserProgressRecord {

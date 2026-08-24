@@ -16,7 +16,13 @@ export type SpanishLspLevel =
   | 'modules'
   | 'dom'
   | 'events'
-  | 'dom-input';
+  | 'dom-input'
+  | 'json-storage'
+  | 'async'
+  | 'network'
+  | 'classes'
+  | 'web-components'
+  | 'testing';
 
 export interface DocEntry {
   label: string;
@@ -247,6 +253,46 @@ const SPANISH_DOCS: DocEntry[] = [
     detail: 'valor de un input',
     info: 'Es lo que el usuario escribió en un input.\n\nEjemplo:\nlet nombre = input.value;',
   },
+  {
+    label: 'JSON', type: 'variable', level: 'json-storage', detail: 'convierte entre datos compatibles y texto JSON',
+    info: 'Métodos principales:\nJSON.stringify(dato) produce texto.\nJSON.parse(texto) reconstruye datos.\n\nError común:\nparse lanza un error si el texto no es JSON válido.',
+  },
+  {
+    label: 'localStorage', type: 'variable', level: 'json-storage', detail: 'almacena pares clave-texto en el navegador',
+    info: 'Receptor: almacenamiento del origen.\nMétodos: setItem, getItem, removeItem.\nRetorno de getItem: string o null.\n\nNo guardes contraseñas ni secretos.',
+  },
+  {
+    label: 'async', type: 'keyword', level: 'async', detail: 'declara una función que devuelve una Promise',
+    info: 'Una función async siempre devuelve una Promise. Dentro puedes usar await.\n\nEjemplo:\nasync function cargar() { return 3; }',
+  },
+  {
+    label: 'await', type: 'keyword', level: 'async', detail: 'espera el resultado de una Promise dentro de async',
+    info: 'Recibe: un valor o Promise.\nResultado: el valor cumplido.\nSi se rechaza, lanza el motivo del rechazo.\n\nError común: olvidar await y tratar la Promise como si fueran los datos.',
+  },
+  {
+    label: 'fetch', type: 'function', level: 'network', detail: 'inicia una petición y devuelve Promise<Response>',
+    info: 'Parámetros: URL y opciones opcionales.\nRetorno: Promise<Response>.\n\nImportante: comprueba response.ok antes de leer el cuerpo.',
+  },
+  {
+    label: 'class', type: 'keyword', level: 'classes', detail: 'define cómo crear objetos que comparten métodos',
+    info: 'Usa constructor para el estado inicial y métodos para comportamiento compartido.\n\nEjemplo:\nclass Tarea { constructor(texto) { this.texto = texto; } }',
+  },
+  {
+    label: 'constructor', type: 'function', level: 'classes', detail: 'inicializa una instancia creada con new',
+    info: 'Recibe los argumentos entregados a new. Usa this para guardar propiedades en esa instancia.',
+  },
+  {
+    label: 'customElements', type: 'variable', level: 'web-components', detail: 'registro de elementos personalizados',
+    info: 'Método principal: define(nombre, clase).\nEl nombre debe contener un guion.\n\nEjemplo:\ncustomElements.define("aviso-simple", AvisoSimple);',
+  },
+  {
+    label: 'attachShadow', type: 'function', level: 'web-components', detail: 'crea un árbol Shadow DOM en el elemento',
+    info: 'Receptor: un elemento.\nParámetro habitual: { mode: "open" }.\nRetorno: ShadowRoot.\n\nEs encapsulación, no seguridad.',
+  },
+  {
+    label: 'describe', type: 'function', level: 'testing', detail: 'agrupa casos de prueba relacionados',
+    info: 'Úsalo para nombrar una capacidad observable. Las pruebas deben comprobar resultados, fronteras e inválidos.',
+  },
 ];
 
 const LESSON_LEVELS: Record<string, SpanishLspLevel[]> = {
@@ -275,6 +321,35 @@ const LESSON_LEVELS: Record<string, SpanishLspLevel[]> = {
   'fundamentos-23': ['program-basics', 'variables', 'operators', 'functions', 'conditionals', 'loops', 'arrays', 'objects', 'dom', 'events', 'dom-input', 'string-methods', 'array-transformations', 'modules'],
   'fundamentos-24': ['program-basics', 'variables', 'operators', 'functions', 'conditionals', 'loops', 'arrays', 'objects', 'dom', 'events', 'dom-input', 'string-methods', 'array-transformations', 'modules'],
 };
+
+const JS_STAGE_LEVELS: Array<[number, SpanishLspLevel[]]> = [
+  [1, ['program-basics']],
+  [2, ['variables']],
+  [3, ['conversions', 'operators']],
+  [4, ['conditionals']],
+  [5, ['functions']],
+  [6, ['loops']],
+  [8, ['string-methods']],
+  [9, ['arrays']],
+  [10, ['array-transformations']],
+  [11, ['objects']],
+  [13, ['dom']],
+  [14, ['events', 'dom-input']],
+  [17, ['json-storage']],
+  [18, ['async']],
+  [20, ['network']],
+  [21, ['modules']],
+  [22, ['classes']],
+  [23, ['web-components']],
+  [24, ['testing']],
+];
+
+for (let lesson = 1; lesson <= 24; lesson += 1) {
+  const levels = JS_STAGE_LEVELS
+    .filter(([startsAt]) => startsAt <= lesson)
+    .flatMap(([, stageLevels]) => stageLevels);
+  LESSON_LEVELS[`javascript-${String(lesson).padStart(2, '0')}`] = [...new Set(levels)];
+}
 
 export function getSpanishDocsForLesson(lessonId?: string): DocEntry[] {
   const levels = (lessonId && LESSON_LEVELS[lessonId]) || LESSON_LEVELS['fundamentos-01'];

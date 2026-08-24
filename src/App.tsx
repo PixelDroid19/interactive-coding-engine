@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Course, CurriculumItem, UserProgressRecord } from './types/curriculum';
 import { ScrimLessonData } from './types/scrim';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './curriculum/fundamentos/course';
+import { JAVASCRIPT_COURSE, JAVASCRIPT_SCRIMS } from './curriculum/javascript/course';
 import { AppNavigationState, loadAppNavigationState, loadUserProgress, loadCustomCourses, loadCustomScrims, markItemCompleted, saveAppNavigationState, saveCustomCourse, updateRecentPosition } from './engine/persistence';
 import { getNavigationState } from './engine/navigation';
 import { RoadmapHome } from './components/curriculum/RoadmapHome';
@@ -12,8 +13,9 @@ import { SoloProjectView } from './components/challenges/SoloProjectView';
 import { PlaygroundView } from './components/playground/PlaygroundView';
 import { CreatorStudio } from './components/studio/CreatorStudio';
 import { ReasoningPracticeView } from './components/reasoning/ReasoningPracticeView';
+import { CourseCatalog } from './components/curriculum/CourseCatalog';
 
-type AppView = 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'reasoning' | 'playground' | 'studio';
+type AppView = 'catalog' | 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'reasoning' | 'playground' | 'studio';
 
 interface InitialAppState {
   view: AppView;
@@ -28,23 +30,34 @@ function viewForItem(item: CurriculumItem): AppView {
   return item.type;
 }
 
-function getInitialCourse(): Course {
-  const savedCourse = loadCustomCourses().find((course) => course.id === FUNDAMENTOS_COURSE.id);
-  return savedCourse ? mergeSavedCourseItems(FUNDAMENTOS_COURSE, savedCourse) : FUNDAMENTOS_COURSE;
+function getInitialCourses(): Course[] {
+  const savedCourses = loadCustomCourses();
+  return [FUNDAMENTOS_COURSE, JAVASCRIPT_COURSE].map((baseCourse) => {
+    const savedCourse = savedCourses.find((candidate) => candidate.id === baseCourse.id);
+    return savedCourse ? mergeSavedCourseItems(baseCourse, savedCourse) : baseCourse;
+  });
+}
+
+function chooseInitialCourse(courses: Course[]): Course {
+  const persisted = loadAppNavigationState();
+  return courses.find((course) => course.id === persisted?.courseId) ?? courses[0];
 }
 
 function getInitialAppState(course: Course): InitialAppState {
   const persisted = loadAppNavigationState();
   const defaultState: InitialAppState = {
-    view: 'home',
+    view: 'catalog',
     item: null,
     moduleId: course.modules[0]?.id || 'mod-primeros-pasos',
     timestampMs: 0,
   };
 
   if (!persisted) return defaultState;
-  if (persisted.view === 'home' || persisted.view === 'playground' || persisted.view === 'studio') {
+  if (persisted.view === 'catalog' || persisted.view === 'playground' || persisted.view === 'studio') {
     return { ...defaultState, view: persisted.view };
+  }
+  if (persisted.view === 'home') {
+    return { ...defaultState, view: persisted.courseId === course.id ? 'home' : 'catalog' };
   }
   if (!persisted.itemId) return defaultState;
   if (persisted.courseId && persisted.courseId !== course.id && persisted.courseId !== course.title) {
@@ -68,8 +81,10 @@ function getInitialAppState(course: Course): InitialAppState {
 function saveRoute(route: AppNavigationState): void {
   saveAppNavigationState({
     ...route,
-    ...(route.view === 'home' || route.view === 'playground' || route.view === 'studio'
+    ...(route.view === 'catalog' || route.view === 'playground' || route.view === 'studio'
       ? { courseId: undefined, moduleId: undefined, itemId: undefined, timestampMs: undefined }
+      : route.view === 'home'
+      ? { moduleId: undefined, itemId: undefined, timestampMs: undefined }
       : {}),
   });
 }
@@ -109,17 +124,20 @@ function appendPublishedLesson(course: Course, lesson: ScrimLessonData): Course 
 }
 
 export default function App() {
-  const [initialCourse] = useState(getInitialCourse);
+  const [initialCourses] = useState(getInitialCourses);
+  const [initialCourse] = useState(() => chooseInitialCourse(initialCourses));
   const [initialAppState] = useState(() => getInitialAppState(initialCourse));
   const [currentView, setCurrentView] = useState<AppView>(initialAppState.view);
+  const [courses, setCourses] = useState<Course[]>(initialCourses);
   const [course, setCourse] = useState<Course>(initialCourse);
   const [activeItem, setActiveItem] = useState<CurriculumItem | null>(initialAppState.item);
   const [activeModuleId, setActiveModuleId] = useState<string>(initialAppState.moduleId);
-  const [scrimsMap, setScrimsMap] = useState<Record<string, ScrimLessonData>>(FUNDAMENTOS_SCRIMS);
+  const [scrimsMap, setScrimsMap] = useState<Record<string, ScrimLessonData>>({ ...FUNDAMENTOS_SCRIMS, ...JAVASCRIPT_SCRIMS });
   const [customScrimsStatus, setCustomScrimsStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [customScrimsError, setCustomScrimsError] = useState('');
   const [progress, setProgress] = useState<UserProgressRecord>(() => loadUserProgress());
   const [scrimInitialTimeMs, setScrimInitialTimeMs] = useState(initialAppState.timestampMs);
+  const [playgroundReturnView, setPlaygroundReturnView] = useState<'catalog' | 'home'>(initialAppState.view === 'playground' ? 'catalog' : 'home');
 
   useEffect(() => {
     document.documentElement.classList.add('dark');
@@ -159,7 +177,7 @@ export default function App() {
     setActiveModuleId(moduleId);
     setScrimInitialTimeMs(initialTimeMs);
 
-    updateRecentPosition(course.title, moduleId, item.id, item.title, item.type, initialTimeMs);
+    updateRecentPosition(course.id, moduleId, item.id, item.title, item.type, initialTimeMs);
     saveRoute({
       view: nextView,
       courseId: course.id,
@@ -174,7 +192,26 @@ export default function App() {
 
   const handleBackToRoadmap = () => {
     refreshProgress();
-    saveRoute({ view: 'home' });
+    saveRoute({ view: 'home', courseId: course.id });
+    setCurrentView('home');
+  };
+
+  const handleBackToCourses = () => {
+    refreshProgress();
+    setActiveItem(null);
+    saveRoute({ view: 'catalog' });
+    setCurrentView('catalog');
+  };
+
+  const handleOpenCourse = (courseId: string) => {
+    const selected = courses.find((candidate) => candidate.id === courseId);
+    if (!selected) return;
+    setCourse(selected);
+    setActiveItem(null);
+    setActiveModuleId(selected.modules[0]?.id || '');
+    setScrimInitialTimeMs(0);
+    saveRoute({ view: 'home', courseId: selected.id });
+    refreshProgress();
     setCurrentView('home');
   };
 
@@ -186,7 +223,7 @@ export default function App() {
     if (!nav.hasPrevious || !nav.previous) return;
     // Preserve recent position before leaving
     if (activeItem) {
-      updateRecentPosition(course.title, activeModuleId, activeItem.id, activeItem.title, activeItem.type, scrimInitialTimeMs);
+      updateRecentPosition(course.id, activeModuleId, activeItem.id, activeItem.title, activeItem.type, scrimInitialTimeMs);
     }
     handleSelectItem(nav.previous.item, nav.previous.moduleId, 0);
   };
@@ -200,12 +237,12 @@ export default function App() {
     if (!nav.hasNext || !nav.next) {
       // Last element: coherent finalization
       refreshProgress();
-      saveRoute({ view: 'home' });
+      saveRoute({ view: 'home', courseId: course.id });
       setCurrentView('home');
       return;
     }
     if (activeItem) {
-      updateRecentPosition(course.title, activeModuleId, activeItem.id, activeItem.title, activeItem.type, scrimInitialTimeMs);
+      updateRecentPosition(course.id, activeModuleId, activeItem.id, activeItem.title, activeItem.type, scrimInitialTimeMs);
     }
     handleSelectItem(nav.next.item, nav.next.moduleId, 0);
   };
@@ -236,9 +273,10 @@ export default function App() {
     const updatedCourse = appendPublishedLesson(course, newLesson);
     saveCustomCourse(updatedCourse);
     setCourse(updatedCourse);
+    setCourses((current) => current.map((candidate) => candidate.id === updatedCourse.id ? updatedCourse : candidate));
 
     refreshProgress();
-    saveRoute({ view: 'home' });
+    saveRoute({ view: 'home', courseId: updatedCourse.id });
     setCurrentView('home');
   };
 
@@ -250,6 +288,18 @@ export default function App() {
 
   return (
     <div className={currentView === 'scrim' ? 'app-screen' : undefined}>
+      {currentView === 'catalog' && (
+        <CourseCatalog
+          courses={courses}
+          progress={progress}
+          onOpenCourse={handleOpenCourse}
+          onPlayground={() => {
+            setPlaygroundReturnView('catalog');
+            saveRoute({ view: 'playground' });
+            setCurrentView('playground');
+          }}
+        />
+      )}
       {currentView === 'home' && (
         <RoadmapHome
           course={course}
@@ -257,9 +307,11 @@ export default function App() {
           scrims={scrimsMap}
           onEnterLesson={(item, modId, timeMs) => handleSelectItem(item, modId, timeMs ?? 0)}
           onPlayground={() => {
+            setPlaygroundReturnView('home');
             saveRoute({ view: 'playground' });
             setCurrentView('playground');
           }}
+          onBackToCourses={handleBackToCourses}
         />
       )}
 
@@ -310,7 +362,7 @@ export default function App() {
                   createdAt: Date.now(),
                   updatedAt: Date.now(),
                 }
-              : scrimsMap['fundamentos-01'] || Object.values(scrimsMap)[0]
+              : Object.values(scrimsMap)[0]
           }
           courseTitle={course.title}
           moduleTitle={course.modules.find((m) => m.id === activeModuleId)?.title || ''}
@@ -385,8 +437,13 @@ export default function App() {
         <PlaygroundView
           onBack={() => {
             refreshProgress();
-            saveRoute({ view: 'home' });
-            setCurrentView('home');
+            if (playgroundReturnView === 'home') {
+              saveRoute({ view: 'home', courseId: course.id });
+              setCurrentView('home');
+            } else {
+              saveRoute({ view: 'catalog' });
+              setCurrentView('catalog');
+            }
           }}
         />
       )}
@@ -395,7 +452,7 @@ export default function App() {
         <CreatorStudio
           onBack={() => {
             refreshProgress();
-            saveRoute({ view: 'home' });
+            saveRoute({ view: 'home', courseId: course.id });
             setCurrentView('home');
           }}
           onLessonPublished={handleLessonPublished}

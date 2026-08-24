@@ -15,6 +15,7 @@ interface RoadmapHomeProps {
   scrims: Record<string, ScrimLessonData>;
   onEnterLesson: (item: CurriculumItem, moduleId: string, timeMs?: number) => void;
   onPlayground: () => void;
+  onBackToCourses: () => void;
 }
 
 export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
@@ -23,6 +24,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
   scrims,
   onEnterLesson,
   onPlayground,
+  onBackToCourses,
 }) => {
   const [openConcept, setOpenConcept] = useState<RoadmapNode | null>(null);
   const phases = useMemo(() => buildRoadmap(course, scrims), [course, scrims]);
@@ -34,6 +36,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
     (sum, mod) => sum + mod.items.filter((item) => item.type === 'debugging' || item.type === 'reasoning').length,
     0
   );
+  const hasReasoning = course.modules.some((mod) => mod.items.some((item) => item.type === 'reasoning'));
 
   const enterLesson = (lessonId: string) => {
     const found = findCourseItem(course, lessonId);
@@ -41,7 +44,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
   };
 
   const conceptCopy = openConcept
-    ? explainConcept(openConcept.lessonId, openConcept.focusTerm || openConcept.label)
+    ? explainConcept(course, openConcept.lessonId, openConcept.focusTerm || openConcept.label)
     : null;
 
   useEffect(() => {
@@ -100,16 +103,19 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
       <header className="rm-nav">
         <div className="rm-nav-inner">
           <div className="rm-brand">
-            <span className="rm-logo">
+            <button type="button" className="rm-logo" onClick={onBackToCourses} aria-label="Volver a cursos">
               <Route size={15} />
-            </span>
+            </button>
             <span className="rm-wordmark">
               Aprende<span>Código</span>
             </span>
           </div>
-          <button type="button" className="rm-play-btn" onClick={onPlayground}>
-            <Terminal size={13} /> Playground
-          </button>
+          <div className="flex items-center gap-2">
+            <button type="button" className="rm-play-btn" onClick={onBackToCourses}>Cursos</button>
+            <button type="button" className="rm-play-btn" onClick={onPlayground}>
+              <Terminal size={13} /> Playground
+            </button>
+          </div>
         </div>
       </header>
 
@@ -117,7 +123,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
         <section className="rm-hero">
           <div>
             <div className="rm-hero-meta">
-              <span className="rm-pill">Fundamentos</span>
+              <span className="rm-pill">{course.tags[1] || course.tags[0] || 'Curso'}</span>
               <span className="rm-time">{lessonCount} lecciones · {practiceCount} prácticas</span>
             </div>
             <h1>{course.title}</h1>
@@ -133,9 +139,11 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             <span>
               <i className="rm-swatch rm-swatch-reading" /> Lee antes de practicar
             </span>
-            <span>
-              <i className="rm-swatch rm-swatch-reasoning" /> Construye el modelo
-            </span>
+            {hasReasoning && (
+              <span>
+                <i className="rm-swatch rm-swatch-reasoning" /> Construye el modelo
+              </span>
+            )}
             <span>
               <i className="rm-swatch rm-swatch-white" /> Explica un concepto
             </span>

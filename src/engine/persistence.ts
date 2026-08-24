@@ -177,7 +177,7 @@ export function saveDebuggingDraft(exerciseId: string, draft: DebuggingDraft): v
   }
 }
 
-export type AppNavigationView = 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'reasoning' | 'playground' | 'studio';
+export type AppNavigationView = 'catalog' | 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'reasoning' | 'playground' | 'studio';
 
 export interface AppNavigationState {
   view: AppNavigationView;
@@ -188,6 +188,7 @@ export interface AppNavigationState {
 }
 
 const APP_NAVIGATION_VIEWS: AppNavigationView[] = [
+  'catalog',
   'home',
   'scrim',
   'debugging',
