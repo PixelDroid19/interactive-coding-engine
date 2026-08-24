@@ -32,8 +32,8 @@ export function vanillaWorkspace(opts: {
   const css = `* { box-sizing: border-box; }
 html, body {
   margin: 0;
-  background: #fff;
-  color: #171717;
+  background: #12151e;
+  color: #f8fafc;
 }
 body {
   min-height: 100vh;
@@ -44,14 +44,14 @@ main { width: min(${opts.width ?? '440px'}, 100%); }
 header {
   padding-bottom: 16px;
   margin-bottom: 20px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid #343a49;
 }
 .eyebrow {
   margin: 0 0 6px;
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #737373;
+  color: #aab3c4;
 }
 h1 {
   margin: 0;
@@ -62,7 +62,7 @@ h1 {
 }
 p, .label {
   margin: 0 0 14px;
-  color: #404040;
+  color: #cbd5e1;
   font-size: 15px;
   line-height: 1.5;
 }
@@ -74,29 +74,29 @@ p, .label {
 }
 .box {
   padding: 10px 0;
-  border-bottom: 1px solid #ececec;
+  border-bottom: 1px solid #2c3240;
 }
 .box span, .label {
   display: block;
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #737373;
+  color: #aab3c4;
   margin: 0 0 4px;
 }
 .box strong, .mono, .value {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 16px;
   font-weight: 600;
-  color: #171717;
+  color: #f8fafc;
 }
 .panel {
   margin: 18px 0 0;
   padding: 14px 0 0;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid #343a49;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 14px;
-  color: #171717;
+  color: #f8fafc;
   min-height: 1.4em;
 }
 .row { display: flex; flex-wrap: wrap; gap: 12px 16px; margin: 12px 0; align-items: baseline; }
@@ -106,25 +106,26 @@ p, .label {
   padding: 4px 0;
   border-bottom: 1px solid transparent;
 }
-.chip.on { border-bottom-color: #171717; }
-.chip.dim { color: #a3a3a3; }
+.chip.on { border-bottom-color: #ffe600; }
+.chip.dim { color: #717b8f; }
 button, .btn {
   display: inline-block;
   margin: 4px 8px 4px 0;
   padding: 8px 14px;
-  border: 1px solid #171717;
-  background: #fff;
-  color: #171717;
+  border: 1px solid #ffe600;
+  background: #ffe600;
+  color: #12151e;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
-button:hover, .btn:hover { background: #f5f5f5; }
+button:hover, .btn:hover { background: #fff04d; }
 button.ghost {
-  border-color: #d4d4d4;
+  border-color: #596174;
+  background: transparent;
   font-weight: 500;
-  color: #404040;
+  color: #cbd5e1;
 }
 .cells { display: flex; flex-wrap: wrap; gap: 4px 0; margin: 8px 0 16px; }
 .cell {
@@ -133,24 +134,24 @@ button.ghost {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 18px;
   font-weight: 600;
-  border-bottom: 2px solid #e5e5e5;
+  border-bottom: 2px solid #343a49;
 }
-.cell.mark { border-bottom-color: #171717; }
-.cell.gone { color: #a3a3a3; border-bottom-color: transparent; }
+.cell.mark { border-bottom-color: #ffe600; }
+.cell.gone { color: #717b8f; border-bottom-color: transparent; }
 .stack { display: grid; gap: 6px; margin: 4px 0 16px; }
 .plate {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-weight: 600;
   padding: 4px 0;
-  border-bottom: 1px solid #ececec;
+  border-bottom: 1px solid #2c3240;
 }
 table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 4px 0 16px; }
 th, td {
   text-align: left;
   padding: 8px 10px 8px 0;
-  border-bottom: 1px solid #ececec;
+  border-bottom: 1px solid #2c3240;
 }
-th { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #737373; }
+th { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #aab3c4; }
 tr.hot td { font-weight: 700; }
 ${opts.extraCss ?? ''}
 `;

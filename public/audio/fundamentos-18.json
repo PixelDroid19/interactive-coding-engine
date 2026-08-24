@@ -1,0 +1,8 @@
+{
+  "id": "fundamentos-18",
+  "durationMs": 150920,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/18-patrones-algoritmos.md"
+}

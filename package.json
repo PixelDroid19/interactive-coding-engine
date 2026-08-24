@@ -11,7 +11,8 @@
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "audio:generate": "tsx scripts/export-cues.ts && bash -lc 'source /opt/intel/oneapi/setvars.sh >/dev/null; exec .venv-tts/bin/python scripts/generate_spanish_arc.py'"
+    "audio:generate": "tsx scripts/export-cues.ts && bash -lc 'source /opt/intel/oneapi/setvars.sh >/dev/null; exec .venv-tts/bin/python scripts/generate_spanish_arc.py'",
+    "audio:gemini": "tsx scripts/generate-gemini-audio.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",

@@ -1,9 +1,10 @@
 import { DebuggingExerciseItem } from '../../types/curriculum';
 import { ChallengeTest } from '../../types/scrim';
 import { file, workspaceOf } from '../../engine/lessonCompiler';
+import { ADVANCED_DEBUG_EXERCISES } from './debugExercisesAdvanced';
 
 const SHELL_CSS = `* { box-sizing: border-box; }
-html, body { margin: 0; background: #fff; color: #171717; }
+html, body { margin: 0; background: #12151e; color: #f8fafc; }
 body {
   min-height: 100vh;
   padding: 28px 24px 40px;
@@ -15,22 +16,22 @@ main { width: min(440px, 100%); }
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #737373;
+  color: #aab3c4;
 }
 h1 {
   margin: 0 0 12px;
   padding-bottom: 14px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid #343a49;
   font-size: 24px;
   font-weight: 650;
   letter-spacing: -0.03em;
 }
-.hint { margin: 0 0 16px; color: #404040; font-size: 15px; line-height: 1.45; }
+.hint { margin: 0 0 16px; color: #cbd5e1; font-size: 15px; line-height: 1.45; }
 #salida, .salida {
   min-height: 1.5em;
   margin: 0 0 16px;
   padding-top: 12px;
-  border-top: 1px solid #e5e5e5;
+  border-top: 1px solid #343a49;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 16px;
   font-weight: 600;
@@ -38,20 +39,22 @@ h1 {
 }
 button {
   padding: 8px 14px;
-  border: 1px solid #171717;
-  background: #fff;
-  color: #171717;
+  border: 1px solid #ffe600;
+  background: #ffe600;
+  color: #12151e;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }
-button:hover { background: #f5f5f5; }
-label { display: block; margin: 0 0 6px; font-size: 13px; color: #525252; }
+button:hover { background: #fff04d; }
+label { display: block; margin: 0 0 6px; font-size: 13px; color: #cbd5e1; }
 input {
   margin: 0 0 12px;
   padding: 6px 8px;
-  border: 1px solid #171717;
+  border: 1px solid #596174;
+  background: #1b1f2a;
+  color: #f8fafc;
   font: inherit;
   width: 120px;
 }
@@ -114,14 +117,15 @@ function exercise(
   js: string,
   tests: ChallengeTest[],
   hints: { level: number; text: string }[],
-  troubleshootingTips: string[],
-  reading?: DebuggingExerciseItem['reading']
+  troubleshootingTips: string[]
 ): DebuggingExerciseItem {
+  const lessonNumber = Number(relatedLessonId.slice(-2));
   return {
     id: `${relatedLessonId}-debug`,
     relatedLessonId,
     title,
     type: 'debugging',
+    executionMode: lessonNumber >= 10 && lessonNumber <= 14 ? 'browser' : 'logic',
     estimatedMinutes: 6,
     description,
     templateId: 'vanilla-js',
@@ -131,284 +135,194 @@ function exercise(
     tests,
     hints,
     troubleshootingTips,
-    reading,
   };
 }
 
-export const DEBUG_EXERCISES: DebuggingExerciseItem[] = [
+const BEGINNER_DEBUG_EXERCISES: DebuggingExerciseItem[] = [
   exercise(
     'fundamentos-01',
-    'Dos recuadros, un solo texto',
-    'El programa debería llenar los dos recuadros de la página, pero uno queda vacío.',
-    '#linea1 debe mostrar “Me llamo Ana” y #linea2 debe mostrar “Y me gusta el helado”. Cada recuadro con su propio texto.',
-    'Solo se ve “Y me gusta el helado” en el primer recuadro. El segundo quedó vacío y el nombre desapareció.',
-    `<p class="hint">Revisa app.js. La página tiene dos recuadros: #linea1 y #linea2.</p>
-    <p id="linea1" class="salida"></p>
-    <p id="linea2" class="salida"></p>`,
-    `document.getElementById("linea1").textContent = "Me llamo Ana";
-document.getElementById("linea1").textContent = "Y me gusta el helado";
+    'Las instrucciones no se ejecutan',
+    'El programa debería mostrar dos mensajes, pero las líneas solo nombran la herramienta.',
+    'La consola muestra “Me llamo Ana” y después “Estoy aprendiendo JavaScript”.',
+    'No aparece ninguna salida porque faltan las llamadas con paréntesis y texto.',
+    `<p class="hint">Abre la consola después de ejecutar. No hay error, pero tampoco mensajes.</p>
+    <p class="salida">Revisa app.js una línea a la vez.</p>`,
+    `console.log;
+console.log;
 `,
     [
-      {
-        id: 'linea1-con-nombre',
-        description: '#linea1 muestra el nombre',
-        validatorType: 'dom-check',
-        domSelector: '#linea1',
-        domProperty: 'innerText',
-        expectedContains: ['Ana'],
-        matcher: 'contains-all',
-        caseInsensitive: true,
-        normalizeSpaces: true,
-        ignorePunctuation: true,
-        errorMessage: '#linea1 ya no muestra “Me llamo Ana”. Revisa qué instrucción escribe ahí.',
-        hintTip: 'Cada recuadro necesita su propia instrucción.',
-      },
-      {
-        id: 'linea2-con-helado',
-        description: '#linea2 muestra la comida favorita',
-        validatorType: 'dom-check',
-        domSelector: '#linea2',
-        domProperty: 'innerText',
-        expectedContains: ['helado'],
-        matcher: 'contains-all',
-        caseInsensitive: true,
-        normalizeSpaces: true,
-        ignorePunctuation: true,
-        errorMessage: '#linea2 sigue vacío. La segunda instrucción está escribiendo en otro recuadro.',
-        hintTip: 'Mira el id que aparece entre comillas en cada línea.',
-      },
-      {
-        id: 'usa-ambos-recuadros',
-        description: 'El código busca los recuadros linea1 y linea2',
-        validatorType: 'source-regex',
-        // Acepta ambos órdenes: el requisito es apuntar a los dos recuadros,
-        // no el orden en que están escritas las instrucciones.
-        regexPattern: 'getElementById\\(\\s*["\']linea1["\']\\s*\\)[\\s\\S]*getElementById\\(\\s*["\']linea2["\']\\s*\\)|getElementById\\(\\s*["\']linea2["\']\\s*\\)[\\s\\S]*getElementById\\(\\s*["\']linea1["\']\\s*\\)',
-        errorMessage: 'Necesitamos una instrucción para linea1 y otra para linea2.',
-        hintTip: 'El segundo recuadro se llama linea2.',
-      },
+      { id: 'primera-cerrada', description: 'La primera instrucción cierra texto y paréntesis', validatorType: 'source-regex', regexPattern: 'console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Me llamo Ana["\\\']\\s*\\)\\s*;?', errorMessage: 'La primera llamada todavía no cierra correctamente.', hintTip: 'Después de la segunda comilla debe cerrarse el paréntesis.' },
+      { id: 'segunda-intacta', description: 'La segunda instrucción sigue completa', validatorType: 'source-regex', regexPattern: 'console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Estoy aprendiendo JavaScript["\\\']\\s*\\)\\s*;?', errorMessage: 'La segunda instrucción ya estaba completa; no la borres.', hintTip: 'Compárala con la primera para encontrar la pieza que falta.' },
     ],
     [
-      { level: 1, text: 'Ejecuta y mira la página: hay dos recuadros, ¿cuántos tienen texto? ¿Cuál falta?' },
-      { level: 2, text: 'Las dos instrucciones del programa apuntan al mismo recuadro. Recuerda: cada id identifica un recuadro distinto.' },
-      { level: 3, text: 'Próximo paso: la segunda instrucción debería escribir en el otro recuadro. Cambia el id entre comillas, no el texto.' },
+      { level: 1, text: 'Nombrar log no es lo mismo que llamarlo. ¿Dónde van los datos que quieres mostrar?' },
+      { level: 2, text: 'Una llamada usa paréntesis después de log.' },
+      { level: 3, text: 'En cada línea agrega paréntesis y coloca el texto completo entre comillas dentro.' },
     ],
-    [
-      'Compara los ids de la página (linea1, linea2) con los ids que aparecen en app.js.',
-      'No cambies los textos: solo hay que apuntar cada instrucción a su recuadro.',
-    ],
-    {
-      title: 'Antes de depurar: repaso de tu primer programa',
-      summary: 'Repaso rápido de la clase para que arregles el programa sin adivinar.',
-      sections: [
-        {
-          title: 'Qué es un programa',
-          content: 'Un programa es una lista de instrucciones que la computadora ejecuta de arriba abajo, una tras otra, como una receta. Cada línea es una instrucción. Si cambias el orden, cambia el resultado.',
-          example: 'document.getElementById("linea1").textContent = "Hola";\ndocument.getElementById("linea2").textContent = "Adiós";',
-          exampleCaption: 'Una instrucción por línea. Se ejecutan en orden.',
-        },
-        {
-          title: 'El patrón busca-y-escribe',
-          content: 'Cada instrucción tiene dos partes: document.getElementById("...") busca el recuadro cuyo id coincida, y .textContent = "..." escribe texto dentro. El id va entre comillas y debe ser exactamente igual al de la página.',
-          example: 'document.getElementById("linea2").textContent = "Escrito con JavaScript";',
-          exampleCaption: 'Busca el recuadro por su id, luego escribe.',
-        },
-        {
-          title: 'Un recuadro, una instrucción',
-          content: 'Si dos instrucciones escriben en el mismo recuadro, la última pisa a la primera y el otro recuadro queda vacío. Para llenar dos recuadros necesitas dos instrucciones, cada una con su id.',
-          example: 'Antes: dos líneas con "linea1"\nDespués: una para "linea1" y otra para "linea2"',
-          exampleCaption: 'El id entre comillas decide a qué recuadro escribe cada línea.',
-        },
-        {
-          title: 'Qué vas a arreglar',
-          content: 'En app.js las dos instrucciones escriben en linea1. Por eso el nombre desaparece y linea2 queda vacío. No cambies los textos: cambia el id de la segunda instrucción para que apunte al otro recuadro.',
-          example: 'Antes: getElementById("linea1") ... dos veces\nDespués: getElementById("linea1") y getElementById("linea2")',
-          exampleCaption: 'Un cambio pequeño: el id correcto en cada línea.',
-        },
-      ],
-      keyPoints: [
-        'JavaScript ejecuta las líneas de arriba abajo',
-        'getElementById("id") busca el recuadro con ese id',
-        'textContent = "texto" escribe dentro del recuadro',
-        'El id entre comillas debe coincidir exactamente con el de la página',
-        'La última instrucción sobre un mismo recuadro gana',
-      ],
-    }
+    ['No necesitas DOM, variables ni funciones propias.', 'Corrige una sola pieza y vuelve a ejecutar.']
   ),
 
   exercise(
     'fundamentos-02',
-    'La cuenta sale mal',
-    'El conversor corre, pero 20 °C no da 68 °F.',
-    'aFahrenheit(0) es 32, aFahrenheit(20) es 68, aFahrenheit(100) es 212.',
-    'Con 20 °C la página muestra un número enorme. La fórmula no respeta el orden de las operaciones.',
-    `<p class="hint">Parte el problema: leer el número, hacer la cuenta, mostrar. La cuenta es la que falla.</p>
-    <p id="salida" class="salida"></p>`,
-    `function aFahrenheit(celsius) {
-  return celsius * 9 + 5 / 32;
-}
-
-const salida = document.getElementById("salida");
-salida.textContent = "20 °C = " + aFahrenheit(20) + " °F";
+    'Los pasos están desordenados',
+    'El programa describe cómo lavarse las manos, pero empieza por secarlas y una acción quedó convertida en comentario.',
+    'La consola debe mostrar abrir el grifo, usar jabón y secar las manos, en ese orden.',
+    'Las líneas usan una sintaxis válida, pero la secuencia no representa la tarea correctamente.',
+    `<p class="hint">Lee app.js de arriba abajo y compara cada salida con el orden real de la tarea.</p>
+    <p class="salida">La consola permite comprobar la secuencia.</p>`,
+    `console.log("Secar las manos");
+// console.log("Usar jabón");
+console.log("Abrir el grifo");
 `,
     [
-      fn('cero', '0 °C son 32 °F', 'aFahrenheit', [0], 32, 'El 32 se suma al final, no se divide.'),
-      fn('veinte', '20 °C son 68 °F', 'aFahrenheit', [20], 68, 'Multiplica, divide, y al final suma.'),
-      fn('cien', '100 °C son 212 °F', 'aFahrenheit', [100], 212, 'Prueba con un número redondo para ver si la cuenta escala.'),
+      {
+        id: 'secuencia-lavado',
+        description: 'Las tres instrucciones ejecutables están en el orden correcto',
+        validatorType: 'source-regex',
+        regexPattern: 'console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Abrir el grifo["\\\']\\s*\\)\\s*;?[\\s\\S]*console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Usar jabón["\\\']\\s*\\)\\s*;?[\\s\\S]*console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Secar las manos["\\\']\\s*\\)\\s*;?',
+        errorMessage: 'La secuencia todavía está incompleta o desordenada.',
+        hintTip: 'Las líneas se ejecutan de arriba abajo y una línea que empieza con // no se ejecuta.',
+      },
     ],
     [
-      { level: 1, text: 'En JavaScript, * y / van antes que +. No es lo mismo a * b + c / d que (a * b / c) + d.' },
-      { level: 2, text: 'La clase usaba tres operaciones en un orden concreto: multiplicar, dividir, sumar.' },
-      { level: 3, text: 'Comprueba aFahrenheit(0). Si no da 32, el 32 no está donde debería.' },
+      { level: 1, text: 'Imagina la tarea sin mirar el código y di los tres pasos en voz alta.' },
+      { level: 2, text: 'Mueve las instrucciones hasta que la primera acción quede arriba y la última abajo.' },
+      { level: 3, text: 'La acción del centro debe ser una instrucción ejecutable, no una línea que empieza con dos barras.' },
     ],
     [
-      'No reescribas todo. Encuentra la línea de la cuenta y mírala con un ejemplo: 20.',
-      'Puedes probar aFahrenheit con 0, 20 y 100 en la consola después de pulsar Ejecutar.',
+      'No necesitas variables, funciones ni operadores.',
+      'Ejecuta y compara la salida de la consola con el orden de la tarea.',
     ]
   ),
 
   exercise(
     'fundamentos-03',
-    'La edad se pega como texto',
-    'La ficha mezcla tipos y el año que viene sale mal.',
-    'ficha("Ana", 25) dice que tendrá 26 años. Si la edad llega como texto "25", también debe sumar 1, no pegar un 1.',
-    'Sale "Ana el año que viene tendrá 251 años". El 1 se pega al 25.',
-    `<p class="hint">El + hace dos trabajos: suma números y pega textos. El tipo del dato decide.</p>
+    'El contador no cambia',
+    'El programa intenta actualizar un dato, pero eligió una declaración que no permite reasignarlo.',
+    'La consola debe mostrar 1 después de actualizar intentos.',
+    'El programa se detiene al intentar cambiar intentos y la salida queda vacía.',
+    `<p class="hint">Sigue intentos línea por línea: el programa falla antes de mostrar el segundo valor.</p>
     <p id="salida" class="salida"></p>`,
-    `function ficha(nombre, edad) {
-  return nombre + " el año que viene tendrá " + (edad + 1) + " años";
-}
-
-const nombre = "Ana";
-let edad = "25";
-document.getElementById("salida").textContent = ficha(nombre, edad);
+    `const intentos = 0;
+intentos = 1;
+console.log(intentos);
 `,
     [
-      fn('texto', 'Si la edad llega como texto, suma un año', 'ficha', ['Ana', '25'], 'Ana el año que viene tendrá 26 años', 'Number(...) convierte texto a número antes de sumar.'),
-      fn('otro', 'Sirve con otra persona', 'ficha', ['Luis', '40'], 'Luis el año que viene tendrá 41 años', 'El tipo importa más que el nombre de la variable.'),
+      {
+        id: 'contador-actualizado',
+        description: 'intentos termina en uno después de recibir dos valores',
+        validatorType: 'source-regex',
+        regexPattern: 'let\\s+intentos\\s*=\\s*(?:1|0\\s*;?[\\s\\S]*intentos\\s*=\\s*1)',
+        errorMessage: 'intentos sigue declarado de una forma que no permite reasignarlo.',
+        hintTip: 'Sigue el valor línea por línea y decide si ese nombre necesita recibir un segundo valor.',
+      },
     ],
     [
-      { level: 1, text: 'Mira cómo está escrita la edad en app.js. ¿Lleva comillas?' },
-      { level: 2, text: '"25" + 1 no es 26. Es texto pegado a un 1.' },
-      { level: 3, text: 'Antes de sumar, la edad tiene que ser un número de verdad, no un texto que se parece a un número.' },
+      { level: 1, text: 'Sigue las líneas en orden. El error ocurre cuando intentos recibe su segundo valor.' },
+      { level: 2, text: 'const se usa cuando no vas a reasignar la variable. Aquí intentos sí cambia.' },
+      { level: 3, text: 'Cambia únicamente la declaración que impide que intentos reciba un segundo valor.' },
     ],
     [
-      'Pregúntate: ¿edad es número o texto? Las comillas lo deciden.',
-      'let y const no arreglan el tipo. El valor que guardas sí.',
+      'No necesitas funciones ni operadores para resolverlo.',
+      'Comprueba que la salida muestre 1 después de ejecutar.',
     ]
   ),
 
   exercise(
     'fundamentos-04',
-    'Entra quien no debería',
-    'El descuento y el múltiplo usan mal los operadores que viste.',
-    'Descuento solo si el precio es mayor que 50 y además es socio. esMultiplo usa el resto, no la división.',
-    'Un precio de 80 sin ser socio se rebaja y el porcentaje tampoco coincide. esMultiplo(9, 3) da false.',
-    `<p class="hint">=== compara. % es el resto. && pide las dos condiciones.</p>
+    'La división responde la pregunta equivocada',
+    'El programa debe indicar si 9 es múltiplo de 3, pero usa el operador equivocado.',
+    'La consola debe mostrar true porque 9 se divide exactamente entre 3.',
+    'La consola muestra false aunque la división no deja resto.',
+    `<p class="hint">Para saber si cabe exacto necesitas comprobar el resto de la división.</p>
     <p id="salida" class="salida"></p>`,
-    `function aplicaDescuento(precio, esSocio) {
-  if (precio > 50 || esSocio) {
-    return precio * 0.8;
-  }
-  return precio;
-}
-
-function esMultiplo(n, de) {
-  return n / de === 0;
-}
-
-const salida = document.getElementById("salida");
-salida.textContent =
-  "80 sin socio → " + aplicaDescuento(80, false) +
-  "\\n9 múltiplo de 3 → " + esMultiplo(9, 3);
+    `const numero = 9;
+const divisor = 3;
+const esMultiplo = numero / divisor === 0;
+console.log(esMultiplo);
 `,
     [
-      fn('sin-socio', '80 sin socio no tiene descuento', 'aplicaDescuento', [80, false], 80, '|| se conforma con una de las dos. && pide las dos.'),
-      fn('con-socio', '80 con socio sí rebaja', 'aplicaDescuento', [80, true], 72, 'Revisa tanto las dos condiciones como el porcentaje aplicado.'),
-      fn('barato-socio', '30 aunque sea socio no rebaja', 'aplicaDescuento', [30, true], 30, 'El precio también tiene que pasar el corte.'),
-      fn('multiplo', '9 es múltiplo de 3', 'esMultiplo', [9, 3], true, '% da el resto. Si el resto es 0, cabe exacto.'),
+      {
+        id: 'multiplo-visible',
+        description: 'La expresión comprueba que el resto es cero',
+        validatorType: 'source-regex',
+        regexPattern: 'const\\s+esMultiplo\\s*=\\s*(?:numero\\s*%\\s*divisor\\s*===\\s*0|0\\s*===\\s*numero\\s*%\\s*divisor)',
+        errorMessage: 'La expresión todavía produce false. Necesitas comparar el resto con cero.',
+        hintTip: 'Usa numero % divisor === 0.',
+      },
     ],
     [
-      { level: 1, text: 'Hay dos funciones. En el descuento revisa por separado la condición y la cuenta; después prueba esMultiplo.' },
-      { level: 2, text: '|| y && no son lo mismo. Una se conforma con un sí. La otra exige los dos.' },
-      { level: 3, text: 'n / 3 === 0 casi nunca es cierto (9 / 3 es 3). El resto de una división es otro operador.' },
+      { level: 1, text: 'Calcula 9 / 3. El resultado es 3, así que compararlo con 0 no responde si sobra algo.' },
+      { level: 2, text: 'El operador % devuelve el resto de la división.' },
+      { level: 3, text: 'Cambia la división por numero % divisor y conserva la comparación con cero.' },
     ],
     [
-      'No copies el reto de la clase. Mira qué pregunta hace cada if.',
-      'Para esMultiplo, piensa: ¿qué queda después de repartir n en grupos de tamaño de?',
+      'No necesitas if ni funciones para resolver este ejercicio.',
+      'Predice el valor de cada parte antes de ejecutar.',
     ]
   ),
 
   exercise(
     'fundamentos-05',
     'Las letras se cruzan',
-    'La letra de la nota elige mal el camino y devuelve categorías equivocadas.',
-    'letra(95) es A, letra(80) es B, letra(70) es C, letra(50) es F.',
-    'Las cuatro notas de ejemplo reciben una letra incorrecta. Las preguntas y sus resultados no están alineados.',
+    'La nota vale 75, pero el programa muestra A porque pregunta primero por el caso más amplio.',
+    'La consola debe mostrar C: 75 no llega a 90 ni a 80, pero sí llega a 70.',
+    'La primera condición verdadera gana antes de que JavaScript pueda revisar los cortes correctos.',
     `<p class="hint">if elige un camino. El primero que se cumple gana y el resto no se mira.</p>
-    <p id="salida" class="salida"></p>`,
-    `function letra(nota) {
-  if (nota >= 70) return "D";
-  if (nota >= 80) return "A";
-  if (nota >= 90) return "F";
-  return "C";
+    <p class="salida">Comprueba la letra en la consola.</p>`,
+    `const nota = 75;
+let letra = "";
+
+if (nota >= 70) {
+  letra = "A";
+} else if (nota >= 80) {
+  letra = "B";
+} else if (nota >= 90) {
+  letra = "C";
+} else {
+  letra = "F";
 }
 
-document.getElementById("salida").textContent =
-  "95 → " + letra(95) + " · 80 → " + letra(80) + " · 50 → " + letra(50);
+console.log(letra);
 `,
     [
-      fn('a', '95 es A', 'letra', [95], 'A', '95 también es >= 70. Si preguntas eso primero, nunca llegas a A.'),
-      fn('b', '80 es B', 'letra', [80], 'B', 'El orden de las preguntas cambia el resultado.'),
-      fn('c', '70 es C', 'letra', [70], 'C', 'El corte de C va después de los más altos.'),
-      fn('f', '50 es F', 'letra', [50], 'F', 'Si no entra en A, B ni C, queda el último camino.'),
+      { id: 'cortes-ordenados', description: 'Los cortes aparecen como 90, 80 y 70', validatorType: 'source-regex', regexPattern: 'nota\\s*>=\\s*90[\\s\\S]*nota\\s*>=\\s*80[\\s\\S]*nota\\s*>=\\s*70', errorMessage: 'Los cortes todavía no van de mayor a menor.', hintTip: 'Empieza por el caso más difícil de cumplir.' },
+      { id: 'resultado-c', description: 'La salida real para 75 es C', validatorType: 'console-check', expectedValue: ['C'], errorMessage: 'La consola todavía no muestra C.', hintTip: 'Con 75 deben fallar 90 y 80 antes de entrar en 70.' },
     ],
     [
-      { level: 1, text: 'Un 95 cumple más de una condición. Sigue el recorrido y anota qué letra recibe cada nota de ejemplo.' },
-      { level: 2, text: 'Si preguntas lo más fácil de cumplir al principio, los otros if nunca corren. Comprueba también qué categoría devuelve cada camino.' },
-      { level: 3, text: 'Ordena los cortes desde el más exigente y verifica la letra asociada a cada rango.' },
+      { level: 1, text: 'Un 75 cumple la condición de 70. Si esa pregunta está arriba, el resto nunca se revisa.' },
+      { level: 2, text: 'Ordena los cortes de mayor a menor y conserva cada letra con su rango.' },
+      { level: 3, text: 'Sigue el camino con 75: no entra en 90, no entra en 80 y sí entra en 70.' },
     ],
     [
-      'Prueba mentalmente 95, 80, 70 y 50 en el orden actual de los if.',
-      'No hace falta reescribir la idea: hace falta que la primera pregunta que gana sea la correcta.',
+      'No necesitas crear una función.',
+      'Ejecuta y comprueba una única letra en la consola.',
     ]
   ),
 
   exercise(
     'fundamentos-06',
-    'El 15 no dice FizzBuzz',
-    'La etiqueta del número 15 se queda a medias.',
-    'etiqueta(3) es Fizz, etiqueta(5) es Buzz, etiqueta(15) es FizzBuzz, etiqueta(1) es "1".',
-    'El 3 y el 5 reciben la palabra contraria, el 15 se queda en una sola y el caso normal devuelve un número.',
-    `<p class="hint">El orden de las preguntas importa tanto como las preguntas.</p>
-    <p id="salida" class="salida"></p>`,
-    `function etiqueta(n) {
-  if (n % 3 === 0) return "Buzz";
-  if (n % 5 === 0) return "Fizz";
-  if (n % 3 === 0 && n % 5 === 0) return "FizzBuzz";
-  return n;
+    'La tercera vuelta no ocurre',
+    'El bucle debería mostrar 1, 2 y 3, pero se detiene antes del último número.',
+    'La consola debe mostrar exactamente 1, 2 y 3 en ese orden.',
+    'La condición usa menor que 3, así que la vuelta con i igual a 3 queda fuera.',
+    `<p class="hint">Compara el límite con la última salida que necesitas incluir.</p>
+    <p class="salida">La consola revela cuántas vueltas ocurrieron.</p>`,
+    `for (let i = 1; i < 3; i++) {
+  console.log(i);
 }
-
-const lineas = [];
-for (let i = 1; i <= 15; i++) {
-  lineas.push(i + ": " + etiqueta(i));
-}
-document.getElementById("salida").textContent = lineas.join("\\n");
 `,
     [
-      fn('fizz', '3 es Fizz', 'etiqueta', [3], 'Fizz', 'Múltiplo solo de 3.'),
-      fn('buzz', '5 es Buzz', 'etiqueta', [5], 'Buzz', 'Múltiplo solo de 5.'),
-      fn('ambos', '15 es FizzBuzz', 'etiqueta', [15], 'FizzBuzz', '15 cumple las dos. Si preguntas una sola primero, esa gana.'),
-      fn('numero', '1 se queda en número', 'etiqueta', [1], '1', 'Si no es múltiplo, devuelve el número como texto.'),
+      { id: 'tres-vueltas', description: 'La consola muestra las tres vueltas', validatorType: 'console-check', expectedValue: ['1', '2', '3'], errorMessage: 'La salida no contiene exactamente 1, 2 y 3.', hintTip: 'No dupliques console.log; corrige el control del for.' },
     ],
     [
-      { level: 1, text: 'Prueba 3, 5, 15 y 1 por separado. Compara el valor y también su tipo con lo que pide el enunciado.' },
-      { level: 2, text: 'Un return corta la función. Además, cada múltiplo debe conservar su etiqueta correcta.' },
-      { level: 3, text: 'El caso que cumple las dos condiciones necesita prioridad; el caso normal debe tener el mismo tipo que el resultado esperado.' },
+      { level: 1, text: 'Con menor que 3, la condición deja de cumplirse cuando i llega a 3.' },
+      { level: 2, text: 'Necesitas un comparador que también acepte el propio límite.' },
+      { level: 3, text: 'Conserva el inicio, el incremento y el cuerpo. Ajusta solo la condición central.' },
     ],
     [
-      'No borres el bucle. El fallo está en etiqueta(), no en el for.',
-      'Di en voz alta qué pregunta harías primero si quieres que FizzBuzz tenga oportunidad.',
+      'No necesitas funciones ni arrays.',
+      'El ejercicio comprueba la salida real, no una línea exacta copiada.',
     ]
   ),
 
@@ -424,8 +338,8 @@ document.getElementById("salida").textContent = lineas.join("\\n");
   return 3 * 4;
 }
 
-document.getElementById("salida").textContent =
-  "3×4 → " + areaRectangulo(3, 4) + " · 10×2 → " + areaRectangulo(10, 2);
+console.log(areaRectangulo(3, 4));
+console.log(areaRectangulo(10, 2));
 `,
     [
       fn('otra', '10 por 2 da 20', 'areaRectangulo', [10, 2], 20, 'Si siempre sale 12, la función no está usando lo que le pasas.'),
@@ -460,8 +374,8 @@ function ultimo(lista) {
 }
 
 const numeros = [4, 8, 15];
-document.getElementById("salida").textContent =
-  "primero → " + primero(numeros) + " · ultimo → " + ultimo(numeros);
+console.log(primero(numeros));
+console.log(ultimo(numeros));
 `,
     [
       fn('pri', 'El primero es la posición 0', 'primero', [[4, 8, 15]], 4, 'lista[1] es el segundo.'),
@@ -492,7 +406,7 @@ document.getElementById("salida").textContent =
 }
 
 const producto = { nombre: "Té", precio: 4 };
-document.getElementById("salida").textContent = etiqueta(producto);
+console.log(etiqueta(producto));
 `,
     [
       fn('te', 'Usa nombre y precio del objeto', 'etiqueta', [{ nombre: 'Té', precio: 4 }], 'Té — 4', 'item.nombre no es item[0].'),
@@ -511,189 +425,154 @@ document.getElementById("salida").textContent = etiqueta(producto);
 
   exercise(
     'fundamentos-10',
-    'Los dos contadores se pisan',
-    'Dos contadores deberían vivir aparte. Ahora comparten el número.',
-    'Cada crearContador() tiene su propio n. El segundo no sigue la cuenta del primero.',
-    'Si llamas al primero dos veces y al segundo una, el segundo no empieza en 1: sigue la cuenta del otro.',
-    `<p class="hint">Sin let, n no nace dentro de la función: se comparte.</p>
-    <p id="salida" class="salida"></p>`,
-    `function crearContador() {
-  n = 0;
-  return function () {
-    n = n + 1;
-    return n;
-  };
-}
+    'JavaScript busca el id equivocado',
+    'El programa debería cambiar el título y el mensaje, pero solo uno responde.',
+    '#titulo y #mensaje deben mostrar sus textos nuevos.',
+    'La segunda búsqueda repite titulo, así que mensaje conserva el texto original.',
+    `<h2 id="titulo">Título original</h2>
+    <p id="mensaje" class="salida">Mensaje original</p>`,
+    `const titulo = document.getElementById("titulo");
+const mensaje = document.getElementById("titulo");
 
-function pruebaDosContadores() {
-  const a = crearContador();
-  const b = crearContador();
-  a();
-  a();
-  return [a(), b()];
-}
-
-const salida = document.getElementById("salida");
-salida.textContent = "a, a, a y un b → " + pruebaDosContadores().join(", ");
+titulo.textContent = "Página lista";
+mensaje.textContent = "DOM conectado";
 `,
     [
-      fn(
-        'independientes',
-        'El segundo contador empieza en 1 aunque el primero ya haya contado',
-        'pruebaDosContadores',
-        [],
-        [3, 1],
-        'a() tres veces da 3. b() una vez debería dar 1, no 4.'
-      ),
+      { id: 'titulo-dom', description: 'El título cambia', validatorType: 'dom-check', domSelector: '#titulo', domProperty: 'innerText', expectedValue: 'Página lista', errorMessage: 'El título no muestra el texto esperado.', hintTip: 'La primera búsqueda ya apunta al id correcto.' },
+      { id: 'mensaje-dom', description: 'El mensaje cambia', validatorType: 'dom-check', domSelector: '#mensaje', domProperty: 'innerText', expectedValue: 'DOM conectado', errorMessage: 'El mensaje sigue sin cambiar porque la variable mensaje apunta a otro elemento.', hintTip: 'Compara el nombre de la variable con el id buscado.' },
     ],
     [
-      { level: 1, text: 'pruebaDosContadores crea a y b. Si se pisan, n no es de cada uno.' },
-      { level: 2, text: 'n = 0 sin let (ni const) no queda encerrado en crearContador.' },
-      { level: 3, text: 'La función de adentro “recuerda” las variables que nacieron adentro, no las de fuera.' },
+      { level: 1, text: 'Hay dos variables, pero ambas búsquedas usan el mismo id.' },
+      { level: 2, text: 'Cada elemento del HTML tiene un id distinto: titulo y mensaje.' },
+      { level: 3, text: 'Corrige únicamente el texto entre comillas de la segunda búsqueda.' },
     ],
-    [
-      'No borres pruebaDosContadores: es la comprobación. Arregla crearContador.',
-      'Dos llamadas a crearContador() tienen que nacer dos n distintos.',
-    ]
+    ['No cambies el HTML.', 'Ejecuta y comprueba cada elemento por separado.']
   ),
 
   exercise(
     'fundamentos-11',
-    'Los índices quedan corridos',
-    'La búsqueda lineal se salta un hueco y devuelve posiciones desplazadas.',
-    'buscar([7, 3, 9], 7) es 0. buscar([7, 3, 9], 9) es 2. Si no está, -1.',
-    'El 7 devuelve una posición que no corresponde, el 9 queda desplazado y un ausente tampoco devuelve -1.',
-    `<p class="hint">Lineal mira uno por uno. Si empiezas en el segundo, el primero no existe para el programa.</p>
-    <p id="salida" class="salida"></p>`,
-    `function buscar(lista, objetivo) {
-  for (let i = 1; i < lista.length; i++) {
-    if (lista[i] === objetivo) return i - 1;
-  }
-  return lista.length;
+    'El botón espera dos clics',
+    'La respuesta debería aparecer con un clic normal.',
+    'Un solo clic en #accion cambia #estado.',
+    'El programa escucha dblclick, así que un clic normal no hace nada.',
+    `<button type="button" id="accion">Púlsame</button>
+    <p id="estado" class="salida">Esperando</p>`,
+    `const boton = document.getElementById("accion");
+const estado = document.getElementById("estado");
+
+function responder() {
+  estado.textContent = "Recibido";
 }
 
-document.getElementById("salida").textContent =
-  "buscar 7 → " + buscar([7, 3, 9], 7) + " · buscar 4 → " + buscar([7, 3, 9], 4);
+boton.addEventListener("dblclick", responder);
 `,
     [
-      fn('cabeza', 'Encuentra el que está al principio', 'buscar', [[7, 3, 9], 7], 0, 'El for no puede empezar en 1 si el 0 también cuenta.'),
-      fn('cola', 'Encuentra el del final', 'buscar', [[7, 3, 9], 9], 2, 'El último índice es length - 1, y el for ya llega ahí.'),
-      fn('no-esta', 'Si no está, -1', 'buscar', [[7, 3, 9], 4], -1, 'Al terminar el recorrido sin coincidencias debe devolver el valor que representa “no encontrado”.'),
+      { id: 'click-simple', description: 'Un clic cambia el mensaje', validatorType: 'dom-check', domSelector: '#estado', domProperty: 'innerText', triggerClick: '#accion', expectedValue: 'Recibido', errorMessage: 'Un clic todavía no ejecuta responder.', hintTip: 'Revisa el nombre del evento entre comillas.' },
     ],
     [
-      { level: 1, text: 'El 7 está en la posición 0. Sigue el for y anota qué devuelve cuando encuentra algo y cuando no lo encuentra.' },
-      { level: 2, text: 'El recorrido se salta el índice 0 y la posición devuelta tampoco coincide con la visitada.' },
-      { level: 3, text: 'Una búsqueda lineal recorre desde el primer índice y usa un valor especial fuera del bucle cuando no encuentra nada.' },
+      { level: 1, text: 'La función responder sí cambia el texto. El problema está en cuándo se llama.' },
+      { level: 2, text: 'dblclick significa doble clic.' },
+      { level: 3, text: 'La lección conectaba el evento click.' },
     ],
-    [
-      'Escribe los índices 0, 1, 2 al lado de 7, 3, 9. Marca cuáles visita el for ahora.',
-      'No hace falta binaria aquí. El fallo es el punto de partida.',
-    ]
+    ['Conserva responder sin paréntesis dentro de addEventListener.', 'No hace falta cambiar la función.']
   ),
 
   exercise(
     'fundamentos-12',
-    'Atiende al último de la fila',
-    'Una cola atiende a quien llegó primero. Esta atiende al último.',
-    'atender(["Ana", "Ben", "Cris"]) devuelve "Ana". El primero en entrar es el primero en salir.',
-    'Devuelve "Cris". Está trabajando como pila.',
-    `<p class="hint">Pila: pop saca de atrás. Cola: se saca de adelante, como una fila del súper.</p>
-    <p id="salida" class="salida"></p>`,
-    `function atender(fila) {
-  return fila.pop();
+    'El saludo ignora lo escrito',
+    'El input contiene Ana, pero el saludo no incluye el nombre.',
+    'Al pulsar Saludar, #salida debe mostrar “Hola, Ana”.',
+    'El código lee textContent del input en lugar de su valor.',
+    `<input id="nombre" value="Ana">
+    <button type="button" id="saludar">Saludar</button>
+    <p id="salida" class="salida">Sin saludo</p>`,
+    `const entrada = document.getElementById("nombre");
+const boton = document.getElementById("saludar");
+const salida = document.getElementById("salida");
+
+function mostrarSaludo() {
+  salida.textContent = "Hola, " + entrada.textContent;
 }
 
-const cola = ["Ana", "Ben", "Cris"];
-document.getElementById("salida").textContent = "Atiende → " + atender(cola);
+boton.addEventListener("click", mostrarSaludo);
 `,
     [
-      fn('fifo', 'Sale quien llegó primero', 'atender', [['Ana', 'Ben', 'Cris']], 'Ana', 'pop saca el último. En una cola el último debería esperar.'),
-      fn('segunda', 'Después de Ana tocaría Ben', 'atender', [['Ben', 'Cris']], 'Ben', 'Sigue saliendo por el frente, no por atrás.'),
+      { id: 'valor-input', description: 'El saludo usa el valor del input', validatorType: 'dom-check', domSelector: '#salida', domProperty: 'innerText', triggerClick: '#saludar', expectedValue: 'Hola, Ana', errorMessage: 'El saludo no está leyendo el texto escrito en el input.', hintTip: 'Los inputs guardan su texto en value.' },
     ],
     [
-      { level: 1, text: 'Ana llegó primero. ¿pop saca a Ana o a Cris?' },
-      { level: 2, text: 'En la clase, la cola sacaba por el frente. Hay un método que quita el índice 0.' },
-      { level: 3, text: 'push mete al final. Para atender, tienes que sacar del principio, no del final.' },
+      { level: 1, text: 'entrada es un input, no un párrafo.' },
+      { level: 2, text: 'textContent sirve para texto entre etiquetas; el input tiene otra propiedad.' },
+      { level: 3, text: 'Lee entrada.value dentro de mostrarSaludo.' },
     ],
-    [
-      'Dibuja la fila: Ana, Ben, Cris. ¿Quién debería salir si es una cola? ¿Y si es una pila?',
-      'El array se puede tocar por los dos extremos. Elige el extremo que corresponde a “fila”.',
-    ]
+    ['No cambies el value del HTML.', 'El evento ya está conectado correctamente.']
   ),
 
   exercise(
     'fundamentos-13',
-    'Solo detecta vecinos',
-    'La función dice que no hay duplicados si no están juntos.',
-    'tieneDuplicados([1, 2, 1]) es true. tieneDuplicados([1, 1, 2]) es true. tieneDuplicados([1, 2, 3]) es false.',
-    'Solo mira al de al lado; los duplicados vecinos dan false y los demás casos terminan sin un booleano útil.',
-    `<p class="hint">Si duplicas los datos, un algoritmo que solo mira vecinos se queda corto. Eso también es complejidad: hace de menos.</p>
-    <p id="salida" class="salida"></p>`,
-    `function tieneDuplicados(lista) {
-  for (let i = 0; i < lista.length; i++) {
-    if (lista[i] === lista[i + 1]) return false;
-  }
-  return null;
+    'La primera tarea desaparece',
+    'La página debería mostrar las tres tareas del array.',
+    'La lista contiene Leer, Practicar y Descansar.',
+    'El bucle comienza en 1 y se salta la posición 0.',
+    `<ul id="lista"></ul>
+    <p id="total" class="salida">Total: 0</p>`,
+    `const tareas = ["Leer", "Practicar", "Descansar"];
+const lista = document.getElementById("lista");
+
+for (let i = 1; i < tareas.length; i++) {
+  const fila = document.createElement("li");
+  fila.textContent = tareas[i];
+  lista.appendChild(fila);
 }
 
-document.getElementById("salida").textContent =
-  "[1, 2, 1] → " + tieneDuplicados([1, 2, 1]) +
-  " · [1, 1, 2] → " + tieneDuplicados([1, 1, 2]);
+document.getElementById("total").textContent =
+  "Total: " + lista.children.length;
 `,
     [
-      fn('lejos', 'Duplicado no vecino', 'tieneDuplicados', [[1, 2, 1]], true, '1 aparece dos veces aunque no estén juntos.'),
-      fn('juntos', 'Duplicado vecino', 'tieneDuplicados', [[1, 1, 2]], true, 'Cuando encuentra dos valores repetidos debe comunicar que sí hay duplicado.'),
-      fn('unicos', 'Sin duplicados es false', 'tieneDuplicados', [[1, 2, 3]], false, 'Si todo es distinto, no hay duplicado.'),
+      { id: 'tres-filas', description: 'La lista tiene tres filas', validatorType: 'dom-check', domSelector: '#lista li', domProperty: 'count', expectedValue: 3, errorMessage: 'La lista todavía tiene menos de tres filas.', hintTip: 'El primer índice de un array es 0.' },
+      { id: 'incluye-leer', description: 'La primera tarea también aparece', validatorType: 'dom-check', domSelector: '#lista', domProperty: 'innerText', matcher: 'contains', expectedValue: 'Leer', errorMessage: 'Leer sigue ausente de la lista.', hintTip: 'Revisa el valor inicial de i.' },
     ],
     [
-      { level: 1, text: 'Sigue los dos caminos de retorno con una lista repetida y otra única. ¿El booleano describe lo que ocurrió?' },
-      { level: 2, text: 'Aunque corrijas los booleanos, comparar solo con i + 1 sigue sin ver duplicados separados.' },
-      { level: 3, text: 'Compara cada valor con los demás o recuerda cuáles ya viste; devuelve el resultado que corresponda a encontrar una repetición.' },
+      { level: 1, text: 'Escribe los índices sobre las tareas: 0, 1 y 2.' },
+      { level: 2, text: 'El for actual empieza en la segunda posición.' },
+      { level: 3, text: 'Cambia solamente el valor inicial de i.' },
     ],
-    [
-      'El fallo no es de sintaxis: el programa hace menos trabajo del que el problema pide.',
-      'Piensa un caso que el código actual acierta y uno que falla. Arregla el que falla sin romper el otro.',
-    ]
+    ['No necesitas cambiar createElement ni appendChild.', 'Comprueba la cantidad y el primer texto.']
   ),
 
   exercise(
     'fundamentos-14',
-    'Cambia la lista original',
-    'conIva debería devolver números nuevos sin tocar la lista de entrada.',
-    'conIva([100, 200]) devuelve [121, 242] y la lista original sigue siendo [100, 200].',
-    'La lista de entrada termina modificada y el porcentaje aplicado tampoco llega al 21 %. En el estilo de map, entra una lista y sale otra.',
-    `<p class="hint">map arma una lista nueva. Si escribes sobre precios[i], mutas la original.</p>
+    'Guarda una tarea inventada',
+    'agregarTarea debe usar el texto recibido e ignorar el vacío.',
+    'El vacío devuelve 0. “Leer” se guarda y devuelve 1.',
+    'La función siempre agrega “Ejemplo” y devuelve -1.',
+    `<p class="hint">La fuente de verdad es el array tareas.</p>
     <p id="salida" class="salida"></p>`,
-    `function conIva(precios) {
-  for (let i = 0; i < precios.length; i++) {
-    precios[i] = precios[i] * 1.2;
-  }
-  return precios;
-}
+    `const tareas = [];
 
-function originalIntacto() {
-  const datos = [100, 200];
-  const resultado = conIva(datos);
-  return datos[0] === 100 && resultado[0] === 121;
+function agregarTarea(texto) {
+  tareas.push("Ejemplo");
+  return -1;
 }
 
 document.getElementById("salida").textContent =
-  "resultado → " + conIva([100, 200]).join(", ");
+  "Cantidad: " + agregarTarea("Leer");
 `,
     [
-      fn('valores', 'Aplica el 21 % y devuelve números nuevos', 'conIva', [[100, 200]], [121, 242], 'El enunciado pide añadir 21 %, no 20 %.'),
-      fn('no-muta', 'La lista de entrada no se reescribe', 'originalIntacto', [], true, 'Si conIva escribe en precios[i], datos[0] deja de ser 100.'),
+      fn('vacio-proyecto', 'Ignora el texto vacío', 'agregarTarea', [''], 0, 'La condición debe ocurrir antes de guardar.'),
+      fn('valida-proyecto', 'Guarda una tarea válida', 'agregarTarea', ['Leer'], 1, 'Usa el parámetro texto y devuelve tareas.length.'),
     ],
     [
-      { level: 1, text: 'Comprueba por separado el porcentaje calculado y si datos conserva sus valores después de llamar conIva.' },
-      { level: 2, text: 'precios[i] = ... cambia el array que te pasaron. En la clase, map no hacía eso.' },
-      { level: 3, text: 'Arma otra lista (map, o un array nuevo que vas llenando) y deja la original en paz.' },
+      { level: 1, text: 'La función ignora su parámetro y además devuelve un número fijo incorrecto.' },
+      { level: 2, text: 'Si texto es vacío, devuelve la cantidad sin hacer push.' },
+      { level: 3, text: 'Si es válido, tareas.push(texto) y después return tareas.length.' },
     ],
-    [
-      'No borres originalIntacto: comprueba que la entrada no se reescribe.',
-      'Puedes resolverlo con map o con un for que empuja a un array nuevo. Lo que no vale es pisar precios[i].',
-    ]
+    ['No cambies el array global.', 'Prueba primero el vacío y luego una tarea válida.']
   ),
+];
+
+export const DEBUG_EXERCISES: DebuggingExerciseItem[] = [
+  ...BEGINNER_DEBUG_EXERCISES,
+  ...ADVANCED_DEBUG_EXERCISES,
 ];
 
 export const DEBUG_BY_LESSON: Record<string, DebuggingExerciseItem> = Object.fromEntries(

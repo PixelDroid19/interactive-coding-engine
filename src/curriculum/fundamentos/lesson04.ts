@@ -1,17 +1,29 @@
 import { compileLesson } from '../../engine/lessonCompiler';
-import { L04_CMP, L04_OPS, L04_SOLUTION, lesson04Workspace } from './pages';
+import { L04_CHALLENGE_START, L04_CMP, L04_OPS, L04_SOLUTION, lesson04Workspace } from './preDomWorkspaces';
 
-const AUDIO_MS = 98_960;
+const AUDIO_MS = 118_640;
 
 export const LESSON_04 = compileLesson({
   id: 'fundamentos-04',
   title: '4. Operadores',
   description: 'Suma, resto, comparar con tres iguales, y combinar condiciones con y / o.',
-  audioUrl: '/audio/fundamentos-04.mp3?v=lote',
   language: 'es',
   durationMs: AUDIO_MS,
+  audioUrl: '/audio/fundamentos-04.mp3?v=gemini-20260824',
+  fitTimelineToDuration: true,
   initialWorkspace: lesson04Workspace,
+  executionMode: 'logic',
   concepts: ['Calcular (+, *, %)', 'Comparar (=== y &&)'],
+  skillsRequired: ['variables', 'types'],
+  skillsIntroduced: ['operators', 'booleans'],
+  learningObjectives: [
+    'Construir expresiones aritméticas a partir de variables.',
+    'Interpretar una comparación como un resultado true o false.',
+  ],
+  commonMistakes: [
+    'Confundir =, que asigna, con ===, que compara.',
+    'Confundir % con porcentaje en lugar del resto de una división.',
+  ],
   teachNotes: [
     {
       title: 'El porcentaje es el resto',
@@ -27,12 +39,12 @@ export const LESSON_04 = compileLesson({
     {
       at: 200,
       type: 'speak',
-      text: 'Ya sabes guardar datos. Ahora hay que hacer algo con ellos. Los operadores son los símbolos que calculan, comparan o combinan.',
+      text: 'Ya sabes guardar valores en variables. El siguiente paso es usarlos. Los operadores son símbolos que nos permiten hacer cálculos, comparar valores y combinar condiciones.',
     },
     {
       at: 10180,
       type: 'speak',
-      text: 'Mira la página. Hay dos números. Diez y tres. Vamos a sumarlos, restarlos, multiplicarlos y dividirlos.',
+      text: 'Partiremos de dos números, diez y tres. Con las mismas variables podemos sumar, restar, multiplicar y dividir. Ejecutaremos cada expresión para ver su resultado en la consola.',
     },
     {
       at: 10800,
@@ -47,105 +59,77 @@ export const LESSON_04 = compileLesson({
     {
       at: 21020,
       type: 'speak',
-      text: 'Más, menos, por, dividido. Y este: el porcentaje. No es un descuento. Es el resto. Diez dividido tres es tres y sobra uno. Por eso diez por ciento tres da uno.',
+      text: 'Los primeros símbolos resultan familiares. El signo de porcentaje necesita una explicación: en JavaScript calcula el resto de una división. Diez dividido entre tres deja un resto de uno, así que diez módulo tres produce uno.',
     },
     { at: 22000, type: 'write', filePath: 'app.js', mode: 'replace', content: L04_OPS },
     { at: 30000, type: 'run' },
     {
       at: 39560,
       type: 'speak',
-      text: 'Eso sirve para saber si un número es par. Si el resto al dividir entre dos es cero, es par.',
+      text: 'El resto tiene usos muy prácticos. Por ejemplo, un número es par cuando al dividirlo entre dos el resto es cero.',
     },
     { at: 46440, type: 'chapter', title: 'Comparar' },
     {
       at: 46440,
       type: 'speak',
-      text: 'Comparar es otra cosa. Mayor, menor, igual. El resultado no es un número. Es true o false.',
+      text: 'Las comparaciones responden preguntas como: ¿un valor es mayor, menor o exactamente igual a otro? Su resultado siempre es un booleano: true o false.',
     },
     {
       at: 55400,
       type: 'speak',
-      text: 'Ojo con el igual. Un igual solo, asigna. Tres iguales comparan en serio: mismo valor y mismo tipo. Usa siempre tres iguales. El texto diez no es el número diez.',
+      text: 'No confundas asignar con comparar. Un solo signo igual guarda un valor. Tres signos iguales comprueban que coincidan tanto el valor como el tipo. Por eso el texto diez no es igual al número diez.',
     },
     { at: 57000, type: 'write', filePath: 'app.js', mode: 'replace', content: L04_CMP },
     { at: 64000, type: 'run' },
     {
       at: 69520,
       type: 'speak',
-      text: 'Y luego están y, y o. La lámpara se enciende si hay corriente y el interruptor está arriba. Las dos cosas tienen que ser verdad. Puedes entrar con llave o con el código. Con una de las dos alcanza.',
+      text: 'También podemos combinar preguntas. El operador y exige que ambas condiciones sean verdaderas. El operador o acepta que al menos una lo sea. Es como necesitar una entrada y la edad mínima, frente a poder acceder con una llave o con un código.',
     },
     { at: 83700, type: 'chapter', title: 'Tu turno' },
     {
       at: 83700,
       type: 'speak',
-      text: 'Tu turno. Escribe una función esPar que reciba un número y devuelva true si el resto entre dos es cero. Y otra, puedeEntrar, que sea true si la edad es mayor o igual a dieciocho y tieneEntrada es true.',
+      text: 'Ahora completa dos expresiones. esPar debe comprobar que el resto al dividir entre dos sea cero. puedeEntrar debe ser verdadero únicamente cuando se cumplan la edad mínima y la condición de tener entrada.',
     },
+    { at: 87000, type: 'write', filePath: 'app.js', mode: 'replace', content: L04_CHALLENGE_START },
     {
       at: 89000,
       type: 'challenge',
       challenge: {
-        id: 'reto-espar-entrar',
-        title: 'Reto: esPar y puedeEntrar',
-        instructions: `Crea dos funciones y pulsa Ejecutar:
+        id: 'reto-operadores',
+        title: 'Reto: completa las expresiones',
+        instructions: `Completa las dos variables y pulsa Ejecutar:
 
-1. esPar(n) devuelve true solo cuando n es divisible entre 2.
-2. puedeEntrar(edad, tieneEntrada) devuelve true solo si la persona es mayor de edad y además tiene entrada.`,
+1. esPar debe ser true cuando numero es divisible entre 2.
+2. puedeEntrar debe ser true solo si edad es al menos 18 y tieneEntrada es true.
+3. No cambies los valores de numero, edad ni tieneEntrada.`,
         tests: [
           {
-            id: 'esPar-par',
-            description: 'esPar(4) es true',
-            validatorType: 'function-call',
-            targetFunction: 'esPar',
-            args: [4],
-            expectedReturn: true,
-            errorMessage: 'esPar(4) debería ser true. ¿Usa n % 2 === 0?',
-            hintTip: 'Comprueba el resto de dividir n entre 2.',
+            id: 'expresion-es-par',
+            description: 'esPar compara el resto con cero',
+            validatorType: 'source-regex',
+            regexPattern: 'const\\s+esPar\\s*=\\s*(?:numero\\s*%\\s*2\\s*===\\s*0|0\\s*===\\s*numero\\s*%\\s*2)',
+            errorMessage: 'esPar todavía no usa el resto de numero dividido entre 2.',
+            hintTip: 'Compara numero % 2 con cero.',
           },
           {
-            id: 'esPar-impar',
-            description: 'esPar(7) es false',
-            validatorType: 'function-call',
-            targetFunction: 'esPar',
-            args: [7],
-            expectedReturn: false,
-            errorMessage: 'esPar(7) debería ser false.',
-            hintTip: 'El resto entre 2 distinto de 0 es impar.',
-          },
-          {
-            id: 'puedeEntrar-ok',
-            description: 'puedeEntrar(20, true) es true',
-            validatorType: 'function-call',
-            targetFunction: 'puedeEntrar',
-            args: [20, true],
-            expectedReturn: true,
-            errorMessage: 'Con 20 años y entrada, debe ser true.',
-            hintTip: 'Une la comprobación de edad y la entrada de modo que ambas sean obligatorias.',
-          },
-          {
-            id: 'puedeEntrar-menor',
-            description: 'puedeEntrar(16, true) es false',
-            validatorType: 'function-call',
-            targetFunction: 'puedeEntrar',
-            args: [16, true],
-            expectedReturn: false,
-            errorMessage: 'Con 16 aunque tenga entrada, debe ser false.',
-            hintTip: 'La edad también debe ser >= 18.',
-          },
-          {
-            id: 'puedeEntrar-sin-entrada',
-            description: 'puedeEntrar(20, false) es false',
-            validatorType: 'function-call',
-            targetFunction: 'puedeEntrar',
-            args: [20, false],
-            expectedReturn: false,
-            errorMessage: 'Sin entrada aunque tenga edad, debe ser false.',
-            hintTip: 'Las dos condiciones con &&.',
+            id: 'expresion-puede-entrar',
+            description: 'puedeEntrar exige edad y entrada',
+            validatorType: 'source-regex',
+            regexPattern: 'const\\s+puedeEntrar\\s*=\\s*(?:edad\\s*>=\\s*18\\s*&&\\s*tieneEntrada|tieneEntrada\\s*&&\\s*edad\\s*>=\\s*18)',
+            errorMessage: 'puedeEntrar debe combinar la edad y tieneEntrada.',
+            hintTip: 'Une edad >= 18 y tieneEntrada con &&.',
           },
         ],
         hints: [
-          { level: 1, title: 'Par', text: 'Si n % 2 da 0, es par.' },
+          { level: 1, title: 'Par', text: 'Si numero % 2 da 0, es par.' },
           { level: 2, title: 'Y', text: 'Las dos condiciones se unen con &&.' },
-          { level: 3, title: 'return', text: 'Las funciones tienen que devolver true o false, no solo calcular.' },
+          {
+            level: 3,
+            title: 'Comprueba por partes',
+            text: 'Primero observa el resto de dividir entre 2. Después verifica por separado la edad y la entrada antes de unir ambas condiciones.',
+          },
         ],
         solutionExplanation: '% da el resto. && pide las dos cosas a la vez.',
       },

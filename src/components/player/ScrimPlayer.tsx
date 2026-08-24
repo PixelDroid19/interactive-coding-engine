@@ -9,6 +9,7 @@ import { markChallengeCompleted, markChallengeSkipped, markItemCompleted, saveLe
 import { CodeEditor } from '../editor/CodeEditor';
 import { FileTree } from '../editor/FileTree';
 import { FloatingBrowser, FloatingBrowserRef } from '../preview/FloatingBrowser';
+import { LogicRunnerPanel, LogicRunnerPanelRef } from '../preview/LogicRunnerPanel';
 import { Timeline } from './Timeline';
 import { ChallengeDrawer } from '../challenges/ChallengeDrawer';
 import { ExplainModal } from './ExplainModal';
@@ -95,9 +96,11 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const [closureConfirmed, setClosureConfirmed] = useState(false);
   const [showClosure, setShowClosure] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<'previous' | 'next' | 'roadmap' | null>(null);
+  const isLogicMode = lessonData.executionMode === 'logic';
 
   const engineRef = useRef<PlaybackEngine | null>(null);
   const previewRef = useRef<FloatingBrowserRef | null>(null);
+  const logicRunnerRef = useRef<LogicRunnerPanelRef | null>(null);
   const isForkedRef = useRef(false);
   const timeRef = useRef(initialTimeMs);
   const workspaceRef = useRef(workspace);
@@ -111,11 +114,22 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   closureConfirmedRef.current = closureConfirmed;
   const branchRecoveryFirstActionRef = useRef<HTMLButtonElement | null>(null);
   const onPositionChangeRef = useRef(onPositionChange);
+  const previewReloadAfterWorkspaceRef = useRef(false);
 
   workspaceRef.current = workspace;
   isForkedRef.current = playerState.isForked;
   timeRef.current = currentTimeMs;
   onPositionChangeRef.current = onPositionChange;
+
+  useEffect(() => {
+    if (!previewReloadAfterWorkspaceRef.current) return;
+    previewReloadAfterWorkspaceRef.current = false;
+    const frame = window.requestAnimationFrame(() => {
+      if (isLogicMode) void logicRunnerRef.current?.run();
+      else void previewRef.current?.reloadPreview();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isLogicMode, workspace]);
 
   const forkLearnerBranch = useCallback((baseTime: number, activeChallengeId?: string) => {
     if (isForkedRef.current) return;
@@ -242,9 +256,10 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         }
       },
       onRunTriggered: () => {
-        // During tape, reload preview only when not forked
+        // During tape, execute the active output only when not forked.
         if (!isForkedRef.current) {
-          previewRef.current?.reloadPreview();
+          if (lessonData.executionMode === 'logic') void logicRunnerRef.current?.run();
+          else void previewRef.current?.reloadPreview();
         }
       },
       onCompleted: () => {
@@ -388,8 +403,10 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         lessonData.snapshots,
         baseTime
       );
-      workspaceRef.current = cloneWorkspace(reconstructed.workspace);
-      setWorkspace(cloneWorkspace(reconstructed.workspace));
+      const restoredWorkspace = cloneWorkspace(reconstructed.workspace);
+      workspaceRef.current = restoredWorkspace;
+      previewReloadAfterWorkspaceRef.current = true;
+      setWorkspace(restoredWorkspace);
       engineRef.current.play();
     }
   };
@@ -521,15 +538,20 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       saveLearnerBranch(updated);
       return updated;
     });
-    previewRef.current?.reloadPreview();
+    if (isLogicMode) void logicRunnerRef.current?.run();
+    else void previewRef.current?.reloadPreview();
   };
 
   // Validate active challenge
   const handleValidateChallenge = async () => {
     if (!activeChallenge) return;
-    previewRef.current?.reloadPreview();
-    await new Promise((resolve) => setTimeout(resolve, 180));
-    const iframe = previewRef.current?.getIframeElement();
+    if (isLogicMode) {
+      await logicRunnerRef.current?.run();
+    } else {
+      await previewRef.current?.reloadPreview();
+      await new Promise((resolve) => setTimeout(resolve, 180));
+    }
+    const iframe = isLogicMode ? null : previewRef.current?.getIframeElement();
     const result = await runChallengeValidation(activeChallenge, workspaceRef.current, iframe);
     setValidationResult(result);
 
@@ -551,6 +573,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     );
     const resetWs = cloneWorkspace(reconstructed.workspace);
     workspaceRef.current = resetWs;
+    previewReloadAfterWorkspaceRef.current = true;
     setWorkspace(resetWs);
     setValidationResult(null);
     setIsChallengeMinimized(false);
@@ -574,6 +597,13 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const handleSkipChallenge = () => {
     if (activeChallenge) markChallengeSkipped(activeChallenge.id);
     const skipTime = (activeChallenge?.timestamp || timeRef.current) + 500;
+    const reconstructed = reconstructWorkspaceAt(
+      lessonData.initialWorkspace,
+      lessonData.events,
+      lessonData.snapshots,
+      skipTime
+    );
+    const restoredWorkspace = cloneWorkspace(reconstructed.workspace);
     flushBranchSave(lessonData.id);
     clearBranchesForLesson(lessonData.id);
     isForkedRef.current = false;
@@ -584,6 +614,9 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     setIsChallengeMinimized(false);
     setValidationResult(null);
     setHasPendingEdits(false);
+    workspaceRef.current = restoredWorkspace;
+    previewReloadAfterWorkspaceRef.current = true;
+    setWorkspace(restoredWorkspace);
 
     if (engineRef.current) {
       engineRef.current.seek(skipTime);
@@ -593,6 +626,13 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
   const handleContinueAfterChallenge = () => {
     const nextTime = (activeChallenge?.timestamp || timeRef.current) + 1000;
+    const reconstructed = reconstructWorkspaceAt(
+      lessonData.initialWorkspace,
+      lessonData.events,
+      lessonData.snapshots,
+      nextTime
+    );
+    const restoredWorkspace = cloneWorkspace(reconstructed.workspace);
     flushBranchSave(lessonData.id);
     clearBranchesForLesson(lessonData.id);
     isForkedRef.current = false;
@@ -603,6 +643,9 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     setIsChallengeMinimized(false);
     setValidationResult(null);
     setHasPendingEdits(false);
+    workspaceRef.current = restoredWorkspace;
+    previewReloadAfterWorkspaceRef.current = true;
+    setWorkspace(restoredWorkspace);
 
     if (engineRef.current) {
       engineRef.current.seek(nextTime);
@@ -669,8 +712,10 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       return;
     }
     try {
-      workspaceRef.current = cloneWorkspace(last.workspace);
-      setWorkspace(cloneWorkspace(last.workspace));
+      const restoredWorkspace = cloneWorkspace(last.workspace);
+      workspaceRef.current = restoredWorkspace;
+      previewReloadAfterWorkspaceRef.current = true;
+      setWorkspace(restoredWorkspace);
       setLearnerBranch(last);
       isForkedRef.current = true;
       dispatch({ type: 'RESTORE_BRANCH', baseTime: last.baseTime, challengeId: last.activeChallengeId || null });
@@ -712,6 +757,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     setHasPendingEdits(false);
     const reconstructed = cloneWorkspace(lessonData.initialWorkspace);
     workspaceRef.current = reconstructed;
+    previewReloadAfterWorkspaceRef.current = true;
     setWorkspace(reconstructed);
     setCurrentTimeMs(0);
     timeRef.current = 0;
@@ -721,6 +767,13 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   };
 
   const activeFile = workspace.files[workspace.activeFilePath] || Object.values(workspace.files)[0] || null;
+  const visibleFiles = isLogicMode
+    ? Object.fromEntries(Object.entries(workspace.files).filter(([, file]) =>
+        file.language === 'javascript'
+        || file.language === 'typescript'
+        || file.language === 'json'
+        || /\.(?:js|jsx|ts|tsx|json)$/i.test(file.name)))
+    : workspace.files;
 
   const isCompleted = playerState.status === 'completed' || closureConfirmed;
 
@@ -750,15 +803,17 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         </div>
 
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
-          <button
-            onClick={() => setIsFloatingBrowser(!isFloatingBrowser)}
-            className="neu-pill-btn"
-            aria-label={isFloatingBrowser ? 'Fijar vista al lado' : 'Soltar vista flotante'}
-            title={isFloatingBrowser ? 'Vista flotante' : 'Vista al lado'}
-          >
-            {isFloatingBrowser ? <Pin size={13} /> : <PinOff size={13} />}
-            <span>{isFloatingBrowser ? 'Flotante' : 'Al lado'}</span>
-          </button>
+          {!isLogicMode && (
+            <button
+              onClick={() => setIsFloatingBrowser(!isFloatingBrowser)}
+              className="neu-pill-btn"
+              aria-label={isFloatingBrowser ? 'Fijar vista al lado' : 'Soltar vista flotante'}
+              title={isFloatingBrowser ? 'Vista flotante' : 'Vista al lado'}
+            >
+              {isFloatingBrowser ? <Pin size={13} /> : <PinOff size={13} />}
+              <span>{isFloatingBrowser ? 'Flotante' : 'Al lado'}</span>
+            </button>
+          )}
           <button
             onClick={handleExplainOpen}
             disabled={awaitingStart || showBranchRecovery}
@@ -775,7 +830,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
                 <GitBranch size={12} style={{ display: 'inline', marginRight: 4 }} />
                 Editando
               </span>
-              <button onClick={handleReturnToLesson} className="neu-pill-btn" aria-label="Volver a la cinta, se descartarán cambios no guardados" title="Volver a la cinta: restaura el estado del instructor en el tiempo base y descarta cambios locales">
+              <button onClick={handleReturnToLesson} className="neu-pill-btn" aria-label="Volver al contenido de la lección" title="Volver al contenido de la lección">
                 <RotateCcw size={13} />
                 Volver
               </button>
@@ -837,6 +892,14 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           <p className="lesson-start-hint">
             El instructor escribe, señala y explica. Para oírlo y ver el código moverse, pulsa aquí.
           </p>
+          <section className="lesson-start-objectives" aria-labelledby="lesson-objectives-title">
+            <h3 id="lesson-objectives-title">Al terminar podrás</h3>
+            <ul>
+              {lessonData.learningObjectives.map((objective) => (
+                <li key={objective}>{objective}</li>
+              ))}
+            </ul>
+          </section>
           <button
             type="button"
             className="lesson-start-play"
@@ -857,53 +920,53 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       )}
 
       {showBranchRecovery && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-label="Recuperar rama">
-          <div className="bg-white border-2 border-black rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
-            <h3 className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Continuar tu versión?</h3>
-            <p className="text-sm text-gray-600 mt-2">Encontramos una versión guardada de esta lección con tus cambios. Puedes continuar donde lo dejaste o ver la clase desde el inicio.</p>
-            <div className="flex gap-2 mt-4">
-              <button ref={branchRecoveryFirstActionRef} onClick={handleRestoreBranch} className="flex-1 neu-pill-btn bg-[#ffe600]" aria-label="Continuar mi versión">Continuar mi versión</button>
-              <button onClick={handleDiscardBranchRecovery} className="flex-1 neu-pill-btn" aria-label="Ver la clase desde el inicio">Ver la clase</button>
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Continuar lección">
+          <div className="bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
+            <h3 className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Cómo quieres continuar?</h3>
+            <p className="text-sm text-slate-300 mt-2">Puedes continuar desde donde lo dejaste la última vez o comenzar la lección desde cero.</p>
+            <div className="flex flex-col gap-2 mt-4">
+              <button ref={branchRecoveryFirstActionRef} onClick={handleRestoreBranch} className="w-full neu-pill-btn bg-[#ffe600]" aria-label="Continuar donde lo dejé">Continuar donde lo dejé</button>
+              <button onClick={handleDiscardBranchRecovery} className="w-full neu-pill-btn" aria-label="Comenzar lección desde cero">Comenzar lección desde cero</button>
             </div>
           </div>
         </div>
       )}
 
       {pendingSeekMs !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-label="Cambios pendientes">
-          <div className="bg-white border-2 border-black rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
-            <h3 className="font-bold">Tienes cambios sin guardar</h3>
-            <p className="text-sm text-gray-600 mt-2">Si buscas otro momento de la cinta, se descartarán tus cambios locales. ¿Qué prefieres?</p>
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Cambiar de momento">
+          <div className="bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
+            <h3 className="font-bold">¿Ir a otro momento de la lección?</h3>
+            <p className="text-sm text-slate-300 mt-2">Tienes cambios sin guardar. Puedes descartarlos para cambiar de momento o seguir editando aquí.</p>
             <div className="flex gap-2 mt-4">
-              <button onClick={handleDiscardAndSeek} className="flex-1 neu-pill-btn bg-rose-100" aria-label="Descartar cambios y buscar">Descartar y buscar</button>
-              <button onClick={handleKeepEditing} className="flex-1 neu-pill-btn bg-[#ffe600]" aria-label="Conservar versión y seguir editando">Conservar versión</button>
+              <button onClick={handleDiscardAndSeek} className="flex-1 neu-pill-btn bg-rose-100" aria-label="Descartar cambios e ir">Descartar cambios e ir</button>
+              <button onClick={handleKeepEditing} className="flex-1 neu-pill-btn bg-[#ffe600]" aria-label="Seguir editando">Seguir editando</button>
             </div>
           </div>
         </div>
       )}
 
       {showReturnConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-label="Volver a la cinta">
-          <div className="bg-white border-2 border-black rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
-            <h3 className="font-bold">¿Volver a la cinta?</h3>
-            <p className="text-sm text-gray-600 mt-2">Volver restaurará exactamente el estado del instructor en el tiempo base ({Math.round((learnerBranch?.baseTime || 0)/1000)}s) y descartará tus cambios locales. Puedes guardar antes si lo necesitas.</p>
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Volver a la lección">
+          <div className="bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
+            <h3 className="font-bold">¿Volver al contenido de la lección?</h3>
+            <p className="text-sm text-slate-300 mt-2">Al volver se descartarán los cambios que hiciste mientras practicabas.</p>
             <div className="flex gap-2 mt-4">
-              <button onClick={() => doReturnToTape(learnerBranch?.baseTime ?? timeRef.current)} className="flex-1 neu-pill-btn bg-[#ffe600]" aria-label="Confirmar volver a la cinta">Volver y descartar</button>
-              <button onClick={() => setShowReturnConfirm(false)} className="flex-1 neu-pill-btn" aria-label="Cancelar volver">Cancelar</button>
+              <button onClick={() => doReturnToTape(learnerBranch?.baseTime ?? timeRef.current)} className="flex-1 neu-pill-btn bg-[#ffe600]" aria-label="Volver y descartar cambios">Volver y descartar cambios</button>
+              <button onClick={() => setShowReturnConfirm(false)} className="flex-1 neu-pill-btn" aria-label="Seguir editando">Seguir editando</button>
             </div>
           </div>
         </div>
       )}
 
       {pendingNavigation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true" aria-label="Navegación con cambios">
-          <div className="bg-white border-2 border-black rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
-            <h3 className="font-bold">Tienes cambios sin guardar</h3>
-            <p className="text-sm text-gray-600 mt-2">Si navegas ahora, tu rama con cambios no se descartará silenciosamente. ¿Qué prefieres?</p>
+        <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Salir con cambios">
+          <div className="bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
+            <h3 className="font-bold">¿Salir de esta pantalla?</h3>
+            <p className="text-sm text-slate-300 mt-2">Tienes cambios sin guardar. Puedes guardarlos para continuar después o descartarlos antes de salir.</p>
             <div className="flex flex-col gap-2 mt-4">
-              <button onClick={() => confirmNavigation('save')} className="w-full neu-pill-btn bg-[#ffe600]" aria-label="Guardar rama y continuar">Guardar rama y continuar</button>
-              <button onClick={() => confirmNavigation('discard')} className="w-full neu-pill-btn bg-white border-rose-300" aria-label="Descartar rama y continuar">Descartar rama y continuar</button>
-              <button onClick={cancelNavigation} className="w-full neu-pill-btn" aria-label="Cancelar navegación">Cancelar</button>
+              <button onClick={() => confirmNavigation('save')} className="w-full neu-pill-btn bg-[#ffe600]" aria-label="Guardar cambios y salir">Guardar cambios y salir</button>
+              <button onClick={() => confirmNavigation('discard')} className="w-full neu-pill-btn bg-slate-100 text-slate-900 border-rose-300" aria-label="Descartar cambios y salir">Descartar cambios y salir</button>
+              <button onClick={cancelNavigation} className="w-full neu-pill-btn" aria-label="Seguir aquí">Seguir aquí</button>
             </div>
           </div>
         </div>
@@ -914,7 +977,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         {showFileTree && (
           <aside className="files-sidebar">
             <FileTree
-              files={workspace.files}
+              files={visibleFiles}
               activeFilePath={workspace.activeFilePath}
               onFileSelect={(path) => {
                 setWorkspace((prev) => ({ ...prev, activeFilePath: path }));
@@ -951,7 +1014,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           </aside>
         )}
 
-        <section className="lesson-stage">
+        <section className={`lesson-stage ${isLogicMode ? 'logic-stage' : ''}`}>
           <div className="editor-window-wrapper">
             <div className="editor-tabs-bar">
               <div className="editor-tabs-group">
@@ -964,7 +1027,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
                   <FolderTree className="h-3 w-3" />
                 </button>
 
-                {(Object.values(workspace.files) as WorkspaceFile[]).map((f) => (
+                {(Object.values(visibleFiles) as WorkspaceFile[]).map((f) => (
                   <button
                     key={f.path}
                     onClick={() => setWorkspace((prev) => ({ ...prev, activeFilePath: f.path }))}
@@ -1004,7 +1067,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
               <ConceptSlideInset lessonTitle={lessonData.title} concepts={lessonData.concepts} />
 
-              {isFloatingBrowser && (
+              {!isLogicMode && isFloatingBrowser && (
                 <FloatingBrowser
                   key={`${lessonData.id}-float`}
                   ref={previewRef}
@@ -1018,7 +1081,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             </div>
           </div>
 
-          {!isFloatingBrowser && (
+          {!isLogicMode && !isFloatingBrowser && (
             <div className="h-full overflow-hidden min-h-0" style={{ width: '40%', minWidth: 280, flexShrink: 0 }}>
               <FloatingBrowser
                 key={`${lessonData.id}-dock`}
@@ -1031,17 +1094,31 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
               />
             </div>
           )}
+          {isLogicMode && (
+            <LogicRunnerPanel
+              key={`${lessonData.id}-logic`}
+              ref={logicRunnerRef}
+              workspace={workspace}
+              onRunClick={handleManualRun}
+            />
+          )}
         </section>
       </main>
 
       {/* Closure pedagógico */}
       {showClosure && !closureConfirmed && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-white border-2 border-black rounded-xl shadow-[4px_4px_0_#000] p-4 max-w-lg w-[90%]">
-          <h4 className="font-bold text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Ejecutaste tus dos líneas?</h4>
-          <p className="text-xs text-gray-600 mt-1">Comprueba que linea1 y linea2 muestren texto en la página. Después confirma para completar la clase.</p>
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl shadow-[4px_4px_0_#000] p-4 max-w-lg w-[90%]">
+          <h4 className="font-bold text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Ejecutaste tus dos mensajes?</h4>
+          <p className="text-xs text-slate-300 mt-1">Abre la consola y comprueba que los dos textos aparecen en el mismo orden que tus instrucciones. Después confirma para completar la clase.</p>
           <div className="flex gap-2 mt-3">
             <button onClick={handleClosureConfirm} className="flex-1 neu-pill-btn bg-[#ffe600] text-sm" aria-label="He ejecutado mi programa, completar clase">He ejecutado mi programa</button>
-            <button onClick={() => previewRef.current?.reloadPreview()} className="neu-pill-btn text-sm" aria-label="Recargar vista previa">Recargar</button>
+            <button
+              onClick={() => isLogicMode ? void logicRunnerRef.current?.run() : void previewRef.current?.reloadPreview()}
+              className="neu-pill-btn text-sm"
+              aria-label={isLogicMode ? 'Ejecutar lógica de nuevo' : 'Recargar vista previa'}
+            >
+              {isLogicMode ? 'Ejecutar de nuevo' : 'Recargar'}
+            </button>
           </div>
         </div>
       )}

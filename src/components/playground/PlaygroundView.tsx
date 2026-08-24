@@ -57,8 +57,8 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
   return (
     <div className="app-screen">
       {/* Top Header */}
-      <header className="flex h-11 items-center justify-between px-4 bg-[#141416] border-b border-zinc-800/80 z-30">
-        <div className="flex items-center gap-3">
+      <header className="playground-header flex h-11 items-center justify-between px-4 bg-[#141416] border-b border-zinc-800/80 z-30">
+        <div className="playground-controls flex items-center gap-3">
           <button
             onClick={onBack}
             className="flex items-center gap-1.5 rounded bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 text-xs text-zinc-300 font-medium transition-colors"
@@ -78,9 +78,9 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
         </div>
 
         {/* Template Selector & Controls */}
-        <div className="flex items-center gap-3">
+        <div className="playground-actions flex items-center gap-3">
           <div
-            className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-0.5 rounded-md text-xs"
+            className="playground-templates flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-0.5 rounded-md text-xs"
             role="group"
             aria-label="Plantilla inicial"
           >
@@ -113,10 +113,10 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
       </header>
 
       {/* Main 3-Pane Workspace */}
-      <div className="flex flex-1 w-full overflow-hidden">
+      <div className="playground-layout flex flex-1 w-full overflow-hidden">
         {/* File Tree */}
         {showFileTree && (
-          <div className="w-48 shrink-0 h-full border-r border-zinc-800/80 bg-[#121214]">
+          <div className="playground-files w-48 shrink-0 h-full border-r border-zinc-800/80 bg-[#121214]">
             <FileTree
               files={workspace.files}
               activeFilePath={workspace.activeFilePath}
@@ -142,7 +142,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
         )}
 
         {/* Code Editor */}
-        <div className="flex-1 flex flex-col h-full bg-[#18181b] border-r border-zinc-800/80">
+        <div className="playground-editor flex-1 flex flex-col h-full bg-[#18181b] border-r border-zinc-800/80">
           <div className="flex h-8 items-center justify-between bg-[#141416] border-b border-zinc-800/80 px-2">
             <div className="flex items-center gap-1">
               <button
@@ -191,7 +191,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
         </div>
 
         {/* Sandbox Preview */}
-        <div className="w-[45%] shrink-0 h-full flex flex-col">
+        <div className="playground-preview w-[45%] shrink-0 h-full flex flex-col">
           <PreviewPane ref={previewRef} workspace={workspace} />
         </div>
       </div>

@@ -1,48 +1,8 @@
 {
   "id": "fundamentos-02",
-  "durationMs": 157000,
+  "durationMs": 96200,
   "language": "es",
-  "engine": "kokoro-es-ef_dora-arc-a770",
-  "cues": [
-    {
-      "timestamp": 770,
-      "text": "A veces el código parece difícil porque el problema se ve enorme. El truco es partirlo. Un paso. Luego otro. Luego otro."
-    },
-    {
-      "timestamp": 16330,
-      "text": "Hoy vamos a convertir una temperatura. No hace falta saber física. Solo tres cuentas, en orden."
-    },
-    {
-      "timestamp": 28610,
-      "text": "Mira la página. Hay un número, un botón, y un resultado. Tres piezas. Leer el número. Hacer la cuenta. Mostrarla."
-    },
-    {
-      "timestamp": 43770,
-      "text": "El esqueleto ya está escrito. Leemos lo que escribiste. Escuchamos el clic. Pintamos el resultado. Falta la cuenta. Por eso ahora miente."
-    },
-    {
-      "timestamp": 60910,
-      "text": "Si pulso convertir, dice que 20 Celsius son 20 Fahrenheit. Copió el número. Todavía no hizo la cuenta."
-    },
-    {
-      "timestamp": 73710,
-      "text": "La cuenta es así. Tomas el Celsius. Lo multiplicas por 9. Lo divides entre 5. Le sumas 32. Eso es Fahrenheit. Escríbela tú."
-    },
-    {
-      "timestamp": 91610,
-      "text": "Si te salió, bien. Si no, mira cómo queda escrito. Compáralo con lo tuyo. Así se aprende también."
-    },
-    {
-      "timestamp": 108790,
-      "text": "Veinte Celsius son sesenta y ocho Fahrenheit. La misma cuenta sirve para cualquier número. Por eso la escribimos una vez."
-    },
-    {
-      "timestamp": 122750,
-      "text": "Último rato. Un juego. En cada ronda hay una regla escondida. Encuéntrala. Si ves la regla, ya puedes escribirla en código."
-    },
-    {
-      "timestamp": 139220,
-      "text": "Pausa y juega. Cuando veas la regla, ya estás pensando como hay que pensar para programar. Primero la regla. Después el código."
-    }
-  ]
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/02-pensamiento-computacional.md"
 }

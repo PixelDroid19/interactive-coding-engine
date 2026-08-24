@@ -103,7 +103,7 @@ describe('FloatingBrowser en viewport móvil', () => {
     const toolbar = screen.getByRole('toolbar', { name: /Barra de vista previa/ });
     const browserWindow = toolbar.parentElement as HTMLElement;
 
-    await waitFor(() => expect(browserWindow.style.height).toBe('348px'));
-    expect(browserWindow.style.top).toBe('44px');
+    await waitFor(() => expect(browserWindow.style.height).toBe('184px'));
+    expect(browserWindow.style.top).toBe('96px');
   });
 });

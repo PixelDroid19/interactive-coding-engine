@@ -1,217 +1,136 @@
 import { compileLesson } from '../../engine/lessonCompiler';
-import {
-  LESSON2_JS_SOLUTION,
-  PATTERN_FILES,
-  lesson2Workspace,
-} from './workspaces';
+import { LESSON2_JS_SOLUTION, LESSON2_JS_START, lesson2Workspace } from './workspaces';
 
-const AUDIO_MS = 94_000;
+const AUDIO_MS = 96_200;
 
 export const LESSON_02 = compileLesson({
   id: 'fundamentos-02',
-  title: '2. Pensamiento computacional',
-  description:
-    'Parte un problema en pasos y enseña a la página a convertir una temperatura.',
-  audioUrl: '/audio/fundamentos-02.mp3?v=voz',
+  title: '2. Pensar en pasos',
+  description: 'Aprende a dividir una tarea cotidiana en instrucciones pequeñas y a colocarlas en el orden correcto.',
   language: 'es',
   durationMs: AUDIO_MS,
+  audioUrl: '/audio/fundamentos-02.mp3?v=gemini-20260824',
+  fitTimelineToDuration: true,
   initialWorkspace: lesson2Workspace,
-  concepts: ['Dividir el problema', 'La fórmula es el programa'],
+  executionMode: 'logic',
+  concepts: ['Dividir una tarea', 'Orden de ejecución', 'Comentarios'],
+  skillsRequired: ['instructions', 'strings', 'function-call-syntax', 'console-output'],
+  skillsIntroduced: ['decomposition', 'comments'],
+  learningObjectives: [
+    'Separar una tarea cotidiana en instrucciones pequeñas y observables.',
+    'Ordenar varias instrucciones y comprobar su ejecución en la consola.',
+    'Distinguir un comentario de una instrucción ejecutable.',
+  ],
+  commonMistakes: [
+    'Escribir una instrucción demasiado grande que contiene varias acciones ambiguas.',
+    'Colocar pasos correctos en un orden que produce un resultado incorrecto.',
+    'Esperar que una línea comentada se ejecute.',
+  ],
   teachNotes: [
     {
-      title: 'Parte el problema',
-      body: 'Si se ve enorme, córtalo. Leer el número. Hacer la cuenta. Mostrar el resultado. Un paso cada vez.',
+      title: 'Una acción por paso',
+      body: '“Preparar té” es una meta. “Calentar el agua” es una instrucción concreta que puede ocupar un lugar en la secuencia.',
     },
     {
-      title: 'La cuenta es el programa',
-      body: 'Celsius × 9 ÷ 5 + 32. Sin esa línea, el programa solo copia el número. Con ella, sirve para cualquier valor.',
+      title: 'El orden cambia el resultado',
+      body: 'Las mismas acciones pueden fallar si se ejecutan en otro orden. JavaScript sigue el archivo de arriba abajo.',
+    },
+    {
+      title: 'Los comentarios explican',
+      body: 'Una línea que empieza por // sirve como nota para quien lee el código. JavaScript no la ejecuta.',
     },
   ],
   beats: [
-    { at: 0, type: 'chapter', title: 'Parte el problema' },
+    { at: 0, type: 'chapter', title: 'Una meta no es un paso' },
     {
-      at: 400,
+      at: 500,
       type: 'speak',
-      text: 'A veces el código parece difícil porque el problema se ve enorme. El truco es partirlo. Un paso, luego otro, luego otro.',
+      text: 'En la primera lección escribiste instrucciones y viste que el orden importa. Ahora vamos a detenernos un momento antes del código para decidir qué pasos necesita realmente un programa.',
     },
+    { at: 12_000, type: 'switch', filePath: 'app.js' },
     {
-      at: 11000,
+      at: 12_400,
       type: 'speak',
-      text: 'Hoy vamos a convertir una temperatura. No hace falta saber física. Solo tres cuentas, en orden.',
+      text: 'Imagina que la meta es preparar una taza de té. Esa frase dice qué queremos lograr, pero no explica cómo. Para convertirla en un plan, necesitamos acciones pequeñas y ordenadas.',
     },
-    { at: 18000, type: 'chapter', title: 'Tres piezas' },
     {
-      at: 18000,
+      at: 25_000,
+      type: 'write',
+      filePath: 'app.js',
+      mode: 'replace',
+      content: `// Plan: preparar una taza de té.\n\nconsole.log("Calentar el agua");\n`,
+    },
+    {
+      at: 25_400,
       type: 'speak',
-      text: 'Mira la página. Hay un número, un botón y un resultado. Tres piezas: leer el número, hacer la cuenta, y mostrarla.',
+      text: 'La primera línea resume el plan y comienza con dos barras, así que es un comentario. JavaScript la ignora. La línea siguiente sí es una instrucción que puede ejecutar.',
     },
+    { at: 39_000, type: 'run' },
     {
-      at: 18000,
-      type: 'gesture',
-      durationMs: 900,
-      points: [
-        { x: 56, y: 28, targetArea: 'preview' },
-        { x: 54, y: 42, targetArea: 'preview' },
-      ],
-    },
-    { at: 20000, type: 'switch', filePath: 'index.html' },
-    {
-      at: 20000,
-      type: 'gesture',
-      durationMs: 2200,
-      points: [
-        { x: 48, y: 16, targetArea: 'files', clicked: true },
-        { x: 36, y: 40, targetArea: 'editor' },
-        { x: 38, y: 58, targetArea: 'editor' },
-      ],
-    },
-    { at: 29000, type: 'switch', filePath: 'app.js' },
-    {
-      at: 29000,
-      type: 'gesture',
-      durationMs: 800,
-      points: [
-        { x: 48, y: 32, targetArea: 'files', clicked: true },
-        { x: 28, y: 30, targetArea: 'editor' },
-      ],
-    },
-    {
-      at: 29000,
+      at: 39_400,
       type: 'speak',
-      text: 'El esqueleto ya está escrito. Leemos lo que escribiste, escuchamos el clic y pintamos el resultado. Falta la cuenta. Por eso ahora miente.',
+      text: 'Cuando ejecutamos, la consola muestra solamente la acción de calentar el agua. El comentario nos ayuda a entender la intención, pero no produce ningún resultado.',
     },
-    { at: 39860, type: 'run' },
+    { at: 51_000, type: 'chapter', title: 'El orden importa' },
     {
-      at: 40000,
-      type: 'gesture',
-      durationMs: 1200,
-      points: [
-        { x: 52, y: 48, targetArea: 'preview' },
-        { x: 54, y: 62, targetArea: 'preview', clicked: true },
-      ],
+      at: 51_300,
+      type: 'write',
+      filePath: 'app.js',
+      mode: 'replace',
+      content: `// Este orden todavía tiene un problema.\n\nconsole.log("Servir el agua");\nconsole.log("Poner el té en la taza");\n`,
     },
     {
-      at: 39860,
+      at: 51_700,
       type: 'speak',
-      text: 'Si pulso Convertir, dice que veinte Celsius son veinte Fahrenheit. Copió el número. Todavía no hizo la cuenta.',
+      text: 'Estas dos instrucciones están bien escritas, pero aparecen en el orden equivocado. Este es un detalle importante: un programa puede ejecutarse sin errores y aun así resolver mal el problema.',
     },
-    { at: 48380, type: 'chapter', title: 'La cuenta' },
+    { at: 64_000, type: 'write', filePath: 'app.js', mode: 'replace', content: LESSON2_JS_START },
     {
-      at: 48380,
+      at: 64_400,
       type: 'speak',
-      text: 'La cuenta es así. Tomas el Celsius, lo multiplicas por nueve, lo divides entre cinco, y le sumas treinta y dos. Eso es Fahrenheit. Escríbela tú.',
+      text: 'Ahora completa el plan. Escribe una instrucción para calentar el agua, otra para poner el té en la taza y una última para servir el agua. Revisa el orden antes de ejecutar.',
     },
     {
-      at: 59000,
+      at: 69_000,
       type: 'challenge',
       challenge: {
-        id: 'reto-fahrenheit',
-        title: 'Reto: completa la fórmula',
-        instructions: `Haz que convertir() calcule Fahrenheit de verdad.
+        id: 'reto-pasos-en-orden',
+        title: 'Reto: tres pasos en orden',
+        instructions: `Escribe tres instrucciones con console.log en app.js.
 
-1. Sustituye const fahrenheit = celsius;
-2. Usa la fórmula celsius * 9 / 5 + 32
-3. Pulsa Run y convierte 20. Debería dar 68.`,
+1. Primero muestra "Calentar el agua".
+2. Después muestra "Poner el té en la taza".
+3. Al final muestra "Servir el agua".
+4. Ejecuta y comprueba el orden en la consola.`,
         tests: [
           {
-            id: 'usa-formula',
-            description: 'La fórmula multiplica por 9/5 o 1.8 y suma 32',
+            id: 'pasos-ordenados',
+            description: 'Las tres instrucciones aparecen en el orden correcto',
             validatorType: 'source-regex',
-            regexPattern: 'fahrenheit\\s*=\\s*celsius\\s*\\*\\s*(9\\s*\\/\\s*5|1\\.8)\\s*\\+\\s*32',
-            errorMessage: 'Todavía no veo celsius * 9 / 5 + 32.',
-            hintTip: 'Revisa la línea de fahrenheit.',
-          },
-          {
-            id: 'convierte-20-es-68',
-            description: '20 °C se convierte en 68 °F',
-            validatorType: 'dom-check',
-            domSelector: '#salida',
-            domProperty: 'innerText',
-            expectedValue: '68',
-            errorMessage: 'Con 20 °C el resultado debe contener 68. ¿Probaste con Ejecutar?',
-            hintTip: 'Después de corregir la fórmula, pulsa Ejecutar y verifica #salida.',
-          },
-          {
-            id: 'escribe-salida',
-            description: 'Sigue actualizando el texto de salida',
-            validatorType: 'source-regex',
-            regexPattern: 'salida\\.textContent\\s*=',
-            errorMessage: 'No borres la línea que pinta el resultado.',
-            hintTip: 'Deja salida.textContent = ...',
+            regexPattern: 'console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Calentar el agua["\\\']\\s*\\)\\s*;?[\\s\\S]*console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Poner el té en la taza["\\\']\\s*\\)\\s*;?[\\s\\S]*console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Servir el agua["\\\']\\s*\\)\\s*;?',
+            errorMessage: 'Falta un paso, una instrucción está incompleta o el orden no coincide con el plan.',
+            hintTip: 'Lee las tres llamadas de arriba abajo y compáralas con la secuencia pedida.',
           },
         ],
         hints: [
-          {
-            level: 1,
-            title: 'Dónde editar',
-            text: 'Está marcado con TODO dentro de convertir().',
-          },
-          {
-            level: 2,
-            title: 'La fórmula',
-            text: 'Fahrenheit = Celsius × 9 ÷ 5 + 32.',
-          },
-          {
-            level: 3,
-            title: 'Siguiente paso',
-            text: 'A la derecha del igual usa la operación con * 9 / 5 + 32. No borres el resto de la línea.',
-          },
+          { level: 1, title: 'Una acción por línea', text: 'Necesitas tres instrucciones completas, no una sola frase con todo el plan.' },
+          { level: 2, title: 'Repite la forma conocida', text: 'Las tres líneas usan la misma forma de console.log que practicaste en la lección anterior.' },
+          { level: 3, title: 'Comprueba la secuencia', text: 'La línea de calentar debe quedar arriba, la de colocar el té en el centro y la de servir abajo.' },
         ],
-        solutionExplanation: 'La cuenta es el paso que faltaba. Sin ella, el programa solo copia el número.',
+        solutionExplanation: 'Dividir la meta produjo tres acciones concretas. Colocarlas de arriba abajo definió el orden de ejecución.',
       },
     },
+    { at: 80_000, type: 'write', filePath: 'app.js', mode: 'replace', content: LESSON2_JS_SOLUTION },
+    { at: 81_000, type: 'run' },
     {
-      at: 59840,
+      at: 82_000,
       type: 'speak',
-      text: 'Si te salió, bien. Si no, mira cómo queda escrito y compáralo con lo tuyo. Así se aprende también.',
+      text: 'La consola muestra los tres pasos en la secuencia correcta. Eso es pensar como programador: tomar una meta grande y convertirla en acciones pequeñas que podamos comprobar una por una.',
     },
     {
-      at: 50000,
-      type: 'gesture',
-      durationMs: 1600,
-      points: [
-        { x: 28, y: 36, targetArea: 'editor' },
-        { x: 44, y: 44, targetArea: 'editor' },
-      ],
-    },
-    { at: 61640, type: 'write', filePath: 'app.js', content: LESSON2_JS_SOLUTION },
-    { at: 67840, type: 'run' },
-    {
-      at: 68200,
-      type: 'gesture',
-      durationMs: 900,
-      points: [
-        { x: 54, y: 58, targetArea: 'preview' },
-        { x: 56, y: 70, targetArea: 'preview' },
-      ],
-    },
-    {
-      at: 67840,
+      at: 93_000,
       type: 'speak',
-      text: 'Veinte Celsius son sesenta y ocho Fahrenheit. La misma cuenta sirve para cualquier número. Por eso la escribimos una vez.',
-    },
-    { at: 75840, type: 'chapter', title: 'Encuentra la regla' },
-    {
-      at: 75840,
-      type: 'speak',
-      text: 'Último rato. Un juego. En cada ronda hay una regla escondida. Encuéntrala. Si ves la regla, ya puedes escribirla en código.',
-    },
-    { at: 82000, type: 'workspace', files: PATTERN_FILES, activeFilePath: 'app.js' },
-    { at: 85340, type: 'run' },
-    {
-      at: 85340,
-      type: 'gesture',
-      durationMs: 1200,
-      points: [
-        { x: 48, y: 36, targetArea: 'preview' },
-        { x: 62, y: 52, targetArea: 'preview' },
-        { x: 50, y: 64, targetArea: 'preview' },
-      ],
-    },
-    {
-      at: 85340,
-      type: 'speak',
-      text: 'Pausa y juega. Cuando veas la regla, ya estás pensando como hay que pensar para programar. Primero la regla. Después el código.',
+      text: 'En la siguiente lección aprenderás a guardar información con nombres claros para poder usarla y cambiarla más adelante.',
     },
   ],
 });

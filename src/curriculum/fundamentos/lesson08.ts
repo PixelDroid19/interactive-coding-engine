@@ -1,17 +1,29 @@
 import { compileLesson } from '../../engine/lessonCompiler';
-import { L08_ARR, L08_PUSH, L08_SOLUTION, lesson08Workspace } from './pages';
+import { L08_ARR, L08_PUSH, L08_SOLUTION, lesson08Workspace } from './preDomWorkspaces';
 
-const AUDIO_MS = 74_560;
+const AUDIO_MS = 98_080;
 
 export const LESSON_08 = compileLesson({
   id: 'fundamentos-08',
   title: '8. Arrays',
   description: 'Listas ordenadas: el primero es cero, length, push y un for para recorrer.',
-  audioUrl: '/audio/fundamentos-08.mp3?v=lote',
   language: 'es',
   durationMs: AUDIO_MS,
+  audioUrl: '/audio/fundamentos-08.mp3?v=gemini-20260824',
+  fitTimelineToDuration: true,
   initialWorkspace: lesson08Workspace,
+  executionMode: 'logic',
   concepts: ['Array (lista)', 'El índice empieza en 0'],
+  skillsRequired: ['variables', 'functions', 'loops'],
+  skillsIntroduced: ['arrays'],
+  learningObjectives: [
+    'Crear, leer y modificar una lista ordenada.',
+    'Recorrer todos sus elementos empezando por el índice cero.',
+  ],
+  commonMistakes: [
+    'Tratar el primer elemento como índice 1 en lugar de índice 0.',
+    'Usar length como último índice en lugar de length menos uno.',
+  ],
   teachNotes: [
     {
       title: 'El primero es cero',
@@ -23,24 +35,24 @@ export const LESSON_08 = compileLesson({
     {
       at: 200,
       type: 'speak',
-      text: 'Hasta ahora un dato era una cosa. Un nombre. Un número. La vida real viene en listas. Nombres de amigos. Puntos de un juego. Tareas.',
+      text: 'Hasta ahora guardamos valores individuales. Sin embargo, muchos problemas incluyen colecciones: una lista de tareas, los puntos de varias partidas o los nombres de un grupo. Para eso existen los arrays.',
     },
     {
       at: 11860,
       type: 'speak',
-      text: 'Un array es una lista ordenada. Cada sitio tiene un número. El primero es cero. No uno. Eso confunde al principio. Acuérdate: el primero es cero.',
+      text: 'Un array es una lista ordenada. Cada posición tiene un índice que nos permite encontrar su valor. JavaScript comienza a contar los índices desde cero, así que el primer elemento ocupa la posición cero.',
     },
     {
       at: 24080,
       type: 'speak',
-      text: 'const frutas igual a manzana, pera, uva, entre corchetes.',
+      text: 'Aquí creamos un array llamado frutas. Los corchetes marcan el comienzo y el final de la lista, y las comas separan sus tres elementos.',
     },
     { at: 24800, type: 'write', filePath: 'app.js', mode: 'replace', content: L08_ARR },
     { at: 30000, type: 'run' },
     {
       at: 30960,
       type: 'speak',
-      text: 'frutas en cero es manzana. frutas.length es tres. El último está en length menos uno.',
+      text: 'Para leer el primer elemento usamos frutas y el índice cero entre corchetes. La propiedad length indica cuántos elementos hay. Como los índices empiezan en cero, el último se encuentra en length menos uno.',
     },
     {
       at: 32000,
@@ -55,20 +67,20 @@ export const LESSON_08 = compileLesson({
     {
       at: 43820,
       type: 'speak',
-      text: 'Puedes agregar al final con push. Puedes quitar el último con pop. Puedes recorrerlos con un for. O con for of, que se lee más fácil.',
+      text: 'El método push agrega un elemento al final y pop elimina el último. Si queremos visitar toda la lista, usamos el for que ya conoces: empezamos en cero y continuamos mientras el índice sea menor que length.',
     },
     { at: 45000, type: 'write', filePath: 'app.js', mode: 'replace', content: L08_PUSH },
     { at: 50000, type: 'run' },
     {
       at: 55220,
       type: 'speak',
-      text: 'Hay métodos que recorren por ti. map crea una lista nueva transformando cada elemento. filter se queda con los que cumplen una condición. No hace falta entenderlos todos hoy. Con crear, leer, push y un for, ya haces mucho.',
+      text: 'Existen muchos más métodos, pero no los necesitamos todavía. Primero asegúrate de comprender cómo crear una lista, leer posiciones, modificar su final y recorrerla paso a paso.',
     },
     { at: 70060, type: 'chapter', title: 'Tu turno' },
     {
       at: 70060,
       type: 'speak',
-      text: 'Tu turno. Tienes un array de números. Devuelve la suma. Recorre con un for. Empieza en cero. Ve sumando cada posición.',
+      text: 'Ahora recibirás un array de números y deberás devolver su suma. Crea un acumulador, recorre la lista desde el índice cero y añade el valor de cada posición.',
     },
     {
       at: 71000,
@@ -114,7 +126,7 @@ Recorre todo el array, acumula sus valores desde cero y devuelve el total. Un ar
         hints: [
           { level: 1, title: 'Cero', text: 'let total = 0; antes del for.' },
           { level: 2, title: 'Índice', text: 'numeros[i] es el de esa vuelta.' },
-          { level: 3, title: 'return', text: 'Al final, return total.' },
+          { level: 3, title: 'Comprueba', text: 'Sigue total vuelta por vuelta y verifica que el array vacío conserve el cero inicial.' },
         ],
         solutionExplanation: 'Un acumulador empieza en 0 y se come cada posición.',
       },

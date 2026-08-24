@@ -1,13 +1,21 @@
-Un array es una fila. Un objeto es una ficha. Cada dato tiene nombre, no número.
+---
+titulo: "Lección 9: Objetos"
+modulo: Agrupar datos
+tipo: scrim
+archivo: fundamentos-09.mp3
+estado: audio_generado
+---
 
-Una persona no es posición cero, posición uno. Es nombre, edad, si está activa. Eso se agrupa en un objeto.
+Los arrays organizan valores por posición. Los objetos sirven para representar algo mediante características con nombre, como una persona, un producto o una tarea.
 
-const persona igual, llaves. nombre Ana, edad 25, activo true.
+Para describir a una persona resulta más claro hablar de su nombre, su edad y si está activa que recordar qué significa cada posición de una lista. Un objeto agrupa esas características.
 
-persona punto nombre es Ana. El punto entra a un campo. También puedes usar corchetes si el nombre del campo está en una variable.
+Aquí creamos el objeto persona. Las llaves contienen sus propiedades y cada propiedad relaciona un nombre con un valor. Las comas separan una propiedad de la siguiente.
 
-Puedes meter funciones adentro. Entonces se llaman métodos. Hacen algo con los datos de esa ficha.
+Para leer una propiedad escribimos persona punto nombre. El punto nos permite acceder a una característica por su nombre, en lugar de buscarla con un índice como haríamos en un array.
 
-Los objetos se combinan con arrays. Una lista de personas. Cada elemento es una ficha. Así se construyen apps de verdad: listas de cosas con nombre.
+También podemos entregar el objeto completo a una función. Dentro, la función puede consultar únicamente las propiedades que necesita para realizar su trabajo.
 
-Tu turno. Crea un objeto producto con nombre y precio. Y una función que reciba ese producto y devuelva un texto: el nombre, una raya, y el precio.
+Los arrays y los objetos suelen trabajar juntos. Podemos tener un array de personas donde cada elemento es un objeto con sus propios datos. Así representamos colecciones de elementos más completos.
+
+Ahora crea un objeto producto con las propiedades nombre y precio. Después escribe una función que reciba cualquier producto y devuelva un texto formado con esos dos valores.

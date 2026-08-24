@@ -1,271 +1,80 @@
 import { compileLesson } from '../../engine/lessonCompiler';
-import {
-  LESSON1_JS_DOS_LINEAS,
-  LESSON1_JS_ORDEN,
-  LESSON1_JS_UNA_LINEA,
-  lesson1Workspace,
-} from './workspaces';
+import { LESSON1_JS_DOS_LINEAS, LESSON1_JS_ORDEN, LESSON1_JS_START, LESSON1_JS_UNA_LINEA, lesson1Workspace } from './workspaces';
 
-// NOTA: las voces nuevas se grabarán después. Este valor es una estimación
-// a partir de los beats; cuando llegue fundamentos-01.mp3 hay que medirlo,
-// actualizar AUDIO_MS y re-sincronizar los `at`, y subir ?v= en audioUrl.
-const AUDIO_MS = 176_000;
+const AUDIO_MS = 122_880;
 
 export const LESSON_01 = compileLesson({
   id: 'fundamentos-01',
   title: '1. Tu primer programa',
-  description:
-    'Descubre qué es un programa y escribe tus primeras instrucciones: busca un recuadro de la página y escribe texto dentro.',
-  audioUrl: '/audio/fundamentos-01.mp3?v=voz2',
+  description: 'Aprende la forma mínima de una instrucción antes de usar variables, funciones propias o la página.',
   language: 'es',
   durationMs: AUDIO_MS,
+  audioUrl: '/audio/fundamentos-01.mp3?v=gemini-20260824',
+  fitTimelineToDuration: true,
   initialWorkspace: lesson1Workspace,
-  concepts: ['Qué es un programa', 'Texto entre comillas'],
+  executionMode: 'logic',
+  concepts: ['Una instrucción', 'Texto, paréntesis y punto y coma'],
+  skillsRequired: [],
+  skillsIntroduced: ['instructions', 'strings', 'function-call-syntax', 'console-output'],
+  learningObjectives: [
+    'Explicar que un programa ejecuta instrucciones en orden.',
+    'Escribir dos llamadas a console.log con textos propios y reconocer cada signo.',
+  ],
+  commonMistakes: [
+    'Abrir comillas o paréntesis y olvidar cerrarlos.',
+    'Escribir texto sin comillas y hacer que JavaScript lo interprete como un nombre.',
+  ],
   teachNotes: [
-    {
-      title: 'Un programa son instrucciones en orden',
-      body: 'JavaScript lee tu archivo de arriba abajo y ejecuta cada línea una tras otra. Como una receta: si cambias el orden, cambia el resultado.',
-    },
-    {
-      title: 'El patrón busca-y-escribe',
-      body: 'document.getElementById("linea1") busca el recuadro con ese id. .textContent = "texto" escribe dentro. Con esas dos piezas ya puedes poner cualquier texto en la página.',
-    },
-    {
-      title: 'El orden manda',
-      body: 'Si dos instrucciones escriben en el mismo recuadro, la última gana. Es la primera consecuencia práctica de leer de arriba abajo.',
-    },
+    { title: 'Una forma mínima', body: 'console.log recibe un valor entre paréntesis y lo muestra en la consola. Hoy no hace falta conocer DOM, variables ni eventos.' },
+    { title: 'Cada signo tiene trabajo', body: 'El punto une console con log; los paréntesis contienen el dato; las comillas delimitan texto; el punto y coma termina la instrucción.' },
+    { title: 'Orden visible', body: 'Dos instrucciones producen dos salidas en el mismo orden en que aparecen de arriba abajo.' },
   ],
   beats: [
-    { at: 0, type: 'chapter', title: 'La idea' },
+    { at: 0, type: 'chapter', title: 'Qué es un programa' },
+    { at: 500, type: 'speak', text: 'Hola, bienvenido. Vamos a empezar sin dar nada por sabido. Un programa es un conjunto de instrucciones que la computadora sigue en orden, desde la primera línea hasta la última.' },
+    { at: 12_000, type: 'switch', filePath: 'app.js' },
+    { at: 12_300, type: 'speak', text: 'Estas líneas que comienzan con dos barras son comentarios. Sirven para dejar notas a quien lee el código, pero JavaScript no las ejecuta. Debajo escribiremos nuestra primera instrucción.' },
+    { at: 25_000, type: 'write', filePath: 'app.js', mode: 'replace', content: LESSON1_JS_UNA_LINEA },
+    { at: 25_300, type: 'speak', text: 'Aquí aparece console punto log. Es una herramienta del navegador que nos permite mostrar información en la consola. No hace falta memorizarla de golpe; primero vamos a entender cada parte.' },
+    { at: 39_000, type: 'gesture', durationMs: 1_600, points: [{ x: 28, y: 47, targetArea: 'editor' }, { x: 45, y: 47, targetArea: 'editor' }, { x: 68, y: 47, targetArea: 'editor' }] },
+    { at: 40_000, type: 'speak', text: 'Dentro de los paréntesis colocamos lo que queremos mostrar. Las comillas indican que es texto y siempre deben abrirse y cerrarse. El punto y coma señala que la instrucción terminó.' },
+    { at: 56_000, type: 'run' },
+    { at: 57_000, type: 'gesture', durationMs: 1_200, points: [{ x: 48, y: 85, targetArea: 'preview', clicked: true }, { x: 55, y: 90, targetArea: 'preview' }] },
+    { at: 58_000, type: 'speak', text: 'Al ejecutar el programa, la consola muestra el texto que escribimos entre comillas. El código indica qué debe ocurrir y la consola nos permite comprobar el resultado.' },
+    { at: 72_000, type: 'chapter', title: 'Dos instrucciones' },
+    { at: 72_300, type: 'write', filePath: 'app.js', mode: 'replace', content: LESSON1_JS_ORDEN },
+    { at: 72_600, type: 'speak', text: 'Ahora tenemos dos instrucciones. JavaScript ejecuta primero la línea de arriba y después la siguiente. Si cambias su posición, también cambiará el orden de los mensajes.' },
+    { at: 84_000, type: 'run' },
+    { at: 86_000, type: 'speak', text: 'Si aparece un error de sintaxis, no es un fracaso. Solo significa que JavaScript no pudo entender cómo quedó escrita una instrucción. Revisa con calma las comillas, los paréntesis y el final de cada línea.' },
+    { at: 98_000, type: 'chapter', title: 'Tu turno' },
+    { at: 98_200, type: 'write', filePath: 'app.js', mode: 'replace', content: LESSON1_JS_START },
+    { at: 98_500, type: 'speak', text: 'Ahora inténtalo tú. Escribe dos instrucciones con console punto log. En la primera, presenta tu nombre. En la segunda, cuenta que estás aprendiendo JavaScript. Recuerda colocar cada texto entre comillas y dentro de los paréntesis.' },
     {
-      at: 400,
-      type: 'speak',
-      text: 'Hola. Bienvenido. Hoy vas a escribir tu primer programa. Y antes de tocar nada, te voy a dar una sola idea. La más importante.',
-    },
-    {
-      at: 9500,
-      type: 'speak',
-      text: 'Un programa es una lista de instrucciones que la computadora sigue en orden, de arriba abajo. Una tras otra. Como una receta de cocina: primero un paso, luego el siguiente. Si cambias el orden, cambia el resultado.',
-    },
-    {
-      at: 23000,
-      type: 'speak',
-      text: 'Eso es todo lo que necesitas saber para empezar. Lo demás lo vas a ver haciendo.',
-    },
-    { at: 28000, type: 'chapter', title: 'Conocer el taller' },
-    {
-      at: 28400,
-      type: 'speak',
-      text: 'A la derecha tienes una página de verdad. Un título, dos espacios vacíos. Todavía no dicen nada. Eso lo vamos a arreglar nosotros hoy.',
-    },
-    {
-      at: 37000,
-      type: 'gesture',
-      durationMs: 2400,
-      points: [
-        { x: 60, y: 30, targetArea: 'preview' },
-        { x: 58, y: 48, targetArea: 'preview' },
-        { x: 58, y: 62, targetArea: 'preview' },
-      ],
-    },
-    {
-      at: 39500,
-      type: 'speak',
-      text: 'A la izquierda hay tres archivos. HTML es la página: qué hay dentro. CSS es el aspecto: cómo se ve. Y JavaScript es lo que hace que ocurra algo. Nosotros vamos a trabajar solo en app.js. Los otros dos ya están listos.',
-    },
-    {
-      at: 53500,
-      type: 'gesture',
-      durationMs: 1600,
-      points: [
-        { x: 46, y: 15, targetArea: 'files' },
-        { x: 48, y: 23, targetArea: 'files' },
-        { x: 48, y: 31, targetArea: 'files' },
-      ],
-    },
-    { at: 55500, type: 'switch', filePath: 'app.js' },
-    {
-      at: 55500,
-      type: 'gesture',
-      durationMs: 900,
-      points: [
-        { x: 48, y: 32, targetArea: 'files', clicked: true },
-        { x: 28, y: 18, targetArea: 'editor' },
-        { x: 30, y: 28, targetArea: 'editor' },
-      ],
-    },
-    {
-      at: 57500,
-      type: 'speak',
-      text: 'Mira app.js. Está casi vacío. Las líneas que empiezan con dos barras son notas para ti. JavaScript las ignora, no las ejecuta.',
-    },
-    { at: 66500, type: 'chapter', title: 'Tu primera instrucción' },
-    {
-      at: 66900,
-      type: 'speak',
-      text: 'Vamos a escribir texto en la página con una sola línea. El patrón tiene dos partes: primero buscas el recuadro, después escribes dentro.',
-    },
-    {
-      at: 74500,
-      type: 'gesture',
-      durationMs: 1200,
-      points: [
-        { x: 26, y: 24, targetArea: 'editor' },
-        { x: 40, y: 32, targetArea: 'editor' },
-      ],
-    },
-    { at: 76000, type: 'write', filePath: 'app.js', content: LESSON1_JS_UNA_LINEA },
-    {
-      at: 82500,
-      type: 'speak',
-      text: 'Esta línea dice: busca el recuadro llamado linea1, y pon dentro el texto Mi primer programa. El nombre del recuadro va entre comillas, y el texto también.',
-    },
-    { at: 92000, type: 'run' },
-    {
-      at: 92800,
-      type: 'gesture',
-      durationMs: 1100,
-      points: [
-        { x: 58, y: 34, targetArea: 'preview' },
-        { x: 56, y: 46, targetArea: 'preview', clicked: true },
-      ],
-    },
-    {
-      at: 94000,
-      type: 'speak',
-      text: 'Mira. Apareció. Esa línea es tu primer programa de verdad.',
-    },
-    {
-      at: 99500,
-      type: 'speak',
-      text: 'Y como un programa son varias instrucciones, vamos a poner una segunda línea debajo.',
-    },
-    { at: 105000, type: 'write', filePath: 'app.js', content: LESSON1_JS_DOS_LINEAS },
-    {
-      at: 111500,
-      type: 'speak',
-      text: 'Ahora busca el recuadro linea2 y escribe dentro Escrito con JavaScript. Ejecutamos.',
-    },
-    { at: 118000, type: 'run' },
-    {
-      at: 118800,
-      type: 'gesture',
-      durationMs: 1000,
-      points: [
-        { x: 56, y: 44, targetArea: 'preview' },
-        { x: 58, y: 58, targetArea: 'preview' },
-      ],
-    },
-    {
-      at: 119900,
-      type: 'speak',
-      text: 'Las dos aparecieron, en el orden en que las escribiste. Primero arriba, después abajo. Eso es un programa.',
-    },
-    { at: 127500, type: 'chapter', title: 'Tu turno' },
-    {
-      at: 127900,
-      type: 'speak',
-      text: 'Ahora te toca a ti. Escribe un programa de dos líneas: en linea1 pon tu nombre, y en linea2 tu comida favorita. Después pulsa Ejecutar.',
-    },
-    {
-      at: 138500,
+      at: 106_000,
       type: 'challenge',
       challenge: {
-        id: 'reto-tu-presentacion',
-        title: 'Reto: tu presentación',
-        instructions: `Escribe un programa de dos líneas.
+        id: 'reto-primeras-instrucciones',
+        title: 'Reto: tus dos primeros mensajes',
+        instructions: `Escribe dos instrucciones en app.js.
 
-1. Busca el recuadro "linea1" y escribe tu nombre.
-2. Busca el recuadro "linea2" y escribe tu comida favorita.
-3. Pulsa Ejecutar y mira la página.`,
+1. La primera usa console.log y muestra un texto que empieza por "Me llamo".
+2. La segunda usa console.log y muestra "Estoy aprendiendo JavaScript".
+3. Ejecuta y abre la consola para comprobar el orden.`,
         tests: [
-          {
-            id: 'linea1-tiene-texto',
-            description: 'El recuadro linea1 muestra tu nombre',
-            validatorType: 'dom-check',
-            domSelector: '#linea1',
-            domProperty: 'innerText',
-            errorMessage: 'linea1 está vacío. Necesita una instrucción que escriba ahí tu nombre.',
-            hintTip: 'Una instrucción por recuadro, igual que en la clase.',
-          },
-          {
-            id: 'linea2-tiene-texto',
-            description: 'El recuadro linea2 muestra tu comida favorita',
-            validatorType: 'dom-check',
-            domSelector: '#linea2',
-            domProperty: 'innerText',
-            errorMessage: 'linea2 está vacío. Le falta su propia instrucción.',
-            hintTip: 'Copia el patrón de la primera línea y cambia el recuadro y el texto.',
-          },
-          {
-            id: 'usa-linea1',
-            description: 'Tu código busca el recuadro linea1',
-            validatorType: 'source-regex',
-            regexPattern: 'getElementById\\(\\s*["\']linea1["\']\\s*\\)',
-            errorMessage: 'No encontramos ninguna instrucción para linea1.',
-            hintTip: 'El nombre del recuadro va entre comillas, sin #.',
-          },
-          {
-            id: 'usa-linea2',
-            description: 'Tu código busca el recuadro linea2',
-            validatorType: 'source-regex',
-            regexPattern: 'getElementById\\(\\s*["\']linea2["\']\\s*\\)',
-            errorMessage: 'No encontramos ninguna instrucción para linea2.',
-            hintTip: 'Cada recuadro necesita su propia instrucción.',
-          },
+          { id: 'presentacion-console', description: 'Hay una instrucción que presenta tu nombre', validatorType: 'source-regex', regexPattern: 'console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Me llamo[^"\\\']*["\\\']\\s*\\)\\s*;?', errorMessage: 'No encontramos un console.log con un texto que empiece por “Me llamo”.', hintTip: 'El texto completo va entre un par de comillas dentro de los paréntesis.' },
+          { id: 'aprendiendo-console', description: 'Hay una segunda instrucción sobre JavaScript', validatorType: 'source-regex', regexPattern: 'console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Estoy aprendiendo JavaScript["\\\']\\s*\\)\\s*;?', errorMessage: 'Falta el segundo mensaje o tiene una forma incompleta.', hintTip: 'Revisa que la segunda línea también cierre comillas y paréntesis.' },
+          { id: 'mensajes-en-orden', description: 'La presentación aparece antes del mensaje de aprendizaje', validatorType: 'source-regex', regexPattern: 'console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Me llamo[^"\\\']*["\\\']\\s*\\)\\s*;?[\\s\\S]*console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Estoy aprendiendo JavaScript["\\\']\\s*\\)\\s*;?', errorMessage: 'Los dos mensajes existen, pero no están en el orden solicitado.', hintTip: 'JavaScript ejecuta de arriba abajo: presenta tu nombre primero.' },
         ],
         hints: [
-          {
-            level: 1,
-            title: 'Dónde escribir',
-            text: 'Debajo de las notas, una instrucción por línea. Cada recuadro de la página necesita la suya.',
-          },
-          {
-            level: 2,
-            title: 'El patrón',
-            text: 'Busca el recuadro por su id entre comillas, y pon el texto con textContent. Igual que en los ejemplos de la clase.',
-          },
-          {
-            level: 3,
-            title: 'Comprueba',
-            text: 'Después de escribir, pulsa Ejecutar. Si algo no aparece, revisa que las comillas estén cerradas y que el id coincida con el recuadro.',
-          },
+          { level: 1, title: 'Una línea por mensaje', text: 'Cada salida necesita su propia instrucción completa.' },
+          { level: 2, title: 'Revisa los pares', text: 'Cuenta dos comillas y dos paréntesis en cada línea.' },
+          { level: 3, title: 'Misma forma, otro texto', text: 'La segunda instrucción tiene la misma estructura que la primera; solo cambia el texto entre comillas.' },
         ],
-        solutionExplanation:
-          'Un programa ejecuta sus instrucciones en orden. Cada instrucción busca un recuadro y escribe texto dentro. Dos instrucciones, dos resultados en pantalla.',
+        solutionExplanation: 'Dos instrucciones completas producen dos mensajes en orden. La estructura se repite y el dato entre comillas cambia.',
       },
     },
-    {
-      at: 139000,
-      type: 'speak',
-      text: 'Bien. Acabas de escribir un programa que llena la página con cosas tuyas. Guarda esa sensación: eso es programar.',
-    },
-    { at: 145000, type: 'chapter', title: 'El orden manda' },
-    {
-      at: 145400,
-      type: 'speak',
-      text: 'Una última cosa sobre el orden. Mira lo que pasa cuando dos instrucciones escriben en el mismo recuadro.',
-    },
-    { at: 151000, type: 'write', filePath: 'app.js', content: LESSON1_JS_ORDEN },
-    { at: 154000, type: 'run' },
-    {
-      at: 154800,
-      type: 'gesture',
-      durationMs: 1000,
-      points: [
-        { x: 56, y: 40, targetArea: 'preview' },
-        { x: 58, y: 54, targetArea: 'preview' },
-      ],
-    },
-    {
-      at: 155500,
-      type: 'speak',
-      text: 'Escribimos Hola y después Adiós en el mismo recuadro. ¿Y qué se ve? Adiós. La última instrucción pisa a la anterior, porque JavaScript lee de arriba abajo.',
-    },
-    {
-      at: 166000,
-      type: 'speak',
-      text: 'Con esto ya sabes lo esencial: un programa es una lista de instrucciones en orden, y tú ya sabes escribirlas. Nos vemos en la siguiente.',
-    },
+    { at: 116_000, type: 'write', filePath: 'app.js', mode: 'replace', content: LESSON1_JS_DOS_LINEAS },
+    { at: 117_000, type: 'run' },
+    { at: 119_000, type: 'speak', text: 'Ya escribiste, ejecutaste y comprobaste tu primer programa. En la próxima lección aprenderás a convertir una meta en pasos pequeños antes de empezar a programar.' },
   ],
 });

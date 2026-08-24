@@ -138,7 +138,7 @@ export interface ChallengeTest {
   returnedFunctionCallCounts?: number[];
   expectedReturn?: any;
   domSelector?: string;
-  domProperty?: 'innerText' | 'innerHTML' | 'value' | 'className' | 'style' | 'exists' | 'count';
+  domProperty?: 'innerText' | 'textContent' | 'innerHTML' | 'value' | 'className' | 'style' | 'exists' | 'count';
   expectedValue?: any;
   regexPattern?: string;
   customValidatorScript?: string;
@@ -200,6 +200,7 @@ export interface ScrimLessonData {
   title: string;
   description: string;
   templateId: 'vanilla-js' | 'js-only' | 'lit' | 'react';
+  executionMode?: 'logic' | 'browser';
   durationMs: number;
   initialWorkspace: WorkspaceSnapshot;
   events: ScrimEvent[];
@@ -208,6 +209,24 @@ export interface ScrimLessonData {
   challenges: ScrimChallenge[];
   chapters?: { timestamp: number; title: string }[];
   concepts?: string[];
+  /** Capacidades concretas que la clase presenta por primera vez. */
+  skillsIntroduced: string[];
+  /** Capacidades que el estudiante ya debe haber practicado antes de entrar. */
+  skillsRequired: string[];
+  /** Resultados observables que el estudiante debería lograr al terminar. */
+  learningObjectives: string[];
+  /** Confusiones previsibles que la explicación y la práctica deben abordar. */
+  commonMistakes: string[];
+  /** Frase cotidiana que permite predecir el concepto antes de memorizar sintaxis. */
+  mentalModel?: string;
+  /** Dudas reales de principiante con una respuesta causal y comprobable. */
+  frequentQuestions?: { question: string; answer: string }[];
+  /** Representaciones visuales o tabulares usadas para razonar sobre el código. */
+  representations?: string[];
+  /** Pregunta que lleva el concepto a un contexto diferente del ejemplo. */
+  transferPrompt?: string;
+  /** Evidencias observables de dominio, más concretas que “entender”. */
+  masteryChecks?: string[];
   teachNotes?: { title: string; body: string }[];
   author?: {
     name: string;

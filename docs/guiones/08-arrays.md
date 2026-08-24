@@ -1,13 +1,21 @@
-Hasta ahora un dato era una cosa. Un nombre. Un número. La vida real viene en listas. Nombres de amigos. Puntos de un juego. Tareas.
+---
+titulo: "Lección 8: Arrays"
+modulo: Agrupar datos
+tipo: scrim
+archivo: fundamentos-08.mp3
+estado: audio_generado
+---
 
-Un array es una lista ordenada. Cada sitio tiene un número. El primero es cero. No uno. Eso confunde al principio. Acuérdate: el primero es cero.
+Hasta ahora guardamos valores individuales. Sin embargo, muchos problemas incluyen colecciones: una lista de tareas, los puntos de varias partidas o los nombres de un grupo. Para eso existen los arrays.
 
-const frutas igual a manzana, pera, uva, entre corchetes.
+Un array es una lista ordenada. Cada posición tiene un índice que nos permite encontrar su valor. JavaScript comienza a contar los índices desde cero, así que el primer elemento ocupa la posición cero.
 
-frutas en cero es manzana. frutas.length es tres. El último está en length menos uno.
+Aquí creamos un array llamado frutas. Los corchetes marcan el comienzo y el final de la lista, y las comas separan sus tres elementos.
 
-Puedes agregar al final con push. Puedes quitar el último con pop. Puedes recorrerlos con un for. O con for of, que se lee más fácil.
+Para leer el primer elemento usamos frutas y el índice cero entre corchetes. La propiedad length indica cuántos elementos hay. Como los índices empiezan en cero, el último se encuentra en length menos uno.
 
-Hay métodos que recorren por ti. map crea una lista nueva transformando cada elemento. filter se queda con los que cumplen una condición. No hace falta entenderlos todos hoy. Con crear, leer, push y un for, ya haces mucho.
+El método push agrega un elemento al final y pop elimina el último. Si queremos visitar toda la lista, usamos el for que ya conoces: empezamos en cero y continuamos mientras el índice sea menor que length.
 
-Tu turno. Tienes un array de números. Devuelve la suma. Recorre con un for. Empieza en cero. Ve sumando cada posición.
+Existen muchos más métodos, pero no los necesitamos todavía. Primero asegúrate de comprender cómo crear una lista, leer posiciones, modificar su final y recorrerla paso a paso.
+
+Ahora recibirás un array de números y deberás devolver su suma. Crea un acumulador, recorre la lista desde el índice cero y añade el valor de cada posición.

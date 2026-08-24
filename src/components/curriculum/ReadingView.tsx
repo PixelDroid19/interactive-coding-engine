@@ -20,10 +20,10 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
   onNext,
   navigationState,
 }) => {
-  const continueButtonRef = useRef<HTMLButtonElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
-    continueButtonRef.current?.focus();
+    titleRef.current?.focus({ preventScroll: true });
   }, [reading.id]);
 
   return (
@@ -61,63 +61,118 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
           </div>
         </header>
 
-        <main className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-5 py-6">
-          <section className="rounded-xl border-2 border-black bg-white p-5 shadow-[5px_5px_0_#000]">
+        <main
+          className="mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-5 py-6 select-text"
+          aria-label="Contenido de la lectura"
+        >
+          <article className="overflow-hidden rounded-xl border-2 border-zinc-700 bg-zinc-950 shadow-[5px_5px_0_#000]">
+            <header className="border-b-2 border-dashed border-zinc-700 bg-zinc-950 px-5 py-5 sm:px-7 sm:py-6">
             <h1
-              className="text-2xl font-bold text-zinc-900"
+              ref={titleRef}
+              tabIndex={-1}
+                className="text-2xl font-bold leading-tight text-zinc-100"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
               {reading.title}
             </h1>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-700">{reading.summary}</p>
-          </section>
+              <p className="mt-3 max-w-3xl text-[15px] leading-relaxed text-zinc-300">
+                {reading.summary}
+              </p>
+            </header>
 
-          <div className="space-y-4">
-            {reading.sections.map((section) => (
-              <article
+            <div className="divide-y divide-dashed divide-zinc-800">
+            {reading.sections.map((section) => section.kind === 'curiosity' ? (
+              <details
                 key={section.title}
-                className="rounded-xl border-2 border-black bg-white p-5 shadow-[4px_4px_0_#000]"
+                className="group mx-5 my-5 rounded-xl border border-cyan-800 bg-cyan-950/25 open:border-cyan-600 sm:mx-7 sm:my-6"
               >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 text-zinc-100 marker:content-none">
+                  <span className="text-base font-bold leading-snug" style={{ fontFamily: 'Patrick Hand, cursive' }}>
+                    {section.title}
+                  </span>
+                  <span className="shrink-0 rounded-full border border-cyan-700 bg-zinc-950 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
+                    Opcional
+                  </span>
+                </summary>
+                <div className="border-t border-cyan-900 px-4 pb-4 pt-4">
+                  <p className="text-[15px] leading-relaxed text-zinc-300">{section.content}</p>
+                  {section.example && (
+                    <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-lg bg-[#12151e] p-4 font-mono text-xs leading-relaxed text-slate-200">
+                      {section.example}
+                    </pre>
+                  )}
+                  {section.exampleCaption && (
+                    <p className="mt-3 text-xs italic text-zinc-400">{section.exampleCaption}</p>
+                  )}
+                  <p className="mt-4 text-xs font-medium text-cyan-200">
+                    Contenido opcional: no necesitas memorizarlo para continuar
+                  </p>
+                </div>
+              </details>
+            ) : (
+              <article key={section.title} className="px-5 py-5 sm:px-7 sm:py-6">
                 <h2
-                  className="text-lg font-bold text-zinc-900"
+                  className="text-lg font-bold leading-snug text-zinc-100"
                   style={{ fontFamily: 'Patrick Hand, cursive' }}
                 >
                   {section.title}
                 </h2>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-700">{section.content}</p>
+                <p className="mt-3 text-[15px] leading-relaxed text-zinc-300">{section.content}</p>
                 {section.example && (
-                  <pre className="mt-3 overflow-x-auto whitespace-pre-wrap rounded-lg border border-zinc-300 bg-[#12151e] p-3 font-mono text-xs leading-relaxed text-slate-200">
+                  <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-lg bg-[#12151e] p-4 font-mono text-xs leading-relaxed text-slate-200">
                     {section.example}
                   </pre>
                 )}
                 {section.exampleCaption && (
-                  <p className="mt-2 text-xs italic text-zinc-500">{section.exampleCaption}</p>
+                  <p className="mt-3 text-xs italic text-zinc-400">{section.exampleCaption}</p>
                 )}
               </article>
             ))}
-          </div>
 
-          <section className="rounded-xl border-2 border-yellow-400 bg-[#fffbe6] p-5 shadow-[4px_4px_0_#000]">
+              <aside className="border-t-2 border-yellow-400 bg-amber-950/40 px-5 py-5 sm:px-7 sm:py-6">
             <h2
-              className="flex items-center gap-2 text-base font-bold text-zinc-900"
+              className="flex items-center gap-2 text-base font-bold text-amber-100"
               style={{ fontFamily: 'Patrick Hand, cursive' }}
             >
               <Lightbulb size={16} />
               Lo esencial antes de practicar
             </h2>
-            <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-zinc-800">
+            <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-zinc-200">
               {reading.keyPoints.map((point) => (
                 <li key={point}>{point}</li>
               ))}
             </ul>
-          </section>
+              </aside>
+              {reading.frequentQuestions && reading.frequentQuestions.length > 0 && (
+                <section className="border-t-2 border-sky-900 bg-sky-950/30 px-5 py-5 sm:px-7 sm:py-6" aria-labelledby="reading-faq-title">
+                  <h2 id="reading-faq-title" className="text-lg font-bold text-sky-100" style={{ fontFamily: 'Patrick Hand, cursive' }}>
+                    Dudas frecuentes de quien empieza
+                  </h2>
+                  <div className="mt-4 grid gap-3">
+                    {reading.frequentQuestions.map((entry) => (
+                      <details key={entry.question} className="rounded-lg border border-sky-900 bg-zinc-950 px-4 py-3">
+                        <summary className="cursor-pointer font-bold text-zinc-100">{entry.question}</summary>
+                        <p className="mt-2 text-sm leading-relaxed text-zinc-300">{entry.answer}</p>
+                      </details>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {reading.transferPrompt && (
+                <aside className="border-t-2 border-violet-900 bg-violet-950/30 px-5 py-5 sm:px-7 sm:py-6">
+                  <h2 className="text-base font-bold text-violet-100">Llévalo a otro problema</h2>
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-200">{reading.transferPrompt}</p>
+                  <p className="mt-2 text-xs text-zinc-400">Respóndelo con palabras o un diagrama antes de abrir el editor.</p>
+                </aside>
+              )}
+            </div>
+          </article>
 
-          <footer className="flex flex-col gap-3 rounded-xl border-2 border-black bg-white p-4 shadow-[4px_4px_0_#000] sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-zinc-600">
+          <footer className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-zinc-300">
               Cuando lo tengas claro, pasa al ejercicio. Puedes volver a esta lectura cuando quieras.
             </p>
             <button
-              ref={continueButtonRef}
               type="button"
               onClick={onNext}
               disabled={!navigationState?.hasNext}

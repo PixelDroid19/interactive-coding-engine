@@ -1,15 +1,23 @@
-Ya sabes guardar datos. Ahora hay que hacer algo con ellos. Los operadores son los símbolos que calculan, comparan o combinan.
+---
+titulo: "Lección 4: Operadores"
+modulo: Datos y operaciones
+tipo: scrim
+archivo: fundamentos-04.mp3
+estado: audio_generado
+---
 
-Mira la página. Hay dos números. Diez y tres. Vamos a sumarlos, restarlos, multiplicarlos y dividirlos.
+Ya sabes guardar valores en variables. El siguiente paso es usarlos. Los operadores son símbolos que nos permiten hacer cálculos, comparar valores y combinar condiciones.
 
-Más, menos, por, dividido. Y este: el porcentaje. No es un descuento. Es el resto. Diez dividido tres es tres y sobra uno. Por eso diez por ciento tres da uno.
+Partiremos de dos números, diez y tres. Con las mismas variables podemos sumar, restar, multiplicar y dividir. Ejecutaremos cada expresión para ver su resultado en la consola.
 
-Eso sirve para saber si un número es par. Si el resto al dividir entre dos es cero, es par.
+Los primeros símbolos resultan familiares. El signo de porcentaje necesita una explicación: en JavaScript calcula el resto de una división. Diez dividido entre tres deja un resto de uno, así que diez módulo tres produce uno.
 
-Comparar es otra cosa. Mayor, menor, igual. El resultado no es un número. Es true o false.
+El resto tiene usos muy prácticos. Por ejemplo, un número es par cuando al dividirlo entre dos el resto es cero.
 
-Ojo con el igual. Un igual solo, asigna. Tres iguales comparan en serio: mismo valor y mismo tipo. Usa siempre tres iguales. El texto diez no es el número diez.
+Las comparaciones responden preguntas como: ¿un valor es mayor, menor o exactamente igual a otro? Su resultado siempre es un booleano: true o false.
 
-Y luego están y, y o. La lámpara se enciende si hay corriente y el interruptor está arriba. Las dos cosas tienen que ser verdad. Puedes entrar con llave o con el código. Con una de las dos alcanza.
+No confundas asignar con comparar. Un solo signo igual guarda un valor. Tres signos iguales comprueban que coincidan tanto el valor como el tipo. Por eso el texto diez no es igual al número diez.
 
-Tu turno. Escribe una función esPar que reciba un número y devuelva true si el resto entre dos es cero. Y otra, puedeEntrar, que sea true si la edad es mayor o igual a dieciocho y tieneEntrada es true.
+También podemos combinar preguntas. El operador y exige que ambas condiciones sean verdaderas. El operador o acepta que al menos una lo sea. Es como necesitar una entrada y la edad mínima, frente a poder acceder con una llave o con un código.
+
+Ahora completa dos expresiones. esPar debe comprobar que el resto al dividir entre dos sea cero. puedeEntrar debe ser verdadero únicamente cuando se cumplan la edad mínima y la condición de tener entrada.

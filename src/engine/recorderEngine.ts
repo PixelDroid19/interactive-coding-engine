@@ -145,6 +145,10 @@ export class RecorderEngine {
       events: [...this.events],
       snapshots,
       challenges: [...this.challenges],
+      skillsIntroduced: [],
+      skillsRequired: [],
+      learningObjectives: ['Reproducir la clase grabada y completar sus retos.'],
+      commonMistakes: [],
       audioTrack: this.audioBlob
         ? {
             audioBlob: this.audioBlob,

@@ -38,12 +38,27 @@ describe('DebuggingView integración', () => {
     expect(container.querySelector('[role="dialog"][aria-label*="Explorador"]')).toBeNull();
   });
 
-  it('abrir y cerrar Reto, Resultado y Vista previa', async () => {
+  it('una práctica lógica usa salida JavaScript y oculta archivos web', () => {
     const { container } = render(<DebuggingView exercise={exercise} onBack={() => {}} />);
     expect(container.querySelector('.debug-panel')).toBeTruthy();
     expect(container.textContent).toContain('Reto');
     expect(container.textContent).toContain('Resultado');
-    expect(container.textContent).toContain('Vista previa');
+    expect(screen.queryByRole('tab', { name: 'index.html' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'style.css' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Vista previa' })).toBeNull();
+    fireEvent.click(screen.getByRole('tab', { name: 'Salida' }));
+    expect(screen.getByRole('region', { name: 'Salida de JavaScript' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Ejecutar lógica' })).toBeTruthy();
+  });
+
+  it('una práctica de DOM conserva archivos web y vista previa', () => {
+    const domExercise = DEBUG_EXERCISES.find(e => e.id === 'fundamentos-10-debug')!;
+    render(<DebuggingView exercise={domExercise} onBack={() => {}} />);
+
+    expect(screen.getByRole('tab', { name: 'index.html' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'style.css' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Vista previa' })).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Salida de JavaScript' })).toBeNull();
   });
 
   it('pestañas funcionan con teclado', async () => {
@@ -56,24 +71,43 @@ describe('DebuggingView integración', () => {
   it('restaura el archivo activo y las pistas reveladas después de recargar', () => {
     const firstRender = render(<DebuggingView exercise={exercise} onBack={() => {}} />);
 
-    fireEvent.click(screen.getByRole('tab', { name: 'index.html' }));
     fireEvent.click(screen.getByRole('button', { name: 'Mostrar siguiente pista' }));
     firstRender.unmount();
 
     render(<DebuggingView exercise={exercise} onBack={() => {}} />);
 
-    expect(screen.getByRole('tab', { name: 'index.html' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tab', { name: 'app.js' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByText(`Pistas 1/${exercise.hints.length}`)).toBeTruthy();
   });
 
+  it('muestra el texto de cada pista revelada', () => {
+    render(<DebuggingView exercise={exercise} onBack={() => {}} />);
+
+    exercise.hints.forEach((hint) => {
+      fireEvent.click(screen.getByRole('button', { name: 'Mostrar siguiente pista' }));
+      expect(screen.getByText(new RegExp(hint.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeTruthy();
+    });
+
+    expect(screen.getByRole('button', { name: 'Ver cómo se resuelve' })).toBeTruthy();
+    expect(screen.queryByText(/getElementById\("linea2"\)\.textContent =/)).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ver cómo se resuelve' }));
+    const diagnosis = screen.getByRole('region', { name: 'Diagnóstico específico' });
+    expect(diagnosis.className).toContain('debug-resolution-card');
+    expect(diagnosis.querySelector('ol')?.className).toContain('debug-resolution-steps');
+    expect(diagnosis.querySelector('[data-resolution-note]')).toBeTruthy();
+    expect(screen.getAllByText(exercise.observedBehavior).length).toBeGreaterThan(0);
+    exercise.hints.forEach((hint) => expect(screen.getAllByText(hint.text).length).toBeGreaterThan(0));
+  });
+
   it('edición + Comprobar → Resultado con todas las comprobaciones y Resuelto (simulado)', async () => {
-    const fixedJs = `document.getElementById("linea1").textContent = "Me llamo Ana";
-document.getElementById("linea2").textContent = "Y me gusta el helado";`;
+    const fixedJs = `console.log("Me llamo Ana");
+console.log("Estoy aprendiendo JavaScript");`;
     const { runChallengeValidation } = await import('../../engine/testRunner');
     const ws = {
       files: {
         'app.js': { name: 'app.js', path: 'app.js', content: fixedJs, language: 'javascript' as const },
-        'index.html': { name: 'index.html', path: 'index.html', content: '<p id="linea1"></p><p id="linea2"></p>', language: 'html' as const },
+        'index.html': { name: 'index.html', path: 'index.html', content: exercise.initialWorkspace.files['index.html'].content, language: 'html' as const },
         'style.css': { name: 'style.css', path: 'style.css', content: '', language: 'css' as const },
       },
       activeFilePath: 'app.js',
@@ -88,7 +122,8 @@ document.getElementById("linea2").textContent = "Y me gusta el helado";`;
   });
 
   it('Comprobar integra la vista previa con el evaluador sin falsos errores de generación', async () => {
-    render(<DebuggingView exercise={exercise} onBack={() => {}} />);
+    const domExercise = DEBUG_EXERCISES.find(e => e.id === 'fundamentos-10-debug')!;
+    render(<DebuggingView exercise={domExercise} onBack={() => {}} />);
 
     fireEvent.click(screen.getByRole('tab', { name: 'Vista previa' }));
     const iframe = await screen.findByTitle('Vista previa') as HTMLIFrameElement & { __generation?: number };
@@ -99,7 +134,10 @@ document.getElementById("linea2").textContent = "Y me gusta el helado";`;
     fireEvent.click(screen.getByRole('button', { name: 'Comprobar' }));
 
     await waitFor(() => {
-      expect(screen.getByText(`0 de ${exercise.tests.length} comprobaciones superadas`)).toBeTruthy();
+      expect(screen.getByText(`0 de ${domExercise.tests.length} comprobaciones superadas`)).toBeTruthy();
+    });
+    screen.getAllByLabelText('fallido').forEach((card) => {
+      expect(card.className).toContain('text-rose-950');
     });
     expect(screen.queryByText(/La vista previa no estaba lista/)).toBeNull();
     expect(screen.queryAllByLabelText('error de evaluación')).toHaveLength(0);
@@ -107,10 +145,9 @@ document.getElementById("linea2").textContent = "Y me gusta el helado";`;
 
   it('editar y pulsar Comprobar rápido evalúa la última versión', async () => {
     const { runChallengeValidation } = await import('../../engine/testRunner');
-    const jsRoto = `document.getElementById("linea1").textContent = "Me llamo Ana";
-document.getElementById("linea1").textContent = "Y me gusta el helado";`;
-    const jsArreglado = `document.getElementById("linea1").textContent = "Me llamo Ana";
-document.getElementById("linea2").textContent = "Y me gusta el helado";`;
+    const jsRoto = `console.log("Me llamo Ana");`;
+    const jsArreglado = `console.log("Me llamo Ana");
+console.log("Estoy aprendiendo JavaScript");`;
     const mkWs = (content: string) => ({
       files: {
         'app.js': { name: 'app.js', path: 'app.js', content, language: 'javascript' as const },

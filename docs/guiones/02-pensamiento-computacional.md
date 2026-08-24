@@ -1,36 +1,23 @@
 ---
-titulo: "Lección 2: Pensamiento computacional"
+titulo: "Lección 2: Pensar en pasos"
 modulo: Primeros pasos
 tipo: scrim
 archivo: fundamentos-02.mp3
-estado: grabado
-duracion_audio: "1:34"
-visuales:
-  - página del conversor (número, botón, resultado)
-  - HTML de las tres piezas, luego app.js
-  - Run que "miente" (20 °C = 20 °F)
-  - reto: fórmula celsius * 9 / 5 + 32
-  - juego de secuencias
+estado: audio_generado
 ---
 
-# Guion para grabar
+En la primera lección escribiste instrucciones y viste que el orden importa. Ahora vamos a detenernos un momento antes del código para decidir qué pasos necesita realmente un programa.
 
-A veces el código parece difícil porque el problema se ve enorme. El truco es partirlo. Un paso, luego otro, luego otro.
+Imagina que la meta es preparar una taza de té. Esa frase dice qué queremos lograr, pero no explica cómo. Para convertirla en un plan, necesitamos acciones pequeñas y ordenadas.
 
-Hoy vamos a convertir una temperatura. No hace falta saber física. Solo tres cuentas, en orden.
+La primera línea resume el plan y comienza con dos barras, así que es un comentario. JavaScript la ignora. La línea siguiente sí es una instrucción que puede ejecutar.
 
-Mira la página. Hay un número, un botón y un resultado. Tres piezas: leer el número, hacer la cuenta, y mostrarla.
+Cuando ejecutamos, la consola muestra solamente la acción de calentar el agua. El comentario nos ayuda a entender la intención, pero no produce ningún resultado.
 
-El esqueleto ya está escrito. Leemos lo que escribiste, escuchamos el clic y pintamos el resultado. Falta la cuenta. Por eso ahora miente.
+Estas dos instrucciones están bien escritas, pero aparecen en el orden equivocado. Este es un detalle importante: un programa puede ejecutarse sin errores y aun así resolver mal el problema.
 
-Si pulso Convertir, dice que veinte Celsius son veinte Fahrenheit. Copió el número. Todavía no hizo la cuenta.
+Ahora completa el plan. Escribe una instrucción para calentar el agua, otra para poner el té en la taza y una última para servir el agua. Revisa el orden antes de ejecutar.
 
-La cuenta es así. Tomas el Celsius, lo multiplicas por nueve, lo divides entre cinco, y le sumas treinta y dos. Eso es Fahrenheit. Escríbela tú.
+La consola muestra los tres pasos en la secuencia correcta. Eso es pensar como programador: tomar una meta grande y convertirla en acciones pequeñas que podamos comprobar una por una.
 
-Si te salió, bien. Si no, mira cómo queda escrito y compáralo con lo tuyo. Así se aprende también.
-
-Veinte Celsius son sesenta y ocho Fahrenheit. La misma cuenta sirve para cualquier número. Por eso la escribimos una vez.
-
-Último rato. Un juego. En cada ronda hay una regla escondida. Encuéntrala. Si ves la regla, ya puedes escribirla en código.
-
-Pausa y juega. Cuando veas la regla, ya estás pensando como hay que pensar para programar. Primero la regla. Después el código.
+En la siguiente lección aprenderás a guardar información con nombres claros para poder usarla y cambiarla más adelante.

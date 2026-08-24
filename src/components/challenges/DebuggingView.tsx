@@ -20,11 +20,12 @@ import { DebuggingExerciseItem } from '../../types/curriculum';
 import { ChallengeTest, WorkspaceFile, WorkspaceSnapshot } from '../../types/scrim';
 import { ChallengeValidationResult } from '../../types/runtime';
 import { cloneWorkspace } from '../../engine/eventLog';
-import { loadDebuggingDraft, markItemCompleted, markChallengeSkipped, markChallengeSolutionViewed, saveDebuggingDraft } from '../../engine/persistence';
+import { createDebuggingDraftVersion, loadDebuggingDraft, markItemCompleted, markChallengeSkipped, markChallengeSolutionViewed, saveDebuggingDraft } from '../../engine/persistence';
 import { runChallengeValidation } from '../../engine/testRunner';
 import { CodeEditor } from '../editor/CodeEditor';
 import { FileTree } from '../editor/FileTree';
 import { PreviewPane, PreviewPaneRef } from '../preview/PreviewPane';
+import { LogicRunnerPanel, LogicRunnerPanelRef } from '../preview/LogicRunnerPanel';
 import { NavigationState } from '../../engine/navigation';
 
 interface DebuggingViewProps {
@@ -44,6 +45,21 @@ function inferValidator(test: ChallengeTest): ChallengeTest['validatorType'] {
   return 'source-regex';
 }
 
+function isLogicFile(file: WorkspaceFile): boolean {
+  return file.language === 'javascript' || file.language === 'typescript' || file.language === 'json';
+}
+
+function normalizeWorkspace(exercise: DebuggingExerciseItem, source: WorkspaceSnapshot): WorkspaceSnapshot {
+  const next = cloneWorkspace(source);
+  if (exercise.executionMode !== 'logic') return next;
+
+  const firstLogicFile = Object.values(next.files).find(isLogicFile);
+  if (firstLogicFile && !isLogicFile(next.files[next.activeFilePath])) {
+    next.activeFilePath = firstLogicFile.path;
+  }
+  return next;
+}
+
 export const DebuggingView: React.FC<DebuggingViewProps> = ({
   exercise,
   onBack,
@@ -52,8 +68,11 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   onNext,
   navigationState,
 }) => {
-  const [initialDraft] = useState(() => loadDebuggingDraft(exercise.id));
-  const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() => initialDraft?.workspace ?? cloneWorkspace(exercise.initialWorkspace));
+  const exerciseVersion = createDebuggingDraftVersion(exercise.initialWorkspace, exercise.tests);
+  const [initialDraft] = useState(() => loadDebuggingDraft(exercise.id, exerciseVersion));
+  const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() =>
+    normalizeWorkspace(exercise, initialDraft?.workspace ?? exercise.initialWorkspace),
+  );
   const [validationResult, setValidationResult] = useState<ChallengeValidationResult | null>(null);
   const [revealedHints, setRevealedHints] = useState(initialDraft?.revealedHints ?? 0);
   const [showFileTree, setShowFileTree] = useState(false);
@@ -61,20 +80,23 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   const [activeTab, setActiveTab] = useState<'reto' | 'resultado' | 'preview'>('reto');
   const [isEvaluating, setIsEvaluating] = useState(false);
   const previewRef = useRef<PreviewPaneRef | null>(null);
+  const logicRunnerRef = useRef<LogicRunnerPanelRef | null>(null);
   const resultSummaryRef = useRef<HTMLDivElement>(null);
   const generationRef = useRef(0);
 
   useEffect(() => {
-    saveDebuggingDraft(exercise.id, { workspace, revealedHints });
-  }, [exercise.id, revealedHints, workspace]);
+    saveDebuggingDraft(exercise.id, { workspace, revealedHints, exerciseVersion });
+  }, [exercise.id, exerciseVersion, revealedHints, workspace]);
 
   const handleValidate = async () => {
     if (isEvaluating) return;
     setIsEvaluating(true);
     const currentGen = ++generationRef.current;
     try {
-      // Exactly one evaluation: reload preview and wait for ready
-      if (previewRef.current) {
+      if (exercise.executionMode === 'logic') {
+        await logicRunnerRef.current?.run();
+      } else if (previewRef.current) {
+        // Las prácticas DOM necesitan una vista recién ejecutada antes de evaluar.
         const maybePromise = (previewRef.current as any).reloadPreview?.();
         if (maybePromise && typeof maybePromise.then === 'function') {
           await maybePromise;
@@ -89,7 +111,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
         return;
       }
 
-      const iframe = previewRef.current?.getIframeElement();
+      const iframe = exercise.executionMode === 'browser' ? previewRef.current?.getIframeElement() : null;
       const tests = exercise.tests.map((test) => ({
         ...test,
         validatorType: inferValidator(test),
@@ -157,7 +179,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   };
 
   const handleReset = () => {
-    setWorkspace(cloneWorkspace(exercise.initialWorkspace));
+    setWorkspace(normalizeWorkspace(exercise, exercise.initialWorkspace));
     setValidationResult(null);
     setShowResolution(false);
     setActiveTab('reto');
@@ -182,7 +204,9 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   const handleExecutePreview = async () => {
     setActiveTab('preview');
     const gen = ++generationRef.current;
-    if (previewRef.current) {
+    if (exercise.executionMode === 'logic') {
+      await logicRunnerRef.current?.run();
+    } else if (previewRef.current) {
       const maybePromise = (previewRef.current as any).reloadPreview?.();
       if (maybePromise && typeof maybePromise.then === 'function') {
         await maybePromise;
@@ -193,7 +217,11 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
     }
   };
 
-  const activeFile = workspace.files[workspace.activeFilePath] || Object.values(workspace.files)[0] || null;
+  const visibleFiles = (Object.values(workspace.files) as WorkspaceFile[]).filter((file) =>
+    exercise.executionMode === 'logic' ? isLogicFile(file) : true,
+  );
+  const visibleFileMap = Object.fromEntries(visibleFiles.map((file) => [file.path, file]));
+  const activeFile = visibleFileMap[workspace.activeFilePath] || visibleFiles[0] || null;
 
   const handleRoadmap = () => {
     if (onBackToRoadmap) onBackToRoadmap();
@@ -300,7 +328,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                     <FolderTree className="h-3 w-3" />
                     <span className="hidden sm:inline ml-1">Archivos</span>
                   </button>
-                  {(Object.values(workspace.files) as WorkspaceFile[]).map((file) => (
+                  {visibleFiles.map((file) => (
                     <button
                       key={file.path}
                       type="button"
@@ -317,12 +345,12 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                   <button
                     type="button"
                     onClick={handleExecutePreview}
-                    className="editor-action-btn hidden sm:flex"
-                    aria-label="Ejecutar vista previa"
-                    title="Ver vista previa"
+                    className="editor-action-btn debug-run-tab-button"
+                    aria-label={exercise.executionMode === 'logic' ? 'Abrir salida y ejecutar' : 'Ejecutar vista previa'}
+                    title={exercise.executionMode === 'logic' ? 'Ver salida' : 'Ver vista previa'}
                   >
-                    <Eye className="h-3 w-3" />
-                    <span>Vista previa</span>
+                    {exercise.executionMode === 'logic' ? <Play className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                    <span>{exercise.executionMode === 'logic' ? 'Salida' : 'Vista previa'}</span>
                   </button>
                 </div>
               </div>
@@ -355,7 +383,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                       </button>
                     </div>
                     <FileTree
-                      files={workspace.files}
+                      files={visibleFileMap}
                       activeFilePath={workspace.activeFilePath}
                       onFileSelect={(path) => {
                         setWorkspace((prev) => ({ ...prev, activeFilePath: path }));
@@ -399,13 +427,13 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                 role="tab"
                 id="tab-preview"
                 aria-selected={activeTab === 'preview'}
-                aria-controls="panel-preview"
+                aria-controls={exercise.executionMode === 'logic' ? 'panel-output' : 'panel-preview'}
                 onClick={() => {
                   handleExecutePreview();
                 }}
                 className={`debug-panel-tab ${activeTab === 'preview' ? 'is-active' : ''}`}
               >
-                Vista previa
+                {exercise.executionMode === 'logic' ? 'Salida' : 'Vista previa'}
               </button>
             </div>
 
@@ -442,27 +470,28 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                     )}
 
                     {showResolution ? (
-                      <div className="rounded-lg bg-amber-50 border border-amber-300 p-3 space-y-2 mt-3">
-                        <h4 className="flex items-center gap-1.5 text-amber-900 font-bold text-xs">
+                      <section className="debug-resolution-card" aria-labelledby="debug-resolution-title">
+                        <h4 id="debug-resolution-title" className="debug-resolution-title">
                           <BookOpen className="h-3.5 w-3.5" />
-                          Resolución guiada
+                          Diagnóstico específico
                         </h4>
-                        <p className="text-[11px] text-amber-800">Ver la resolución no equivale a haber resuelto el reto. Tu código se conserva.</p>
-                        <ol className="list-decimal list-inside space-y-1 text-[11px] text-zinc-700">
-                          <li><strong>Causa:</strong> El programa falla porque no hace lo que el comportamiento esperado pide.</li>
-                          <li><strong>Dónde mirar:</strong> Usa la primera pista para localizar el archivo y la línea.</li>
-                          <li><strong>Concepto:</strong> Aplica el concepto de la lección (pista 2).</li>
-                          <li><strong>Próximo paso:</strong> Sigue la pista 3 y verifica con Comprobar.</li>
+                        <p className="debug-resolution-lead">Ver la resolución no equivale a haber resuelto el reto. Tu código se conserva.</p>
+                        <ol className="debug-resolution-steps">
+                          <li><strong>Causa observada:</strong> {exercise.observedBehavior}</li>
+                          <li><strong>Dónde mirar:</strong> {exercise.hints[0]?.text ?? 'Compara la primera diferencia entre esperado y observado.'}</li>
+                          <li><strong>Concepto que corrige la causa:</strong> {exercise.hints[1]?.text ?? 'Vuelve al modelo mental de la lección.'}</li>
+                          <li><strong>Próximo cambio:</strong> {exercise.hints[2]?.text ?? 'Cambia una sola causa y vuelve a ejecutar.'}</li>
+                          <li><strong>Cómo verificar:</strong> {exercise.expectedBehavior}</li>
                         </ol>
-                        <p className="text-[11px] text-zinc-600">No se muestra código terminado para copiar. Reescribe tú la corrección y verifica.</p>
+                        <p className="debug-resolution-note" data-resolution-note>La guía revela el razonamiento completo sin reemplazar tu código. Aplica el cambio y usa todas las comprobaciones, no solo el ejemplo visible.</p>
                         <div className="flex gap-2">
-                          <button type="button" onClick={handleReturnToAttempt} className="flex-1 neu-pill-btn bg-white" aria-label="Volver a intentarlo">
+                          <button type="button" onClick={handleReturnToAttempt} className="flex-1 neu-pill-btn bg-slate-100 text-slate-900" aria-label="Volver a intentarlo">
                             <Undo2 size={13} />
                             Volver a intentarlo
                           </button>
                           <button type="button" onClick={handleSkipForNow} className="flex-1 neu-pill-btn bg-amber-100" aria-label="Saltar por ahora">Saltar por ahora</button>
                         </div>
-                      </div>
+                      </section>
                     ) : (
                       exercise.hints.length > 0 && (
                         <div className="mt-3">
@@ -556,9 +585,16 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                             const result = validationResult.tests.find((item) => item.id === test.id);
                             const isError = result?.isEvaluationError;
                             const state = !result ? '' : isError ? 'is-evaluation-error' : result.passed ? 'is-pass' : 'is-fail';
+                            const stateTextColor = !result
+                              ? ''
+                              : isError
+                                ? 'text-amber-950'
+                                : result.passed
+                                  ? 'text-emerald-950 dark:text-emerald-50'
+                                  : 'text-rose-950';
                             const icon = isError ? <AlertTriangle size={14} className="shrink-0 text-amber-600" /> : result?.passed ? <CheckCircle2 size={14} className="shrink-0 text-emerald-600" /> : <XCircle size={14} className="shrink-0 text-rose-600" />;
                             return (
-                              <div key={test.id} className={`debug-test ${state}`} aria-label={isError ? 'error de evaluación' : result?.passed ? 'pasado' : 'fallido'}>
+                              <div key={test.id} className={`debug-test ${state} ${stateTextColor}`} aria-label={isError ? 'error de evaluación' : result?.passed ? 'pasado' : 'fallido'}>
                                 {validationResult ? icon : (
                                   <span className="shrink-0" style={{ width: 10, height: 10, marginTop: 3, borderRadius: 99, border: '1.5px solid #232733' }} />
                                 )}
@@ -619,20 +655,27 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
               )}
 
               {activeTab === 'preview' && (
-                <div id="panel-preview" role="tabpanel" aria-labelledby="tab-preview" className="debug-panel-pane">
-                  <div className="flex-1 flex flex-col min-h-[300px]">
-                    <div className="flex-1 border border-zinc-300 rounded-lg overflow-hidden bg-white" style={{ minHeight: 240 }}>
-                      <PreviewPane ref={previewRef} workspace={workspace} autoReload={false} isFloating={false} />
+                <div id={exercise.executionMode === 'logic' ? 'panel-output' : 'panel-preview'} role="tabpanel" aria-labelledby="tab-preview" className="debug-panel-pane">
+                  {exercise.executionMode === 'logic' ? (
+                    <div className="debug-logic-output">
+                      <LogicRunnerPanel ref={logicRunnerRef} workspace={workspace} />
+                      <button type="button" onClick={() => setActiveTab('resultado')} className="neu-pill-btn justify-center" aria-label="Volver a resultado">Volver a resultado</button>
                     </div>
-                    <div className="mt-2 flex gap-2">
-                      <button type="button" onClick={handleExecutePreview} className="flex-1 neu-pill-btn bg-white" aria-label="Ejecutar vista previa">
-                        <Play size={13} />
-                        Ejecutar
-                      </button>
-                      <button type="button" onClick={() => setActiveTab('resultado')} className="flex-1 neu-pill-btn" aria-label="Volver a resultado">Volver a resultado</button>
+                  ) : (
+                    <div className="flex-1 flex flex-col min-h-[300px]">
+                      <div className="flex-1 border border-zinc-700 rounded-lg overflow-hidden bg-[#12151e]" style={{ minHeight: 240 }}>
+                        <PreviewPane ref={previewRef} workspace={workspace} autoReload={false} isFloating={false} />
+                      </div>
+                      <div className="mt-2 flex gap-2">
+                        <button type="button" onClick={handleExecutePreview} className="flex-1 neu-pill-btn bg-slate-100 text-slate-900" aria-label="Ejecutar vista previa">
+                          <Play size={13} />
+                          Ejecutar
+                        </button>
+                        <button type="button" onClick={() => setActiveTab('resultado')} className="flex-1 neu-pill-btn" aria-label="Volver a resultado">Volver a resultado</button>
+                      </div>
+                      <p className="text-[11px] text-zinc-500 mt-1">Vista previa bajo demanda. Usa Ejecutar para actualizar tras editar.</p>
                     </div>
-                    <p className="text-[11px] text-zinc-500 mt-1">Vista previa bajo demanda. Usa Ejecutar para actualizar tras editar.</p>
-                  </div>
+                  )}
                 </div>
               )}
             </div>

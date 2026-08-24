@@ -1,15 +1,23 @@
-Hasta ahora el programa hace siempre lo mismo, de arriba a abajo. Hoy va a decidir.
+---
+titulo: "Lección 5: Condicionales"
+modulo: Control de flujo
+tipo: scrim
+archivo: fundamentos-05.mp3
+estado: audio_generado
+---
 
-En la puerta de un edificio hay un portero. Si tienes credencial, pasas. Si no, no pasas. Eso es un if.
+Hasta ahora nuestras instrucciones siempre seguían el mismo camino. Hoy aprenderás a hacer que el programa elija qué debe ocurrir según una condición.
 
-Voy a escribir una edad. Si es mayor o igual a dieciocho, el mensaje dice que puedes votar. Si no, dice que todavía no.
+Piensa en la entrada de un edificio. Si tienes credencial, puedes pasar; si no la tienes, debes quedarte fuera. Un condicional expresa ese tipo de decisión.
 
-La condición va entre paréntesis. Si es true, entra al primer bloque. Si no, al else.
+En este ejemplo guardamos una edad. Si es igual o mayor que dieciocho, mostramos un mensaje. En cualquier otro caso, mostramos una respuesta diferente.
 
-A veces hay más de dos caminos. else if. Si la nota es noventa o más, A. Si no, pero es ochenta o más, B. Si no, C. El orden importa. JavaScript se queda con el primer sí.
+La pregunta se escribe entre los paréntesis del if. Cuando su resultado es true, JavaScript ejecuta el primer bloque. Cuando es false, continúa por el bloque else.
 
-Hay un atajo de una línea. Condición, signo de pregunta, valor si sí, dos puntos, valor si no. Sirve para cosas cortas. Si se pone largo, vuelve al if.
+Cuando existen más de dos posibilidades usamos else if. Podemos preguntar primero si la nota llega a noventa, después si llega a ochenta y luego por los demás casos. JavaScript elige la primera condición verdadera, así que el orden importa.
 
-Cambia la edad en el código y pulsa Run. Mira cómo cambia el mensaje. El programa no adivina. Pregunta, y elige un camino.
+Por ahora concéntrate en seguir el recorrido: JavaScript pregunta de arriba abajo y toma un solo camino. Entender esto es más importante que memorizar muchas variantes.
 
-Tu turno. Recibe una nota del cero al cien. Si es noventa o más, devuelve A. Si es ochenta o más, B. Si es setenta o más, C. Si no, F.
+Prueba distintas edades y ejecuta de nuevo. Verás que el resultado cambia porque el programa evalúa la condición con el valor actual. No adivina; compara y decide.
+
+Ahora corrige un recorrido. La nota es ochenta y cinco, pero las condiciones están desordenadas y aparece la letra C. Colócalas desde la más exigente hasta la más general para obtener B.

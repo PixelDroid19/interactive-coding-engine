@@ -1,21 +1,29 @@
-Un programa necesita recordar cosas. Un nombre. Un número. Si algo está encendido o no. Eso se guarda en variables.
+---
+titulo: "Lección 3: Variables y tipos"
+modulo: Primeros pasos
+tipo: scrim
+archivo: fundamentos-03.mp3
+estado: audio_generado
+---
 
-Piensa en una etiqueta pegada a un valor. La etiqueta es el nombre. El valor es lo que hay detrás. Si más tarde cambias el valor, la etiqueta sigue siendo la misma.
+Los programas necesitan recordar información: el nombre de una persona, una edad o si una opción está activa. Para darle un nombre a cada valor usamos variables.
 
-En JavaScript hay dos formas que nos importan. let, cuando el valor puede cambiar. const, cuando no quieres que cambie.
+Puedes imaginar una variable como una etiqueta asociada a un valor. La etiqueta nos permite encontrarlo después. Si el valor cambia, podemos seguir usando el mismo nombre para acceder al nuevo dato.
 
-Voy a escribir dos líneas. let edad igual a 25. const ciudad igual a Lima, entre comillas.
+En JavaScript comenzaremos con dos formas de crear variables. Usamos let cuando necesitaremos cambiar el valor y const cuando queremos mantener la misma asociación.
 
-edad se puede actualizar. ciudad queda fija. Si intentas cambiar ciudad, JavaScript se queja. Empieza con const. Pasa a let solo si de verdad va a cambiar.
+En la primera línea guardamos el número veinticinco con el nombre edad. En la segunda guardamos el texto Lima con el nombre ciudad. El signo igual asocia cada nombre con su valor.
 
-Los valores no son todos iguales. Hay tipos.
+Después cambiamos edad de veinticinco a veintiséis. Eso se llama reasignar: el nombre sigue siendo edad, pero ahora apunta a otro valor. JavaScript no permite hacer lo mismo con ciudad porque la declaramos con const.
 
-El texto va entre comillas. Se llama string. Los números van sin comillas. true y false son sí y no. Se llaman booleanos.
+Ahora fijémonos en los valores. No toda la información se comporta de la misma manera porque existen distintos tipos de datos.
 
-typeof de hola, entre comillas, da string. typeof de 25 da number. typeof de true da boolean.
+Un texto se escribe entre comillas y su tipo se llama string. Los números se escriben sin comillas. true y false representan dos posibilidades y pertenecen al tipo booleano.
 
-Si pones comillas alrededor de 25, ya no es un número. Es texto. Y no puedes sumarlo como número hasta convertirlo.
+El operador typeof nos permite preguntar por el tipo de un valor. Con un texto responde string, con veinticinco responde number y con true responde boolean.
 
-Ahora te toca a ti. Crea tres datos. Un nombre con const. Una edad con let. Y un boolean que se llame listo. Muéstralos en la página. Deja las comillas en el nombre.
+Las comillas cambian el significado. Veinticinco sin comillas es un número, pero entre comillas es texto. Aunque se vean parecidos, JavaScript los trata de forma diferente.
 
-Si los ves a la derecha, ya sabes guardar información. La próxima vez vamos a operar con esos datos. Sumar, comparar, decidir.
+Ahora crea tres variables desde cero. Guarda tu nombre como texto con const, tu edad como número con let y en listo un valor booleano. Después muestra las tres variables en la consola para comprobarlas.
+
+Si la consola muestra los tres valores, ya sabes nombrar información y elegir su tipo. En la próxima lección aprenderás a calcular y comparar usando esos datos.

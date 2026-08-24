@@ -59,14 +59,14 @@ export function getResolutionContent(challenge: ScrimChallenge, variant: 'scrim'
       why: '% da el resto. Si es 0 al dividir entre 2, es par.',
     },
     'reto-letra': {
-      before: 'if(nota>=70) return "C"; if(nota>=80) return "B";',
-      after: 'if(nota>=90) return "A";\nif(nota>=80) return "B";\nif(nota>=70) return "C";\nreturn "F";',
+      before: 'if (nota >= 70) { letra = "C"; }',
+      after: 'Pregunta primero por 90, después por 80 y al final por 70.',
       why: 'El primer sí gana. Pregunta de la nota más alta a la más baja.',
     },
-    'reto-fizzbuzz': {
-      before: 'if(n%3===0) return "Fizz";',
-      after: 'if(n%3===0 && n%5===0) return "FizzBuzz";\nif(n%3===0) return "Fizz";\nif(n%5===0) return "Buzz";',
-      why: 'El caso de los dos múltiplos debe preguntarse antes que el de uno solo.',
+    'reto-limite-bucle': {
+      before: 'for (let i = 1; i < 5; i++)',
+      after: 'Haz que la condición también acepte el valor cinco.',
+      why: 'Menor que excluye el límite; menor o igual lo incluye.',
     },
     'reto-area': {
       before: 'return 3 * 4;',

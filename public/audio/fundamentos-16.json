@@ -1,0 +1,8 @@
+{
+  "id": "fundamentos-16",
+  "durationMs": 104280,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/16-metodos-documentacion.md"
+}

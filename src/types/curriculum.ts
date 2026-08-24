@@ -1,6 +1,6 @@
 import { ChallengeTest, ScrimChallenge, ScrimLessonData, WorkspaceSnapshot } from './scrim';
 
-export type ItemType = 'scrim' | 'challenge' | 'debugging' | 'solo-project' | 'reading';
+export type ItemType = 'scrim' | 'challenge' | 'debugging' | 'solo-project' | 'reading' | 'reasoning';
 
 export type ProgressStatus = 'not-started' | 'in-progress' | 'completed';
 
@@ -29,11 +29,13 @@ export interface ReadingSection {
   content: string;
   example?: string;
   exampleCaption?: string;
+  kind?: 'core' | 'curiosity';
 }
 
 export interface DebuggingExerciseItem extends BaseCurriculumItem {
   type: 'debugging';
   relatedLessonId?: string;
+  executionMode: 'logic' | 'browser';
   templateId: 'vanilla-js' | 'js-only' | 'react';
   initialWorkspace: WorkspaceSnapshot;
   expectedBehavior: string;
@@ -41,12 +43,6 @@ export interface DebuggingExerciseItem extends BaseCurriculumItem {
   hints: { level: number; text: string }[];
   tests: ChallengeTest[];
   troubleshootingTips?: string[];
-  reading?: {
-    title: string;
-    summary: string;
-    sections: ReadingSection[];
-    keyPoints: string[];
-  };
 }
 
 export interface ReadingItem extends BaseCurriculumItem {
@@ -56,7 +52,70 @@ export interface ReadingItem extends BaseCurriculumItem {
   summary: string;
   sections: ReadingSection[];
   keyPoints: string[];
+  frequentQuestions?: { question: string; answer: string }[];
+  transferPrompt?: string;
   practiceItemId?: string;
+}
+
+export interface ReasoningNode {
+  id: string;
+  label: string;
+}
+
+export interface ReasoningConnection {
+  from: string;
+  to: string;
+  label?: string;
+}
+
+export type ReasoningActivity =
+  | {
+      kind: 'sequence';
+      prompt: string;
+      steps: ReasoningNode[];
+      expectedOrder: string[];
+    }
+  | {
+      kind: 'trace-table';
+      prompt: string;
+      columns: string[];
+      rows: ReasoningNode[];
+      expectedCells: Record<string, string>;
+    }
+  | {
+      kind: 'flowchart';
+      prompt: string;
+      nodes: Array<ReasoningNode & { role: 'start' | 'process' | 'decision' | 'output' | 'end' }>;
+      connectionOptions: ReasoningConnection[];
+      expectedConnections: ReasoningConnection[];
+    }
+  | {
+      kind: 'decision-table';
+      prompt: string;
+      cases: Array<ReasoningNode & { options: string[] }>;
+      expectedOutcomes: Record<string, string>;
+    }
+  | {
+      kind: 'dependency-map';
+      prompt: string;
+      modules: ReasoningNode[];
+      dependencyOptions: ReasoningConnection[];
+      expectedDependencies: ReasoningConnection[];
+    };
+
+export type ReasoningAttempt =
+  | { kind: 'sequence'; order: string[] }
+  | { kind: 'trace-table'; cells: Record<string, string> }
+  | { kind: 'flowchart'; connections: ReasoningConnection[] }
+  | { kind: 'decision-table'; outcomes: Record<string, string> }
+  | { kind: 'dependency-map'; dependencies: ReasoningConnection[] };
+
+export interface ReasoningExerciseItem extends BaseCurriculumItem {
+  type: 'reasoning';
+  relatedLessonId: string;
+  activity: ReasoningActivity;
+  hints: { level: number; text: string }[];
+  explanation: string;
 }
 
 export interface SoloProjectItem extends BaseCurriculumItem {
@@ -80,6 +139,7 @@ export type CurriculumItem =
   | StandaloneChallengeItem
   | DebuggingExerciseItem
   | ReadingItem
+  | ReasoningExerciseItem
   | SoloProjectItem;
 
 export interface CourseModule {

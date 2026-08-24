@@ -28,6 +28,8 @@ export interface RoadmapNode {
 
 export interface RoadmapRow {
   main: RoadmapNode;
+  reading?: RoadmapNode;
+  reasoning?: RoadmapNode;
   checkpoint?: RoadmapNode;
   concepts: RoadmapNode[];
   hasChallenge?: boolean;
@@ -51,11 +53,21 @@ const VISUAL_BY_LESSON: Record<string, ConceptVisualKind> = {
   'fundamentos-07': 'function',
   'fundamentos-08': 'list',
   'fundamentos-09': 'object',
-  'fundamentos-10': 'scope',
-  'fundamentos-11': 'algorithm',
-  'fundamentos-12': 'list',
-  'fundamentos-13': 'bigo',
-  'fundamentos-14': 'function',
+  'fundamentos-10': 'object',
+  'fundamentos-11': 'function',
+  'fundamentos-12': 'algorithm',
+  'fundamentos-13': 'list',
+  'fundamentos-14': 'algorithm',
+  'fundamentos-15': 'algorithm',
+  'fundamentos-16': 'function',
+  'fundamentos-17': 'algorithm',
+  'fundamentos-18': 'loop',
+  'fundamentos-19': 'list',
+  'fundamentos-20': 'condition',
+  'fundamentos-21': 'algorithm',
+  'fundamentos-22': 'function',
+  'fundamentos-23': 'object',
+  'fundamentos-24': 'algorithm',
 };
 
 export function visualForLesson(lessonId: string): ConceptVisualKind {
@@ -66,22 +78,22 @@ export function visualForLesson(lessonId: string): ConceptVisualKind {
 const LESSON_TERMS: Record<string, { label: string; desc: string }[]> = {
   'fundamentos-01': [
     {
-      label: 'Qué es un programa',
-      desc: 'Una lista de instrucciones en orden. JavaScript las lee de arriba abajo y ejecuta cada línea una tras otra. Si cambias el orden, cambia el resultado.',
+      label: 'Una instrucción',
+      desc: 'Una orden completa que JavaScript puede ejecutar. En esta clase usas console.log para producir una salida visible en la consola.',
     },
     {
-      label: 'Texto entre comillas',
-      desc: 'Lo que va entre comillas es texto. En esta clase escribes instrucciones que buscan un recuadro de la página y ponen texto dentro.',
+      label: 'Texto, paréntesis y cierre',
+      desc: 'Las comillas delimitan texto, los paréntesis contienen el dato entregado y el punto y coma termina la instrucción.',
     },
   ],
   'fundamentos-02': [
     {
       label: 'Dividir el problema',
-      desc: 'Antes de escribir código, partes el problema en piezas chicas. Aquí: leer un número, hacer la cuenta, mostrar el resultado. Cada pieza es una instrucción.',
+      desc: 'Antes de escribir más código, conviertes una meta grande en acciones pequeñas que se puedan ordenar y comprobar.',
     },
     {
-      label: 'La fórmula es el programa',
-      desc: 'Pasar de Celsius a Fahrenheit es una cuenta: se multiplica, se suma. Esa cuenta, escrita en JavaScript, es el programa. El reto es completar la fórmula.',
+      label: 'Comentarios y orden',
+      desc: 'Las líneas con // son notas y no se ejecutan. Las instrucciones reales se ejecutan de arriba abajo, así que su orden cambia el resultado.',
     },
   ],
   'fundamentos-03': [
@@ -116,12 +128,12 @@ const LESSON_TERMS: Record<string, { label: string; desc: string }[]> = {
   ],
   'fundamentos-06': [
     {
-      label: 'for y while',
-      desc: 'Un bucle repite un bloque. for tiene inicio, condición y paso (i++). while solo pregunta “¿sigo?”. Misma idea: repetir hasta que deje de cumplirse.',
+      label: 'El bucle for',
+      desc: 'Un for repite un bloque. Su encabezado indica dónde empieza, hasta cuándo continúa y cómo cambia la variable de control.',
     },
     {
-      label: 'FizzBuzz',
-      desc: 'Para cada número: si es múltiplo de 3 y 5, FizzBuzz; si solo de 3, Fizz; si solo de 5, Buzz. El orden de las preguntas importa.',
+      label: 'Inicio, límite y paso',
+      desc: 'Cambiar < por <= incluye el límite. Olvidar el incremento puede impedir que el bucle termine.',
     },
   ],
   'fundamentos-07': [
@@ -156,53 +168,93 @@ const LESSON_TERMS: Record<string, { label: string; desc: string }[]> = {
   ],
   'fundamentos-10': [
     {
-      label: 'Dónde vive una variable',
-      desc: 'El scope es el sitio donde existe un let. Las llaves { } son paredes: lo que nace adentro no se ve afuera. Un let global se ve en todo el archivo.',
+      label: 'Qué es el DOM',
+      desc: 'El DOM es la representación de los elementos de la página. JavaScript puede buscar esos objetos y cambiar propiedades concretas.',
     },
     {
-      label: 'Una función que recuerda',
-      desc: 'Una función puede devolver otra y esa “recuerda” las variables de adentro. Por eso un contador sigue sumando su propio n cada vez que lo llamas.',
+      label: 'Buscar y cambiar texto',
+      desc: 'getElementById busca un elemento por su id. textContent contiene su texto visible y permite reemplazarlo.',
     },
   ],
   'fundamentos-11': [
     {
-      label: 'Búsqueda lineal',
-      desc: 'Mirar uno por uno hasta encontrar el dato. Funciona siempre, pero si la lista es larga tardas más.',
+      label: 'Qué es un evento',
+      desc: 'Un evento es un aviso del navegador: ocurrió un clic, una tecla u otra acción. El programa puede esperar ese aviso.',
     },
     {
-      label: 'Búsqueda binaria',
-      desc: 'Si la lista está ordenada, miras la mitad y tiras la mitad que no sirve. Cada paso reduce el problema a la mitad.',
+      label: 'Escuchar un clic',
+      desc: 'addEventListener conecta el evento click con una función. La función se entrega sin paréntesis para que se ejecute después.',
     },
   ],
   'fundamentos-12': [
     {
-      label: 'Pila y cola',
-      desc: 'Pila: el último en entrar sale primero (como platos). Cola: el primero en entrar sale primero (como una fila).',
+      label: 'Leer un input',
+      desc: 'La propiedad value contiene el texto escrito en un input. Se lee dentro del evento para obtener el valor actual.',
     },
     {
-      label: 'Mapa por nombre',
-      desc: 'Un mapa guarda un valor pegado a una clave. Preguntas por el nombre, no por el puesto en la fila.',
+      label: 'Entrada, proceso y salida',
+      desc: 'El evento lee la entrada, una función transforma el dato y textContent muestra la salida. Tres pasos que se pueden revisar por separado.',
     },
   ],
   'fundamentos-13': [
     {
-      label: 'Qué es Big O',
-      desc: 'No es una nota. Dice cómo crece el trabajo cuando crecen los datos: si duplicas la lista, ¿el programa tarda el doble, el cuadrado, o casi igual?',
+      label: 'De array a lista',
+      desc: 'Un bucle recorre el array. En cada vuelta usa el dato actual para construir una fila visible.',
     },
     {
-      label: 'O(1) y O(n)',
-      desc: 'O(1) es un paso, da igual el tamaño. O(n) recorre la lista: más datos, más vueltas. O(n²) anida bucles: crece mucho más rápido.',
+      label: 'Crear y agregar elementos',
+      desc: 'createElement crea una etiqueta nueva. appendChild la agrega al DOM. Limpiar antes de dibujar evita duplicados.',
     },
   ],
   'fundamentos-14': [
     {
-      label: 'Objetos con estado',
-      desc: 'En un estilo, el dato vive dentro de un objeto y los métodos lo cambian. El mismo objeto dura y se va actualizando.',
+      label: 'Combinar lo aprendido',
+      desc: 'El proyecto usa variables, funciones, if, arrays, bucles, DOM, inputs y eventos sin introducir sintaxis avanzada.',
     },
     {
-      label: 'map y filter',
-      desc: 'En el otro estilo, entra una lista y sale una lista nueva. map transforma cada dato; filter se queda con los que cumplen. No mutas la original.',
+      label: 'Datos y pantalla',
+      desc: 'El array guarda las tareas. La interfaz se vuelve a dibujar desde esos datos para mantener una sola fuente de verdad.',
     },
+  ],
+  'fundamentos-15': [
+    { label: 'Ciclo de depuración', desc: 'Reproduce, predice, aísla, formula una hipótesis, cambia una cosa y verifica también otro caso.' },
+    { label: 'Evidencia', desc: 'Una observación concreta que diferencia dos explicaciones posibles del fallo.' },
+  ],
+  'fundamentos-16': [
+    { label: 'Contrato de un método', desc: 'Explica receptor, argumentos, retorno y si modifica el valor original.' },
+    { label: 'Método y propiedad', desc: 'Un método se llama con paréntesis; una propiedad como length se lee sin llamarla.' },
+  ],
+  'fundamentos-17': [
+    { label: 'Pseudocódigo', desc: 'Pasos y decisiones escritos sin detalles del lenguaje para revisar la lógica primero.' },
+    { label: 'Diagrama de flujo', desc: 'Un mapa de procesos y caminos sí/no que debe tener una salida coherente.' },
+  ],
+  'fundamentos-18': [
+    { label: 'Acumulador', desc: 'Una variable que resume lo procesado hasta la vuelta actual.' },
+    { label: 'Una pasada', desc: 'Cada elemento se revisa una vez mientras se actualiza el estado parcial.' },
+  ],
+  'fundamentos-19': [
+    { label: 'Buscar o seleccionar', desc: 'Buscar responde por existencia o un elemento; filtrar conserva todos los que cumplen.' },
+    { label: 'Transformar', desc: 'Produce un valor nuevo por cada elemento sin cambiar qué elementos participan.' },
+  ],
+  'fundamentos-20': [
+    { label: 'Caso límite', desc: 'Un valor exactamente en la frontera de una regla, donde < y <= producen resultados distintos.' },
+    { label: 'Regresión', desc: 'Volver a comprobar casos anteriores después de corregir un fallo.' },
+  ],
+  'fundamentos-21': [
+    { label: 'Fuente de verdad', desc: 'El estado único desde el cual la interfaz puede reconstruirse.' },
+    { label: 'Transición', desc: 'Una regla que recibe estado y acción para producir el estado siguiente.' },
+  ],
+  'fundamentos-22': [
+    { label: 'Responsabilidad', desc: 'El tipo de decisiones que una función o módulo conoce y puede cambiar.' },
+    { label: 'Dependencia', desc: 'Una parte usa la capacidad pública de otra; la dirección debe evitar círculos.' },
+  ],
+  'fundamentos-23': [
+    { label: 'Frontera', desc: 'Separa datos, reglas y detalles de interfaz para que cada parte pueda cambiar o probarse.' },
+    { label: 'Arquitectura pequeña', desc: 'Decisiones explícitas sobre responsabilidades y dirección del flujo, sin exigir patrones con nombre.' },
+  ],
+  'fundamentos-24': [
+    { label: 'Corte vertical', desc: 'Una historia pequeña y completa que atraviesa dato, regla, evento, vista y prueba.' },
+    { label: 'Retrospectiva', desc: 'Explicar qué funcionó, qué falló y qué decisión cambiarías con nueva evidencia.' },
   ],
 };
 
@@ -249,8 +301,20 @@ export function buildRoadmap(course: Course, scrims: Record<string, ScrimLessonD
       } else if (item.type === 'reading') {
         const last = rows[rows.length - 1];
         if (last) {
-          last.checkpoint = {
+          last.reading = {
             id: `cp-${item.id}`,
+            kind: 'checkpoint',
+            itemType: item.type,
+            label: item.title,
+            lessonId: item.id,
+            moduleId: mod.id,
+          };
+        }
+      } else if (item.type === 'reasoning') {
+        const last = rows[rows.length - 1];
+        if (last) {
+          last.reasoning = {
+            id: `think-${item.id}`,
             kind: 'checkpoint',
             itemType: item.type,
             label: item.title,

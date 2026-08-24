@@ -133,6 +133,11 @@ function isStringMatch(result: any, test: ChallengeTest): { passed: boolean; err
   return { passed: true };
 }
 
+function cloneEvaluationArgs(args: unknown[] | undefined): unknown[] {
+  if (!args) return [];
+  return structuredClone(args);
+}
+
 export async function runChallengeValidation(
   challenge: ScrimChallenge,
   workspace: WorkspaceSnapshot,
@@ -311,9 +316,9 @@ async function evaluateSingleTest(
             };
           }
 
-          const args = test.args || [];
           const sequences: unknown[][] = [];
           for (const count of counts) {
+            const args = cloneEvaluationArgs(test.args);
             const returnedFunction = targetFn(...args);
             if (typeof returnedFunction !== 'function') {
               return {
@@ -347,7 +352,7 @@ async function evaluateSingleTest(
 
         // Special handling for semantic string matchers
         if (test.matcher === 'contains-all' || test.matcher === 'string-contains-all' || test.matcher === 'contains' || test.expectedContains || test.requireArgInResult !== undefined) {
-          const args = test.args || [];
+          const args = cloneEvaluationArgs(test.args);
           let result: any;
           try {
             result = targetFn(...args);
@@ -375,7 +380,7 @@ async function evaluateSingleTest(
           };
         }
 
-        const args = test.args || [];
+        const args = cloneEvaluationArgs(test.args);
         let result: any;
         try {
           result = targetFn(...args);
@@ -429,9 +434,11 @@ async function evaluateSingleTest(
       // If iframe is provided and generation matches, we could use it, but to avoid race, prefer workspace evaluation
       // However for preview that requires JS execution, we simulate via building document and running JS in stub
       let doc: Document | null = null;
-      let useIframe = false;
+      let runtimeError: Error | null = null;
+      let missingLookup: string | null = null;
       if (iframeElement && iframeElement.contentDocument && generation !== undefined) {
-        // Check generation: if iframe's generation attribute matches, use it, otherwise treat as not ready
+        // La generación solo confirma que no estamos validando una edición anterior.
+        // La evaluación se reconstruye desde el workspace para evitar carreras con el iframe.
         const iframeGen = (iframeElement as any).__generation;
         if (iframeGen !== undefined && iframeGen !== generation) {
           return {
@@ -443,10 +450,6 @@ async function evaluateSingleTest(
             errorMessage: 'Vista previa no lista. Vuelve a pulsar Comprobar.',
             hint: test.hintTip,
           };
-        }
-        if (iframeElement.contentDocument) {
-          doc = iframeElement.contentDocument;
-          useIframe = true;
         }
       }
 
@@ -466,13 +469,24 @@ async function evaluateSingleTest(
               const combinedJs = jsFiles.map(f => f.content).join('\n\n');
               // Create a stub that mirrors the parsed doc's getElementById
               const stubDoc: any = {
-                getElementById: (id: string) => doc!.getElementById(id) || { textContent: '', innerText: '', innerHTML: '', value: '', addEventListener() {} },
-                querySelector: (sel: string) => doc!.querySelector(sel),
+                getElementById: (id: string) => {
+                  const element = doc!.getElementById(id);
+                  if (!element) missingLookup = `#${id}`;
+                  return element;
+                },
+                querySelector: (sel: string) => {
+                  const element = doc!.querySelector(sel);
+                  if (!element) missingLookup = sel;
+                  return element;
+                },
                 querySelectorAll: (sel: string) => doc!.querySelectorAll(sel),
                 createElement: (tag: string) => doc!.createElement(tag),
               };
-              // Try to run the JS to populate DOM (best effort)
-              try { new Function('document', combinedJs)(stubDoc); } catch {}
+              try {
+                new Function('document', combinedJs)(stubDoc);
+              } catch (error) {
+                runtimeError = error instanceof Error ? error : new Error(String(error));
+              }
             } catch {}
           } else {
             // Node env fallback: create mock
@@ -524,22 +538,27 @@ async function evaluateSingleTest(
               const stub: any = {
                 _els: elements,
                 getElementById: (id: string) => {
-                  if (!elements.has(id)) elements.set(id, makeEl(id, ''));
-                  return elements.get(id);
+                  const element = elements.get(id) ?? null;
+                  if (!element) missingLookup = `#${id}`;
+                  return element;
                 },
                 querySelector: (sel: string) => {
                   const m = sel.match(/#([\w-]+)/);
                   if (m) {
-                    const id = m[1];
-                    if (!elements.has(id)) elements.set(id, makeEl(id, ''));
-                    return elements.get(id);
+                    const element = elements.get(m[1]) ?? null;
+                    if (!element) missingLookup = sel;
+                    return element;
                   }
-                  return makeEl('__dummy', '');
+                  return null;
                 },
                 querySelectorAll: () => [],
                 createElement: () => makeEl('__created', ''),
               };
-              try { new Function('document', combinedJs)(stub); } catch {}
+              try {
+                new Function('document', combinedJs)(stub);
+              } catch (error) {
+                runtimeError = error instanceof Error ? error : new Error(String(error));
+              }
             } catch {}
           }
         } catch (e: any) {
@@ -549,6 +568,18 @@ async function evaluateSingleTest(
 
       if (!doc) {
         return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'No se pudo acceder a la vista previa.', hint: test.hintTip };
+      }
+
+      if (runtimeError) {
+        return {
+          id: test.id,
+          description: test.description,
+          passed: false,
+          status: 'evaluation-error',
+          isEvaluationError: true,
+          errorMessage: `El programa se detuvo antes de completar la comprobación: ${missingLookup ? `no se encontró ${missingLookup}. ` : ''}${runtimeError.message}`,
+          hint: test.hintTip,
+        };
       }
 
       // Handle triggerClick for tests that need to simulate a click before checking
@@ -636,6 +667,25 @@ async function evaluateSingleTest(
           } catch {}
         }
 
+        if (test.expectedContains?.length) {
+          const opts = {
+            caseInsensitive: test.caseInsensitive ?? true,
+            normalizeSpaces: test.normalizeSpaces ?? true,
+            ignorePunctuation: test.ignorePunctuation ?? true,
+          };
+          const passed = stringContainsAll(propVal, test.expectedContains, opts);
+          return {
+            id: test.id,
+            description: test.description,
+            passed,
+            status: passed ? 'passed' : 'failed',
+            receivedValue: propVal,
+            expectedValue: test.expectedContains.join('", "'),
+            errorMessage: passed ? undefined : (test.errorMessage || `Esperábamos que "${test.domSelector}" contuviera "${test.expectedContains.join('", "')}" pero tiene "${propVal}".`),
+            hint: test.hintTip,
+          };
+        }
+
         if (test.expectedValue !== undefined) {
           const expectedStr = String(test.expectedValue);
           if (expectedStr.startsWith('!')) {
@@ -696,12 +746,78 @@ async function evaluateSingleTest(
     }
 
     case 'console-check': {
+      if (test.expectedValue === undefined && !test.expectedContains?.length) {
+        return {
+          id: test.id,
+          description: test.description,
+          passed: false,
+          status: 'evaluation-error',
+          isEvaluationError: true,
+          errorMessage: 'Prueba mal configurada: falta el resultado esperado de la consola.',
+          hint: test.hintTip,
+        };
+      }
+
+      const output: string[] = [];
+      const formatConsoleValue = (value: unknown) => {
+        if (typeof value === 'string') return value;
+        if (value === undefined) return 'undefined';
+        try {
+          return JSON.stringify(value);
+        } catch {
+          return String(value);
+        }
+      };
+      const capturedConsole = {
+        log: (...values: unknown[]) => output.push(values.map(formatConsoleValue).join(' ')),
+        warn: (...values: unknown[]) => output.push(values.map(formatConsoleValue).join(' ')),
+        error: (...values: unknown[]) => output.push(values.map(formatConsoleValue).join(' ')),
+      };
+
+      try {
+        const stubDocument = createEvaluationDocument();
+        new Function('document', 'window', 'console', combinedJs)(
+          stubDocument,
+          { document: stubDocument },
+          capturedConsole,
+        );
+      } catch (e: any) {
+        return {
+          id: test.id,
+          description: test.description,
+          passed: false,
+          status: 'evaluation-error',
+          isEvaluationError: true,
+          receivedValue: output,
+          errorMessage: `El programa produjo un error al ejecutarse: ${e.message}`,
+          hint: test.hintTip,
+        };
+      }
+
+      let passed = false;
+      if (Array.isArray(test.expectedValue)) {
+        passed = JSON.stringify(output) === JSON.stringify(test.expectedValue.map(String));
+      } else {
+        const joined = output.join('\n');
+        if (test.expectedContains?.length || test.matcher === 'contains' || test.matcher === 'contains-all') {
+          passed = stringContainsAll(joined, test.expectedContains ?? [String(test.expectedValue)], {
+            caseInsensitive: test.caseInsensitive ?? true,
+            normalizeSpaces: test.normalizeSpaces ?? true,
+            ignorePunctuation: test.ignorePunctuation ?? false,
+          });
+        } else {
+          passed = joined === String(test.expectedValue);
+        }
+      }
+
       return {
         id: test.id,
         description: test.description,
-        passed: false,
-        status: 'failed',
-        errorMessage: test.errorMessage || 'Esta validación requiere una comprobación de comportamiento real (función o DOM), no solo consola.',
+        passed,
+        status: passed ? 'passed' : 'failed',
+        receivedValue: output,
+        expectedValue: test.expectedValue ?? test.expectedContains,
+        errorMessage: passed ? undefined : (test.errorMessage || 'La salida de la consola no coincide con el orden o los valores esperados.'),
         hint: test.hintTip,
       };
     }

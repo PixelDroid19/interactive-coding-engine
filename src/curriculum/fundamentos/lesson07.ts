@@ -1,17 +1,29 @@
 import { compileLesson } from '../../engine/lessonCompiler';
-import { L07_ARROW, L07_FN, L07_SOLUTION, lesson07Workspace } from './pages';
+import { L07_FN, L07_SOLUTION, lesson07Workspace } from './preDomWorkspaces';
 
-const AUDIO_MS = 84_480;
+const AUDIO_MS = 103_440;
 
 export const LESSON_07 = compileLesson({
   id: 'fundamentos-07',
   title: '7. Funciones',
   description: 'Escribe una tarea una vez, llámala muchas, y devuelve un resultado.',
-  audioUrl: '/audio/fundamentos-07.mp3?v=lote',
   language: 'es',
   durationMs: AUDIO_MS,
+  audioUrl: '/audio/fundamentos-07.mp3?v=gemini-20260824',
+  fitTimelineToDuration: true,
   initialWorkspace: lesson07Workspace,
+  executionMode: 'logic',
   concepts: ['Qué es una función', 'return'],
+  skillsRequired: ['variables', 'operators'],
+  skillsIntroduced: ['functions'],
+  learningObjectives: [
+    'Definir y llamar una función con parámetros.',
+    'Devolver un resultado reutilizable mediante return.',
+  ],
+  commonMistakes: [
+    'Definir una función y esperar que se ejecute sin llamarla.',
+    'Calcular un valor pero olvidar devolverlo con return.',
+  ],
   teachNotes: [
     {
       title: 'Definir no ejecuta',
@@ -23,17 +35,17 @@ export const LESSON_07 = compileLesson({
     {
       at: 200,
       type: 'speak',
-      text: 'Si copias el mismo código tres veces, en la tercera ya te equivocaste. Las funciones sirven para escribir una tarea una vez y usarla muchas.',
+      text: 'Cuando una tarea se repite, copiar el mismo código una y otra vez aumenta la posibilidad de cometer errores. Una función reúne esa tarea bajo un nombre para poder usarla cuando la necesitemos.',
     },
     {
       at: 11740,
       type: 'speak',
-      text: 'Una función tiene un nombre, puede recibir datos, hace un trabajo, y a veces devuelve un resultado.',
+      text: 'Una función tiene un nombre y un bloque de instrucciones. Puede recibir datos para trabajar con ellos y puede devolver un resultado al terminar.',
     },
     {
       at: 19780,
       type: 'speak',
-      text: 'function saludar, nombre entre paréntesis. return Hola, más el nombre. Luego la llamamos. saludar Ana. saludar Luis.',
+      text: 'Aquí definimos una función llamada saludar. El nombre que aparece entre paréntesis es el dato que recibirá. Dentro construimos el saludo y usamos return para entregar el resultado.',
     },
     { at: 21000, type: 'write', filePath: 'app.js', mode: 'replace', content: L07_FN },
     { at: 26500, type: 'run' },
@@ -49,30 +61,28 @@ export const LESSON_07 = compileLesson({
     {
       at: 32100,
       type: 'speak',
-      text: 'Definir no ejecuta nada. Llamar sí. Los paréntesis al final son: corre ahora, con esto.',
+      text: 'Definir una función prepara sus instrucciones, pero todavía no las ejecuta. Para usarla debemos llamarla por su nombre y escribir paréntesis. Dentro colocamos el dato de esa llamada.',
     },
     {
       at: 40660,
       type: 'speak',
-      text: 'Los datos que entran se llaman parámetros. Lo que sale se llama return. Si no pones return, la función termina y no entrega nada útil.',
+      text: 'Los nombres que reciben los datos se llaman parámetros. return indica qué valor sale de la función. Sin return, las instrucciones pueden ejecutarse, pero quien hizo la llamada no recibe ese resultado.',
     },
     {
       at: 51020,
       type: 'speak',
-      text: 'Puedes escribirla más corta, con flecha. const doble igual a n flecha n por dos. Entra n, sale el doble.',
+      text: 'Una función resulta reutilizable cuando trabaja con sus parámetros. Si colocamos un nombre o un número fijo dentro, quizá funcione para un caso, pero fallará al recibir datos diferentes.',
     },
-    { at: 52200, type: 'write', filePath: 'app.js', mode: 'replace', content: L07_ARROW },
-    { at: 56000, type: 'run' },
     {
       at: 61540,
       type: 'speak',
-      text: 'Una función no tiene que saber de dónde viene el número. Tú le das cuatro, te devuelve ocho. Eso se puede probar. Eso se puede reutilizar.',
+      text: 'Por ahora usaremos funciones con nombre y esta forma sencilla. Al leer una, pregúntate siempre qué datos entran, qué trabajo realiza y qué valor devuelve.',
     },
     { at: 71920, type: 'chapter', title: 'Tu turno' },
     {
       at: 71920,
       type: 'speak',
-      text: 'Tu turno. Escribe areaRectangulo. Recibe ancho y alto. Devuelve el producto. En la página, llama dos veces con medidas distintas y muestra los dos resultados.',
+      text: 'Ahora crea areaRectangulo. La función debe recibir un ancho y un alto, multiplicarlos y devolver el área. Llámala con dos pares de medidas para comprobar que no depende de valores fijos.',
     },
     {
       at: 78000,
@@ -118,9 +128,9 @@ Debe calcular el área usando los dos parámetros y devolver el resultado. Despu
         hints: [
           { level: 1, title: 'Firma', text: 'Dos parámetros: ancho y alto.' },
           { level: 2, title: 'return', text: 'Sin return no entrega el número.' },
-          { level: 3, title: 'Dos llamadas', text: 'Escribe areaRectangulo(...) dos veces.' },
+          { level: 3, title: 'Comprueba', text: 'Prueba dos pares distintos. Si ambos dan 12, todavía usas números fijos.' },
         ],
-        solutionExplanation: 'La función no sabe de la página. Recibe números y devuelve un número.',
+        solutionExplanation: 'La función no depende de una interfaz. Recibe números y devuelve un número que puedes comprobar en la consola.',
       },
     },
     { at: 81000, type: 'write', filePath: 'app.js', mode: 'replace', content: L07_SOLUTION },

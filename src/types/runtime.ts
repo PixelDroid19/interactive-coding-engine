@@ -3,6 +3,7 @@ export interface ConsoleMessage {
   type: 'log' | 'info' | 'warn' | 'error' | 'system';
   args: string[];
   timestamp: number;
+  sourceLine?: number;
 }
 
 export interface RuntimeExecutionResult {

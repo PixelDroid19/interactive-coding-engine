@@ -31,7 +31,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
     0
   );
   const practiceCount = course.modules.reduce(
-    (sum, mod) => sum + mod.items.filter((item) => item.type === 'debugging').length,
+    (sum, mod) => sum + mod.items.filter((item) => item.type === 'debugging' || item.type === 'reasoning').length,
     0
   );
 
@@ -58,6 +58,8 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
       for (const phase of phases) {
         for (const row of phase.rows) {
           if (row.checkpoint) links.push({ from: row.main.id, to: row.checkpoint.id, dotted: true });
+          if (row.reading) links.push({ from: row.main.id, to: row.reading.id, dotted: true });
+          if (row.reasoning) links.push({ from: row.main.id, to: row.reasoning.id, dotted: true });
           if (row.concepts[0]) links.push({ from: row.main.id, to: row.concepts[0].id, dotted: true });
         }
       }
@@ -129,6 +131,12 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
               <i className="rm-swatch rm-swatch-dark" /> Encuentra el error
             </span>
             <span>
+              <i className="rm-swatch rm-swatch-reading" /> Lee antes de practicar
+            </span>
+            <span>
+              <i className="rm-swatch rm-swatch-reasoning" /> Construye el modelo
+            </span>
+            <span>
               <i className="rm-swatch rm-swatch-white" /> Explica un concepto
             </span>
           </div>
@@ -145,6 +153,32 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
                 {phase.rows.map((row) => (
                   <div key={row.main.id} className="rm-row">
                     <div className="rm-col rm-col-left">
+                      {row.reading && (
+                        <button
+                          id={row.reading.id}
+                          type="button"
+                          className={`rm-node-cp is-reading ${isCurrent(row.reading.lessonId) ? 'is-current' : ''} ${
+                            isDone(row.reading.lessonId) ? 'is-done' : ''
+                          }`}
+                          onClick={() => enterLesson(row.reading!.lessonId)}
+                        >
+                          <em className="rm-cp-tag">Lee</em>
+                          <span>{row.reading.label}</span>
+                        </button>
+                      )}
+                      {row.reasoning && (
+                        <button
+                          id={row.reasoning.id}
+                          type="button"
+                          className={`rm-node-cp is-reasoning ${isCurrent(row.reasoning.lessonId) ? 'is-current' : ''} ${
+                            isDone(row.reasoning.lessonId) ? 'is-done' : ''
+                          }`}
+                          onClick={() => enterLesson(row.reasoning!.lessonId)}
+                        >
+                          <em className="rm-cp-tag">Piensa</em>
+                          <span>{row.reasoning.label}</span>
+                        </button>
+                      )}
                       {row.checkpoint && (
                         <button
                           id={row.checkpoint.id}

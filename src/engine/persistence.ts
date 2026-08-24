@@ -1,5 +1,5 @@
-import { Course, ItemType, UserProgressRecord } from '../types/curriculum';
-import { ScrimLessonData, LearnerBranch, WorkspaceSnapshot } from '../types/scrim';
+import { Course, ItemType, ReasoningAttempt, UserProgressRecord } from '../types/curriculum';
+import { ChallengeTest, ScrimLessonData, LearnerBranch, WorkspaceSnapshot } from '../types/scrim';
 import { TemplateDefinition } from '../types/runtime';
 
 const STORAGE_KEYS = {
@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
   STUDIO_DRAFT: 'aula_studio_draft_v1',
   PLAYGROUND_DRAFT: 'aula_playground_draft_v1',
   DEBUGGING_DRAFTS: 'aula_debugging_drafts_v1',
+  REASONING_DRAFTS: 'aula_reasoning_drafts_v1',
   LEARNER_BRANCHES: 'aula_learner_branches_v1',
   VOICE_VOLUME: 'aula_voice_volume_v1',
   CHALLENGE_STATES: 'aula_challenge_states_v1',
@@ -27,6 +28,49 @@ export interface PlaygroundDraft {
 export interface DebuggingDraft {
   workspace: WorkspaceSnapshot;
   revealedHints: number;
+  exerciseVersion: string;
+}
+
+export interface ReasoningDraft {
+  attempt: ReasoningAttempt;
+  revealedHints: number;
+  activityVersion: string;
+}
+
+export function createReasoningActivityVersion(activity: unknown): string {
+  const serialized = JSON.stringify(activity);
+  let hash = 2166136261;
+  for (let index = 0; index < serialized.length; index += 1) {
+    hash ^= serialized.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `reasoning-${(hash >>> 0).toString(36)}`;
+}
+
+export function loadReasoningDraft(exerciseId: string, expectedVersion: string): ReasoningDraft | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.REASONING_DRAFTS);
+    if (!raw) return null;
+    const draft = (JSON.parse(raw) as Record<string, ReasoningDraft>)[exerciseId];
+    if (!draft || draft.activityVersion !== expectedVersion || typeof draft.revealedHints !== 'number' || !draft.attempt) {
+      return null;
+    }
+    return draft;
+  } catch {
+    return null;
+  }
+}
+
+export function saveReasoningDraft(exerciseId: string, draft: ReasoningDraft): void {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.REASONING_DRAFTS);
+    const parsed = raw ? JSON.parse(raw) : {};
+    const drafts = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    drafts[exerciseId] = draft;
+    localStorage.setItem(STORAGE_KEYS.REASONING_DRAFTS, JSON.stringify(drafts));
+  } catch {
+    // Draft persistence is best-effort and must not interrupt learning.
+  }
 }
 
 const PLAYGROUND_TEMPLATE_IDS: TemplateDefinition['id'][] = ['vanilla-js', 'js-only', 'lit', 'react'];
@@ -76,7 +120,20 @@ export function savePlaygroundDraft(draft: PlaygroundDraft): void {
   }
 }
 
-export function loadDebuggingDraft(exerciseId: string): DebuggingDraft | null {
+export function createDebuggingDraftVersion(workspace: WorkspaceSnapshot, tests: ChallengeTest[]): string {
+  const files = Object.keys(workspace.files)
+    .sort()
+    .map((path) => ({ path, language: workspace.files[path].language, content: workspace.files[path].content }));
+  const serialized = JSON.stringify({ files, tests });
+  let hash = 2166136261;
+  for (let index = 0; index < serialized.length; index += 1) {
+    hash ^= serialized.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `debug-${(hash >>> 0).toString(36)}`;
+}
+
+export function loadDebuggingDraft(exerciseId: string, expectedVersion?: string): DebuggingDraft | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.DEBUGGING_DRAFTS);
     if (!raw) return null;
@@ -88,6 +145,8 @@ export function loadDebuggingDraft(exerciseId: string): DebuggingDraft | null {
       || typeof draft.revealedHints !== 'number'
       || !Number.isInteger(draft.revealedHints)
       || draft.revealedHints < 0
+      || typeof draft.exerciseVersion !== 'string'
+      || (expectedVersion !== undefined && draft.exerciseVersion !== expectedVersion)
     ) {
       return null;
     }
@@ -118,7 +177,7 @@ export function saveDebuggingDraft(exerciseId: string, draft: DebuggingDraft): v
   }
 }
 
-export type AppNavigationView = 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'playground' | 'studio';
+export type AppNavigationView = 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'reasoning' | 'playground' | 'studio';
 
 export interface AppNavigationState {
   view: AppNavigationView;
@@ -134,6 +193,7 @@ const APP_NAVIGATION_VIEWS: AppNavigationView[] = [
   'debugging',
   'solo-project',
   'reading',
+  'reasoning',
   'playground',
   'studio',
 ];

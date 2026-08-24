@@ -12,8 +12,8 @@ export const LESSON1_HTML = `<!DOCTYPE html>
   <main>
     <p class="eyebrow">Lección 1</p>
     <h1>Tu primer programa</h1>
-    <p id="linea1" class="linea"></p>
-    <p id="linea2" class="linea"></p>
+    <p class="linea">Tu código escribirá en la consola.</p>
+    <p class="linea">Ábrela en la parte inferior de la vista previa.</p>
   </main>
   <script src="app.js"></script>
 </body>
@@ -21,7 +21,7 @@ export const LESSON1_HTML = `<!DOCTYPE html>
 `;
 
 export const LESSON1_CSS = `* { box-sizing: border-box; }
-html, body { margin: 0; background: #fff; color: #171717; }
+html, body { margin: 0; background: #12151e; color: #f8fafc; }
 body {
   min-height: 100vh;
   padding: 28px 24px 40px;
@@ -33,12 +33,12 @@ main { width: min(420px, 100%); }
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #737373;
+  color: #aab3c4;
 }
 h1 {
   margin: 0 0 16px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid #343a49;
   font-size: 26px;
   font-weight: 650;
   letter-spacing: -0.03em;
@@ -51,8 +51,8 @@ h1 {
 }
 `;
 
-// El primer programa del alumno: una instrucción por recuadro.
-// Sin variables, sin concatenar, sin eventos: eso llega después.
+// El primer programa del alumno usa una sola instrucción conocida.
+// Sin DOM, variables, funciones propias ni eventos: eso llega después.
 export const LESSON1_JS_START = `// Las líneas que empiezan con // son notas para ti.
 // JavaScript no las ejecuta. Escribe tus instrucciones debajo.
 
@@ -61,22 +61,21 @@ export const LESSON1_JS_START = `// Las líneas que empiezan con // son notas pa
 export const LESSON1_JS_UNA_LINEA = `// Las líneas que empiezan con // son notas para ti.
 // JavaScript no las ejecuta. Escribe tus instrucciones debajo.
 
-document.getElementById("linea1").textContent = "Mi primer programa";
+console.log("Hola, este es mi primer programa");
 `;
 
 export const LESSON1_JS_DOS_LINEAS = `// Las líneas que empiezan con // son notas para ti.
 // JavaScript no las ejecuta. Escribe tus instrucciones debajo.
 
-document.getElementById("linea1").textContent = "Mi primer programa";
-document.getElementById("linea2").textContent = "Escrito con JavaScript";
+console.log("Me llamo Alex");
+console.log("Estoy aprendiendo JavaScript");
 `;
 
-// Demostración de que el orden manda: la última instrucción pisa a la anterior.
-export const LESSON1_JS_ORDEN = `// Dos instrucciones para el mismo recuadro. ¿Cuál gana?
+// Demostración de que la salida conserva el orden del archivo.
+export const LESSON1_JS_ORDEN = `// Dos instrucciones. Cambia el orden y cambia la salida.
 
-document.getElementById("linea1").textContent = "Hola";
-document.getElementById("linea1").textContent = "Adiós";
-document.getElementById("linea2").textContent = "La última instrucción gana.";
+console.log("Primero");
+console.log("Después");
 `;
 
 export const lesson1Workspace = workspaceOf('app.js', {
@@ -233,19 +232,15 @@ export const LESSON2_HTML = `<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>De Celsius a Fahrenheit</title>
+  <title>Pensar en pasos</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main>
-    <p class="eyebrow">Algoritmo</p>
-    <h1>Conversor de temperatura</h1>
-    <label>
-      Celsius
-      <input id="celsius" type="number" value="20">
-    </label>
-    <button id="convertir" type="button">Convertir</button>
-    <p id="salida">Pulsa convertir.</p>
+    <p class="eyebrow">Lección 2</p>
+    <h1>Pensar en pasos</h1>
+    <p>El código se ejecuta de arriba abajo.</p>
+    <p class="panel">Ejecuta el programa y abre la consola para seguir el orden.</p>
   </main>
   <script src="app.js"></script>
 </body>
@@ -253,7 +248,7 @@ export const LESSON2_HTML = `<!DOCTYPE html>
 `;
 
 export const LESSON2_CSS = `* { box-sizing: border-box; }
-html, body { margin: 0; background: #fff; color: #171717; }
+html, body { margin: 0; background: #12151e; color: #f8fafc; }
 body {
   min-height: 100vh;
   padding: 28px 24px 40px;
@@ -265,73 +260,35 @@ main { width: min(380px, 100%); }
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #737373;
+  color: #aab3c4;
 }
 h1 {
   margin: 0 0 18px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid #343a49;
   font-size: 26px;
   font-weight: 650;
   letter-spacing: -0.03em;
 }
-label { display: grid; gap: 6px; font-size: 13px; color: #404040; }
-input {
-  padding: 6px 0;
-  border: 0;
-  border-bottom: 1px solid #d4d4d4;
-  background: transparent;
-  font-size: 18px;
-  font-weight: 600;
-  color: #171717;
-}
-button {
+.panel {
   margin-top: 18px;
-  padding: 8px 14px;
-  border: 1px solid #171717;
-  background: #fff;
-  color: #171717;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-button:hover { background: #f5f5f5; }
-#salida {
-  margin: 18px 0 0;
-  padding-top: 14px;
-  border-top: 1px solid #e5e5e5;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 15px;
+  padding: 14px;
+  border: 1px solid #596174;
+  color: #cbd5e1;
+  font-size: 14px;
 }
 `;
 
-export const LESSON2_JS_START = `const input = document.getElementById("celsius");
-const boton = document.getElementById("convertir");
-const salida = document.getElementById("salida");
+export const LESSON2_JS_START = `// Plan: preparar una taza de té.
+// Falta convertir el plan en instrucciones y respetar el orden.
 
-function convertir() {
-  const celsius = Number(input.value);
-  // TODO: completa la fórmula
-  const fahrenheit = celsius;
-  salida.textContent = celsius + " °C = " + fahrenheit + " °F";
-}
-
-boton.addEventListener("click", convertir);
 `;
 
-export const LESSON2_JS_SOLUTION = `const input = document.getElementById("celsius");
-const boton = document.getElementById("convertir");
-const salida = document.getElementById("salida");
+export const LESSON2_JS_SOLUTION = `// Plan: preparar una taza de té.
 
-function convertir() {
-  const celsius = Number(input.value);
-  const fahrenheit = celsius * 9 / 5 + 32;
-  salida.textContent = celsius + " °C = " + fahrenheit + " °F";
-}
-
-boton.addEventListener("click", convertir);
-convertir();
+console.log("Calentar el agua");
+console.log("Poner el té en la taza");
+console.log("Servir el agua");
 `;
 
 export const lesson2Workspace = workspaceOf('app.js', {

@@ -13,66 +13,65 @@ function wsFromJs(js: string): WorkspaceSnapshot {
   });
 }
 
-// El reto real de la lección 01 reescrita (dos instrucciones busca-y-escribe)
+// El reto real de la lección 01 reescrita: dos instrucciones de consola.
 const retoLeccion1: ScrimChallenge = LESSON_01.challenges[0];
 
-describe('testRunner reto lección 01 (busca-y-escribe)', () => {
+describe('testRunner reto lección 01 (sintaxis mínima)', () => {
   it('el starter vacío falla', async () => {
     const ws = wsFromJs(`// notas\n`);
     const result = await runChallengeValidation(retoLeccion1, ws, null);
     expect(result.allPassed).toBe(false);
     expect(result.passedCount).toBe(0);
+    expect(result.tests.filter((t) => t.isEvaluationError).length).toBe(0);
   });
 
-  it('una solución del alumno pasa las 4 pruebas', async () => {
+  it('una solución del alumno pasa todas las comprobaciones de comportamiento', async () => {
     const ws = wsFromJs(
-      `document.getElementById("linea1").textContent = "Damien";
-document.getElementById("linea2").textContent = "Pizza";`
+      `console.log("Me llamo Damien");
+console.log("Estoy aprendiendo JavaScript");`
     );
     const result = await runChallengeValidation(retoLeccion1, ws, null);
     expect(result.allPassed).toBe(true);
-    expect(result.passedCount).toBe(4);
+    expect(result.passedCount).toBe(result.totalCount);
   });
 
   it('una segunda solución razonable también pasa', async () => {
     const ws = wsFromJs(
-      `document.getElementById("linea1").textContent = 'María';
-document.getElementById("linea2").textContent = 'Sushi';`
+      `console.log('Me llamo María');
+console.log('Estoy aprendiendo JavaScript');`
     );
     const result = await runChallengeValidation(retoLeccion1, ws, null);
     expect(result.allPassed).toBe(true);
   });
 
-  it('escribir todo en un solo recuadro falla', async () => {
+  it('escribir un solo mensaje falla', async () => {
     const ws = wsFromJs(
-      `document.getElementById("linea1").textContent = "Damien";
-document.getElementById("linea1").textContent = "Pizza";`
+      `console.log("Me llamo Damien");`
     );
     const result = await runChallengeValidation(retoLeccion1, ws, null);
     expect(result.allPassed).toBe(false);
-    const linea2 = result.tests.find(t => t.id === 'linea2-tiene-texto');
-    expect(linea2?.passed).toBe(false);
+    const segundo = result.tests.find(t => t.id === 'aprendiendo-console');
+    expect(segundo?.passed).toBe(false);
+    expect(result.tests.filter((t) => t.isEvaluationError).length).toBe(0);
   });
 
-  it('con id equivocado falla la comprobación del recuadro', async () => {
+  it('un texto suelto sin console.log no cuenta como instrucción', async () => {
     const ws = wsFromJs(
-      `document.getElementById("linea3").textContent = "Damien";
-document.getElementById("linea4").textContent = "Pizza";`
+      `"Me llamo Damien";
+"Estoy aprendiendo JavaScript";`
     );
     const result = await runChallengeValidation(retoLeccion1, ws, null);
     expect(result.allPassed).toBe(false);
   });
 
-  it('la demo de orden del instructor pasa el patrón (última gana)', async () => {
-    // Comportamiento clave enseñado: dos escrituras al mismo recuadro → la última gana
+  it('los dos mensajes en orden inverso no completan el reto', async () => {
     const ws = wsFromJs(
-      `document.getElementById("linea1").textContent = "Hola";
-document.getElementById("linea1").textContent = "Adiós";`
+      `console.log("Estoy aprendiendo JavaScript");
+console.log("Me llamo Damien");`
     );
     const result = await runChallengeValidation(retoLeccion1, ws, null);
-    const linea1 = result.tests.find(t => t.id === 'linea1-tiene-texto');
-    // linea1 tiene texto (Adiós), así que esa comprobación pasa aunque el reto completo no
-    expect(linea1?.passed).toBe(true);
+    const order = result.tests.find(t => t.id === 'mensajes-en-orden');
+    expect(order?.passed).toBe(false);
     expect(result.allPassed).toBe(false);
   });
 });
@@ -147,7 +146,28 @@ describe('testRunner hardening', () => {
     const result = await runChallengeValidation(reto as any, ws, null);
     expect(result.allPassed).toBe(false);
     expect(result.tests[0].passed).toBe(false);
-    expect(result.tests[0].errorMessage).toContain('comportamiento real');
+    expect(result.tests[0].isEvaluationError).toBe(true);
+    expect(result.tests[0].errorMessage).toContain('falta el resultado esperado');
+  });
+
+  it('console-check evalúa la salida real y respeta el orden', async () => {
+    const ws = wsFromJs('console.log("uno");\nconsole.log("dos");');
+    const reto = {
+      id: 'test-console',
+      title: 't',
+      timestamp: 0,
+      instructions: '',
+      tests: [{ id: 'c', description: 'consola', validatorType: 'console-check' as const, expectedValue: ['uno', 'dos'] }],
+      hints: [],
+    };
+
+    const result = await runChallengeValidation(reto as any, ws, null);
+    expect(result.allPassed).toBe(true);
+
+    ws.files['app.js'].content = 'console.log("dos");\nconsole.log("uno");';
+    const reversed = await runChallengeValidation(reto as any, ws, null);
+    expect(reversed.allPassed).toBe(false);
+    expect(reversed.tests[0].receivedValue).toEqual(['dos', 'uno']);
   });
 
   it('function-call compara retorno y mensaje en español', async () => {
@@ -215,6 +235,61 @@ describe('testRunner hardening', () => {
     };
     const result = await runChallengeValidation(reto as any, ws, null);
     expect(result.tests[0].errorMessage).toContain('No encontramos');
+  });
+
+  it('dom-check respeta expectedContains aunque no haya expectedValue', async () => {
+    const ws = wsFromJs(
+      `document.getElementById("linea1").textContent = "Y me gusta el helado";
+document.getElementById("linea2").textContent = "";`
+    );
+    const reto = {
+      id: 'test',
+      title: 't',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'd',
+        description: 'contenido correcto',
+        validatorType: 'dom-check' as const,
+        domSelector: '#linea1',
+        domProperty: 'innerText' as const,
+        expectedContains: ['Ana'],
+        matcher: 'contains-all' as const,
+        caseInsensitive: true,
+        normalizeSpaces: true,
+        ignorePunctuation: true,
+      }],
+      hints: [],
+    };
+    const result = await runChallengeValidation(reto as any, ws, null);
+    expect(result.tests[0].passed).toBe(false);
+    expect(result.passedCount).toBe(0);
+  });
+
+  it('dom-check distingue un error de ejecución de una respuesta incorrecta', async () => {
+    const ws = wsFromJs('document.getElementById("no-existe").textContent = "Listo";');
+    const reto = {
+      id: 'dom-runtime-error',
+      title: 'Error de ejecución',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'd',
+        description: 'actualiza el título',
+        validatorType: 'dom-check' as const,
+        domSelector: '#titulo',
+        domProperty: 'innerText' as const,
+        expectedValue: 'Listo',
+      }],
+      hints: [],
+    };
+
+    const result = await runChallengeValidation(reto, ws, null);
+
+    expect(result.tests[0].status).toBe('evaluation-error');
+    expect(result.tests[0].isEvaluationError).toBe(true);
+    expect(result.tests[0].errorMessage).toContain('no-existe');
+    expect(result.feedbackMessage).toContain('No pudimos evaluar');
   });
 
   it('función que lanza error produce evaluation-error, no fallo normal', async () => {

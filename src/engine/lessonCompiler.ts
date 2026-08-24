@@ -32,14 +32,25 @@ export interface CompileLessonInput {
   title: string;
   description: string;
   templateId?: ScrimLessonData['templateId'];
+  executionMode?: ScrimLessonData['executionMode'];
   initialWorkspace: WorkspaceSnapshot;
   beats: LessonBeat[];
   concepts?: string[];
+  skillsIntroduced: string[];
+  skillsRequired: string[];
+  learningObjectives: string[];
+  commonMistakes: string[];
+  mentalModel?: string;
+  frequentQuestions?: { question: string; answer: string }[];
+  representations?: string[];
+  transferPrompt?: string;
+  masteryChecks?: string[];
   teachNotes?: { title: string; body: string }[];
   author?: ScrimLessonData['author'];
   audioUrl?: string;
   language?: string;
   durationMs?: number;
+  fitTimelineToDuration?: boolean;
 }
 
 export function file(path: string, content: string, language?: WorkspaceFile['language']): WorkspaceFile {
@@ -292,6 +303,13 @@ export function compileLesson(input: CompileLessonInput): ScrimLessonData {
   }
 
   const durationMs = input.durationMs ?? t + 1200;
+  if (input.fitTimelineToDuration && input.durationMs && t > 0) {
+    const scale = Math.max(0.05, (durationMs - 250) / t);
+    for (const event of events) event.timestamp = Math.round(event.timestamp * scale);
+    for (const cue of narrationScript) cue.timestamp = Math.round(cue.timestamp * scale);
+    for (const chapter of chapters) chapter.timestamp = Math.round(chapter.timestamp * scale);
+    for (const challenge of challenges) challenge.timestamp = Math.round(challenge.timestamp * scale);
+  }
   const audioTrack: AudioTrackInfo = {
     url: input.audioUrl,
     durationMs,
@@ -304,6 +322,7 @@ export function compileLesson(input: CompileLessonInput): ScrimLessonData {
     title: input.title,
     description: input.description,
     templateId: input.templateId ?? 'vanilla-js',
+    executionMode: input.executionMode ?? 'browser',
     durationMs,
     initialWorkspace: cloneWorkspace(input.initialWorkspace),
     events,
@@ -312,6 +331,15 @@ export function compileLesson(input: CompileLessonInput): ScrimLessonData {
     challenges,
     chapters,
     concepts: input.concepts,
+    skillsIntroduced: input.skillsIntroduced,
+    skillsRequired: input.skillsRequired,
+    learningObjectives: input.learningObjectives,
+    commonMistakes: input.commonMistakes,
+    mentalModel: input.mentalModel,
+    frequentQuestions: input.frequentQuestions,
+    representations: input.representations,
+    transferPrompt: input.transferPrompt,
+    masteryChecks: input.masteryChecks,
     teachNotes: input.teachNotes,
     author: input.author ?? { name: 'Kit', role: 'Instructor de fundamentos' },
     createdAt: 1_700_000_000_000,

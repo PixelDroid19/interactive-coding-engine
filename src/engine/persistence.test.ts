@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import { ScrimLessonData, WorkspaceSnapshot } from '../types/scrim';
-import { saveLearnerBranch, loadLearnerBranch, loadLastBranchForLesson, clearBranch, clearBranchesForLesson, saveLearnerBranchDebounced, flushBranchSave, markChallengeCompleted, markChallengeSkipped, markChallengeSolutionViewed, getChallengeState, clearChallengeState, getChallengeStates, saveAppNavigationState, loadAppNavigationState, loadDebuggingDraft, saveDebuggingDraft, loadCustomScrims, saveCustomScrim } from './persistence';
+import { saveLearnerBranch, loadLearnerBranch, loadLastBranchForLesson, clearBranch, clearBranchesForLesson, saveLearnerBranchDebounced, flushBranchSave, markChallengeCompleted, markChallengeSkipped, markChallengeSolutionViewed, getChallengeState, clearChallengeState, getChallengeStates, saveAppNavigationState, loadAppNavigationState, loadDebuggingDraft, saveDebuggingDraft, loadCustomScrims, saveCustomScrim, createReasoningActivityVersion, loadReasoningDraft, saveReasoningDraft } from './persistence';
 import { createInitialState } from './playerMachine';
 import { cloneWorkspace } from './eventLog';
 
@@ -58,6 +58,10 @@ describe('persistence branches', () => {
       events: [],
       snapshots: [],
       challenges: [],
+      skillsIntroduced: [],
+      skillsRequired: [],
+      learningObjectives: [],
+      commonMistakes: [],
       audioTrack: {
         audioBlob: new Blob(['voz persistida'], { type: 'audio/webm' }),
         mimeType: 'audio/webm',
@@ -324,10 +328,41 @@ describe('persistence branches', () => {
 
   it('recupera el guardado de un ejercicio después de encontrar almacenamiento corrupto', () => {
     localStorage.setItem('aula_debugging_drafts_v1', 'no-json');
-    const draft = { workspace: makeWs('const respuesta = 42'), revealedHints: 2 };
+    const draft = { workspace: makeWs('const respuesta = 42'), revealedHints: 2, exerciseVersion: 'version-actual' };
 
     saveDebuggingDraft('fundamentos-07-debug', draft);
 
-    expect(loadDebuggingDraft('fundamentos-07-debug')).toEqual(draft);
+    expect(loadDebuggingDraft('fundamentos-07-debug', 'version-actual')).toEqual(draft);
+  });
+
+  it('ignora un borrador de una versión anterior del ejercicio', () => {
+    saveDebuggingDraft('fundamentos-01-debug', {
+      workspace: makeWs('document.getElementById("linea1")'),
+      revealedHints: 3,
+      exerciseVersion: 'curriculo-anterior',
+    });
+
+    expect(loadDebuggingDraft('fundamentos-01-debug', 'curriculo-principiante')).toBeNull();
+  });
+
+  it('restaura un intento Piensa solo cuando pertenece a la versión actual', () => {
+    const activity = { kind: 'sequence', expectedOrder: ['entrada', 'salida'] };
+    const version = createReasoningActivityVersion(activity);
+    const draft = {
+      attempt: { kind: 'sequence' as const, order: ['entrada', 'salida'] },
+      revealedHints: 1,
+      activityVersion: version,
+    };
+
+    saveReasoningDraft('fundamentos-02-reasoning', draft);
+
+    expect(loadReasoningDraft('fundamentos-02-reasoning', version)).toEqual(draft);
+    expect(loadReasoningDraft('fundamentos-02-reasoning', createReasoningActivityVersion({ ...activity, expectedOrder: ['salida'] }))).toBeNull();
+  });
+
+  it('acepta la ruta reasoning al restaurar navegación', () => {
+    const route = { view: 'reasoning' as const, courseId: 'course-fundamentos', moduleId: 'mod-primeros-pasos', itemId: 'fundamentos-02-reasoning' };
+    saveAppNavigationState(route);
+    expect(loadAppNavigationState()).toEqual(route);
   });
 });

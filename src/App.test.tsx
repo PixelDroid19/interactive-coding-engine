@@ -3,7 +3,7 @@ import React from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import App from './App';
-import { loadAppNavigationState } from './engine/persistence';
+import { loadAppNavigationState, loadUserProgress } from './engine/persistence';
 import { FUNDAMENTOS_COURSE } from './curriculum/fundamentos/course';
 
 describe('App navigation persistence', () => {
@@ -13,6 +13,13 @@ describe('App navigation persistence', () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  it('inicia toda la experiencia en modo oscuro', () => {
+    render(<App />);
+
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    expect(document.documentElement.style.colorScheme).toBe('dark');
   });
 
   it('restaura el Playground después de recargar la aplicación', () => {
@@ -28,10 +35,12 @@ describe('App navigation persistence', () => {
     expect(screen.getByText('Playground independiente')).toBeTruthy();
   });
 
-  it('mantiene una lección intermedia y permite recorrer clase, depuración y módulo siguiente', async () => {
-    const lesson02 = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.id === 'fundamentos-02')!;
-    const debug02 = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.id === 'fundamentos-02-debug')!;
-    const lesson03 = FUNDAMENTOS_COURSE.modules[1].items.find((item) => item.id === 'fundamentos-03')!;
+  it('mantiene una lección intermedia y permite recorrer clase, lectura, depuración y módulo siguiente', async () => {
+    const lesson02 = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.id === 'fundamentos-03')!;
+    const reading02 = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.id === 'fundamentos-03-lectura')!;
+    const reasoning02 = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.id === 'fundamentos-03-reasoning')!;
+    const debug02 = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.id === 'fundamentos-03-debug')!;
+    const lesson03 = FUNDAMENTOS_COURSE.modules[1].items.find((item) => item.id === 'fundamentos-04')!;
     const firstRender = render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${lesson02.title}`) }));
@@ -47,17 +56,40 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('heading', { name: lesson02.title })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+    const readingHeading = screen.getByRole('heading', { name: reading02.title });
+    expect(readingHeading).toBeTruthy();
+    expect(document.activeElement).toBe(readingHeading);
+    const readingContent = screen.getByRole('main', { name: 'Contenido de la lectura' });
+    expect(readingContent.className).toContain('overflow-y-auto');
+    expect(readingContent.className).toContain('select-text');
+    expect(loadAppNavigationState()).toMatchObject({ view: 'reading', itemId: reading02.id });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ir a la práctica' }));
+    expect(screen.getByRole('heading', { name: reasoning02.title })).toBeTruthy();
+    expect(loadAppNavigationState()).toMatchObject({ view: 'reasoning', itemId: reasoning02.id });
+    fireEvent.input(screen.getByRole('textbox', { name: 'let intentos = 0, intentos' }), { target: { value: '0' } });
+    fireEvent.input(screen.getByRole('textbox', { name: 'intentos = 1, intentos' }), { target: { value: '1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Comprobar mi razonamiento' }));
+    expect(screen.getByRole('heading', { name: 'Resuelto' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente/ }));
     expect(screen.getByText(debug02.title)).toBeTruthy();
     expect(loadAppNavigationState()).toMatchObject({ view: 'debugging', itemId: debug02.id });
+    expect(loadUserProgress().completedItemIds).toContain(reading02.id);
 
     cleanup();
     render(<App />);
     expect(screen.getByText(debug02.title)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Anterior' }));
-    expect(screen.getByRole('heading', { name: lesson02.title })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: reasoning02.title })).toBeTruthy();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Anterior' })[0]);
+    expect(screen.getByRole('heading', { name: reading02.title })).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ir a la práctica' }));
+    fireEvent.input(screen.getByRole('textbox', { name: 'let intentos = 0, intentos' }), { target: { value: '0' } });
+    fireEvent.input(screen.getByRole('textbox', { name: 'intentos = 1, intentos' }), { target: { value: '1' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Comprobar mi razonamiento' }));
+    fireEvent.click(screen.getByRole('button', { name: /Siguiente/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
     expect(screen.getByRole('heading', { name: lesson03.title })).toBeTruthy();
     expect(loadAppNavigationState()).toMatchObject({

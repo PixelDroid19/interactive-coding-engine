@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Course, CurriculumItem, UserProgressRecord } from './types/curriculum';
 import { ScrimLessonData } from './types/scrim';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './curriculum/fundamentos/course';
-import { AppNavigationState, loadAppNavigationState, loadUserProgress, loadCustomCourses, loadCustomScrims, saveAppNavigationState, saveCustomCourse, updateRecentPosition } from './engine/persistence';
+import { AppNavigationState, loadAppNavigationState, loadUserProgress, loadCustomCourses, loadCustomScrims, markItemCompleted, saveAppNavigationState, saveCustomCourse, updateRecentPosition } from './engine/persistence';
 import { getNavigationState } from './engine/navigation';
 import { RoadmapHome } from './components/curriculum/RoadmapHome';
 import { ReadingView } from './components/curriculum/ReadingView';
@@ -11,8 +11,9 @@ import { DebuggingView } from './components/challenges/DebuggingView';
 import { SoloProjectView } from './components/challenges/SoloProjectView';
 import { PlaygroundView } from './components/playground/PlaygroundView';
 import { CreatorStudio } from './components/studio/CreatorStudio';
+import { ReasoningPracticeView } from './components/reasoning/ReasoningPracticeView';
 
-type AppView = 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'playground' | 'studio';
+type AppView = 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'reasoning' | 'playground' | 'studio';
 
 interface InitialAppState {
   view: AppView;
@@ -120,6 +121,11 @@ export default function App() {
   const [progress, setProgress] = useState<UserProgressRecord>(() => loadUserProgress());
   const [scrimInitialTimeMs, setScrimInitialTimeMs] = useState(initialAppState.timestampMs);
 
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+    document.documentElement.style.colorScheme = 'dark';
+  }, []);
+
   // Sync custom scrims and progress from storage on mount
   useEffect(() => {
     let isMounted = true;
@@ -186,6 +192,10 @@ export default function App() {
   };
 
   const handleNext = () => {
+    if (activeItem?.type === 'reading') {
+      markItemCompleted(activeItem.id);
+      refreshProgress();
+    }
     const nav = getNav();
     if (!nav.hasNext || !nav.next) {
       // Last element: coherent finalization
@@ -293,6 +303,10 @@ export default function App() {
                   events: [],
                   snapshots: [],
                   challenges: [activeItem.challenge],
+                  skillsIntroduced: [],
+                  skillsRequired: [],
+                  learningObjectives: [activeItem.description || activeItem.title],
+                  commonMistakes: [],
                   createdAt: Date.now(),
                   updatedAt: Date.now(),
                 }
@@ -339,6 +353,19 @@ export default function App() {
           onPrevious={navigationState.hasPrevious ? handlePrevious : undefined}
           onNext={navigationState.hasNext ? handleNext : handleBackToRoadmap}
           navigationState={navigationState}
+        />
+      )}
+
+      {currentView === 'reasoning' && activeItem && activeItem.type === 'reasoning' && (
+        <ReasoningPracticeView
+          key={activeItem.id}
+          item={activeItem}
+          onBack={handleBackToRoadmap}
+          onBackToRoadmap={handleBackToRoadmap}
+          onPrevious={navigationState.hasPrevious ? handlePrevious : undefined}
+          onNext={navigationState.hasNext ? handleNext : handleBackToRoadmap}
+          navigationState={navigationState}
+          onCompleted={refreshProgress}
         />
       )}
 

@@ -1,17 +1,29 @@
 import { compileLesson } from '../../engine/lessonCompiler';
-import { L06_FOR, L06_SOLUTION, lesson06Workspace } from './pages';
+import { L06_CHALLENGE, L06_FOR, L06_SOLUTION, lesson06Workspace } from './preDomWorkspaces';
 
-const AUDIO_MS = 82_000;
+const AUDIO_MS = 100_680;
 
 export const LESSON_06 = compileLesson({
   id: 'fundamentos-06',
   title: '6. Bucles',
-  description: 'Repite un bloque con for y while. Hoy escribes FizzBuzz.',
-  audioUrl: '/audio/fundamentos-06.mp3?v=lote',
+  description: 'Repite un bloque con for y aprende a controlar dónde empieza y termina.',
   language: 'es',
   durationMs: AUDIO_MS,
+  audioUrl: '/audio/fundamentos-06.mp3?v=gemini-20260824',
+  fitTimelineToDuration: true,
   initialWorkspace: lesson06Workspace,
-  concepts: ['for y while', 'FizzBuzz'],
+  executionMode: 'logic',
+  concepts: ['for', 'Inicio, condición y paso'],
+  skillsRequired: ['operators', 'variables', 'conditionals'],
+  skillsIntroduced: ['loops'],
+  learningObjectives: [
+    'Reconocer las partes de un bucle for: inicio, condición y paso.',
+    'Repetir una decisión sin copiar el mismo código muchas veces.',
+  ],
+  commonMistakes: [
+    'Crear un bucle infinito porque la variable de control no cambia.',
+    'Empezar o terminar una vuelta antes o después de lo necesario.',
+  ],
   teachNotes: [
     {
       title: 'Tres piezas del for',
@@ -23,12 +35,12 @@ export const LESSON_06 = compileLesson({
     {
       at: 200,
       type: 'speak',
-      text: 'Si tienes que saludar a cien personas, no escribes cien líneas. Usas un bucle. Un bucle repite un bloque mientras una condición sea verdad.',
+      text: 'Imagina que necesitas mostrar cien mensajes parecidos. Copiar la misma instrucción cien veces sería lento y fácil de romper. Un bucle nos permite repetir un bloque mientras se cumpla una condición.',
     },
     {
       at: 10360,
       type: 'speak',
-      text: 'Mira esto. Quiero pintar cinco estrellas. for, let i igual a cero, mientras i sea menor que cinco, i más más.',
+      text: 'Vamos a mostrar cinco números con un for. Dentro de sus paréntesis indicamos dónde empieza el contador, hasta cuándo debe continuar y cómo cambia después de cada vuelta.',
     },
     { at: 11800, type: 'write', filePath: 'app.js', mode: 'replace', content: L06_FOR },
     { at: 15500, type: 'run' },
@@ -44,7 +56,7 @@ export const LESSON_06 = compileLesson({
     {
       at: 21120,
       type: 'speak',
-      text: 'Tres piezas. Dónde empiezo: i vale cero. Hasta cuándo: mientras i sea menor que cinco. Qué hago al final de cada vuelta: i más uno.',
+      text: 'Lee el for en tres partes. Primero, i comienza en cero. Segundo, repetimos mientras i sea menor que cinco. Tercero, al terminar cada vuelta aumentamos i en uno.',
     },
     {
       at: 22000,
@@ -59,86 +71,64 @@ export const LESSON_06 = compileLesson({
     {
       at: 32980,
       type: 'speak',
-      text: 'while es más suelto. Mientras la condición sea true, sigue. Úsalo cuando no sabes cuántas vueltas van a ser. Un for es mejor cuando sí lo sabes.',
+      text: 'También existe while, que repite mientras una condición sea verdadera. Suele ser útil cuando no sabemos de antemano cuántas vueltas harán falta. Para un contador con límites claros, un for resulta más fácil de seguir.',
     },
     {
       at: 45100,
       type: 'speak',
-      text: 'Cuidado. Si la condición nunca se vuelve false, no para. Eso es un bucle infinito. Por eso i más más es importante. Sin eso, i nunca crece, y el for no termina.',
+      text: 'Todo bucle necesita una forma de terminar. Si i nunca cambia, la condición seguirá siendo verdadera y el programa repetirá para siempre. A eso lo llamamos un bucle infinito.',
     },
     {
       at: 58680,
       type: 'speak',
-      text: 'break corta el bucle ya. continue se salta solo esta vuelta y sigue con la siguiente.',
+      text: 'Los límites merecen atención. Usar menor en lugar de menor o igual cambia la última vuelta que se ejecuta. Conviene seguir los valores del contador uno por uno antes de añadir más lógica.',
     },
-    { at: 65500, type: 'chapter', title: 'FizzBuzz' },
+    { at: 65500, type: 'chapter', title: 'Tu turno' },
+    { at: 65600, type: 'write', filePath: 'app.js', mode: 'replace', content: L06_CHALLENGE },
     {
       at: 65500,
       type: 'speak',
-      text: 'Tu turno. Del uno al veinte. Si el número se divide entre tres, escribe Fizz. Si entre cinco, Buzz. Si entre tres y cinco, FizzBuzz. Si no, el número. Eso se llama FizzBuzz. Hoy lo escribes tú.',
+      text: 'Tu ejercicio debe mostrar los números del uno al cinco, pero ahora termina en cuatro. Sigue el valor del contador en cada vuelta, corrige únicamente la condición y comprueba la salida.',
     },
     {
       at: 72000,
       type: 'challenge',
       challenge: {
-        id: 'reto-fizzbuzz',
-        title: 'Reto: FizzBuzz',
-        instructions: `Crea una función etiqueta(n) y úsala del 1 al 20:
-- múltiplo de 3 y 5 → "FizzBuzz"
-- múltiplo de 3 → "Fizz"
-- múltiplo de 5 → "Buzz"
-- si no, String(n)
+        id: 'reto-limite-bucle',
+        title: 'Reto: incluye el cinco',
+        instructions: `Corrige el bucle para que la consola muestre, en orden:
 
-Ejemplo: function etiqueta(n) { ... }
-Pregunta primero el caso de los dos, si no FizzBuzz nunca gana.`,
+1
+2
+3
+4
+5
+
+No copies cinco console.log: cambia el límite del for.`,
         tests: [
           {
-            id: 'etiqueta-3',
-            description: 'etiqueta(3) es "Fizz"',
-            validatorType: 'function-call',
-            targetFunction: 'etiqueta',
-            args: [3],
-            expectedReturn: 'Fizz',
-            errorMessage: 'Con 3 debería ser "Fizz". ¿Usa n % 3 === 0?',
-            hintTip: 'Si n % 3 === 0 devuelve "Fizz".',
+            id: 'sigue-siendo-bucle',
+            description: 'La solución conserva un for que llega hasta cinco',
+            validatorType: 'source-regex',
+            regexPattern: 'for\\s*\\([\\s\\S]*i\\s*(?:<=\\s*5|<\\s*6)[\\s\\S]*i\\+\\+',
+            errorMessage: 'El for todavía no incluye el límite cinco.',
+            hintTip: 'Compara < con <=.',
           },
           {
-            id: 'etiqueta-5',
-            description: 'etiqueta(5) es "Buzz"',
-            validatorType: 'function-call',
-            targetFunction: 'etiqueta',
-            args: [5],
-            expectedReturn: 'Buzz',
-            errorMessage: 'Con 5 debería ser "Buzz".',
-            hintTip: 'Si n % 5 === 0 devuelve "Buzz".',
-          },
-          {
-            id: 'etiqueta-15',
-            description: 'etiqueta(15) es "FizzBuzz"',
-            validatorType: 'function-call',
-            targetFunction: 'etiqueta',
-            args: [15],
-            expectedReturn: 'FizzBuzz',
-            errorMessage: 'Con 15 debería ser "FizzBuzz". ¿Preguntas los dos múltiplos primero?',
-            hintTip: '15 cumple 3 y 5, debe ganar FizzBuzz.',
-          },
-          {
-            id: 'etiqueta-7',
-            description: 'etiqueta(7) es "7"',
-            validatorType: 'function-call',
-            targetFunction: 'etiqueta',
-            args: [7],
-            expectedReturn: '7',
-            errorMessage: 'Con 7 debería ser "7". Si no es múltiplo, devuelve el número como texto.',
-            hintTip: 'Si no es múltiplo, conserva el número pero devuélvelo como texto.',
+            id: 'salida-uno-a-cinco',
+            description: 'La consola muestra las cinco vueltas en orden',
+            validatorType: 'console-check',
+            expectedValue: ['1', '2', '3', '4', '5'],
+            errorMessage: 'La salida todavía no contiene exactamente las cinco vueltas.',
+            hintTip: 'El último valor válido debe ser cinco.',
           },
         ],
         hints: [
-          { level: 1, title: 'Orden', text: 'Pregunta 3 y 5 juntos ANTES que solo 3 o solo 5.' },
-          { level: 2, title: 'Resto', text: 'i % 3 === 0 significa múltiplo de 3.' },
-          { level: 3, title: 'Estructura', text: 'Recorre del 1 al 20 con for y dentro decide el texto con tu función etiqueta.' },
+          { level: 1, title: 'Mira la última salida', text: 'El bucle llega a cuatro. La condición deja de cumplirse justo antes de cinco.' },
+          { level: 2, title: 'Dos comparadores', text: 'Menor que excluye el límite. Menor o igual lo incluye.' },
+          { level: 3, title: 'Un solo cambio', text: 'Conserva inicio, incremento y cuerpo. Ajusta únicamente el comparador del límite.' },
         ],
-        solutionExplanation: 'Un for recorre. Los if eligen el texto de cada vuelta.',
+        solutionExplanation: 'El for ya repetía correctamente. Cambiar el límite hizo que la quinta vuelta también se ejecutara.',
       },
     },
     { at: 77000, type: 'write', filePath: 'app.js', mode: 'replace', content: L06_SOLUTION },

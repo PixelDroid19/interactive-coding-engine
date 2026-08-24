@@ -1,13 +1,21 @@
-Si tienes que saludar a cien personas, no escribes cien líneas. Usas un bucle. Un bucle repite un bloque mientras una condición sea verdad.
+---
+titulo: "Lección 6: Bucles"
+modulo: Control de flujo
+tipo: scrim
+archivo: fundamentos-06.mp3
+estado: audio_generado
+---
 
-Mira esto. Quiero pintar cinco estrellas. for, let i igual a cero, mientras i sea menor que cinco, i más más.
+Imagina que necesitas mostrar cien mensajes parecidos. Copiar la misma instrucción cien veces sería lento y fácil de romper. Un bucle nos permite repetir un bloque mientras se cumpla una condición.
 
-Tres piezas. Dónde empiezo: i vale cero. Hasta cuándo: mientras i sea menor que cinco. Qué hago al final de cada vuelta: i más uno.
+Vamos a mostrar cinco números con un for. Dentro de sus paréntesis indicamos dónde empieza el contador, hasta cuándo debe continuar y cómo cambia después de cada vuelta.
 
-while es más suelto. Mientras la condición sea true, sigue. Úsalo cuando no sabes cuántas vueltas van a ser. Un for es mejor cuando sí lo sabes.
+Lee el for en tres partes. Primero, i comienza en cero. Segundo, repetimos mientras i sea menor que cinco. Tercero, al terminar cada vuelta aumentamos i en uno.
 
-Cuidado. Si la condición nunca se vuelve false, no para. Eso es un bucle infinito. Por eso i más más es importante. Sin eso, i nunca crece, y el for no termina.
+También existe while, que repite mientras una condición sea verdadera. Suele ser útil cuando no sabemos de antemano cuántas vueltas harán falta. Para un contador con límites claros, un for resulta más fácil de seguir.
 
-break corta el bucle ya. continue se salta solo esta vuelta y sigue con la siguiente.
+Todo bucle necesita una forma de terminar. Si i nunca cambia, la condición seguirá siendo verdadera y el programa repetirá para siempre. A eso lo llamamos un bucle infinito.
 
-Tu turno. Del uno al veinte. Si el número se divide entre tres, escribe Fizz. Si entre cinco, Buzz. Si entre tres y cinco, FizzBuzz. Si no, el número. Eso se llama FizzBuzz. Hoy lo escribes tú.
+Los límites merecen atención. Usar menor en lugar de menor o igual cambia la última vuelta que se ejecuta. Conviene seguir los valores del contador uno por uno antes de añadir más lógica.
+
+Tu ejercicio debe mostrar los números del uno al cinco, pero ahora termina en cuatro. Sigue el valor del contador en cada vuelta, corrige únicamente la condición y comprueba la salida.

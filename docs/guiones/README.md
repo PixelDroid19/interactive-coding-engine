@@ -1,4 +1,4 @@
-Guiones para leer en voz alta. Un archivo por lección. Solo el texto.
+Guiones para leer en voz alta. Un archivo por cinta. El número del archivo conserva el id técnico del audio; el orden pedagógico real es el siguiente:
 
 01-que-es-programar.md
 02-pensamiento-computacional.md
@@ -9,8 +9,24 @@ Guiones para leer en voz alta. Un archivo por lección. Solo el texto.
 07-funciones.md
 08-arrays.md
 09-objetos.md
-10-scope-closures.md
-11-algoritmos-basicos.md
-12-estructuras-datos.md
-13-complejidad-big-o.md
-14-paradigmas.md
+10-dom.md
+11-eventos-botones.md
+12-inputs-formularios.md
+13-listas-dom.md
+14-proyecto-lista-tareas.md
+15-depuracion.md
+16-metodos-documentacion.md
+17-pseudocodigo-diagramas.md
+18-patrones-algoritmos.md
+19-buscar-filtrar-transformar.md
+20-casos-pruebas.md
+21-estado-flujo.md
+22-responsabilidades-modulos.md
+23-arquitectura.md
+24-proyecto-final.md
+
+Los 24 guiones tienen `estado: audio_generado`. Sus voces están en `public/audio/fundamentos-01.mp3` hasta `fundamentos-24.mp3`, todas con la voz Aoede y volumen normalizado. Los archivos JSON contiguos registran duración, modelo, voz y guion de origen.
+
+Las 24 lecciones se generaron exclusivamente con `gemini-3.1-flash-tts-preview`. El reproductor carga cada MP3 con una versión de caché y ajusta la cinta a su duración real.
+
+Para regenerar una voz, usa `GEMINI_API_KEY` únicamente como variable de entorno y ejecuta `npm run audio:gemini -- --lesson=NN`. El generador está fijado a Gemini 3.1 Flash TTS y no admite modelos alternativos. No guardes claves en el repositorio. Después actualiza la duración declarada por la lección y cambia la versión de caché de su `audioUrl`.

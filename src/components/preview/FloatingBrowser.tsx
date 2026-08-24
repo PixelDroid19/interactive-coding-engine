@@ -67,14 +67,22 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
     const place = () => {
       const availableWidth = Math.max(160, window.innerWidth - 16);
       const minimumWidth = Math.min(340, availableWidth);
-      const width = Math.min(availableWidth, 420, Math.max(minimumWidth, Math.round(window.innerWidth * 0.3)));
+      const isNarrowViewport = window.innerWidth <= 768;
+      const width = isNarrowViewport
+        ? availableWidth
+        : Math.min(availableWidth, 420, Math.max(minimumWidth, Math.round(window.innerWidth * 0.3)));
       const availableHeight = Math.max(180, window.innerHeight - 52);
       const minimumHeight = Math.min(380, availableHeight);
-      const height = Math.min(availableHeight, 540, Math.max(minimumHeight, window.innerHeight - 148));
+      const narrowTop = 96;
+      const height = isNarrowViewport
+        ? Math.min(320, Math.max(180, window.innerHeight - narrowTop - 120))
+        : Math.min(availableHeight, 540, Math.max(minimumHeight, window.innerHeight - 148));
       setSize({ width, height });
       setPos({
         x: Math.max(8, window.innerWidth - width - 18),
-        y: Math.max(44, Math.min(76, window.innerHeight - height - 8)),
+        y: isNarrowViewport
+          ? narrowTop
+          : Math.max(44, Math.min(76, window.innerHeight - height - 8)),
       });
     };
     place();
@@ -209,6 +217,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
     if (!iframeRef.current) return Promise.resolve();
     const gen = ++generationRef.current;
     (iframeRef.current as any).__generation = gen;
+    setLogs([]);
     setIsExecuting(true);
     return new Promise<void>((resolve) => {
       const iframe = iframeRef.current!;

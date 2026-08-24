@@ -1,17 +1,29 @@
 import { compileLesson } from '../../engine/lessonCompiler';
-import { L09_OBJ, L09_SOLUTION, lesson09Workspace } from './pages';
+import { L09_OBJ, L09_SOLUTION, lesson09Workspace } from './preDomWorkspaces';
 
-const AUDIO_MS = 68_960;
+const AUDIO_MS = 104_840;
 
 export const LESSON_09 = compileLesson({
   id: 'fundamentos-09',
   title: '9. Objetos',
   description: 'Agrupa datos por nombre: ficha, punto, y una función que los usa.',
-  audioUrl: '/audio/fundamentos-09.mp3?v=lote',
   language: 'es',
   durationMs: AUDIO_MS,
+  audioUrl: '/audio/fundamentos-09.mp3?v=gemini-20260824',
+  fitTimelineToDuration: true,
   initialWorkspace: lesson09Workspace,
+  executionMode: 'logic',
   concepts: ['Objeto { }', 'item.nombre'],
+  skillsRequired: ['variables', 'functions', 'arrays'],
+  skillsIntroduced: ['objects'],
+  learningObjectives: [
+    'Agrupar datos relacionados en un objeto con claves claras.',
+    'Leer propiedades con notación de punto.',
+  ],
+  commonMistakes: [
+    'Intentar leer un objeto por posición como si fuera un array.',
+    'Confundir el nombre de una variable con el nombre de una propiedad.',
+  ],
   teachNotes: [
     {
       title: 'Nombre, no posición',
@@ -23,24 +35,24 @@ export const LESSON_09 = compileLesson({
     {
       at: 200,
       type: 'speak',
-      text: 'Un array es una fila. Un objeto es una ficha. Cada dato tiene nombre, no número.',
+      text: 'Los arrays organizan valores por posición. Los objetos sirven para representar algo mediante características con nombre, como una persona, un producto o una tarea.',
     },
     {
       at: 8100,
       type: 'speak',
-      text: 'Una persona no es posición cero, posición uno. Es nombre, edad, si está activa. Eso se agrupa en un objeto.',
+      text: 'Para describir a una persona resulta más claro hablar de su nombre, su edad y si está activa que recordar qué significa cada posición de una lista. Un objeto agrupa esas características.',
     },
     {
       at: 18120,
       type: 'speak',
-      text: 'const persona igual, llaves. nombre Ana, edad 25, activo true.',
+      text: 'Aquí creamos el objeto persona. Las llaves contienen sus propiedades y cada propiedad relaciona un nombre con un valor. Las comas separan una propiedad de la siguiente.',
     },
     { at: 19000, type: 'write', filePath: 'app.js', mode: 'replace', content: L09_OBJ },
     { at: 25000, type: 'run' },
     {
       at: 27720,
       type: 'speak',
-      text: 'persona punto nombre es Ana. El punto entra a un campo. También puedes usar corchetes si el nombre del campo está en una variable.',
+      text: 'Para leer una propiedad escribimos persona punto nombre. El punto nos permite acceder a una característica por su nombre, en lugar de buscarla con un índice como haríamos en un array.',
     },
     {
       at: 29000,
@@ -54,18 +66,18 @@ export const LESSON_09 = compileLesson({
     {
       at: 38040,
       type: 'speak',
-      text: 'Puedes meter funciones adentro. Entonces se llaman métodos. Hacen algo con los datos de esa ficha.',
+      text: 'También podemos entregar el objeto completo a una función. Dentro, la función puede consultar únicamente las propiedades que necesita para realizar su trabajo.',
     },
     {
       at: 45960,
       type: 'speak',
-      text: 'Los objetos se combinan con arrays. Una lista de personas. Cada elemento es una ficha. Así se construyen apps de verdad: listas de cosas con nombre.',
+      text: 'Los arrays y los objetos suelen trabajar juntos. Podemos tener un array de personas donde cada elemento es un objeto con sus propios datos. Así representamos colecciones de elementos más completos.',
     },
     { at: 57220, type: 'chapter', title: 'Tu turno' },
     {
       at: 57220,
       type: 'speak',
-      text: 'Tu turno. Crea un objeto producto con nombre y precio. Y una función que reciba ese producto y devuelva un texto: el nombre, una raya, y el precio.',
+      text: 'Ahora crea un objeto producto con las propiedades nombre y precio. Después escribe una función que reciba cualquier producto y devuelva un texto formado con esos dos valores.',
     },
     {
       at: 62000,
@@ -101,7 +113,7 @@ Después escribe etiqueta(item): debe leer esos dos campos y devolver un texto c
         hints: [
           { level: 1, title: 'Llaves', text: 'El objeto va entre { }.' },
           { level: 2, title: 'Punto', text: 'item.nombre entra al campo.' },
-          { level: 3, title: 'Raya', text: 'Junta con + " — " +' },
+          { level: 3, title: 'Comprueba', text: 'Prueba con un segundo producto. Si repite el primero, la función no está leyendo item.' },
         ],
         solutionExplanation: 'El objeto agrupa. La función lee los campos y arma un texto.',
       },

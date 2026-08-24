@@ -50,10 +50,14 @@ describe('ScrimPlayer overlay coordination', () => {
     expect(screen.getByRole('button', { name: 'Explicar lección' }).hasAttribute('disabled')).toBe(true);
 
     await waitFor(() => {
-      expect(screen.getByRole('dialog', { name: 'Recuperar rama' })).toBeTruthy();
-      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Continuar mi versión' }));
+      expect(screen.getByRole('dialog', { name: 'Continuar lección' })).toBeTruthy();
+      expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Continuar donde lo dejé' }));
     });
-    expect(screen.getByRole('button', { name: 'Continuar mi versión' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: '¿Cómo quieres continuar?' })).toBeTruthy();
+    expect(screen.getByText('Puedes continuar desde donde lo dejaste la última vez o comenzar la lección desde cero.')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continuar donde lo dejé' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Comenzar lección desde cero' })).toBeTruthy();
+    expect(screen.queryByText(/\bversi[oó]n\b|\brama\b/i)).toBeNull();
   });
 
   it('blocks explanation while the start gate is active', () => {
@@ -62,6 +66,33 @@ describe('ScrimPlayer overlay coordination', () => {
     expect(screen.getByText('Clase con explicación')).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Empezar la clase' })).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Explicar lección' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('explica qué aprenderá el estudiante antes de iniciar la cinta', () => {
+    render(<ScrimPlayer lessonData={lesson} onBack={() => undefined} />);
+
+    expect(screen.getByRole('heading', { name: 'Al terminar podrás' })).toBeTruthy();
+    lesson.learningObjectives.forEach((objective) => {
+      expect(screen.getByText(objective)).toBeTruthy();
+    });
+  });
+
+  it('usa una salida lógica sin mini-browser en una lección de JavaScript puro', () => {
+    render(<ScrimPlayer lessonData={{ ...lesson, executionMode: 'logic' } as typeof lesson} onBack={() => undefined} />);
+
+    expect(screen.getByRole('region', { name: 'Salida de JavaScript' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Ejecutar lógica' })).toBeTruthy();
+    expect(screen.queryByRole('toolbar', { name: 'Barra de vista previa, usa flechas para mover' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Fijar vista al lado' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Abrir index.html' })).toBeNull();
+  });
+
+  it('conserva el mini-browser cuando la lección enseña DOM', () => {
+    const domLesson = FUNDAMENTOS_SCRIMS['fundamentos-10'];
+    render(<ScrimPlayer lessonData={{ ...domLesson, executionMode: 'browser' } as typeof domLesson} onBack={() => undefined} />);
+
+    expect(screen.getByRole('toolbar', { name: 'Barra de vista previa, usa flechas para mover' })).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Salida de JavaScript' })).toBeNull();
   });
 
   it('guarda el reto activo para recuperarlo después de recargar', async () => {
@@ -96,7 +127,7 @@ describe('ScrimPlayer overlay coordination', () => {
     localStorage.setItem('aula_learner_branches_v1', JSON.stringify({ [branch.id]: branch }));
 
     render(<ScrimPlayer lessonData={lesson} onBack={() => undefined} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Ver la clase desde el inicio' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Comenzar lección desde cero' }));
 
     expect(loadLastBranchForLesson(lesson.id)).toBeNull();
   });
@@ -117,7 +148,7 @@ describe('ScrimPlayer overlay coordination', () => {
     localStorage.setItem('aula_learner_branches_v1', JSON.stringify({ [branch.id]: branch }));
 
     render(<ScrimPlayer lessonData={lesson} onBack={() => undefined} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Continuar mi versión' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar donde lo dejé' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Saltar por ahora' }));
 
     expect(loadLastBranchForLesson(lesson.id)).toBeNull();
