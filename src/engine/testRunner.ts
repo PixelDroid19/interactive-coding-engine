@@ -155,8 +155,11 @@ export async function runChallengeValidation(
     (f) => f.language === 'javascript' || f.language === 'typescript' || f.name.endsWith('.js') || f.name.endsWith('.jsx')
   );
   const combinedJsPre = jsFilesPre.map((f) => f.content).join('\n\n');
+  let anonymousDefaultClassIndex = 0;
   const syntaxProbe = combinedJsPre
     .replace(/^\s*import\s+[^;]+;?\s*$/gm, '')
+    .replace(/\bexport\s+default\s+class(?=\s*(?:extends|\{))/g, () =>
+      `class __DefaultExport${anonymousDefaultClassIndex++}`)
     .replace(/\bexport\s+default\s+/g, '')
     .replace(/\bexport\s+(?=(?:async\s+)?(?:function|class|const|let|var)\b)/g, '');
   let syntaxError: string | null = null;

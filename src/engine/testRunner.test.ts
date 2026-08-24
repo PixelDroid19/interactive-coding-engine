@@ -78,6 +78,30 @@ console.log("Me llamo Damien");`
 });
 
 describe('testRunner hardening', () => {
+  it('acepta una clase default anónima válida durante el preflight de sintaxis', async () => {
+    const ws = wsFromJs(`import { LitElement } from 'lit';
+export default class extends LitElement {}`);
+    const reto = {
+      id: 'default-anonima',
+      title: 'Export nombrado',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'export-nombrado',
+        description: 'Exporta una clase por nombre',
+        validatorType: 'source-regex' as const,
+        regexPattern: String.raw`export\s+class\s+StatusChip`,
+      }],
+      hints: [],
+    };
+
+    const result = await runChallengeValidation(reto, ws, null);
+
+    expect(result.allPassed).toBe(false);
+    expect(result.tests[0].status).toBe('failed');
+    expect(result.tests[0].isEvaluationError).not.toBe(true);
+  });
+
   it('trata una función aún no escrita como reto pendiente, no como error interno', async () => {
     const ws = wsFromJs('// El alumno todavía no empezó la función.');
     const reto: ScrimChallenge = {
