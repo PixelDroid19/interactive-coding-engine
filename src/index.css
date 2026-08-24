@@ -2508,6 +2508,10 @@ body.dark {
 }
 
 .rm-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
   background: #dbeafe;
   color: #1e3a8a;
   border: 1.5px solid var(--color-black);
@@ -2517,6 +2521,7 @@ body.dark {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  line-height: 1;
 }
 
 .rm-pill-dark {
