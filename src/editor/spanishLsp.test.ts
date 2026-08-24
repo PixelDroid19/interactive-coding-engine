@@ -78,4 +78,24 @@ describe('Spanish LSP', () => {
     expect(eventDoc?.info).toContain('addEventListener("click", responderAlClick)');
     expect(eventDoc?.info).not.toContain('addEventListener("click", function()');
   });
+
+  it('explica la herencia nativa y super antes de presentar Lit', () => {
+    const lesson2 = getSpanishDocsForLesson('componentes-lit-02');
+    const labels = lesson2.map((entry) => entry.label);
+
+    expect(labels).toEqual(expect.arrayContaining(['HTMLElement', 'extends', 'super']));
+    expect(lesson2.find((entry) => entry.label === 'super')?.info).toContain('antes de usar this');
+    expect(labels).not.toContain('LitElement');
+  });
+
+  it('desbloquea la documentación de Lit siguiendo la progresión del curso', () => {
+    const firstLit = getSpanishDocsForLesson('componentes-lit-15').map((entry) => entry.label);
+    const asyncLit = getSpanishDocsForLesson('componentes-lit-29').map((entry) => entry.label);
+    const ssr = getSpanishDocsForLesson('componentes-lit-39').map((entry) => entry.label);
+
+    expect(firstLit).toEqual(expect.arrayContaining(['LitElement', 'html', 'render']));
+    expect(firstLit).not.toContain('Task');
+    expect(asyncLit).toEqual(expect.arrayContaining(['repeat', 'updateComplete', 'Task']));
+    expect(ssr).toEqual(expect.arrayContaining(['Directive', 'addController', 'hydrate']));
+  });
 });

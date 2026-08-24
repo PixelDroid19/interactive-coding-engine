@@ -22,6 +22,18 @@ export type SpanishLspLevel =
   | 'network'
   | 'classes'
   | 'web-components'
+  | 'wc-inheritance'
+  | 'wc-lifecycle'
+  | 'wc-api'
+  | 'wc-composition'
+  | 'lit-core'
+  | 'lit-reactivity'
+  | 'lit-lifecycle'
+  | 'lit-directives'
+  | 'lit-async'
+  | 'lit-architecture'
+  | 'lit-custom-directives'
+  | 'lit-ssr'
   | 'testing';
 
 export interface DocEntry {
@@ -290,6 +302,82 @@ const SPANISH_DOCS: DocEntry[] = [
     info: 'Receptor: un elemento.\nParámetro habitual: { mode: "open" }.\nRetorno: ShadowRoot.\n\nEs encapsulación, no seguridad.',
   },
   {
+    label: 'HTMLElement', type: 'variable', level: 'wc-inheritance', detail: 'clase base de los elementos HTML',
+    info: 'Un componente nativo hereda capacidades reales del navegador desde HTMLElement.\n\nEjemplo:\nclass StatusBadge extends HTMLElement { ... }',
+  },
+  {
+    label: 'extends', type: 'keyword', level: 'wc-inheritance', detail: 'declara que una clase hereda de otra',
+    info: 'Conecta la clase nueva con una clase base. La instancia conserva los métodos y reglas de esa base.\n\nEjemplo:\nclass StatusBadge extends HTMLElement { ... }',
+  },
+  {
+    label: 'super', type: 'function', level: 'wc-inheritance', detail: 'inicializa o continúa el comportamiento de la clase base',
+    info: 'En un constructor derivado, super() inicializa la parte heredada y debe ejecutarse antes de usar this. En callbacks sobrescritos, super.metodo() conserva el contrato de la clase base.\n\nNo es una formalidad: sin él la instancia heredada queda incompleta o Lit pierde parte de su ciclo.',
+  },
+  {
+    label: 'connectedCallback', type: 'function', level: 'wc-lifecycle', detail: 'se ejecuta cuando el elemento entra en un documento',
+    info: 'Úsalo para iniciar trabajo que depende de estar conectado: listeners externos, timers u observadores. Puede ejecutarse más de una vez, así que debe tolerar reconexiones.',
+  },
+  {
+    label: 'disconnectedCallback', type: 'function', level: 'wc-lifecycle', detail: 'se ejecuta cuando el elemento sale del documento',
+    info: 'Libera timers, listeners, observadores y suscripciones que el componente inició al conectarse. La limpieza debe usar las mismas referencias creadas antes.',
+  },
+  {
+    label: 'observedAttributes', type: 'property', level: 'wc-api', detail: 'lista los atributos que activan observación',
+    info: 'Devuelve los nombres que interesan al componente. Solo esos cambios llaman attributeChangedCallback.\n\nEjemplo:\nstatic get observedAttributes() { return ["value"]; }',
+  },
+  {
+    label: 'attributeChangedCallback', type: 'function', level: 'wc-api', detail: 'reacciona a un atributo observado',
+    info: 'Parámetros: nombre, valor anterior y valor nuevo. Convierte el texto del atributo al tipo interno antes de usarlo y evita ciclos al reflejar.',
+  },
+  {
+    label: 'CustomEvent', type: 'function', level: 'wc-api', detail: 'crea un evento con datos de dominio',
+    info: 'Usa detail para el dato público y composed/bubbles cuando el evento debe atravesar composición o Shadow DOM.\n\nEjemplo:\nnew CustomEvent("quantity-change", { detail: { value }, bubbles: true, composed: true })',
+  },
+  {
+    label: 'slot', type: 'property', level: 'wc-composition', detail: 'punto donde el consumidor compone contenido',
+    info: 'Un slot conserva la propiedad del contenido en el consumidor. Usa nombres cuando existen regiones distintas y ofrece fallback cuando la región puede quedar vacía.',
+  },
+  {
+    label: 'LitElement', type: 'variable', level: 'lit-core', detail: 'clase base reactiva de Lit sobre HTMLElement',
+    info: 'LitElement sigue siendo un HTMLElement. Lit programa actualizaciones, renderiza templates y administra estilos; registro, eventos, Shadow DOM y ciclo siguen siendo APIs web.',
+  },
+  {
+    label: 'html', type: 'function', level: 'lit-core', detail: 'crea un template seguro a partir de strings estáticos y valores',
+    info: 'Se usa como etiqueta de template literal. Las expresiones se enlazan como texto, propiedad, atributo o evento según su prefijo. No construyas el template concatenando HTML remoto.',
+  },
+  {
+    label: 'render', type: 'function', level: 'lit-core', detail: 'describe la interfaz a partir del estado vigente',
+    info: 'En LitElement, render() devuelve un template y debe evitar efectos secundarios. Puede ejecutarse muchas veces: no crees listeners externos, tareas o timers aquí.',
+  },
+  {
+    label: 'properties', type: 'property', level: 'lit-reactivity', detail: 'declara propiedades reactivas y su conversión',
+    info: 'static properties define tipo, atributo, reflexión o estado interno. Cambiar una propiedad reactiva programa una actualización; los objetos mutados sin nueva referencia pueden no hacerlo.',
+  },
+  {
+    label: 'updateComplete', type: 'property', level: 'lit-lifecycle', detail: 'Promise que termina al completar la actualización pendiente',
+    info: 'Usa await this.updateComplete cuando necesitas consultar el DOM que acaba de producir Lit. No reemplaza el estado ni debe usarse como temporizador general.',
+  },
+  {
+    label: 'repeat', type: 'function', level: 'lit-directives', detail: 'renderiza listas conservando identidad por clave',
+    info: 'Parámetros: colección, función de clave y template de fila. La clave debe ser única y estable; evita el índice cuando los elementos pueden moverse o eliminarse.',
+  },
+  {
+    label: 'Task', type: 'variable', level: 'lit-async', detail: 'controlador de trabajo asíncrono ligado a argumentos',
+    info: 'Se crea una vez en la instancia. args decide cuándo reiniciar y render permite representar pending, complete y error. Pasa signal a APIs cancelables y contempla también el estado vacío.',
+  },
+  {
+    label: 'addController', type: 'function', level: 'lit-architecture', detail: 'registra un Reactive Controller en el host',
+    info: 'El controlador participa en conexión, desconexión y actualización del host. Úsalo para lógica reutilizable con ciclo propio, no para esconder cualquier función.',
+  },
+  {
+    label: 'Directive', type: 'variable', level: 'lit-custom-directives', detail: 'clase base para una directiva personalizada',
+    info: 'Una directiva actúa sobre una parte específica del template. Valida el tipo de Part, mantiene una responsabilidad estrecha y no almacena reglas de negocio del componente.',
+  },
+  {
+    label: 'hydrate', type: 'function', level: 'lit-ssr', detail: 'conecta comportamiento cliente con HTML renderizado en servidor',
+    info: 'La hidratación conserva contenido significativo y añade interacción. El render debe ser estable entre servidor y cliente; protege window, document y otras APIs exclusivas del navegador.',
+  },
+  {
     label: 'describe', type: 'function', level: 'testing', detail: 'agrupa casos de prueba relacionados',
     info: 'Úsalo para nombrar una capacidad observable. Las pruebas deben comprobar resultados, fronteras e inválidos.',
   },
@@ -349,6 +437,30 @@ for (let lesson = 1; lesson <= 24; lesson += 1) {
     .filter(([startsAt]) => startsAt <= lesson)
     .flatMap(([, stageLevels]) => stageLevels);
   LESSON_LEVELS[`javascript-${String(lesson).padStart(2, '0')}`] = [...new Set(levels)];
+}
+
+const COMPONENT_STAGE_LEVELS: Array<[number, SpanishLspLevel[]]> = [
+  [1, ['web-components']],
+  [2, ['wc-inheritance']],
+  [3, ['wc-lifecycle']],
+  [5, ['wc-api']],
+  [8, ['wc-composition']],
+  [15, ['lit-core']],
+  [18, ['lit-reactivity']],
+  [22, ['lit-lifecycle']],
+  [27, ['lit-directives']],
+  [29, ['lit-async']],
+  [30, ['lit-architecture']],
+  [33, ['lit-custom-directives']],
+  [39, ['lit-ssr']],
+];
+
+const COMPONENT_BASE_LEVELS = LESSON_LEVELS['javascript-24'] || [];
+for (let lesson = 1; lesson <= 40; lesson += 1) {
+  const levels = COMPONENT_STAGE_LEVELS
+    .filter(([startsAt]) => startsAt <= lesson)
+    .flatMap(([, stageLevels]) => stageLevels);
+  LESSON_LEVELS[`componentes-lit-${String(lesson).padStart(2, '0')}`] = [...new Set([...COMPONENT_BASE_LEVELS, ...levels])];
 }
 
 export function getSpanishDocsForLesson(lessonId?: string): DocEntry[] {
