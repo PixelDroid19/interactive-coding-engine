@@ -143,6 +143,44 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.add('dark');
     document.documentElement.style.colorScheme = 'dark';
+    // HUD theme — activación sin tocar tema por defecto: ?theme=hud o localStorage hud=1
+    const params = new URLSearchParams(window.location.search);
+    const hudParam = params.get('theme') === 'hud' || params.get('hud') === '1';
+    const hudStored = (() => { try { return localStorage.getItem('theme') === 'hud' || localStorage.getItem('hud') === '1'; } catch { return false; } })();
+    const applyHudAugs = () => {
+      const isHud = document.documentElement.classList.contains('hud');
+      const map: Array<[string, string]> = [
+        ['.editor-window-wrapper', 'hud-editor tl-clip br-clip border'],
+        ['.browser-window', 'hud-browser tl-clip br-clip border'],
+        ['.files-sidebar', 'hud-sidebar tl-clip br-clip border'],
+        ['.window-topbar', 'hud-topbar tl-clip br-clip border'],
+        ['.player-bar', 'hud-player tl-clip tr-clip border inlay'],
+        ['.caption-chip', 'hud-narration tl-clip br-clip border inlay'],
+      ];
+      map.forEach(([sel, aug]) => {
+        document.querySelectorAll(sel).forEach((el) => {
+          if (isHud) el.setAttribute('data-augmented-ui', aug);
+          else el.removeAttribute('data-augmented-ui');
+        });
+      });
+    };
+    if (hudParam || hudStored) {
+      document.documentElement.classList.add('hud');
+      try { localStorage.setItem('theme', 'hud'); } catch {}
+    }
+    applyHudAugs();
+    // Observar cambios de clase hud para aplicar/quitar augs
+    const mo = new MutationObserver(applyHudAugs);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    // Aplicar augs también en mutaciones del DOM (navegación)
+    const domMo = new MutationObserver(() => {
+      if (document.documentElement.classList.contains('hud')) applyHudAugs();
+    });
+    domMo.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      mo.disconnect();
+      domMo.disconnect();
+    };
   }, []);
 
   // Sync custom scrims and progress from storage on mount

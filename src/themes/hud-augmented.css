@@ -1,0 +1,62 @@
+/* HUD Augmented — uses augmented-ui for borders
+   Applied when .hud is active. This file augments the previous hud.css
+   with real augmented-ui borders. The base hud.css clip-path is kept as
+   fallback, but augmented-ui provides the true sci-fi border + inlay.
+*/
+
+/* Import is already done in main.tsx via 'augmented-ui/augmented-ui.min.css' */
+
+/* Editor — use augmented-ui border with tl/br clip */
+.hud [data-augmented-ui~="hud-editor"] {
+  --aug-border: initial;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--hud-yellow);
+  --aug-tl: 12px; --aug-br: 14px; --aug-tr: 8px; --aug-bl: 8px;
+  --aug-tl-inset1: 0px; --aug-br-inset1: 0px;
+}
+
+/* Browser preview */
+.hud [data-augmented-ui~="hud-browser"] {
+  --aug-border: initial;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--hud-yellow);
+  --aug-tl: 10px; --aug-br: 14px;
+}
+
+/* Sidebar */
+.hud [data-augmented-ui~="hud-sidebar"] {
+  --aug-border: initial;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--hud-yellow);
+  --aug-l: 10px; --aug-r: 10px;
+}
+
+/* Topbar */
+.hud [data-augmented-ui~="hud-topbar"] {
+  --aug-border: initial;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--hud-yellow);
+  --aug-tl: 12px; --aug-bl: 8px;
+}
+
+/* Player bar — yellow top border + purple inlay for slider area */
+.hud [data-augmented-ui~="hud-player"] {
+  --aug-border: initial;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--hud-yellow);
+  --aug-inlay: initial;
+  --aug-inlay-all: 2px;
+  --aug-inlay-bg: rgba(168,85,247,0.06);
+  --aug-tl: 8px; --aug-tr: 8px;
+}
+
+/* Narration box — purple border */
+.hud [data-augmented-ui~="hud-narration"] {
+  --aug-border: initial;
+  --aug-border-all: 1px;
+  --aug-border-bg: var(--hud-purple);
+  --aug-tl: 10px; --aug-br: 10px;
+  --aug-inlay: initial;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: rgba(168,85,247,0.04);
+}

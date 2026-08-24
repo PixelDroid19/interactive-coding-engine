@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, BookOpen, CheckCircle2, Code2, Route } from 'lucide-react';
 import { Course, UserProgressRecord } from '../../types/curriculum';
+import { ThemeToggle } from '../ThemeToggle';
 
 interface CourseCatalogProps {
   courses: Course[];
@@ -13,7 +14,10 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress,
   <div className="course-catalog">
     <header className="course-catalog__nav">
       <div className="course-catalog__brand"><Route size={18} /> Aprende<span>Código</span></div>
-      <button type="button" className="rm-play-btn" onClick={onPlayground}><Code2 size={14} /> Playground</button>
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+        <button type="button" className="rm-play-btn" onClick={onPlayground}><Code2 size={14} /> Playground</button>
+      </div>
     </header>
     <main className="course-catalog__main">
       <section className="course-catalog__intro">

@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 
 import { NavigationState } from '../../engine/navigation';
+import { ThemeToggle } from '../ThemeToggle';
 
 interface ScrimPlayerProps {
   lessonData: ScrimLessonData;
@@ -803,6 +804,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         </div>
 
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          <ThemeToggle />
           {!isLogicMode && (
             <button
               onClick={() => setIsFloatingBrowser(!isFloatingBrowser)}

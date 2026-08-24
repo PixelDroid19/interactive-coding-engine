@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, Route, Terminal, X } from 'lucide-react';
+import { ThemeToggle } from '../ThemeToggle';
 import { Course, CurriculumItem, UserProgressRecord } from '../../types/curriculum';
 import { ScrimLessonData } from '../../types/scrim';
 import {
@@ -111,6 +112,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <button type="button" className="rm-play-btn" onClick={onBackToCourses}>Cursos</button>
             <button type="button" className="rm-play-btn" onClick={onPlayground}>
               <Terminal size={13} /> Playground
