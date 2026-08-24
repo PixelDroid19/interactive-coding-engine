@@ -438,7 +438,7 @@ class SupportBoard extends LitElement {
   }
 }
 customElements.define('support-board', SupportBoard);`,
-      tests: [sourceTest('lit32-d1', 'Reemplaza tickets', String.raw`this\.tickets\s*=\s*this\.tickets\.map`), browserTest('lit32-d2', 'La vista refleja closed', `async ({document,customElements})=>{await customElements.whenDefined('support-board');const el=document.querySelector('support-board');el.close('t1');await el.updateComplete;return el.shadowRoot.textContent.includes('closed');}`)],
+      tests: [sourceTest('lit32-d1', 'Reemplaza tickets', String.raw`this\.tickets\s*=\s*this\.tickets\.map`), browserTest('lit32-d2', 'La vista refleja closed', `async ({document,customElements})=>{await customElements.whenDefined('support-board');const el=document.querySelector('support-board');if(!el)return false;try{el.close('t1');await el.updateComplete;}catch{return false;}return Boolean(el.shadowRoot?.textContent.includes('closed'));}`)],
       hints: ['Lit compara la referencia de tickets.', 'map permite reemplazar solo el ticket elegido.', 'Crea también un objeto nuevo para esa fila.'] },
   }),
 ];

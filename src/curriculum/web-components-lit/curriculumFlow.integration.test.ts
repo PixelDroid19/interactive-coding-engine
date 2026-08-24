@@ -188,6 +188,22 @@ describe('curso profesional de Web Components y Lit', () => {
     }
   });
 
+  it('cada laboratorio conserva una condición incumplida o una comprobación conductual', () => {
+    for (const spec of COMPONENT_COURSE_SPECS) {
+      const sourceChecks = spec.debug.tests.filter((test) => test.validatorType === 'source-regex');
+      expect(sourceChecks.length, `laboratorio ${spec.number} no tiene comprobación de código`).toBeGreaterThan(0);
+      const hasUnfulfilledSourceCheck = sourceChecks.some(
+        (test) => !new RegExp(test.regexPattern || '', 'i').test(spec.debug.starter),
+      );
+      if (!hasUnfulfilledSourceCheck) {
+        expect(
+          spec.debug.tests.some((test) => test.validatorType === 'browser-script'),
+          `laboratorio ${spec.number} entrega el código resuelto sin comprobar su comportamiento`,
+        ).toBe(true);
+      }
+    }
+  });
+
   it('usa 45 audios Gemini 3.1 TTS propios, completos y sincronizados', () => {
     const digest = (path: string) => createHash('sha256').update(readFileSync(path)).digest('hex');
     const foreignHashes = new Set<string>();

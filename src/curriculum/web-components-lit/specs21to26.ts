@@ -1,6 +1,6 @@
 import { appHtml, browserTest, lesson, source, sourceTest } from './helpers';
 
-const litText = (id: string, description: string, tag: string, selector: string, expected: string) => browserTest(id, description, `async ({document,customElements})=>{await customElements.whenDefined('${tag}');const el=document.querySelector('${tag}');if(el.updateComplete)await el.updateComplete;const node=el.shadowRoot?.querySelector('${selector}');return {passed:Boolean(node?.textContent?.includes('${expected}')),receivedValue:node?.textContent||''};}`);
+const litText = (id: string, description: string, tag: string, selector: string, expected: string) => browserTest(id, description, `async ({document,customElements})=>{await customElements.whenDefined('${tag}');const el=document.querySelector('${tag}');if(!el)return false;await Promise.race([Promise.resolve(el.updateComplete).catch(()=>false),new Promise(resolve=>setTimeout(resolve,150))]);const node=el.shadowRoot?.querySelector('${selector}');return {passed:Boolean(node?.textContent?.includes('${expected}')),receivedValue:node?.textContent||''};}`);
 
 export const COMPONENT_SPECS_21_TO_26 = [
   lesson({
@@ -395,7 +395,7 @@ class ReportCard extends LitElement {
   }
 }
 customElements.define('report-card', ReportCard);`,
-      tests: [sourceTest('lit26-d1', 'Expone surface', String.raw`part\s*=\s*['"]surface['"]`), browserTest('lit26-d2', 'La superficie existe', `async ({document,customElements})=>{await customElements.whenDefined('report-card');const el=document.querySelector('report-card');await el.updateComplete;return Boolean(el.shadowRoot.querySelector('[part="surface"]'));}`)],
+      tests: [sourceTest('lit26-d1', 'Expone surface', String.raw`part\s*=\s*['"]surface['"]`), browserTest('lit26-d2', 'La superficie existe', `async ({document,customElements})=>{await customElements.whenDefined('report-card');const el=document.querySelector('report-card');if(!el)return false;await Promise.race([Promise.resolve(el.updateComplete).catch(()=>false),new Promise(resolve=>setTimeout(resolve,150))]);return Boolean(el.shadowRoot?.querySelector('[part="surface"]'));}`)],
       hints: ['El slot resuelve contenido, no estilo de section.', 'Nombra solo la superficie estable.', 'Añade part a la pieza interna.'] },
   }),
 ];

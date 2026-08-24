@@ -106,7 +106,7 @@ class PresenceCard extends WithPresence(LitElement) {
 customElements.define('presence-card', PresenceCard);`,
       tests: [
         sourceTest('lit41-d1', 'El mixin continúa la cadena', String.raw`connectedCallback\s*\([^)]*\)\s*\{\s*super\.connectedCallback\s*\(`),
-        browserTest('lit41-d2', 'La tarjeta renderiza después de conectarse', `async ({document,customElements})=>{await customElements.whenDefined('presence-card');const el=document.querySelector('presence-card');await el.updateComplete;return el.shadowRoot.textContent.includes('Disponible');}`),
+        browserTest('lit41-d2', 'La tarjeta renderiza después de conectarse', `async ({document,customElements})=>{await customElements.whenDefined('presence-card');const el=document.querySelector('presence-card');if(!el)return false;await Promise.race([Promise.resolve(el.updateComplete).catch(()=>false),new Promise(resolve=>setTimeout(resolve,150))]);return Boolean(el.shadowRoot?.textContent.includes('Disponible'));}`),
       ],
       hints: ['PresenceCard todavía depende del ciclo de LitElement.', 'El mixin está entre ambas clases.', 'Continúa el callback antes de añadir el comportamiento de presencia.'],
     },
@@ -225,7 +225,7 @@ customElements.define('dependency-planner', DependencyPlanner);`,
 
 customElements.define('safe-graph', SafeGraph);`,
       tests: [
-        browserTest('lit42-d1', 'El rechazo no altera el grafo', `async ({document,customElements})=>{await customElements.whenDefined('safe-graph');const el=document.querySelector('safe-graph');const before=el.edges.length;return el.connect('c','a')===false&&el.edges.length===before;}`),
+        browserTest('lit42-d1', 'El rechazo no altera el grafo', `async ({document,customElements})=>{await customElements.whenDefined('safe-graph');const el=document.querySelector('safe-graph');if(!el||!Array.isArray(el.edges))return false;const before=el.edges.length;try{return el.connect('c','a')===false&&el.edges.length===before;}catch{return false;}}`),
         sourceTest('lit42-d2', 'Valida antes de insertar', String.raw`if[\s\S]*return\s+false[\s\S]*(?:push|this\.edges\s*=)`),
       ],
       hints: ['El valor de retorno no repara el estado.', 'Decide si es legal antes de insertar.', 'El camino rechazado termina sin tocar edges.'],
@@ -358,7 +358,7 @@ class FormulaView extends LitElement {
 
 customElements.define('formula-view', FormulaView);`,
       tests: [
-        browserTest('lit43-d1', 'Calcula las dependencias antes del operador', `async ({document,customElements})=>{await customElements.whenDefined('formula-view');const el=document.querySelector('formula-view');el.calculate();await el.updateComplete;return el.values.get('add')===5;}`),
+        browserTest('lit43-d1', 'Calcula las dependencias antes del operador', `async ({document,customElements})=>{await customElements.whenDefined('formula-view');const el=document.querySelector('formula-view');if(!el)return false;try{el.calculate();await el.updateComplete;}catch{return false;}return el.values?.get('add')===5;}`),
         sourceTest('lit43-d2', 'No depende del orden original', String.raw`(?:topological|pending|indegree|while\s*\()`),
       ],
       hints: ['El primer elemento del array todavía no tiene entradas.', 'Construye un orden a partir de deps.', 'Evalúa una pieza solo cuando sus dependencias ya existen.'],
@@ -494,7 +494,7 @@ customElements.define('relay-canvas', RelayCanvas);`,
       tests: [
         sourceTest('lit44-d1', 'El evento burbujea', String.raw`bubbles\s*:\s*true`),
         sourceTest('lit44-d2', 'El evento cruza Shadow DOM', String.raw`composed\s*:\s*true`),
-        browserTest('lit44-d3', 'El canvas recibe la posición', `async ({document,customElements})=>{await customElements.whenDefined('relay-canvas');const canvas=document.querySelector('relay-canvas');await canvas.updateComplete;const node=canvas.shadowRoot.querySelector('broken-node');await node.updateComplete;node.shadowRoot.querySelector('button').click();await canvas.updateComplete;return canvas.shadowRoot.textContent.includes('10, 5');}`),
+        browserTest('lit44-d3', 'El canvas recibe la posición', `async ({document,customElements})=>{await customElements.whenDefined('relay-canvas');const canvas=document.querySelector('relay-canvas');if(!canvas)return false;try{await canvas.updateComplete;const node=canvas.shadowRoot?.querySelector('broken-node');if(!node)return false;await node.updateComplete;const button=node.shadowRoot?.querySelector('button');if(!button)return false;button.click();await canvas.updateComplete;return Boolean(canvas.shadowRoot?.textContent.includes('10, 5'));}catch{return false;}}`),
       ],
       hints: ['El listener vive fuera del shadow root del nodo.', 'bubbles recorre ancestros.', 'composed autoriza cruzar la frontera.'],
     },
@@ -685,7 +685,7 @@ class ClockStudio extends LitElement {
 
 customElements.define('clock-studio', ClockStudio);`,
       tests: [
-        browserTest('lit45-d1', 'tick cambia pulse sin guardar historial', `async ({document,customElements})=>{await customElements.whenDefined('clock-studio');const el=document.querySelector('clock-studio');const before=el.history.length;const pulse=el.pulse;el.tick();await el.updateComplete;return el.pulse!==pulse&&el.history.length===before;}`),
+        browserTest('lit45-d1', 'tick cambia pulse sin guardar historial', `async ({document,customElements})=>{await customElements.whenDefined('clock-studio');const el=document.querySelector('clock-studio');if(!el||!Array.isArray(el.history))return false;const before=el.history.length;const pulse=el.pulse;try{el.tick();await el.updateComplete;}catch{return false;}return el.pulse!==pulse&&el.history.length===before;}`),
         sourceTest('lit45-d2', 'tick no llama commit', String.raw`tick\s*\([^)]*\)\s*\{(?![\s\S]*?this\.commit)[\s\S]*?\}`),
       ],
       hints: ['Un pulso no es una orden humana.', 'tick puede cambiar pulse directamente.', 'Reserva commit para acciones que deban aparecer en undo.'],

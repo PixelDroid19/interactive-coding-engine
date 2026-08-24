@@ -85,7 +85,7 @@ class LiveLabel extends LitElement {
   }
 }
 customElements.define('live-label', LiveLabel);`,
-      tests: [sourceTest('lit33-d1', 'La salida usa el valor vigente', String.raw`render\s*\(\s*value\s*\)\s*\{[^}]*return\s+value`), browserTest('lit33-d2', 'El texto cambia después de actualizar label', `async ({document,customElements})=>{await customElements.whenDefined('live-label');const el=document.querySelector('live-label');el.label='Dos';await el.updateComplete;return el.shadowRoot.textContent.includes('Dos');}`)],
+      tests: [sourceTest('lit33-d1', 'La salida usa el valor vigente', String.raw`render\s*\(\s*value\s*\)\s*\{[^}]*return\s+value`), browserTest('lit33-d2', 'El texto cambia después de actualizar label', `async ({document,customElements})=>{await customElements.whenDefined('live-label');const el=document.querySelector('live-label');if(!el)return false;try{el.label='Dos';await el.updateComplete;}catch{return false;}return Boolean(el.shadowRoot?.textContent.includes('Dos'));}`)],
       hints: ['La entrada de render ya es la versión vigente.', 'No toda directiva necesita estado.', 'Devuelve el argumento actual en cada actualización.'] },
   }),
   lesson({
@@ -168,7 +168,7 @@ class DetailPanel extends LitElement {
   }
 }
 customElements.define('detail-panel', DetailPanel);`,
-      tests: [sourceTest('lit34-d1', 'show es asíncrono y espera el render', String.raw`async\s+show\s*\([^)]*\)[\s\S]*await\s+this\.updateComplete`), browserTest('lit34-d2', 'Abrir muestra el detalle sin lanzar error', `async ({document,customElements})=>{await customElements.whenDefined('detail-panel');const el=document.querySelector('detail-panel');await el.show();return el.shadowRoot.textContent.includes('Detalle');}`)],
+      tests: [sourceTest('lit34-d1', 'show es asíncrono y espera el render', String.raw`async\s+show\s*\([^)]*\)[\s\S]*await\s+this\.updateComplete`), browserTest('lit34-d2', 'Abrir muestra el detalle sin lanzar error', `async ({document,customElements})=>{await customElements.whenDefined('detail-panel');const el=document.querySelector('detail-panel');if(!el)return false;try{await el.show();}catch{return false;}return Boolean(el.shadowRoot?.textContent.includes('Detalle'));}`)],
       hints: ['Asignar open programa una actualización.', 'El article aparece después del render.', 'Haz show async y espera updateComplete antes de consultarlo.'] },
   }),
   lesson({
@@ -464,7 +464,7 @@ class ArtCard extends LitElement {
   }
 }
 customElements.define('art-card', ArtCard);`,
-      tests: [sourceTest('lit37-d1', 'La imagen ausente tiene fallback', String.raw`image\?\.|\?\?`), browserTest('lit37-d2', 'Renderiza una obra sin image', `async ({document,customElements})=>{await customElements.whenDefined('art-card');const el=document.createElement('art-card');el.art={title:'Sin imagen'};document.body.append(el);await el.updateComplete;return el.shadowRoot.textContent.includes('Sin imagen');}`)],
+      tests: [sourceTest('lit37-d1', 'La imagen ausente tiene fallback', String.raw`image\?\.|\?\?`), browserTest('lit37-d2', 'Renderiza una obra sin image', `async ({document,customElements})=>{await customElements.whenDefined('art-card');const el=document.createElement('art-card');el.art={title:'Sin imagen'};document.body.append(el);try{await el.updateComplete;}catch{return false;}return Boolean(el.shadowRoot?.textContent.includes('Sin imagen'));}`)],
       hints: ['Los datos remotos pueden omitir campos.', 'Decide un fallback antes del template.', 'El título debe seguir disponible aunque no haya imagen.'] },
   }),
   lesson({
@@ -565,7 +565,7 @@ class CityBoard extends LitElement {
   }
 }
 customElements.define('city-board', CityBoard);`,
-      tests: [sourceTest('lit38-d1', 'Usa allSettled para resultados independientes', String.raw`Promise\.allSettled\s*\(`), browserTest('lit38-d2', 'Conserva al menos la ciudad correcta', `async ({document,customElements})=>{await customElements.whenDefined('city-board');const el=document.querySelector('city-board');await el.load();return JSON.stringify(el.rows).includes('Bogotá');}`)],
+      tests: [sourceTest('lit38-d1', 'Usa allSettled para resultados independientes', String.raw`Promise\.allSettled\s*\(`), browserTest('lit38-d2', 'Conserva al menos la ciudad correcta', `async ({document,customElements})=>{await customElements.whenDefined('city-board');const el=document.querySelector('city-board');if(!el)return false;try{await el.load();}catch{return false;}return JSON.stringify(el.rows).includes('Bogotá');}`)],
       hints: ['Las operaciones son independientes.', 'allSettled no lanza por un rechazo individual.', 'Transforma fulfilled y rejected por separado.'] },
   }),
   lesson({
