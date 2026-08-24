@@ -96,6 +96,74 @@ function hasModuleSyntax(source: string): boolean {
   return /(?:^|\n)\s*(?:import(?:\s|\{|\*)|export\s)/m.test(source);
 }
 
+function normalizeWorkspaceModulePath(path: string): string {
+  const parts: string[] = [];
+  for (const part of path.replace(/\\/g, '/').replace(/^\/+/, '').split('/')) {
+    if (!part || part === '.') continue;
+    if (part === '..') parts.pop();
+    else parts.push(part);
+  }
+  return parts.join('/');
+}
+
+function resolveLocalModulePath(fromPath: string, specifier: string, knownPaths: Set<string>): string | null {
+  if (!specifier.startsWith('.') && !specifier.startsWith('/')) return null;
+  const base = specifier.startsWith('/')
+    ? specifier
+    : `${fromPath.split('/').slice(0, -1).join('/')}/${specifier}`;
+  const normalized = normalizeWorkspaceModulePath(base);
+  for (const candidate of [normalized, `${normalized}.js`, `${normalized}/index.js`]) {
+    if (knownPaths.has(candidate)) return candidate;
+  }
+  return null;
+}
+
+const STATIC_IMPORT_PATTERN = /(^|\n)\s*import\s+(?:[^;'"`]+\s+from\s+)?['"]([^'"]+)['"]\s*;?/g;
+
+function buildJavaScriptSource(files: WorkspaceFile[]): string {
+  const byPath = new Map(files.map((file) => [normalizeWorkspaceModulePath(file.path), file]));
+  const knownPaths = new Set(byPath.keys());
+  const dependencies = new Map<string, string[]>();
+  let hasLocalImports = false;
+
+  for (const [path, file] of byPath) {
+    const localDependencies: string[] = [];
+    for (const match of file.content.matchAll(new RegExp(STATIC_IMPORT_PATTERN.source, 'g'))) {
+      const resolved = resolveLocalModulePath(path, match[2], knownPaths);
+      if (resolved) {
+        localDependencies.push(resolved);
+        hasLocalImports = true;
+      }
+    }
+    dependencies.set(path, localDependencies);
+  }
+
+  if (!hasLocalImports) return files.map((file) => file.content).join('\n\n');
+
+  const ordered: WorkspaceFile[] = [];
+  const state = new Map<string, 'visiting' | 'done'>();
+  const visit = (path: string) => {
+    if (state.get(path) === 'done') return;
+    if (state.get(path) === 'visiting') return;
+    state.set(path, 'visiting');
+    for (const dependency of dependencies.get(path) || []) visit(dependency);
+    state.set(path, 'done');
+    const file = byPath.get(path);
+    if (file) ordered.push(file);
+  };
+  for (const path of byPath.keys()) visit(path);
+
+  return ordered.map((file) => {
+    const path = normalizeWorkspaceModulePath(file.path);
+    return file.content
+      .replace(new RegExp(STATIC_IMPORT_PATTERN.source, 'g'), (statement, prefix: string, specifier: string) =>
+        resolveLocalModulePath(path, specifier, knownPaths) ? prefix : statement)
+      .replace(/(^|\n)\s*export\s+\{[^}]*\}\s*;?/g, '$1')
+      .replace(/\bexport\s+default\s+(?=(?:class|function)\s+[A-Za-z_$])/g, '')
+      .replace(/\bexport\s+(?=(?:async\s+)?(?:function|class|const|let|var)\b)/g, '');
+  }).join('\n\n');
+}
+
 function buildReactDependencies(html: string): string {
   const scriptSources = Array.from(html.matchAll(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi))
     .map((match) => match[1].toLowerCase());
@@ -115,7 +183,7 @@ export function buildPreviewDocument(workspace: WorkspaceSnapshot): string {
   const htmlFile = collectByLanguage(files, 'html')[0];
   const cssContent = collectByLanguage(files, 'css').map((file) => file.content).join('\n\n');
   const jsFiles = collectByLanguage(files, 'javascript');
-  const jsContent = jsFiles.map((file) => file.content).join('\n\n');
+  const jsContent = buildJavaScriptSource(jsFiles);
   const useJsx = shouldTranspileJsx(workspace);
   const useModules = !useJsx && hasModuleSyntax(jsContent);
   const usesBareLitImport = /\bfrom\s+['"](?:lit(?:\/[^'"]*)?|@lit\/(?:task|context))['"]|\bimport\s*\(\s*['"](?:lit(?:\/[^'"]*)?|@lit\/(?:task|context))['"]\s*\)/.test(jsContent);

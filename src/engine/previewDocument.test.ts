@@ -85,6 +85,38 @@ describe('buildPreviewDocument', () => {
     expect(document).toContain('console.log("local");');
   });
 
+  it('ejecuta módulos locales en orden de dependencia dentro del playground', () => {
+    const workspace: WorkspaceSnapshot = {
+      activeFilePath: 'src/main.js',
+      files: {
+        'index.html': {
+          name: 'index.html',
+          path: 'index.html',
+          language: 'html',
+          content: '<!doctype html><html><head></head><body><output id="result"></output><script type="module" src="src/main.js"></script></body></html>',
+        },
+        'src/main.js': {
+          name: 'main.js',
+          path: 'src/main.js',
+          language: 'javascript',
+          content: `import { sum } from './math.js';\ndocument.querySelector('#result').textContent = sum(2, 3);`,
+        },
+        'src/math.js': {
+          name: 'math.js',
+          path: 'src/math.js',
+          language: 'javascript',
+          content: 'export function sum(a, b) { return a + b; }',
+        },
+      },
+    };
+
+    const document = buildPreviewDocument(workspace);
+
+    expect(document).not.toContain("from './math.js'");
+    expect(document.indexOf('function sum')).toBeLessThan(document.indexOf("querySelector('#result')"));
+    expect(document).toContain('document.querySelector');
+  });
+
   it('no duplica las dependencias que ya declara la plantilla React', () => {
     const document = buildPreviewDocument(templateWorkspace('react'));
 
