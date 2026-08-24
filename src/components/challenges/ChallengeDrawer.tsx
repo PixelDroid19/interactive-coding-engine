@@ -134,6 +134,7 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
   const [showApplyConfirm, setShowApplyConfirm] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const testsFunctionDirectly = challenge.tests.some((test) => test.validatorType === 'function-call');
 
   const handleSkipForNow = onSkipForNow || onSkip;
   const effectiveOnViewSolution = onViewSolution || (() => {
@@ -372,6 +373,12 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
                     </span>
                   )}
                 </div>
+
+                {testsFunctionDirectly && (
+                  <p className="rounded-md border border-sky-900/70 bg-sky-950/25 px-2.5 py-2 text-[11px] leading-relaxed text-sky-200">
+                    Puedes usar tus propios valores en el ejemplo. Las pruebas llaman a tu función con datos distintos para comprobar que la lógica sea general.
+                  </p>
+                )}
 
                 <div className="space-y-1.5">
                   {challenge.tests.map((test) => {

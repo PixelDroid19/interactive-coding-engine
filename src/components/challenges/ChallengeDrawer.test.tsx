@@ -73,6 +73,26 @@ describe('ChallengeDrawer', () => {
     expect(markup).toContain('aria-label="Minimizar reto"');
   });
 
+  it('aclara que las funciones pueden probarse con valores propios', () => {
+    const challenge = {
+      ...makeChallenge(),
+      tests: [{
+        id: 'funcion-general',
+        description: 'Funciona con datos distintos',
+        validatorType: 'function-call' as const,
+        targetFunction: 'etiqueta',
+        args: [{ nombre: 'Control', precio: 1 }],
+        expectedReturn: 'Control — 1',
+      }],
+    };
+    const markup = renderToStaticMarkup(
+      <ChallengeDrawer challenge={challenge as any} validationResult={null} onValidate={() => {}} onReset={() => {}} onContinue={() => {}} isOpen={true} />
+    );
+
+    expect(markup).toContain('Puedes usar tus propios valores');
+    expect(markup).toContain('datos distintos');
+  });
+
   it('tras validación fallida muestra mensaje útil', () => {
     const challenge = makeChallenge();
     const validation = {

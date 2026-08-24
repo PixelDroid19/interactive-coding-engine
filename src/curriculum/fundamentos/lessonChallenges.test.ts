@@ -7,6 +7,7 @@ import { LESSON_01 } from './lesson01';
 import { LESSON_04 } from './lesson04';
 import { LESSON_02 } from './lesson02';
 import { LESSON_06 } from './lesson06';
+import { LESSON_09 } from './lesson09';
 
 describe('retos dentro de las lecciones', () => {
   it.each(Object.values(FUNDAMENTOS_SCRIMS).flatMap((lesson) =>
@@ -132,5 +133,33 @@ describe('retos dentro de las lecciones', () => {
 
     expect(workspace.files['app.js'].content).not.toMatch(/\b(?:const|let|function|if|for)\b/);
     expect(result.allPassed).toBe(true);
+  });
+
+  it('el reto de objetos acepta valores elegidos por el estudiante sin exigir console.log', async () => {
+    const challenge = LESSON_09.challenges.find((candidate) => candidate.id === 'reto-producto')!;
+    const workspace = cloneWorkspace(LESSON_09.initialWorkspace);
+    workspace.files['app.js'].content = [
+      'const producto = { nombre: "Cuaderno", precio: 27 };',
+      'function etiqueta(item) {',
+      '  return item.nombre + " — " + item.precio;',
+      '}',
+    ].join('\n');
+
+    const result = await runChallengeValidation(challenge, workspace, null);
+
+    expect(result.allPassed).toBe(true);
+    expect(workspace.files['app.js'].content).not.toContain('console.log');
+  });
+
+  it('el reto de objetos explica que los datos propios son libres y console.log es opcional', () => {
+    const challenge = LESSON_09.challenges.find((candidate) => candidate.id === 'reto-producto')!;
+    const visibleTests = challenge.tests.map((test) => test.description).join('\n');
+    const visibleHints = challenge.hints.map((hint) => `${hint.title} ${hint.text}`).join('\n');
+
+    expect(challenge.instructions).toMatch(/elige.+valores|valores.+quieras/i);
+    expect(challenge.instructions).toMatch(/pruebas.+otros productos/i);
+    expect(visibleTests).not.toMatch(/Té|Café|precio\s*:\s*(?:4|12)/i);
+    expect(visibleHints).toMatch(/console\.log/i);
+    expect(visibleHints).toMatch(/opcional|si quieres/i);
   });
 });

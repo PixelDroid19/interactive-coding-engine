@@ -85,35 +85,37 @@ export const LESSON_09 = compileLesson({
       challenge: {
         id: 'reto-producto',
         title: 'Reto: producto y etiqueta',
-        instructions: `Crea un producto con nombre y precio.
+        instructions: `Crea un objeto producto y elige los valores que quieras para nombre y precio.
 
-Después escribe etiqueta(item): debe leer esos dos campos y devolver un texto con el formato “Nombre — precio”. Debe funcionar con cualquier producto.`,
+Después escribe etiqueta(item): debe leer esos dos campos y devolver un texto con el formato “Nombre — precio”. Debe funcionar con cualquier producto.
+
+Puedes usar console.log(etiqueta(producto)) para observar tu ejemplo, pero no es obligatorio. Las pruebas llamarán directamente a tu función con otros productos.`,
         tests: [
           {
             id: 'etiqueta-te',
-            description: 'etiqueta({nombre:"Té",precio:4}) es "Té — 4"',
+            description: 'Usa el nombre y el precio del producto recibido',
             validatorType: 'function-call',
             targetFunction: 'etiqueta',
             args: [{ nombre: 'Té', precio: 4 }],
             expectedReturn: 'Té — 4',
-            errorMessage: 'Con {nombre:"Té",precio:4} debe devolver "Té — 4".',
+            errorMessage: 'La etiqueta no usa correctamente el nombre y el precio recibidos.',
             hintTip: 'Lee los dos campos por su nombre y júntalos con la raya del formato pedido.',
           },
           {
             id: 'etiqueta-cafe',
-            description: 'etiqueta({nombre:"Café",precio:12}) es "Café — 12"',
+            description: 'También funciona con un producto distinto',
             validatorType: 'function-call',
             targetFunction: 'etiqueta',
             args: [{ nombre: 'Café', precio: 12 }],
             expectedReturn: 'Café — 12',
-            errorMessage: 'Prueba con otro producto, debe usar los campos.',
+            errorMessage: 'La función parece depender de los valores de tu ejemplo.',
             hintTip: 'Lee item.nombre y item.precio con punto.',
           },
         ],
         hints: [
           { level: 1, title: 'Llaves', text: 'El objeto va entre { }.' },
           { level: 2, title: 'Punto', text: 'item.nombre entra al campo.' },
-          { level: 3, title: 'Comprueba', text: 'Prueba con un segundo producto. Si repite el primero, la función no está leyendo item.' },
+          { level: 3, title: 'Observa si lo necesitas', text: 'console.log(etiqueta(producto)) es opcional: sirve para ver tu ejemplo. Las pruebas llaman a etiqueta con otros productos para comprobar que no dependa de valores fijos.' },
         ],
         solutionExplanation: 'El objeto agrupa. La función lee los campos y arma un texto.',
       },
