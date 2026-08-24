@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-02",
+  "durationMs": 270400,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/02.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 34710,
+      "text": "Extiende HTMLElement sin romper la construcción nativa y explica qué inicializa super() antes de usar this. En esta clase construiremos una tarjeta de perfil con Shadow DOM. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 34860,
+      "end": 95310,
+      "text": "super() construye los cimientos de HTMLElement; solo después la subclase puede usar this sobre una instancia válida. En términos concretos, Herencia significa una clase especializada conserva capacidades de su base En cambio, super() significa ejecuta el constructor base antes de acceder a la instancia derivada. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 95460,
+      "end": 131810,
+      "text": "No leas el ejemplo como una receta. Pausa en cada paso de una tarjeta de perfil con Shadow DOM y predice qué observará el navegador antes de continuar. Primero, new crea ProfileCard. Después, super() inicializa HTMLElement. A continuación, la subclase puede usar this. Por último, la tarjeta prepara su DOM. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 131960,
+      "end": 187710,
+      "text": "Todo constructor de una clase derivada debe llamar super(); si no tienes inicialización propia, omite el constructor. La señal más útil para decidir es la frontera: pregunta si Herencia y super() reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 187860,
+      "end": 246550,
+      "text": "Mantén el constructor pequeño: inicializa estado y estructura estable; deja red y recursos vivos para el ciclo adecuado. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: usar this antes de super(), olvidar super() o iniciar trabajo externo durante la construcción. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 246700,
+      "end": 270100,
+      "text": "Te toca tomar las decisiones en una tarjeta de perfil con Shadow DOM. El starter prepara el escenario, pero la regla central sigue abierta; usa la vista previa como evidencia. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9734
+}

@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-10",
+  "durationMs": 256000,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/10.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 29390,
+      "text": "Envía datos hacia abajo por propiedades y decisiones hacia arriba por eventos. En esta clase construiremos un carrito compuesto sin estado duplicado. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 29540,
+      "end": 90530,
+      "text": "El padre lleva el libro contable; los hijos leen una página y envían recibos, pero no reescriben el libro por su cuenta. En términos concretos, Flujo unidireccional significa datos bajan; eventos suben En cambio, Propietario del estado significa componente responsable de actualizar el dato canónico. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 90680,
+      "end": 121830,
+      "text": "No leas el ejemplo como una receta. Pausa en cada paso de un carrito compuesto sin estado duplicado y predice qué observará el navegador antes de continuar. Primero, cartApp posee items. Después, pasa item a cart-line. A continuación, el hijo emite line-remove. Por último, el padre actualiza items y renderiza. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 121980,
+      "end": 176070,
+      "text": "Úsalo cuando varios componentes representan o modifican partes del mismo estado. La señal más útil para decidir es la frontera: pregunta si Flujo unidireccional y Propietario del estado reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 176220,
+      "end": 234040,
+      "text": "Coloca el estado en el ancestro común más cercano y define eventos de dominio, no referencias al padre. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: duplicar items en cada hijo, pasar objetos por atributos o permitir que el hijo mute el objeto recibido. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 234190,
+      "end": 255790,
+      "text": "Te toca tomar las decisiones en un carrito compuesto sin estado duplicado. El starter prepara el escenario, pero la regla central sigue abierta; usa la vista previa como evidencia. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9811
+}

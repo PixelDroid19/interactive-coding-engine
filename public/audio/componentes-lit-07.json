@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-07",
+  "durationMs": 266360,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/07.md",
+  "cues": [
+    {
+      "timestamp": 180,
+      "end": 36030,
+      "text": "Diseña eventos con nombre, detail, bubbles y composed para comunicar decisiones sin controlar al padre. En esta clase construiremos un selector de cantidad desacoplado. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 36180,
+      "end": 94330,
+      "text": "Un evento es una carta: nombre dice qué ocurrió, detail lleva datos y las opciones deciden hasta dónde viaja. En términos concretos, Evento público significa notificación observable de algo ocurrido En cambio, detail significa datos propios de un CustomEvent. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 94480,
+      "end": 129690,
+      "text": "Este ejemplo no es el ejercicio disfrazado. un selector de cantidad desacoplado nos permitirá observar el mismo principio en un problema diferente y comparar decisiones. Primero, la persona pulsa +. Después, el hijo calcula cantidad. A continuación, emite quantity-change. Por último, el padre decide. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 129840,
+      "end": 185130,
+      "text": "Usa eventos para decisiones nacidas dentro del componente; usa propiedades para datos que entran. La señal más útil para decidir es la frontera: pregunta si Evento público y detail reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 185280,
+      "end": 241670,
+      "text": "Nombra hechos, documenta detail y prueba desde la API pública. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: emitir órdenes al padre, omitir composed tras Shadow DOM o filtrar nodos internos. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 241820,
+      "end": 265940,
+      "text": "Resuelve un selector de cantidad desacoplado desde la API pública hacia dentro. El código inicial conserva contexto, no la respuesta; deja que las comprobaciones guíen tu diagnóstico. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9656
+}
