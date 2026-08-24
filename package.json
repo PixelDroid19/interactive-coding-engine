@@ -14,6 +14,7 @@
     "audio:generate": "tsx scripts/export-cues.ts && bash -lc 'source /opt/intel/oneapi/setvars.sh >/dev/null; exec .venv-tts/bin/python scripts/generate_spanish_arc.py'",
     "audio:gemini": "tsx scripts/generate-gemini-audio.ts",
     "audio:align:javascript": ".venv-tts/bin/python scripts/align-javascript-audio.py",
+    "audio:align:components": ".venv-tts/bin/python scripts/align-component-course-audio.py",
     "guiones:components": "tsx scripts/export-component-course-guiones.ts",
     "format:component-course": "tsx scripts/format-component-course-code.ts"
   },

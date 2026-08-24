@@ -25,7 +25,7 @@ const index = [
   '',
   'Texto hablado solamente. Cada archivo corresponde a una clase y debe coincidir palabra por palabra con el audio que se genere más adelante.',
   '',
-  'El curso no tiene un límite artificial de lecciones. Esta versión contiene las siguientes 40 unidades:',
+  `El curso no tiene un límite artificial de lecciones. Esta versión contiene ${COMPONENT_COURSE_SPECS.length} unidades:`,
   '',
   ...COMPONENT_COURSE_SPECS.map((spec) => `- ${String(spec.number).padStart(2, '0')}. ${spec.title}`),
   '',

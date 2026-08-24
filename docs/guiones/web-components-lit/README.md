@@ -2,7 +2,7 @@
 
 Texto hablado solamente. Cada archivo corresponde a una clase y debe coincidir palabra por palabra con el audio que se genere más adelante.
 
-El curso no tiene un límite artificial de lecciones. Esta versión contiene las siguientes 40 unidades:
+El curso no tiene un límite artificial de lecciones. Esta versión contiene 45 unidades:
 
 - 01. Un componente es un contrato HTML
 - 02. HTMLElement y por qué llamamos a super()
