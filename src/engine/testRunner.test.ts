@@ -331,6 +331,26 @@ document.getElementById("linea2").textContent = "";`
     expect(result.tests[0].isEvaluationError).toBe(true);
     expect(result.feedbackMessage).toContain('No pudimos evaluar');
   });
+
+  it('usa el plural correcto al informar varias comprobaciones no evaluables', async () => {
+    const ws = wsFromJs('console.log("abierto";');
+    const reto = {
+      id: 'syntax-plural',
+      title: 'Sintaxis',
+      timestamp: 0,
+      instructions: '',
+      tests: [
+        { id: 'uno', description: 'primera', validatorType: 'console-check' as const, expectedReturn: 'uno' },
+        { id: 'dos', description: 'segunda', validatorType: 'console-check' as const, expectedReturn: 'dos' },
+      ],
+      hints: [],
+    };
+
+    const result = await runChallengeValidation(reto as any, ws, null);
+
+    expect(result.feedbackMessage).toContain('2 comprobaciones');
+    expect(result.feedbackMessage).not.toContain('comprobaciónes');
+  });
 });
 
 describe('testRunner para componentes ejecutados en navegador', () => {

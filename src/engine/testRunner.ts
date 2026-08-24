@@ -210,7 +210,8 @@ export async function runChallengeValidation(
 
   let feedbackMessage = '';
   if (evaluationErrors > 0) {
-    feedbackMessage = `No pudimos evaluar el código en ${evaluationErrors} comprobación${evaluationErrors > 1 ? 'es' : ''}. Corrige el error indicado y vuelve a pulsar Comprobar.`;
+    const evaluationLabel = evaluationErrors === 1 ? 'comprobación' : 'comprobaciones';
+    feedbackMessage = `No pudimos evaluar el código en ${evaluationErrors} ${evaluationLabel}. Corrige el error indicado y vuelve a pulsar Comprobar.`;
   } else if (allPassed) {
     feedbackMessage = 'Muy bien. Pasaste las pruebas. Sigue con la lección.';
   } else {
