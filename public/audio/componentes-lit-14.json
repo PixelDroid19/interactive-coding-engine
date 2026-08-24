@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-14",
+  "durationMs": 388080,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/14.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 38170,
+      "text": "Prueba el componente como lo usa una aplicación: etiqueta, propiedades, eventos, accesibilidad y ciclos reales de navegador. En esta clase construiremos un diálogo reutilizable probado desde su API pública. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 38320,
+      "end": 102040,
+      "text": "Una prueba pública entra por la puerta del componente y observa sus salidas; si necesita desmontar paredes, el contrato está incompleto o la prueba está acoplada. En términos concretos, Prueba de componente significa verificación en navegador de una instancia real En cambio, Contrato publicable significa aPI documentada que puede evolucionar sin filtrar internals. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 102190,
+      "end": 144690,
+      "text": "Antes de ejecutar, haz una apuesta: ¿qué debería ocurrir en un diálogo reutilizable probado desde su API pública y por qué? Usa Prueba de componente y Contrato publicable para justificar tu predicción. Primero, la prueba crea el elemento. Después, configura API pública. A continuación, ejecuta interacción observable. Por último, comprueba DOM/evento/accesibilidad. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 144840,
+      "end": 202970,
+      "text": "Prueba en navegador todo componente que dependa de DOM, Shadow DOM, foco, eventos o ciclo de vida. La señal más útil para decidir es la frontera: pregunta si Prueba de componente y Contrato publicable reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 203120,
+      "end": 273750,
+      "text": "Comprueba resultados, no métodos privados; incluye teclado, estados, reconexión y más de una entrada. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: testear innerHTML exacto, llamar métodos privados, simular HTMLElement en Node o publicar sin documentar eventos y CSS hooks. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 273900,
+      "end": 387740,
+      "text": "Es tu turno con un diálogo reutilizable probado desde su API pública. Haz primero el camino mínimo completo, compruébalo en el navegador y después añade el caso alternativo. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9724
+}

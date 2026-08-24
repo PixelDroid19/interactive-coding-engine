@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-11",
+  "durationMs": 257080,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/11.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 33010,
+      "text": "Conserva semántica nativa, administra foco y ofrece teclado sin inventar controles incompletos. En esta clase construiremos un menú de acciones operable sin ratón. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 33160,
+      "end": 91210,
+      "text": "La accesibilidad es parte del contrato de interacción: nombre, rol, estado, teclado y foco deben contar la misma historia. En términos concretos, Semántica significa significado que navegador y tecnología asistiva comparten En cambio, Gestión de foco significa movimiento predecible del punto de interacción. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 91360,
+      "end": 124130,
+      "text": "La demostración cambia de contexto a propósito. Recorre un menú de acciones operable sin ratón desde su contrato público hasta el DOM y pregunta qué sabe cada pieza. Primero, el usuario enfoca el botón. Después, enter abre el menú. A continuación, el foco pasa a una opción. Por último, escape cierra y devuelve el foco. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 124280,
+      "end": 177050,
+      "text": "Diseña teclado y foco cuando el componente abre superficies, selecciona opciones o cambia contexto. La señal más útil para decidir es la frontera: pregunta si Semántica y Gestión de foco reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 177200,
+      "end": 233410,
+      "text": "Prefiere elementos nativos, prueba solo con teclado y no añadas ARIA que contradiga al HTML. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: divs clicables sin teclado, foco perdido al cerrar o aria-expanded desincronizado. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 233560,
+      "end": 256860,
+      "text": "Cierra la explicación y trabaja desde el comportamiento esperado. Para completar un menú de acciones operable sin ratón, predice, implementa y comprueba más de una entrada. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9697
+}

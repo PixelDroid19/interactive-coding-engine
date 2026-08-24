@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-13",
+  "durationMs": 295440,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/13.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 37930,
+      "text": "Modela todos los estados de una operación asíncrona y cancela resultados que ya no pertenecen a la consulta actual. En esta clase construiremos un buscador con carga, vacío, error y carreras controladas. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 38080,
+      "end": 100270,
+      "text": "Una promesa no es una pantalla: el componente traduce el tiempo en estados observables y protege la vista contra respuestas atrasadas. En términos concretos, Estado asíncrono significa idle, loading, success, empty o error En cambio, Cancelación significa evitar que trabajo obsoleto actualice el componente. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 100420,
+      "end": 139910,
+      "text": "Fíjate en la frontera, no solo en la sintaxis. Mientras construimos un buscador con carga, vacío, error y carreras controladas, separa responsabilidades de plataforma, componente y consumidor. Primero, nueva consulta crea AbortController. Después, cambia a loading. A continuación, respuesta vigente cambia estado. Por último, render muestra success/empty/error. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 140060,
+      "end": 203540,
+      "text": "Úsalo en búsqueda, carga remota, validación de servidor y cualquier tarea cuyo resultado llegue después. La señal más útil para decidir es la frontera: pregunta si Estado asíncrono y Cancelación reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 203690,
+      "end": 266320,
+      "text": "Modela estados explícitos, conserva AbortController y prueba respuesta vacía, fallo, desconexión y carrera. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: mostrar spinner para siempre, tratar [] como error, permitir que una respuesta vieja pise una nueva o actualizar tras desconexión. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 266470,
+      "end": 268710,
+      "text": "Lleva el modelo a un buscador con carga, vacío, error y carreras controladas. Si te atascas, vuelve al flujo de cuatro pasos; las pistas orientan la investigación, pero no entregan el programa. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.86
+}
