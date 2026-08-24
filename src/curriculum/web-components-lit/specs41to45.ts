@@ -71,7 +71,7 @@ customElements.define('viewport-panel', ViewportPanel);`,
     tests: [
       sourceTest('lit41-chain', 'Conserva ambos callbacks de la clase base', String.raw`connectedCallback[\s\S]*super\.connectedCallback\s*\([\s\S]*disconnectedCallback[\s\S]*super\.disconnectedCallback\s*\(`),
       sourceTest('lit41-cleanup', 'Usa una referencia estable para añadir y retirar resize', String.raw`addEventListener\s*\(\s*['"]resize['"][\s\S]*removeEventListener\s*\(\s*['"]resize['"]`),
-      browserTest('lit41-runtime', 'El panel obtiene y muestra una medida real', `async ({document,customElements})=>{await customElements.whenDefined('viewport-panel');const el=document.querySelector('viewport-panel');await el.updateComplete;return Number(el.viewportWidth)>0&&el.shadowRoot.textContent.includes('px');}`),
+      browserTest('lit41-runtime', 'El panel obtiene y muestra una medida real', `async ({document,customElements})=>{await customElements.whenDefined('viewport-panel');const el=document.querySelector('viewport-panel');await Promise.race([el.updateComplete,new Promise(resolve=>setTimeout(resolve,150))]);return Number(el.viewportWidth)>0&&Boolean(el.shadowRoot?.textContent.includes('px'));}`),
     ],
     hints: ['El mixin devuelve una clase; no crea una instancia por su cuenta.', 'La misma función que escucha resize debe llegar a removeEventListener.', 'Cada callback sobrescrito conserva el comportamiento anterior con super.'],
     model: 'Un mixin añade una capa a la cadena de herencia. Esa capa puede ofrecer estado y métodos, pero también hereda la obligación de no cortar los callbacks que LitElement necesita para conectarse, actualizar y limpiar.',
@@ -309,8 +309,8 @@ customElements.define('relay-calculator', RelayCalculator);`,
     challengeTitle: 'App: motor de evaluación independiente de Lit',
     challengeInstructions: 'Implementa topologicalOrder y evaluateGraph. El visor debe producir 50, el orden debe respetar dependencias y el motor debe aceptar otra tabla de evaluadores.',
     tests: [
-      browserTest('lit43-value', 'El circuito calcula 36 + 14 = 50', `async ({document,customElements})=>{await customElements.whenDefined('relay-calculator');const el=document.querySelector('relay-calculator');const snap=el.run();await el.updateComplete;return snap.outputs.get('screen')===50&&el.shadowRoot.querySelector('output').textContent.includes('50');}`),
-      browserTest('lit43-order', 'El orden coloca fuentes antes de suma y visor', `async ({document})=>{const order=document.querySelector('relay-calculator').snapshot.order;return order.indexOf('slider')<order.indexOf('sum')&&order.indexOf('fixed')<order.indexOf('sum')&&order.indexOf('sum')<order.indexOf('screen');}`),
+      browserTest('lit43-value', 'El circuito calcula 36 + 14 = 50', `async ({document,customElements})=>{await customElements.whenDefined('relay-calculator');const el=document.querySelector('relay-calculator');const snap=el.run();if(!snap?.outputs)return false;await el.updateComplete;return snap.outputs.get('screen')===50&&Boolean(el.shadowRoot?.querySelector('output')?.textContent.includes('50'));}`),
+      browserTest('lit43-order', 'El orden coloca fuentes antes de suma y visor', `async ({document})=>{const order=document.querySelector('relay-calculator')?.snapshot?.order;if(!Array.isArray(order))return false;return order.indexOf('slider')<order.indexOf('sum')&&order.indexOf('fixed')<order.indexOf('sum')&&order.indexOf('sum')<order.indexOf('screen');}`),
       sourceTest('lit43-bridge', 'La implementación se selecciona desde una tabla', String.raw`implementations\s*\[[^\]]*(?:kind|\.kind)[^\]]*\]`),
     ],
     hints: ['indegree cuenta cuántas entradas pendientes tiene cada nodo.', 'Al evaluar una fuente, reduce indegree de sus destinos y encola los que llegan a cero.', 'El motor consulta implementations[node.kind]; no necesita un if por cada tipo.'],
@@ -445,7 +445,7 @@ customElements.define('relay-board', RelayBoard);`,
     challengeInstructions: 'Completa el evento node-move, pointer capture y actualización inmutable. moveTo(24, 12) debe actualizar el tablero sin que relay-node posea la colección.',
     tests: [
       sourceTest('lit44-pointer', 'Captura el puntero durante el arrastre', String.raw`setPointerCapture\s*\(`),
-      browserTest('lit44-event', 'El evento cruza la frontera y conserva el contrato', `async ({document,customElements})=>{await customElements.whenDefined('relay-board');const board=document.querySelector('relay-board');await board.updateComplete;const node=board.shadowRoot.querySelector('relay-node');await node.updateComplete;let observed;board.addEventListener('node-move',e=>observed=e,{once:true});node.moveTo(24,12,false);await board.updateComplete;return observed?.bubbles&&observed?.composed&&observed.detail.nodeId==='n1'&&board.nodes[0].x===24&&board.nodes[0].y===12;}`),
+      browserTest('lit44-event', 'El evento cruza la frontera y conserva el contrato', `async ({document,customElements})=>{await customElements.whenDefined('relay-board');const board=document.querySelector('relay-board');await board.updateComplete;const node=board.shadowRoot?.querySelector('relay-node');if(!node)return false;await node.updateComplete;let observed;board.addEventListener('node-move',e=>observed=e,{once:true});node.moveTo(24,12,false);await board.updateComplete;return Boolean(observed?.bubbles&&observed?.composed&&observed.detail.nodeId==='n1'&&board.nodes[0].x===24&&board.nodes[0].y===12);}`),
       sourceTest('lit44-owner', 'El tablero reemplaza nodes de forma inmutable', String.raw`this\.nodes\s*=\s*this\.nodes\.map`),
     ],
     hints: ['node.id viaja en detail; la colección completa no sale del tablero.', 'CustomEvent necesita bubbles y composed para cruzar el shadow root.', 'setPointerCapture recibe event.pointerId y mantiene la secuencia.'],
@@ -530,7 +530,11 @@ customElements.define('relay-canvas', RelayCanvas);`,
     this.past = this.past.slice(0, -1);
     return structuredClone(this.present);
   }
-}`,
+}
+
+const history = new CommandHistory({ volume: 20 });
+history.commit({ volume: 35 });
+console.log(history.undo());`,
     supportFiles: {
       'relay-engine.js': `export function evaluateRelay(graph) {
   const indegree = new Map(graph.nodes.map((node) => [node.id, 0]));

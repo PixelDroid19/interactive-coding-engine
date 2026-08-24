@@ -287,6 +287,20 @@ async function evaluateSingleTest(
           };
         }
       }
+      const awaitedTags = [...test.customValidatorScript.matchAll(
+        /(?:\bcustomElements|\.customElements)\.whenDefined\s*\(\s*['"]([^'"]+)['"]/g,
+      )].map((match) => match[1]);
+      const missingTag = awaitedTags.find((tag) => !frameWindow.customElements.get(tag));
+      if (missingTag) {
+        return {
+          id: test.id,
+          description: test.description,
+          passed: false,
+          status: 'failed',
+          errorMessage: `Aún no registraste la etiqueta <${missingTag}> en la vista previa.`,
+          hint: test.hintTip,
+        };
+      }
       try {
         const validator = new Function(`return (${test.customValidatorScript});`)();
         if (typeof validator !== 'function') throw new Error('la comprobación no es una función');

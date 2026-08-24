@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { resolve } from 'node:path';
 import { transform } from 'esbuild';
 import { COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS, COMPONENT_COURSE_SPECS } from './course';
 import { LEGACY_LIT_MIGRATION } from './legacyMigration';
+import { COMPONENT_AUDIO_BY_LESSON } from './audioManifest';
 
 describe('curso profesional de Web Components y Lit', () => {
   const items = COMPONENT_COURSE.modules.flatMap((module) => module.items);
@@ -152,13 +154,83 @@ describe('curso profesional de Web Components y Lit', () => {
     }
   });
 
+  it('cada demostración monta su propia etiqueta o deja una salida observable en consola', () => {
+    for (const spec of COMPONENT_COURSE_SPECS) {
+      const lesson = COMPONENT_COURSE_SCRIMS[`componentes-lit-${String(spec.number).padStart(2, '0')}`];
+      const tags = [...spec.example.matchAll(/customElements\.define\s*\(\s*['"]([^'"]+)/g)]
+        .map((match) => match[1]);
+      const exampleTag = tags.at(-1);
+      if (!exampleTag) {
+        expect(spec.example, `demostración ${spec.number} no produce evidencia`).toMatch(/console\.(?:log|table)\s*\(/);
+        continue;
+      }
+      const htmlChanges = lesson.events.flatMap((event) =>
+        event.type === 'code-change' && event.filePath === 'index.html' ? [event] : [],
+      );
+      expect(htmlChanges.length, `demostración ${spec.number} no cambia la página`).toBeGreaterThanOrEqual(2);
+      expect(htmlChanges[0].fullContent, `demostración ${spec.number} no monta <${exampleTag}>`).toContain(`<${exampleTag}`);
+      expect(htmlChanges.at(-1)?.fullContent, `reto ${spec.number} no recupera su HTML`).toBe(spec.html);
+    }
+  });
+
   it('mantiene válidas todas las expresiones de comprobación curricular', () => {
     for (const spec of COMPONENT_COURSE_SPECS) {
       for (const test of [...spec.tests, ...spec.debug.tests]) {
         if (test.validatorType === 'source-regex') {
           expect(() => new RegExp(test.regexPattern || '', 'i'), `${spec.number}: ${test.description}`).not.toThrow();
+        } else if (test.validatorType === 'browser-script') {
+          expect(
+            () => new Function(`return (${test.customValidatorScript});`)(),
+            `${spec.number}: ${test.description}`,
+          ).not.toThrow();
         }
       }
+    }
+  });
+
+  it('usa 45 audios Gemini 3.1 TTS propios, completos y sincronizados', () => {
+    const digest = (path: string) => createHash('sha256').update(readFileSync(path)).digest('hex');
+    const foreignHashes = new Set<string>();
+    for (const prefix of ['fundamentos', 'javascript']) {
+      for (let number = 1; number <= 24; number += 1) {
+        const path = resolve(process.cwd(), 'public', 'audio', `${prefix}-${String(number).padStart(2, '0')}.mp3`);
+        if (existsSync(path)) foreignHashes.add(digest(path));
+      }
+    }
+
+    for (const spec of COMPONENT_COURSE_SPECS) {
+      const number = String(spec.number).padStart(2, '0');
+      const id = `componentes-lit-${number}`;
+      const audio = COMPONENT_AUDIO_BY_LESSON[id];
+      const lesson = COMPONENT_COURSE_SCRIMS[id];
+      const mp3 = resolve(process.cwd(), 'public', 'audio', `${id}.mp3`);
+      const metadataPath = resolve(process.cwd(), 'public', 'audio', `${id}.json`);
+      expect(audio, `${id} no aparece en el manifiesto`).toBeDefined();
+      expect(existsSync(mp3), `${id} no tiene MP3`).toBe(true);
+      expect(statSync(mp3).size, `${id} contiene un audio vacío`).toBeGreaterThan(100_000);
+      expect(foreignHashes.has(digest(mp3)), `${id} reutiliza el audio de otro curso`).toBe(false);
+
+      const metadata = JSON.parse(readFileSync(metadataPath, 'utf8')) as {
+        durationMs: number;
+        engine: string;
+        voice: string;
+        transcriptCoverage: number;
+        cues: { timestamp: number; end: number; text: string }[];
+      };
+      expect(metadata.engine).toBe('gemini-3.1-flash-tts-preview');
+      expect(metadata.voice).toBe('Aoede');
+      expect(metadata.transcriptCoverage, `${id} no cubre el guion`).toBeGreaterThanOrEqual(0.82);
+      expect(metadata.cues.map((cue) => cue.text)).toEqual(spec.script);
+      expect(audio.durationMs).toBe(metadata.durationMs);
+      expect(audio.cues).toEqual(metadata.cues.map((cue) => cue.timestamp));
+      expect(audio.ends).toEqual(metadata.cues.map((cue) => cue.end));
+      expect(lesson.audioTrack?.url).toBe(audio.url);
+      expect(lesson.durationMs).toBe(audio.durationMs);
+      expect(lesson.audioTrack?.narrationScript?.map((cue) => cue.timestamp)).toEqual(audio.cues);
+      expect(lesson.challenges[0].timestamp).toBeGreaterThanOrEqual(
+        Math.min(audio.ends[5], audio.durationMs - 20),
+      );
+      expect(lesson.challenges[0].timestamp).toBeLessThan(lesson.durationMs);
     }
   });
 

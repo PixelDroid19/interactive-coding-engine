@@ -62,7 +62,7 @@ class InviteForm extends LitElement {
   }
 }
 customElements.define('invite-form', InviteForm);`,
-      tests: [sourceTest('lit21-d1', 'Pasa la referencia del manejador', String.raw`@submit\s*=\s*\$\{this\._submit\}`), browserTest('lit21-d2', 'El formulario puede renderizar', `async ({document,customElements})=>{await customElements.whenDefined('invite-form');const el=document.querySelector('invite-form');await el.updateComplete;return Boolean(el.shadowRoot.querySelector('form'));}`)],
+      tests: [sourceTest('lit21-d1', 'Pasa la referencia del manejador', String.raw`@submit\s*=\s*\$\{this\._submit\}`), browserTest('lit21-d2', 'El formulario puede renderizar', `async ({document,customElements})=>{await customElements.whenDefined('invite-form');const el=document.querySelector('invite-form');await Promise.race([Promise.resolve(el.updateComplete).catch(()=>false),new Promise(resolve=>setTimeout(resolve,150))]);return Boolean(el.shadowRoot?.querySelector('form'));}`)],
       hints: ['Los paréntesis ejecutan ahora.', 'Lit necesita una función para llamar después.', 'Quita la llamada del binding.'] },
   }),
   lesson({
@@ -114,7 +114,7 @@ class ConnectionMonitor extends LitElement {
 }
 customElements.define('connection-monitor', ConnectionMonitor);`,
     challengeTitle: 'App: monitor con herencia intacta', challengeInstructions: 'Llama los callbacks super correspondientes, inicia el intervalo al conectar y límpialo al desconectar.',
-    tests: [browserTest('lit22-render', 'Lit conserva su actualización', `async ({document,customElements})=>{await customElements.whenDefined('connection-monitor');const el=document.querySelector('connection-monitor');await el.updateComplete;return Boolean(el.shadowRoot?.querySelector('p'));}`), sourceTest('lit22-super', 'Delega ambos callbacks', String.raw`super\.connectedCallback\s*\([\s\S]*super\.disconnectedCallback\s*\(`)],
+    tests: [browserTest('lit22-render', 'Lit conserva su actualización', `async ({document,customElements})=>{await customElements.whenDefined('connection-monitor');const el=document.querySelector('connection-monitor');await Promise.race([el.updateComplete,new Promise(resolve=>setTimeout(resolve,150))]);return Boolean(el.shadowRoot?.querySelector('p'));}`), sourceTest('lit22-super', 'Delega ambos callbacks', String.raw`super\.connectedCallback\s*\([\s\S]*super\.disconnectedCallback\s*\(`)],
     hints: ['LitElement ya tiene trabajo en esos métodos.', 'Llama super.connectedCallback antes de depender del render.', 'Limpia tu recurso y llama también super.disconnectedCallback.'],
     model: 'Tu clase añade una estación a una línea existente. super permite que el tren de Lit siga recorriendo sus estaciones antes o después de tu trabajo.',
     whenToUse: 'Sobrescribe callbacks nativos solo para recursos ligados a conexión; no los uses para observar cualquier propiedad.',
@@ -379,7 +379,7 @@ class AppPanel extends LitElement {
 }
 customElements.define('app-panel', AppPanel);`,
     challengeTitle: 'App: panel con extensiones deliberadas', challengeInstructions: 'Conserva los slots, expón surface como part y aplica estilo al slot header.',
-    tests: [browserTest('lit26-slots', 'Expone composición completa', `async ({document,customElements})=>{await customElements.whenDefined('app-panel');const root=document.querySelector('app-panel').shadowRoot;return root.querySelector('slot[name="header"]')&&root.querySelector('slot[name="actions"]')&&root.querySelector('[part="surface"]');}`), sourceTest('lit26-slotted', 'Estiliza contenido proyectado sin asumir su etiqueta', String.raw`::slotted\s*\(\s*\[slot\s*=\s*['"]header['"]\]`) ],
+    tests: [browserTest('lit26-slots', 'Expone composición completa', `async ({document,customElements})=>{await customElements.whenDefined('app-panel');const root=document.querySelector('app-panel')?.shadowRoot;return Boolean(root?.querySelector('slot[name="header"]')&&root.querySelector('slot[name="actions"]')&&root.querySelector('[part="surface"]'));}`), sourceTest('lit26-slotted', 'Estiliza contenido proyectado sin asumir su etiqueta', String.raw`::slotted\s*\(\s*\[slot\s*=\s*['"]header['"]\]`) ],
     hints: ['Los slots ya son parte del contrato; no copies su contenido.', 'part nombra una pieza interna concreta.', 'Selecciona por slot, no por h2.'],
     model: 'Variables ajustan perillas, parts permiten pintar una pieza y slots dejan traer contenido; cada puerta tiene un alcance diferente.',
     whenToUse: 'Usa slots para DOM aportado, custom properties para valores y parts para personalización estructural excepcional.',

@@ -387,4 +387,32 @@ describe('testRunner para componentes ejecutados en navegador', () => {
     expect(result.tests[0].status).toBe('evaluation-error');
     expect(result.tests[0].errorMessage).toContain('tiempo');
   });
+
+  it('trata una etiqueta esperada pero aún no registrada como respuesta fallida, no como avería', async () => {
+    const previewWindow = new Window();
+    const iframe = {
+      contentDocument: previewWindow.document,
+      contentWindow: previewWindow,
+      __generation: 4,
+    } as unknown as HTMLIFrameElement;
+    const challenge = {
+      id: 'registro-por-aprender', title: 'Registra la etiqueta', timestamp: 0, instructions: '', hints: [],
+      tests: [{
+        id: 'registro-status',
+        description: 'Registra status-badge',
+        validatorType: 'browser-script',
+        customValidatorScript: `async ({ customElements }) => {
+          await customElements.whenDefined('status-badge');
+          return true;
+        }`,
+      }],
+    } as any;
+
+    const result = await runChallengeValidation(challenge, wsFromJs('// falta registrar'), iframe, 4);
+
+    expect(result.allPassed).toBe(false);
+    expect(result.tests[0].status).toBe('failed');
+    expect(result.tests[0].isEvaluationError).not.toBe(true);
+    expect(result.tests[0].errorMessage).toContain('status-badge');
+  });
 });

@@ -26,7 +26,7 @@ customElements.define('message-box', MessageBox);`,
 }
 customElements.define('summary-panel', SummaryPanel);`,
     challengeTitle: 'App: panel componible', challengeInstructions: 'Construye la estructura de SummaryPanel con los tres slots sin copiar el contenido del consumidor.',
-    tests: [browserTest('wc08-slots', 'Expone los tres puntos de composición', `async ({document,customElements})=>{await customElements.whenDefined('summary-panel');const root=document.querySelector('summary-panel').shadowRoot;return root.querySelector('slot[name="title"]')&&root.querySelector('slot:not([name])')&&root.querySelector('slot[name="actions"]');}`), sourceTest('wc08-no-copy', 'No reemplaza el contenido externo', String.raw`slot\s+name\s*=\s*['"]actions['"]|<slot[^>]+name=['"]actions['"]`)],
+    tests: [browserTest('wc08-slots', 'Expone los tres puntos de composición', `async ({document,customElements})=>{await customElements.whenDefined('summary-panel');const root=document.querySelector('summary-panel')?.shadowRoot;return Boolean(root?.querySelector('slot[name="title"]')&&root.querySelector('slot:not([name])')&&root.querySelector('slot[name="actions"]'));}`), sourceTest('wc08-no-copy', 'No reemplaza el contenido externo', String.raw`slot\s+name\s*=\s*['"]actions['"]|<slot[^>]+name=['"]actions['"]`)],
     hints: ['La estructura pertenece al componente; el contenido pertenece al consumidor.', 'Un slot sin name recibe el contenido por defecto.', 'Los nombres title y actions son parte de la API.'],
     model: 'El componente pone estantes con etiquetas; quien lo usa decide qué objetos coloca en cada estante.',
     whenToUse: 'Usa slots cuando el consumidor debe aportar DOM, semántica o controles que el componente no debería serializar.',
@@ -154,7 +154,7 @@ class CartApp extends HTMLElement {
 }
 customElements.define('cart-app', CartApp);`,
     challengeTitle: 'App: carrito con dueño claro', challengeInstructions: 'Haz que CartApp pase items por propiedad, escuche line-remove y elimine solo el id recibido.',
-    tests: [browserTest('wc10-flow', 'El evento de un hijo actualiza al padre', `async ({document,customElements})=>{await Promise.all([customElements.whenDefined('cart-app'),customElements.whenDefined('cart-line')]);const app=document.querySelector('cart-app');app.querySelector('cart-line button').click();return app.items.length===1&&app.querySelectorAll('cart-line').length===1;}`), sourceTest('wc10-property', 'Pasa objetos por propiedad', String.raw`\.item\s*=\s*item`) ],
+    tests: [browserTest('wc10-flow', 'El evento de un hijo actualiza al padre', `async ({document,customElements})=>{await Promise.all([customElements.whenDefined('cart-app'),customElements.whenDefined('cart-line')]);const app=document.querySelector('cart-app');const button=app?.querySelector('cart-line button');if(!button)return false;button.click();return app.items.length===1&&app.querySelectorAll('cart-line').length===1;}`), sourceTest('wc10-property', 'Pasa objetos por propiedad', String.raw`\.item\s*=\s*item`) ],
     hints: ['CartApp es el único dueño de items.', 'CartLine recibe un objeto por propiedad y solo emite el id.', 'El padre reemplaza el array y vuelve a renderizar.'],
     model: 'El padre lleva el libro contable; los hijos leen una página y envían recibos, pero no reescriben el libro por su cuenta.',
     whenToUse: 'Úsalo cuando varios componentes representan o modifican partes del mismo estado.',
@@ -224,7 +224,7 @@ customElements.define('action-menu', ActionMenu);`,
   }
 }
 customElements.define('save-control', SaveControl);`,
-      tests: [browserTest('wc11-d1', 'Usa un botón nativo', `async ({document,customElements})=>{await customElements.whenDefined('save-control');return document.querySelector('save-control').querySelector('button')?.textContent.includes('Guardar');}`), sourceTest('wc11-d2', 'Conserva la acción', String.raw`setAttribute\s*\(\s*['"]saved['"]`) ],
+      tests: [browserTest('wc11-d1', 'Usa un botón nativo', `async ({document,customElements})=>{await customElements.whenDefined('save-control');return Boolean(document.querySelector('save-control')?.querySelector('button')?.textContent.includes('Guardar'));}`), sourceTest('wc11-d2', 'Conserva la acción', String.raw`setAttribute\s*\(\s*['"]saved['"]`) ],
       hints: ['No repares el div añadiendo muchos atributos.', 'El navegador ya trae un control correcto.', 'Cambia la etiqueta y conserva la acción.'] },
   }),
   lesson({

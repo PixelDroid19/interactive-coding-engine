@@ -3,6 +3,7 @@ import { DebuggingExerciseItem, ReadingItem, ScrimCurriculumItem } from '../../t
 import { ScrimLessonData, WorkspaceSnapshot } from '../../types/scrim';
 import { appHtml, BASE_CSS } from './helpers';
 import { ComponentCourseLessonSpec } from './types';
+import { COMPONENT_AUDIO_BY_LESSON } from './audioManifest';
 
 function workspace(spec: ComponentCourseLessonSpec, content: string, html = spec.html): WorkspaceSnapshot {
   return workspaceOf('app.js', {
@@ -30,8 +31,23 @@ function debugElementTag(spec: ComponentCourseLessonSpec): string {
   return registeredTag;
 }
 
+function examplePage(spec: ComponentCourseLessonSpec): string {
+  const registeredTags = [...spec.example.matchAll(
+    /customElements\.define\s*\(\s*['"]([^'"]+)/g,
+  )].map((match) => match[1]);
+  const elementTag = registeredTags.at(-1);
+  const markup = elementTag
+    ? `<${elementTag}></${elementTag}>`
+    : '<p>Abre la consola para seguir la salida del ejemplo.</p>';
+  return appHtml(`Demostración: ${spec.title}`, markup);
+}
+
 export function buildLesson(spec: ComponentCourseLessonSpec): ScrimLessonData {
   const id = `componentes-lit-${String(spec.number).padStart(2, '0')}`;
+  const audio = COMPONENT_AUDIO_BY_LESSON[id];
+  const cues = audio?.cues;
+  const ends = audio?.ends;
+  const demoPage = examplePage(spec);
   return compileLesson({
     id,
     title: `${spec.number}. ${spec.title}`,
@@ -55,22 +71,28 @@ export function buildLesson(spec: ComponentCourseLessonSpec): ScrimLessonData {
       { title: 'Buena práctica', body: spec.reading.bestPractices },
     ],
     author: { name: 'Kit', role: 'Mentor de componentes web' },
+    audioUrl: audio?.url,
+    durationMs: audio?.durationMs,
+    fitTimelineToDuration: Boolean(audio && !cues),
     beats: [
-      { type: 'chapter', title: 'Problema y contrato' },
-      { type: 'speak', text: spec.script[0] },
-      { type: 'speak', text: spec.script[1] },
-      { type: 'chapter', title: 'Aplicación trabajada' },
-      { type: 'write', filePath: 'app.js', content: spec.example, mode: 'replace' },
-      { type: 'speak', text: spec.script[2] },
-      { type: 'run' },
-      { type: 'speak', text: spec.script[3] },
-      { type: 'chapter', title: 'Decisiones y errores' },
-      { type: 'speak', text: spec.script[4] },
-      { type: 'chapter', title: 'Construye tu aplicación' },
-      { type: 'write', filePath: 'app.js', content: spec.starter, mode: 'replace' },
-      { type: 'speak', text: spec.script[5] },
+      { type: 'chapter', title: 'Problema y contrato', ...(cues ? { at: Math.max(0, cues[0] - 350) } : {}) },
+      { type: 'speak', text: spec.script[0], ...(cues ? { at: cues[0] } : {}) },
+      { type: 'speak', text: spec.script[1], ...(cues ? { at: cues[1] } : {}) },
+      { type: 'chapter', title: 'Aplicación trabajada', ...(cues ? { at: Math.max(0, cues[2] - 1_200) } : {}) },
+      { type: 'write', filePath: 'index.html', content: demoPage, mode: 'replace', ...(cues ? { at: Math.max(0, cues[2] - 1_100) } : {}) },
+      { type: 'write', filePath: 'app.js', content: spec.example, mode: 'replace', ...(cues ? { at: Math.max(0, cues[2] - 900) } : {}) },
+      { type: 'speak', text: spec.script[2], ...(cues ? { at: cues[2] } : {}) },
+      { type: 'run', ...(cues ? { at: Math.max(cues[2] + 500, (ends?.[2] ?? cues[3]) - 700) } : {}) },
+      { type: 'speak', text: spec.script[3], ...(cues ? { at: cues[3] } : {}) },
+      { type: 'chapter', title: 'Decisiones y errores', ...(cues ? { at: Math.max(0, cues[4] - 1_200) } : {}) },
+      { type: 'speak', text: spec.script[4], ...(cues ? { at: cues[4] } : {}) },
+      { type: 'chapter', title: 'Construye tu aplicación', ...(cues ? { at: Math.max(0, cues[5] - 1_200) } : {}) },
+      { type: 'write', filePath: 'index.html', content: spec.html, mode: 'replace', ...(cues ? { at: Math.max(0, cues[5] - 1_100) } : {}) },
+      { type: 'write', filePath: 'app.js', content: spec.starter, mode: 'replace', ...(cues ? { at: Math.max(0, cues[5] - 900) } : {}) },
+      { type: 'speak', text: spec.script[5], ...(cues ? { at: cues[5] } : {}) },
       {
         type: 'challenge',
+        ...(cues ? { at: Math.min(audio.durationMs - 20, (ends?.[5] ?? audio.durationMs - 220) + 100) } : {}),
         challenge: {
           id: `${id}-app`,
           title: spec.challengeTitle,
@@ -85,7 +107,7 @@ export function buildLesson(spec: ComponentCourseLessonSpec): ScrimLessonData {
 }
 
 export function lessonItem(lessonData: ScrimLessonData): ScrimCurriculumItem {
-  return { id: lessonData.id, title: lessonData.title, type: 'scrim', estimatedMinutes: 18, description: lessonData.description, scrimDataId: lessonData.id };
+  return { id: lessonData.id, title: lessonData.title, type: 'scrim', estimatedMinutes: Math.max(4, Math.ceil(lessonData.durationMs / 60_000)), description: lessonData.description, scrimDataId: lessonData.id };
 }
 
 export function buildReading(spec: ComponentCourseLessonSpec): ReadingItem {
