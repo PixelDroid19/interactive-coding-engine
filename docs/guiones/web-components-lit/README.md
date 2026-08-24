@@ -44,3 +44,8 @@ El curso no tiene un límite artificial de lecciones. Esta versión contiene las
 - 38. Proyecto API II: clima, concurrencia y decisiones
 - 39. SSR e hidratación: diseñar para dos entornos
 - 40. Capstone profesional: sistema de soporte publicable
+- 41. Mixins heredados y composición moderna
+- 42. Grafos, dependencias y ciclos antes de la interfaz
+- 43. Orden topológico y evaluadores como Bridge
+- 44. Relé visual: eventos públicos y arrastre desacoplado
+- 45. Proyecto Relé: reloj, historial y entrega profesional

@@ -12,16 +12,21 @@ export const COMPONENT_SPECS_15_TO_20 = [
     html: appHtml('Producto', '<product-card></product-card>'),
     example: `import { LitElement, html } from 'lit';
 class WelcomeCard extends LitElement {
-  render(){return html\`<article><h2>Bienvenida</h2><p>Tu espacio está listo.</p></article>\`;}
+  render() {
+    return html\`<article>
+      <h2>Bienvenida</h2>
+      <p>Tu espacio está listo.</p>
+    </article>\`;
+  }
 }
-customElements.define('welcome-card',WelcomeCard);`,
+customElements.define('welcome-card', WelcomeCard);`,
     starter: `import { LitElement, html } from 'lit';
 class ProductCard extends LitElement {
-  render(){
+  render() {
     // Devuelve un template con "Teclado" y "$80".
   }
 }
-customElements.define('product-card',ProductCard);`,
+customElements.define('product-card', ProductCard);`,
     challengeTitle: 'App: primera tarjeta Lit', challengeInstructions: 'Renderiza un article con nombre “Teclado” y precio “$80” usando html.',
     tests: [litText('lit15-name', 'La tarjeta renderiza el producto', 'product-card', 'article', 'Teclado'), sourceTest('lit15-template', 'Usa un template Lit', String.raw`return\s+html\s*\``)],
     hints: ['LitElement sigue registrándose con customElements.define.', 'render describe la vista y devuelve html, no modifica innerHTML.', 'La salida aparecerá en el shadow root que Lit prepara.'],
@@ -33,8 +38,12 @@ customElements.define('product-card',ProductCard);`,
     sources: [source('Qué es Lit', 'https://lit.dev/docs/', 'Relaciona Lit con Web Components.', 'Lit'), source('LitElement API', 'https://lit.dev/docs/api/LitElement/', 'Consulta la clase base.', 'Lit')],
     debug: { title: 'render modifica innerHTML y no devuelve template', expected: 'account-card renderiza con html.', observed: 'render devuelve undefined y escribe en el host equivocado.',
       starter: `import { LitElement, html } from 'lit';
-class AccountCard extends LitElement { render(){this.innerHTML='<p>Cuenta activa</p>';} }
-customElements.define('account-card',AccountCard);`,
+class AccountCard extends LitElement {
+  render() {
+    this.innerHTML = '<p>Cuenta activa</p>';
+  }
+}
+customElements.define('account-card', AccountCard);`,
       tests: [litText('lit15-d1', 'La cuenta aparece en Shadow DOM', 'account-card', 'p', 'Cuenta activa'), sourceTest('lit15-d2', 'render devuelve html', String.raw`render\s*\([^)]*\)\s*\{\s*return\s+html`) ],
       hints: ['Lit llama render y espera un resultado.', 'No escribas el host con innerHTML.', 'Devuelve un template html.'] },
   }),
@@ -47,18 +56,31 @@ customElements.define('account-card',AccountCard);`,
     html: appHtml('Pedido', '<order-summary></order-summary>'),
     example: `import { LitElement, html } from 'lit';
 class UserGreeting extends LitElement {
-  constructor(){super();this.name='Ana';this.disabled=false;}
-  render(){return html\`<button ?disabled=\${this.disabled} title=\${'Abrir '+this.name}>Hola, \${this.name}</button>\`;}
+  constructor() {
+    super();
+    this.name = 'Ana';
+    this.disabled = false;
+  }
+  render() {
+    return html\`<button ?disabled=\${this.disabled} title=\${'Abrir ' + this.name}>
+      Hola, \${this.name}
+    </button>\`;
+  }
 }
-customElements.define('user-greeting',UserGreeting);`,
+customElements.define('user-greeting', UserGreeting);`,
     starter: `import { LitElement, html } from 'lit';
 class OrderSummary extends LitElement {
-  constructor(){super();this.customer='Luis';this.total=42;this.locked=true;}
-  render(){
+  constructor() {
+    super();
+    this.customer = 'Luis';
+    this.total = 42;
+    this.locked = true;
+  }
+  render() {
     // Muestra cliente y total; enlaza locked a disabled como booleano.
   }
 }
-customElements.define('order-summary',OrderSummary);`,
+customElements.define('order-summary', OrderSummary);`,
     challengeTitle: 'App: bindings del pedido', challengeInstructions: 'Muestra “Luis” y “$42” y desactiva el botón con un binding booleano.',
     tests: [browserTest('lit16-bindings', 'Texto y booleano llegan a destinos correctos', `async ({document,customElements})=>{await customElements.whenDefined('order-summary');const el=document.querySelector('order-summary');await el.updateComplete;const b=el.shadowRoot.querySelector('button');return el.shadowRoot.textContent.includes('Luis')&&el.shadowRoot.textContent.includes('$42')&&b.disabled;}`), sourceTest('lit16-boolean', 'Usa binding booleano', String.raw`\?disabled\s*=\s*\$\{`) ],
     hints: ['El texto usa una expresión en el contenido.', 'disabled no necesita el string "true".', 'El prefijo ? controla presencia booleana.'],
@@ -69,9 +91,17 @@ customElements.define('order-summary',OrderSummary);`,
     transfer: 'Clasifica bindings para input.value, aria-label, disabled, click y una propiedad items.',
     sources: [source('Templates', 'https://lit.dev/docs/templates/overview/', 'Aprende posiciones y expresiones.', 'Lit'), source('Expressions', 'https://lit.dev/docs/templates/expressions/', 'Compara bindings.', 'Lit')],
     debug: { title: 'false deja el botón desactivado', expected: 'permission-button queda habilitado cuando locked=false.', observed: 'Usa disabled="false" como atributo presente.',
-      starter: `import {LitElement,html} from 'lit';
-class PermissionButton extends LitElement { constructor(){super();this.locked=false;} render(){return html\`<button disabled="\${this.locked}">Continuar</button>\`;} }
-customElements.define('permission-button',PermissionButton);`,
+      starter: `import { LitElement, html } from 'lit';
+class PermissionButton extends LitElement {
+  constructor() {
+    super();
+    this.locked = false;
+  }
+  render() {
+    return html\`<button disabled="\${this.locked}">Continuar</button>\`;
+  }
+}
+customElements.define('permission-button', PermissionButton);`,
       tests: [browserTest('lit16-d1', 'El botón refleja el booleano', `async ({document,customElements})=>{await customElements.whenDefined('permission-button');const el=document.querySelector('permission-button');await el.updateComplete;return !el.shadowRoot.querySelector('button').disabled;}`), sourceTest('lit16-d2', 'Usa ?disabled', String.raw`\?disabled\s*=`)],
       hints: ['Un atributo presente activa disabled.', 'No serialices false.', 'Usa el binding booleano de Lit.'] },
   }),
@@ -82,17 +112,33 @@ customElements.define('permission-button',PermissionButton);`,
     skillsRequired: ['lit-templates', 'lit-bindings'], skillsIntroduced: ['lit-conditionals', 'lit-lists'],
     reasoningSteps: ['El estado selecciona una rama', 'La rama produce un template', 'map produce templates de filas', 'nothing evita nodos innecesarios'],
     html: appHtml('Sesión', '<session-panel></session-panel>'),
-    example: `import {LitElement,html,nothing} from 'lit';
-class InboxPreview extends LitElement { constructor(){super();this.messages=['Hola'];this.showTitle=true;} render(){return html\`\${this.showTitle?html\`<h2>Bandeja</h2>\`:nothing}<ul>\${this.messages.map(m=>html\`<li>\${m}</li>\`)}</ul>\`;} }
-customElements.define('inbox-preview',InboxPreview);`,
-    starter: `import {LitElement,html,nothing} from 'lit';
+    example: `import { LitElement, html, nothing } from 'lit';
+class InboxPreview extends LitElement {
+  constructor() {
+    super();
+    this.messages = ['Hola'];
+    this.showTitle = true;
+  }
+  render() {
+    return html\`\${this.showTitle ? html\`<h2>Bandeja</h2>\` : nothing}
+      <ul>
+        \${this.messages.map((m) => html\`<li>\${m}</li>\`)}
+      </ul>\`;
+  }
+}
+customElements.define('inbox-preview', InboxPreview);`,
+    starter: `import { LitElement, html, nothing } from 'lit';
 class SessionPanel extends LitElement {
-  constructor(){super();this.user=null;this.notifications=[];}
-  render(){
+  constructor() {
+    super();
+    this.user = null;
+    this.notifications = [];
+  }
+  render() {
     // Sin user muestra "Inicia sesión"; con user muestra su nombre y una lista o "Sin notificaciones".
   }
 }
-customElements.define('session-panel',SessionPanel);`,
+customElements.define('session-panel', SessionPanel);`,
     challengeTitle: 'App: panel con ramas completas', challengeInstructions: 'Renderiza los estados sin sesión, sesión vacía y sesión con notificaciones.',
     tests: [litText('lit17-empty', 'Sin usuario ofrece iniciar sesión', 'session-panel', ':host', 'Inicia sesión'), browserTest('lit17-list', 'Con usuario renderiza la colección', `async ({document,customElements})=>{await customElements.whenDefined('session-panel');const el=document.querySelector('session-panel');el.user={name:'Mara'};el.notifications=['Pago','Envío'];el.requestUpdate();await el.updateComplete;return el.shadowRoot.querySelectorAll('li').length===2&&el.shadowRoot.textContent.includes('Mara');}`)],
     hints: ['Decide primero la rama de sesión.', 'Dentro de la sesión decide vacío o lista.', 'map devuelve un template por elemento.'],
@@ -103,7 +149,19 @@ customElements.define('session-panel',SessionPanel);`,
     transfer: 'Diseña ramas para carrito: loading, error, empty y ready con artículos.',
     sources: [source('Conditionals', 'https://lit.dev/docs/templates/conditionals/', 'Compara ternario, nothing y when.', 'Lit'), source('Lists', 'https://lit.dev/docs/templates/lists/', 'Renderiza colecciones.', 'Lit')],
     debug: { title: 'El cero aparece como contenido extraño', expected: 'cart-count muestra “Sin artículos” cuando count=0.', observed: 'Usa count && template y deja 0 en pantalla.',
-      starter: `import{LitElement,html}from'lit';class CartCount extends LitElement{constructor(){super();this.count=0;}render(){return html\`<div>\${this.count&&html\`<strong>\${this.count} artículos</strong>\`}</div>\`;}}customElements.define('cart-count',CartCount);`,
+      starter: `import { LitElement, html } from 'lit';
+class CartCount extends LitElement {
+  constructor() {
+    super();
+    this.count = 0;
+  }
+  render() {
+    return html\`<div>
+      \${this.count && html\`<strong>\${this.count} artículos</strong>\`}
+    </div>\`;
+  }
+}
+customElements.define('cart-count', CartCount);`,
       tests: [litText('lit17-d1', 'Cero tiene una rama humana', 'cart-count', 'div', 'Sin artículos'), sourceTest('lit17-d2', 'Usa una decisión explícita', String.raw`\?\s*html\s*\``)],
       hints: ['0 es un dato válido, no ausencia.', 'Escribe las dos salidas.', 'Un ternario hace explícito el caso vacío.'] },
   }),
@@ -114,16 +172,31 @@ customElements.define('session-panel',SessionPanel);`,
     skillsRequired: ['lit-conditionals', 'lit-lists'], skillsIntroduced: ['lit-reactive-properties', 'lit-attribute-conversion'],
     reasoningSteps: ['El consumidor cambia una propiedad', 'El setter reactivo detecta diferencia', 'Lit programa una actualización', 'render recibe el nuevo valor'],
     html: appHtml('Ficha', '<user-chip name="Ada" online></user-chip>'),
-    example: `import{LitElement,html}from'lit';
-class StockBadge extends LitElement{static properties={count:{type:Number},label:{type:String}};constructor(){super();this.count=0;this.label='Stock';}render(){return html\`<span>\${this.label}: \${this.count}</span>\`;}}
-customElements.define('stock-badge',StockBadge);`,
-    starter: `import{LitElement,html}from'lit';
-class UserChip extends LitElement{
-  static properties={/* name String y online Boolean */};
-  constructor(){super();/* valores por defecto */}
-  render(){return html\`<span>\${/* nombre */} — \${/* estado */}</span>\`;}
+    example: `import { LitElement, html } from 'lit';
+class StockBadge extends LitElement {
+  static properties = { count: { type: Number }, label: { type: String } };
+  constructor() {
+    super();
+    this.count = 0;
+    this.label = 'Stock';
+  }
+  render() {
+    return html\`<span>\${this.label}: \${this.count}</span>\`;
+  }
 }
-customElements.define('user-chip',UserChip);`,
+customElements.define('stock-badge', StockBadge);`,
+    starter: `import { LitElement, html } from 'lit';
+class UserChip extends LitElement {
+  static properties = {};
+  constructor() {
+    super();
+    // Declara e inicializa el contrato público.
+  }
+  render() {
+    return html\`<span>Completa la ficha</span>\`;
+  }
+}
+customElements.define('user-chip', UserChip);`,
     challengeTitle: 'App: ficha reactiva', challengeInstructions: 'Declara name y online, inicializa defaults y muestra “Ada — En línea” desde los atributos.',
     tests: [litText('lit18-attr', 'Convierte atributos al contrato', 'user-chip', 'span', 'Ada — En línea'), sourceTest('lit18-properties', 'Declara ambas propiedades', String.raw`static\s+properties\s*=\s*\{[\s\S]*name[\s\S]*online`) ],
     hints: ['En JavaScript del curso usamos static properties, no decoradores.', 'El tipo Boolean interpreta presencia del atributo.', 'Inicializa defaults después de super().'],
@@ -134,7 +207,20 @@ customElements.define('user-chip',UserChip);`,
     transfer: 'Diseña propiedades de product-card: product objeto, selected booleano y currency string.',
     sources: [source('Reactive properties', 'https://lit.dev/docs/components/properties/', 'Revisa JavaScript static properties y conversores.', 'Lit')],
     debug: { title: 'El contador cambia pero no actualiza', expected: 'live-counter muestra 2 después de increment.', observed: 'count no está declarado como reactivo.',
-      starter: `import{LitElement,html}from'lit';class LiveCounter extends LitElement{constructor(){super();this.count=1;}increment(){this.count+=1;}render(){return html\`<span>\${this.count}</span>\`;}}customElements.define('live-counter',LiveCounter);`,
+      starter: `import { LitElement, html } from 'lit';
+class LiveCounter extends LitElement {
+  constructor() {
+    super();
+    this.count = 1;
+  }
+  increment() {
+    this.count += 1;
+  }
+  render() {
+    return html\`<span>\${this.count}</span>\`;
+  }
+}
+customElements.define('live-counter', LiveCounter);`,
       tests: [browserTest('lit18-d1', 'El método produce una actualización', `async ({document,customElements})=>{await customElements.whenDefined('live-counter');const el=document.querySelector('live-counter');el.increment();await el.updateComplete;return el.shadowRoot.textContent.includes('2');}`), sourceTest('lit18-d2', 'count es reactiva', String.raw`static\s+properties\s*=\s*\{[\s\S]*count`) ],
       hints: ['Cambiar una propiedad común no avisa a Lit.', 'Declara el contrato reactivo.', 'No llames render manualmente.'] },
   }),
@@ -145,13 +231,36 @@ customElements.define('user-chip',UserChip);`,
     skillsRequired: ['lit-reactive-properties', 'lit-attribute-conversion'], skillsIntroduced: ['lit-internal-state', 'api-boundaries'],
     reasoningSteps: ['El consumidor fija capacity', 'El componente administra _reserved', 'Ambos cambios programan render', 'Solo capacity aparece como API'],
     html: appHtml('Inventario', '<inventory-counter capacity="5"></inventory-counter>'),
-    example: `import{LitElement,html}from'lit';class DownloadButton extends LitElement{static properties={url:{type:String},_progress:{state:true}};constructor(){super();this.url='';this._progress=0;}render(){return html\`<button>\${this._progress}%</button>\`;}}customElements.define('download-button',DownloadButton);`,
-    starter: `import{LitElement,html}from'lit';class InventoryCounter extends LitElement{
-  static properties={capacity:{type:Number},/* _reserved como estado */};
-  constructor(){super();this.capacity=0;this._reserved=0;}
-  reserve(){/* aumenta sin superar capacity */}
-  render(){return html\`<button @click=\${()=>this.reserve()}>Reservar</button><span>\${/* disponible */}</span>\`;}
-}customElements.define('inventory-counter',InventoryCounter);`,
+    example: `import { LitElement, html } from 'lit';
+class DownloadButton extends LitElement {
+  static properties = { url: { type: String }, _progress: { state: true } };
+  constructor() {
+    super();
+    this.url = '';
+    this._progress = 0;
+  }
+  render() {
+    return html\`<button>\${this._progress}%</button>\`;
+  }
+}
+customElements.define('download-button', DownloadButton);`,
+    starter: `import { LitElement, html } from 'lit';
+class InventoryCounter extends LitElement {
+  static properties = { capacity: { type: Number } };
+  constructor() {
+    super();
+    this.capacity = 0;
+    // Inicializa aquí el estado que solo pertenece al componente.
+  }
+  reserve() {
+    // Cambia el estado interno sin superar capacity.
+  }
+  render() {
+    return html\`<button @click=\${() => this.reserve()}>Reservar</button>
+      <span>Disponibilidad pendiente</span>\`;
+  }
+}
+customElements.define('inventory-counter', InventoryCounter);`,
     challengeTitle: 'App: inventario con frontera clara', challengeInstructions: 'Mantén capacity pública y _reserved interna; muestra “Disponibles: N” y limita reservas.',
     tests: [browserTest('lit19-state', 'La acción actualiza estado interno', `async ({document,customElements})=>{await customElements.whenDefined('inventory-counter');const el=document.querySelector('inventory-counter');await el.updateComplete;el.shadowRoot.querySelector('button').click();await el.updateComplete;return el.shadowRoot.textContent.includes('Disponibles: 4')&&!el.hasAttribute('_reserved');}`), sourceTest('lit19-private', 'Declara state interno', String.raw`_reserved\s*:\s*\{\s*state\s*:\s*true`) ],
     hints: ['capacity llega de fuera; _reserved nace y cambia dentro.', 'state:true actualiza sin crear atributo.', 'Disponible se deriva, no necesita otra propiedad.'],
@@ -162,7 +271,18 @@ customElements.define('user-chip',UserChip);`,
     transfer: 'Clasifica query, results, loading, selectedId y pageSize como entrada, salida, interno o derivado.',
     sources: [source('Public properties and internal state', 'https://lit.dev/docs/components/properties/#public-properties-and-internal-state', 'Diseña fronteras.', 'Lit')],
     debug: { title: 'El spinner expone loading como atributo', expected: 'data-panel mantiene _loading interno.', observed: 'loading se refleja y el exterior parece dueño.',
-      starter: `import{LitElement,html}from'lit';class DataPanel extends LitElement{static properties={loading:{type:Boolean,reflect:true}};constructor(){super();this.loading=true;}render(){return html\`<p>\${this.loading?'Cargando':'Listo'}</p>\`;}}customElements.define('data-panel',DataPanel);`,
+      starter: `import { LitElement, html } from 'lit';
+class DataPanel extends LitElement {
+  static properties = { loading: { type: Boolean, reflect: true } };
+  constructor() {
+    super();
+    this.loading = true;
+  }
+  render() {
+    return html\`<p>\${this.loading ? 'Cargando' : 'Listo'}</p>\`;
+  }
+}
+customElements.define('data-panel', DataPanel);`,
       tests: [sourceTest('lit19-d1', 'Usa estado interno', String.raw`_loading\s*:\s*\{\s*state\s*:\s*true`), sourceTest('lit19-d2', 'No refleja loading público', String.raw`this\._loading`) ],
       hints: ['La carga pertenece al proceso interno.', 'Renombra y declara state:true.', 'Actualiza render para leer la misma fuente.'] },
   }),
@@ -173,13 +293,43 @@ customElements.define('user-chip',UserChip);`,
     skillsRequired: ['lit-internal-state', 'api-boundaries'], skillsIntroduced: ['lit-immutable-data', 'lit-change-detection'],
     reasoningSteps: ['Una acción describe el cambio', 'Crea un array nuevo', 'El setter detecta nueva referencia', 'Lit renderiza la colección'],
     html: appHtml('Tareas', '<task-board></task-board>'),
-    example: `import{LitElement,html}from'lit';class TagEditor extends LitElement{static properties={tags:{state:true}};constructor(){super();this.tags=['web'];}add(tag){this.tags=[...this.tags,tag];}render(){return html\`<ul>\${this.tags.map(t=>html\`<li>\${t}</li>\`)}</ul>\`;}}customElements.define('tag-editor',TagEditor);`,
-    starter: `import{LitElement,html}from'lit';class TaskBoard extends LitElement{
-  static properties={tasks:{state:true}};constructor(){super();this.tasks=[{id:1,text:'Leer'}];}
-  addTask(text){/* crea array nuevo con id y texto */}
-  complete(id){/* crea array nuevo cambiando solo esa tarea */}
-  render(){return html\`<ul>\${this.tasks.map(task=>html\`<li>\${task.text} \${task.done?'✓':''}</li>\`)}</ul>\`;}
-}customElements.define('task-board',TaskBoard);`,
+    example: `import { LitElement, html } from 'lit';
+class TagEditor extends LitElement {
+  static properties = { tags: { state: true } };
+  constructor() {
+    super();
+    this.tags = ['web'];
+  }
+  add(tag) {
+    this.tags = [...this.tags, tag];
+  }
+  render() {
+    return html\`<ul>
+      \${this.tags.map((t) => html\`<li>\${t}</li>\`)}
+    </ul>\`;
+  }
+}
+customElements.define('tag-editor', TagEditor);`,
+    starter: `import { LitElement, html } from 'lit';
+class TaskBoard extends LitElement {
+  static properties = { tasks: { state: true } };
+  constructor() {
+    super();
+    this.tasks = [{ id: 1, text: 'Leer' }];
+  }
+  addTask(text) {
+    /* crea array nuevo con id y texto */
+  }
+  complete(id) {
+    /* crea array nuevo cambiando solo esa tarea */
+  }
+  render() {
+    return html\`<ul>
+      \${this.tasks.map((task) => html\`<li>\${task.text} \${task.done ? '✓' : ''}</li>\`)}
+    </ul>\`;
+  }
+}
+customElements.define('task-board', TaskBoard);`,
     challengeTitle: 'App: tablero inmutable', challengeInstructions: 'Implementa addTask y complete sin push ni mutar la tarea existente.',
     tests: [browserTest('lit20-add', 'Agregar crea una fila nueva', `async ({document,customElements})=>{await customElements.whenDefined('task-board');const el=document.querySelector('task-board');const before=el.tasks;el.addTask('Practicar');await el.updateComplete;return before!==el.tasks&&el.shadowRoot.querySelectorAll('li').length===2;}`), browserTest('lit20-complete', 'Completar reemplaza la tarea', `async ({document})=>{const el=document.querySelector('task-board');const before=el.tasks[0];el.complete(1);await el.updateComplete;return before!==el.tasks[0]&&el.shadowRoot.textContent.includes('✓');}`)],
     hints: ['Lit compara la referencia del array.', 'spread agrega sin mutar; map reemplaza un elemento por id.', 'También crea un objeto nuevo para la tarea modificada.'],
@@ -190,7 +340,21 @@ customElements.define('user-chip',UserChip);`,
     transfer: 'Implementa mentalmente editar y eliminar una fila conservando referencias de las filas no afectadas.',
     sources: [source('Mutating object and array properties', 'https://lit.dev/docs/components/properties/#mutating-object-and-array-properties', 'Compara estrategias.', 'Lit')],
     debug: { title: 'push no despierta el render', expected: 'note-list muestra Segunda.', observed: 'Muta el mismo array.',
-      starter: `import{LitElement,html}from'lit';class NoteList extends LitElement{static properties={notes:{state:true}};constructor(){super();this.notes=['Primera'];}add(){this.notes.push('Segunda');}render(){return html\`\${this.notes.map(n=>html\`<p>\${n}</p>\`)}\`;}}customElements.define('note-list',NoteList);`,
+      starter: `import { LitElement, html } from 'lit';
+class NoteList extends LitElement {
+  static properties = { notes: { state: true } };
+  constructor() {
+    super();
+    this.notes = ['Primera'];
+  }
+  add() {
+    this.notes.push('Segunda');
+  }
+  render() {
+    return html\`\${this.notes.map((n) => html\`<p>\${n}</p>\`)}\`;
+  }
+}
+customElements.define('note-list', NoteList);`,
       tests: [browserTest('lit20-d1', 'add produce un render', `async ({document,customElements})=>{await customElements.whenDefined('note-list');const el=document.querySelector('note-list');el.add();await el.updateComplete;return el.shadowRoot.textContent.includes('Segunda');}`), sourceTest('lit20-d2', 'Reemplaza notes', String.raw`this\.notes\s*=\s*\[\.\.\.this\.notes`) ],
       hints: ['push conserva la referencia.', 'Asigna un array nuevo.', 'No llames requestUpdate para ocultar la mutación.'] },
   }),

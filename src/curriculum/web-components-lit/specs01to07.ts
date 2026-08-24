@@ -17,7 +17,10 @@ export const COMPONENT_SPECS_01_TO_07 = [
     reasoningSteps: ['La página encuentra <status-badge>', 'El registro relaciona nombre y clase', 'El navegador crea la instancia', 'La instancia muestra su estado'],
     html: appHtml('Estado del servicio', '<status-badge></status-badge>'),
     example: `class SyncIndicator extends HTMLElement {
-  connectedCallback() { this.textContent = 'Sincronizado'; this.setAttribute('role', 'status'); }
+  connectedCallback() {
+    this.textContent = 'Sincronizado';
+    this.setAttribute('role', 'status');
+  }
 }
 customElements.define('sync-indicator', SyncIndicator);`,
     starter: `class StatusBadge extends HTMLElement {
@@ -36,7 +39,11 @@ customElements.define('sync-indicator', SyncIndicator);`,
     transfer: 'Decide si un precio, una tarjeta y una página completa merecen ser componentes y justifica cada frontera.',
     sources: [source('Usar custom elements', 'https://developer.mozilla.org/es/docs/Web/API/Web_components/Using_custom_elements', 'Revisa nombres, registro y upgrade.')],
     debug: { title: 'La alerta nunca se actualiza', expected: 'alerta-app muestra “Revisión pendiente”.', observed: 'El registro usa un nombre inválido.',
-      starter: `class AppAlert extends HTMLElement { connectedCallback() { this.textContent = 'Revisión pendiente'; } }
+      starter: `class AppAlert extends HTMLElement {
+  connectedCallback() {
+    this.textContent = 'Revisión pendiente';
+  }
+}
 customElements.define('alerta', AppAlert);`,
       tests: [textTest('wc01-d1', 'La alerta se registra', 'alerta-app', ':host', 'Revisión pendiente'), sourceTest('wc01-d2', 'Usa la etiqueta pública', String.raw`customElements\.define\s*\(\s*['"]alerta-app['"]`)],
       hints: ['Lee el error de la consola.', 'Un nombre personalizado necesita guion.', 'El registro debe usar alerta-app.'] },
@@ -49,7 +56,11 @@ customElements.define('alerta', AppAlert);`,
     reasoningSteps: ['new crea ProfileCard', 'super() inicializa HTMLElement', 'La subclase puede usar this', 'La tarjeta prepara su DOM'],
     html: appHtml('Equipo', '<profile-card></profile-card>'),
     example: `class TeamMember extends HTMLElement {
-  constructor() { super(); const root = this.attachShadow({ mode: 'open' }); root.innerHTML = '<strong>Mar</strong><span>Frontend</span>'; }
+  constructor() {
+    super();
+    const root = this.attachShadow({ mode: 'open' });
+    root.innerHTML = '<strong>Mar</strong><span>Frontend</span>';
+  }
 }
 customElements.define('team-member', TeamMember);`,
     starter: `class ProfileCard extends HTMLElement {
@@ -70,7 +81,11 @@ customElements.define('profile-card', ProfileCard);`,
     sources: [source('super', 'https://developer.mozilla.org/es/docs/Web/JavaScript/Reference/Operators/super', 'Comprende constructores derivados.')],
     debug: { title: 'La tarjeta falla antes de aparecer', expected: 'user-summary muestra “Cuenta activa”.', observed: 'Usa this antes de inicializar HTMLElement.',
       starter: `class UserSummary extends HTMLElement {
-  constructor() { this.attachShadow({ mode: 'open' }); super(); this.shadowRoot.textContent = 'Cuenta activa'; }
+  constructor() {
+    this.attachShadow({ mode: 'open' });
+    super();
+    this.shadowRoot.textContent = 'Cuenta activa';
+  }
 }
 customElements.define('user-summary', UserSummary);`,
       tests: [textTest('wc02-d1', 'El resumen renderiza', 'user-summary', ':host', 'Cuenta activa'), sourceTest('wc02-d2', 'super ocurre primero', String.raw`constructor\s*\([^)]*\)\s*\{\s*super\s*\(\s*\)`) ],
@@ -84,8 +99,14 @@ customElements.define('user-summary', UserSummary);`,
     reasoningSteps: ['El elemento se conecta', 'Inicia un recurso', 'El elemento se desconecta', 'Libera el mismo recurso'],
     html: appHtml('Reloj de sesión', '<session-clock></session-clock>'),
     example: `class PulseIndicator extends HTMLElement {
-  connectedCallback() { this._timer = setInterval(() => { this.textContent = 'Pulso'; }, 1000); }
-  disconnectedCallback() { clearInterval(this._timer); }
+  connectedCallback() {
+    this._timer = setInterval(() => {
+      this.textContent = 'Pulso';
+    }, 1000);
+  }
+  disconnectedCallback() {
+    clearInterval(this._timer);
+  }
 }
 customElements.define('pulse-indicator', PulseIndicator);`,
     starter: `class SessionClock extends HTMLElement {
@@ -108,8 +129,13 @@ customElements.define('session-clock', SessionClock);`,
     sources: [source('Lifecycle callbacks', 'https://developer.mozilla.org/es/docs/Web/API/Web_components/Using_custom_elements#using_the_lifecycle_callbacks', 'Revisa conexión y desconexión.')],
     debug: { title: 'El listener sobrevive al componente', expected: 'resize-watch retira la misma referencia.', observed: 'add y remove reciben funciones diferentes.',
       starter: `class ResizeWatch extends HTMLElement {
-  connectedCallback() { window.addEventListener('resize', () => this.textContent = 'Cambió'); this.textContent = 'Escuchando'; }
-  disconnectedCallback() { window.removeEventListener('resize', () => this.textContent = 'Cambió'); }
+  connectedCallback() {
+    window.addEventListener('resize', () => (this.textContent = 'Cambió'));
+    this.textContent = 'Escuchando';
+  }
+  disconnectedCallback() {
+    window.removeEventListener('resize', () => (this.textContent = 'Cambió'));
+  }
 }
 customElements.define('resize-watch', ResizeWatch);`,
       tests: [textTest('wc03-d1', 'El indicador se conecta', 'resize-watch', ':host', 'Escuchando'), sourceTest('wc03-d2', 'Conserva el manejador', String.raw`this\._[\w$]+\s*=\s*(?:\([^)]*\)|[\w$]+)\s*=>|\.bind\s*\(\s*this\s*\)`) ],
@@ -123,7 +149,12 @@ customElements.define('resize-watch', ResizeWatch);`,
     reasoningSteps: ['La página crea notice-card', 'El host crea shadowRoot', 'Renderiza CSS y estructura internos', 'El exterior usa la API pública'],
     html: appHtml('Avisos', '<notice-card></notice-card>'),
     example: `class PrivateBanner extends HTMLElement {
-  constructor() { super(); const root=this.attachShadow({mode:'open'}); root.innerHTML='<style>.box{border:2px solid #ffe600;padding:12px}</style><div class="box">Actualización disponible</div>'; }
+  constructor() {
+    super();
+    const root = this.attachShadow({ mode: 'open' });
+    root.innerHTML =
+      '<style>.box{border:2px solid #ffe600;padding:12px}</style><div class="box">Actualización disponible</div>';
+  }
 }
 customElements.define('private-banner', PrivateBanner);`,
     starter: `class NoticeCard extends HTMLElement {
@@ -143,7 +174,11 @@ customElements.define('notice-card', NoticeCard);`,
     transfer: 'Compara una tabla, un icono y un editor. Decide dónde aporta más la frontera.',
     sources: [source('Usar Shadow DOM', 'https://developer.mozilla.org/es/docs/Web/API/Web_components/Using_shadow_DOM', 'Comprende host, árbol y encapsulación.')],
     debug: { title: 'El CSS global invade la nota', expected: 'secure-note mueve .box al shadow root.', observed: 'Renderiza la implementación en light DOM.',
-      starter: `class SecureNote extends HTMLElement { connectedCallback() { this.innerHTML='<div class="box">Nota interna</div>'; } }
+      starter: `class SecureNote extends HTMLElement {
+  connectedCallback() {
+    this.innerHTML = '<div class="box">Nota interna</div>';
+  }
+}
 customElements.define('secure-note', SecureNote);`,
       tests: [textTest('wc04-d1', 'La nota queda en su árbol interno', 'secure-note', '.box', 'Nota interna'), sourceTest('wc04-d2', 'Crea Shadow DOM', String.raw`attachShadow\s*\(`)],
       hints: ['El problema es el árbol, no solo el nombre box.', 'Crea la frontera una vez.', 'Renderiza en shadowRoot.'] },
@@ -156,10 +191,13 @@ customElements.define('secure-note', SecureNote);`,
     reasoningSteps: ['HTML cambia value="72"', 'El callback recibe texto', 'Convierte y valida', 'Renderiza el número'],
     html: appHtml('Progreso', '<progress-meter value="25"></progress-meter>'),
     example: `class TemperatureBadge extends HTMLElement {
-  static observedAttributes=['value'];
-  attributeChangedCallback(_n,_o,value){const n=Number(value);this.textContent=Number.isFinite(n)?n+' °C':'Sin dato';}
+  static observedAttributes = ['value'];
+  attributeChangedCallback(_n, _o, value) {
+    const n = Number(value);
+    this.textContent = Number.isFinite(n) ? n + ' °C' : 'Sin dato';
+  }
 }
-customElements.define('temperature-badge',TemperatureBadge);`,
+customElements.define('temperature-badge', TemperatureBadge);`,
     starter: `class ProgressMeter extends HTMLElement {
   static observedAttributes = [/* atributo público */];
   attributeChangedCallback(name, oldValue, newValue) {
@@ -177,8 +215,13 @@ customElements.define('progress-meter', ProgressMeter);`,
     transfer: 'Diseña la API de un selector con options como array y disabled desde HTML.',
     sources: [source('Cambios de atributos', 'https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_custom_elements#responding_to_attribute_changes', 'Estudia observedAttributes.')],
     debug: { title: 'El medidor concatena', expected: 'score-meter muestra 15 para value="10" más cinco.', observed: 'Muestra 105.',
-      starter: `class ScoreMeter extends HTMLElement { static observedAttributes=['value']; attributeChangedCallback(_n,_o,value){this.textContent=value+5;} }
-customElements.define('score-meter',ScoreMeter);`,
+      starter: `class ScoreMeter extends HTMLElement {
+  static observedAttributes = ['value'];
+  attributeChangedCallback(_n, _o, value) {
+    this.textContent = value + 5;
+  }
+}
+customElements.define('score-meter', ScoreMeter);`,
       tests: [browserTest('wc05-d1', 'Calcula con números', `async ({document,customElements})=>{await customElements.whenDefined('score-meter');const el=document.querySelector('score-meter');el.setAttribute('value','10');return el.textContent==='15';}`), sourceTest('wc05-d2', 'Convierte la entrada', String.raw`Number\s*\(|parse(?:Int|Float)\s*\(`)],
       hints: ['Inspecciona typeof value.', 'La apariencia no cambia el tipo.', 'Convierte antes de sumar.'] },
   }),
@@ -190,17 +233,30 @@ customElements.define('score-meter',ScoreMeter);`,
     reasoningSteps: ['La persona pulsa', 'Cambia active', 'Refleja el atributo', 'Actualiza ARIA y texto'],
     html: appHtml('Preferencias', '<setting-toggle></setting-toggle>'),
     example: `class FavoriteToggle extends HTMLElement {
-  connectedCallback(){this._render();this.addEventListener('click',()=>this.active=!this.active);}
-  get active(){return this.hasAttribute('active');}
-  set active(value){this.toggleAttribute('active',Boolean(value));this._render();}
-  _render(){this.textContent=this.active?'Favorito':'Añadir';this.setAttribute('aria-pressed',String(this.active));}
+  connectedCallback() {
+    this._render();
+    this.addEventListener('click', () => (this.active = !this.active));
+  }
+  get active() {
+    return this.hasAttribute('active');
+  }
+  set active(value) {
+    this.toggleAttribute('active', Boolean(value));
+    this._render();
+  }
+  _render() {
+    this.textContent = this.active ? 'Favorito' : 'Añadir';
+    this.setAttribute('aria-pressed', String(this.active));
+  }
 }
-customElements.define('favorite-toggle',FavoriteToggle);`,
+customElements.define('favorite-toggle', FavoriteToggle);`,
     starter: `class SettingToggle extends HTMLElement {
-  connectedCallback() { this.tabIndex=0; /* renderiza y alterna active al hacer clic */ }
+  connectedCallback() {
+    this.tabIndex = 0; /* renderiza y alterna active al hacer clic */
+  }
   // Diseña getter/setter active y sincroniza texto con aria-pressed.
 }
-customElements.define('setting-toggle',SettingToggle);`,
+customElements.define('setting-toggle', SettingToggle);`,
     challengeTitle: 'App: interruptor observable', challengeInstructions: 'Alterna active, aria-pressed y texto “Activado”/“Desactivado”.',
     tests: [browserTest('wc06-toggle', 'Un clic sincroniza el estado', `async ({document,customElements})=>{await customElements.whenDefined('setting-toggle');const el=document.querySelector('setting-toggle');el.click();return el.hasAttribute('active')&&el.getAttribute('aria-pressed')==='true'&&el.textContent.includes('Activado');}`), sourceTest('wc06-api', 'Expone active como propiedad', String.raw`(?:get|set)\s+active\s*\(`)],
     hints: ['Un booleano HTML usa presencia/ausencia.', 'Elige una sola fuente de verdad.', 'Actualiza texto y aria-pressed juntos.'],
@@ -211,8 +267,13 @@ customElements.define('setting-toggle',SettingToggle);`,
     transfer: 'Diseña expanded para un acordeón y loading para un botón.',
     sources: [source('toggleAttribute()', 'https://developer.mozilla.org/en-US/docs/Web/API/Element/toggleAttribute', 'Consulta presencia booleana.')],
     debug: { title: 'false sigue contando como activo', expected: 'privacy-toggle no tiene active y muestra Inactivo.', observed: 'Escribe active="false".',
-      starter: `class PrivacyToggle extends HTMLElement { connectedCallback(){this.setAttribute('active','false');this.textContent=this.hasAttribute('active')?'Activo':'Inactivo';} }
-customElements.define('privacy-toggle',PrivacyToggle);`,
+      starter: `class PrivacyToggle extends HTMLElement {
+  connectedCallback() {
+    this.setAttribute('active', 'false');
+    this.textContent = this.hasAttribute('active') ? 'Activo' : 'Inactivo';
+  }
+}
+customElements.define('privacy-toggle', PrivacyToggle);`,
       tests: [browserTest('wc06-d1', 'El falso elimina el atributo', `async ({document,customElements})=>{await customElements.whenDefined('privacy-toggle');const el=document.querySelector('privacy-toggle');return !el.hasAttribute('active')&&el.textContent.includes('Inactivo');}`), sourceTest('wc06-d2', 'Controla presencia', String.raw`(?:removeAttribute|toggleAttribute)\s*\(\s*['"]active['"]`)],
       hints: ['hasAttribute no lee el texto.', 'false significa ausencia.', 'Quita o alterna el atributo.'] },
   }),
@@ -224,16 +285,29 @@ customElements.define('privacy-toggle',PrivacyToggle);`,
     reasoningSteps: ['La persona pulsa +', 'El hijo calcula cantidad', 'Emite quantity-change', 'El padre decide'],
     html: appHtml('Cantidad', '<quantity-picker></quantity-picker>'),
     example: `class RatingPicker extends HTMLElement {
-  connectedCallback(){this.innerHTML='<button>Valorar con 5</button>';this.querySelector('button').onclick=()=>this.dispatchEvent(new CustomEvent('rating-change',{detail:{value:5},bubbles:true,composed:true}));}
-}
-customElements.define('rating-picker',RatingPicker);`,
-    starter: `class QuantityPicker extends HTMLElement {
-  connectedCallback(){
-    this.quantity=1;this.innerHTML='<button>Aumentar</button><output>1</output>';
-    this.querySelector('button').addEventListener('click',()=>{ /* aumenta, renderiza y emite quantity-change */ });
+  connectedCallback() {
+    this.innerHTML = '<button>Valorar con 5</button>';
+    this.querySelector('button').onclick = () =>
+      this.dispatchEvent(
+        new CustomEvent('rating-change', {
+          detail: { value: 5 },
+          bubbles: true,
+          composed: true,
+        }),
+      );
   }
 }
-customElements.define('quantity-picker',QuantityPicker);`,
+customElements.define('rating-picker', RatingPicker);`,
+    starter: `class QuantityPicker extends HTMLElement {
+  connectedCallback() {
+    this.quantity = 1;
+    this.innerHTML = '<button>Aumentar</button><output>1</output>';
+    this.querySelector('button').addEventListener('click', () => {
+      /* aumenta, renderiza y emite quantity-change */
+    });
+  }
+}
+customElements.define('quantity-picker', QuantityPicker);`,
     challengeTitle: 'App: selector desacoplado', challengeInstructions: 'Incrementa, actualiza output y emite quantity-change con detail.value, bubbles y composed.',
     tests: [browserTest('wc07-event', 'Emite el contrato completo', `async ({document,customElements})=>{await customElements.whenDefined('quantity-picker');const el=document.querySelector('quantity-picker');let event=null;document.addEventListener('quantity-change',e=>event=e,{once:true});el.querySelector('button').click();return event?.detail?.value===2&&event.bubbles&&event.composed;}`), sourceTest('wc07-name', 'Usa un evento de dominio', String.raw`CustomEvent\s*\(\s*['"]quantity-change['"]`)],
     hints: ['El hijo informa; no busca ni modifica al padre.', 'detail lleva el dato estable.', 'bubbles y composed permiten que el aviso viaje.'],
@@ -244,8 +318,18 @@ customElements.define('quantity-picker',QuantityPicker);`,
     transfer: 'Diseña eventos para un modal que se cierra y un campo que valida.',
     sources: [source('CustomEvent', 'https://developer.mozilla.org/es/docs/Web/API/CustomEvent', 'Consulta detail.'), source('Event composed', 'https://developer.mozilla.org/en-US/docs/Web/API/Event/composed', 'Comprende Shadow DOM.')],
     debug: { title: 'El evento queda atrapado', expected: 'document recibe line-remove.', observed: 'No usa bubbles ni composed.',
-      starter: `class CartLine extends HTMLElement { constructor(){super();this.attachShadow({mode:'open'});} connectedCallback(){this.shadowRoot.innerHTML='<button>Quitar</button>';this.shadowRoot.querySelector('button').onclick=()=>this.dispatchEvent(new CustomEvent('line-remove',{detail:{id:'a1'}}));} }
-customElements.define('cart-line',CartLine);`,
+      starter: `class CartLine extends HTMLElement {
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+  }
+  connectedCallback() {
+    this.shadowRoot.innerHTML = '<button>Quitar</button>';
+    this.shadowRoot.querySelector('button').onclick = () =>
+      this.dispatchEvent(new CustomEvent('line-remove', { detail: { id: 'a1' } }));
+  }
+}
+customElements.define('cart-line', CartLine);`,
       tests: [browserTest('wc07-d1', 'El documento recibe el evento', `async ({document,customElements})=>{await customElements.whenDefined('cart-line');const el=document.querySelector('cart-line');let event=null;document.addEventListener('line-remove',e=>event=e,{once:true});el.shadowRoot.querySelector('button').click();return event?.detail?.id==='a1';}`), sourceTest('wc07-d2', 'Atraviesa la frontera', String.raw`bubbles\s*:\s*true[\s\S]*composed\s*:\s*true|composed\s*:\s*true[\s\S]*bubbles\s*:\s*true`)],
       hints: ['El botón vive detrás de una frontera.', 'El evento debe ascender y atravesarla.', 'Corrige opciones, no detail.'] },
   }),

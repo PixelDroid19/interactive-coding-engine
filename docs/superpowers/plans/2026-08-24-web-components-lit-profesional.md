@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Incorporar un curso independiente, sin un límite artificial de unidades, que lleve a estudiantes de JavaScript a construir y depurar aplicaciones con Web Components y Lit. La primera versión completa contiene 40 unidades porque cada frontera conceptual conserva su propia explicación y práctica.
+**Goal:** Incorporar un curso independiente, sin un límite artificial de unidades, que lleve a estudiantes de JavaScript a construir y depurar aplicaciones con Web Components y Lit. La versión auditada contiene 45 unidades porque cada frontera conceptual conserva su propia explicación y práctica, incluido el proyecto Relé heredado.
 
 **Architecture:** El curso replica el contrato multicurso existente mediante especificaciones declarativas y una fábrica, pero añade validación contra el iframe real para comprobar componentes. Lit se resuelve con un import map del preview, sin introducir TypeScript en el código del estudiante.
 
@@ -43,19 +43,20 @@
 - [ ] Implementar progresión nativa, aplicaciones, lecturas y bugs.
 - [ ] Explicar herencia y `super()` antes del ciclo de vida de Lit.
 
-### Task 4: Veintiséis unidades de Lit y arquitectura aplicada
+### Task 4: Treinta y una unidades de Lit y arquitectura aplicada
 
-**Files:** `specs15to20.ts`, `specs21to26.ts`, `specs27to32.ts`, `specs33to40.ts`
+**Files:** `specs15to20.ts`, `specs21to26.ts`, `specs27to32.ts`, `specs33to40.ts`, `specs41to45.ts`
 
 - [ ] Implementar templates, reactividad, ciclo, estilos, directivas y arquitectura.
 - [ ] Profundizar en directivas propias, animación accesible, Observer, Bridge/Adapter, APIs, SSR e hidratación.
+- [ ] Migrar Mixins y Proyecto Relé mediante cadena de super, grafos, ciclos, orden topológico, eventos, reloj e historial.
 - [ ] Cerrar con un capstone vertical y pruebas de navegador.
 
 ### Task 5: Registro, guiones y garantías
 
 **Files:** `course.ts`, `curriculumFlow.integration.test.ts`, `docs/guiones/web-components-lit/`, `src/App.tsx`
 
-- [ ] Registrar el tercer curso y sus 40 scrims.
+- [ ] Registrar el tercer curso y sus 45 scrims.
 - [ ] Exportar guiones humanos.
 - [ ] Comprobar orden, cantidad, fuentes, starters rotos, JS-only y ausencia de soluciones.
 

@@ -456,7 +456,7 @@ const COMPONENT_STAGE_LEVELS: Array<[number, SpanishLspLevel[]]> = [
 ];
 
 const COMPONENT_BASE_LEVELS = LESSON_LEVELS['javascript-24'] || [];
-for (let lesson = 1; lesson <= 40; lesson += 1) {
+for (let lesson = 1; lesson <= 45; lesson += 1) {
   const levels = COMPONENT_STAGE_LEVELS
     .filter(([startsAt]) => startsAt <= lesson)
     .flatMap(([, stageLevels]) => stageLevels);

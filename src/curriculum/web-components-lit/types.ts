@@ -12,6 +12,7 @@ export interface ComponentCourseLessonSpec {
   reasoningSteps: [string, string, string, string];
   script: [string, string, string, string, string, string];
   html: string;
+  supportFiles?: Record<string, string>;
   example: string;
   starter: string;
   challengeTitle: string;

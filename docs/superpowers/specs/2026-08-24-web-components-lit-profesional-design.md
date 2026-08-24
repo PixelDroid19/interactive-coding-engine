@@ -6,7 +6,7 @@ Crear un tercer curso independiente para quien ya terminó JavaScript y necesita
 
 ## Decisiones pedagógicas
 
-- El curso tiene actualmente 40 unidades: 14 de Web Components nativos y 26 de Lit y arquitectura aplicada. No existe un límite pedagógico de 24, 32 o 40; la ruta crece cuando aparece una frontera conceptual que necesita explicación, aplicación y depuración propias.
+- El curso tiene actualmente 45 unidades: 14 de Web Components nativos y 31 de Lit y arquitectura aplicada. No existe un límite pedagógico de 24, 32, 40 o 45; la ruta crece cuando aparece una frontera conceptual que necesita explicación, aplicación y depuración propias.
 - Lit no aparece hasta que el estudiante domina `HTMLElement`, registro, ciclo de vida, Shadow DOM, propiedades, eventos y slots.
 - Cada unidad sigue: modelo mental -> demostración en otra aplicación -> lectura profunda -> diagrama o traza -> aplicación del estudiante -> laboratorio de depuración.
 - El ejemplo trabajado y la aplicación del estudiante resuelven problemas distintos. Ningún starter, pista o material de diagnóstico contiene la solución final.
@@ -14,7 +14,7 @@ Crear un tercer curso independiente para quien ya terminó JavaScript y necesita
 - Los proyectos usan archivos `.js`, `static properties` y módulos ES. No se enseñan decoradores ni sintaxis exclusiva de TypeScript.
 - Las lecturas explican cuándo aplicar el concepto, cuándo evitarlo, buenas prácticas, errores frecuentes, accesibilidad y cómo investigarlo en MDN o Lit.
 
-## Ruta de 40 unidades
+## Ruta de 45 unidades
 
 ### Web Components nativos
 
@@ -61,6 +61,11 @@ Crear un tercer curso independiente para quien ya terminó JavaScript y necesita
 38. Proyecto API de clima con concurrencia y fallos parciales — tablero multiciudad.
 39. SSR, entorno DOM e hidratación — ficha de producto universal.
 40. Capstone profesional con evidencia integral — sistema de soporte publicable.
+41. Mixins heredados, cadena de `super` y controllers como alternativa — panel de viewport.
+42. Grafos dirigidos y rechazo de ciclos antes de mutar — planificador de dependencias.
+43. Orden topológico y Bridge de evaluadores — calculadora de circuitos.
+44. Eventos públicos, pointer capture y dueño del estado — tablero Relé.
+45. Reloj, historial y estado efímero — estudio Relé entregable.
 
 ## Arquitectura del contenido
 
@@ -77,8 +82,11 @@ Crear un tercer curso independiente para quien ya terminó JavaScript y necesita
 ## Criterios de aceptación
 
 - Catálogo con Fundamentos, JavaScript y Web Components + Lit independientes.
-- 40 clases, 40 lecturas, 40 prácticas de razonamiento y 40 laboratorios.
-- 40 aplicaciones de clase y 40 aplicaciones rotas diferentes.
+- 45 clases, 45 lecturas, 45 prácticas de razonamiento y 45 laboratorios.
+- 45 aplicaciones de clase y 45 aplicaciones rotas diferentes.
+- Trazabilidad ejecutable de las 27 clases heredadas en `legacyMigration.ts`.
+- Guiones de al menos 500 palabras y lecturas nucleares de al menos 650 palabras por unidad.
+- Ejemplos, starters y bugs como JavaScript válido, formateado y con líneas de hasta 120 caracteres.
 - Cero `solutionFiles`, cero pistas con código final y cero archivos TypeScript en los workspaces.
 - Dependencias pedagógicas verificadas en orden.
 - Uso real de `super()` explicado causalmente en clases nativas y Lit.

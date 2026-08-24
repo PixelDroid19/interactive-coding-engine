@@ -1,15 +1,33 @@
 import { compileLesson, file, workspaceOf } from '../../engine/lessonCompiler';
 import { DebuggingExerciseItem, ReadingItem, ScrimCurriculumItem } from '../../types/curriculum';
 import { ScrimLessonData, WorkspaceSnapshot } from '../../types/scrim';
-import { BASE_CSS } from './helpers';
+import { appHtml, BASE_CSS } from './helpers';
 import { ComponentCourseLessonSpec } from './types';
 
-function workspace(spec: ComponentCourseLessonSpec, content: string): WorkspaceSnapshot {
+function workspace(spec: ComponentCourseLessonSpec, content: string, html = spec.html): WorkspaceSnapshot {
   return workspaceOf('app.js', {
-    'index.html': file('index.html', spec.html),
+    'index.html': file('index.html', html),
     'style.css': file('style.css', BASE_CSS),
     'app.js': file('app.js', content),
+    ...Object.fromEntries(
+      Object.entries(spec.supportFiles || {}).map(([path, fileContent]) => [path, file(path, fileContent)]),
+    ),
   });
+}
+
+function debugElementTag(spec: ComponentCourseLessonSpec): string {
+  const browserContract = spec.debug.tests
+    .find((test) => test.validatorType === 'browser-script')
+    ?.customValidatorScript;
+  const contractTag = browserContract?.match(/whenDefined\s*\(\s*['"]([^'"]+)/)?.[1];
+  if (contractTag) return contractTag;
+
+  const registeredTags = [...spec.debug.starter.matchAll(
+    /customElements\.define\s*\(\s*['"]([^'"]+)/g,
+  )].map((match) => match[1]);
+  const registeredTag = registeredTags.at(-1);
+  if (!registeredTag) throw new Error(`El laboratorio ${spec.number} no declara qué componente debe montar.`);
+  return registeredTag;
 }
 
 export function buildLesson(spec: ComponentCourseLessonSpec): ScrimLessonData {
@@ -93,10 +111,12 @@ export function buildReading(spec: ComponentCourseLessonSpec): ReadingItem {
 
 export function buildDebug(spec: ComponentCourseLessonSpec): DebuggingExerciseItem {
   const id = `componentes-lit-${String(spec.number).padStart(2, '0')}`;
+  const elementTag = debugElementTag(spec);
+  const debugPage = appHtml(`Depura: ${spec.debug.title}`, `<${elementTag}></${elementTag}>`);
   return {
     id: `${id}-debug`, relatedLessonId: id, title: spec.debug.title, type: 'debugging', executionMode: 'browser', estimatedMinutes: 14,
     description: 'Reproduce el fallo, explica la primera causa observable y corrige una decisión sin reescribir toda la aplicación.',
-    templateId: 'vanilla-js', initialWorkspace: workspace(spec, spec.debug.starter), expectedBehavior: spec.debug.expected, observedBehavior: spec.debug.observed,
+    templateId: 'vanilla-js', initialWorkspace: workspace(spec, spec.debug.starter, debugPage), expectedBehavior: spec.debug.expected, observedBehavior: spec.debug.observed,
     tests: spec.debug.tests,
     hints: spec.debug.hints.map((text, index) => ({ level: index + 1, text })),
     troubleshootingTips: ['Ejecuta antes de editar y observa consola, DOM y eventos.', 'Formula una hipótesis concreta y cambia una sola causa.', 'Vuelve a probar el caso original y una variante.'],

@@ -8,6 +8,7 @@ import { COMPONENT_SPECS_15_TO_20 } from './specs15to20';
 import { COMPONENT_SPECS_21_TO_26 } from './specs21to26';
 import { COMPONENT_SPECS_27_TO_32 } from './specs27to32';
 import { COMPONENT_SPECS_33_TO_40 } from './specs33to40';
+import { COMPONENT_SPECS_41_TO_45 } from './specs41to45';
 import { ComponentCourseLessonSpec } from './types';
 
 export const COMPONENT_COURSE_SPECS: ComponentCourseLessonSpec[] = [
@@ -17,6 +18,7 @@ export const COMPONENT_COURSE_SPECS: ComponentCourseLessonSpec[] = [
   ...COMPONENT_SPECS_21_TO_26,
   ...COMPONENT_SPECS_27_TO_32,
   ...COMPONENT_SPECS_33_TO_40,
+  ...COMPONENT_SPECS_41_TO_45,
 ];
 
 const built = COMPONENT_COURSE_SPECS.map((spec) => ({
@@ -64,5 +66,9 @@ export const COMPONENT_COURSE: Course = {
     { id: 'wc-lit-mod-13-api', title: 'Proyectos con APIs', description: 'Museo, clima, concurrencia y fallos parciales.', items: itemsForModule(13) },
     { id: 'wc-lit-mod-14-ssr', title: 'Servidor e hidratación', description: 'Componentes diseñados para más de un entorno.', items: itemsForModule(14) },
     { id: 'wc-lit-mod-15-capstone', title: 'Capstone profesional', description: 'Un sistema publicable con evidencia integral.', items: itemsForModule(15) },
+    { id: 'wc-lit-mod-16-mixins', title: 'Herencia en proyectos existentes', description: 'Mixins, cadena de super y migración hacia composición.', items: itemsForModule(16) },
+    { id: 'wc-lit-mod-17-grafos', title: 'Motor de grafos', description: 'Ciclos, orden topológico y evaluadores desacoplados.', items: itemsForModule(17) },
+    { id: 'wc-lit-mod-18-rele-ui', title: 'Interacción de Relé', description: 'Eventos públicos, arrastre y propiedad del estado.', items: itemsForModule(18) },
+    { id: 'wc-lit-mod-19-rele', title: 'Proyecto Relé', description: 'Reloj, historial, invariantes y entrega profesional.', items: itemsForModule(19) },
   ],
 };

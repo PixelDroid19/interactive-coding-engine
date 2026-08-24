@@ -1,20 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { transform } from 'esbuild';
 import { COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS, COMPONENT_COURSE_SPECS } from './course';
+import { LEGACY_LIT_MIGRATION } from './legacyMigration';
 
 describe('curso profesional de Web Components y Lit', () => {
   const items = COMPONENT_COURSE.modules.flatMap((module) => module.items);
   const lessons = items.filter((item) => item.type === 'scrim');
 
-  it('ofrece 40 unidades completas y separadas de los otros cursos', () => {
+  it('ofrece 45 unidades completas y separadas de los otros cursos', () => {
     expect(COMPONENT_COURSE.id).toBe('course-web-components-lit');
-    expect(COMPONENT_COURSE_SPECS).toHaveLength(40);
-    expect(Object.keys(COMPONENT_COURSE_SCRIMS)).toHaveLength(40);
-    expect(lessons).toHaveLength(40);
-    expect(items.filter((item) => item.type === 'reading')).toHaveLength(40);
-    expect(items.filter((item) => item.type === 'reasoning')).toHaveLength(40);
-    expect(items.filter((item) => item.type === 'debugging')).toHaveLength(40);
+    expect(COMPONENT_COURSE_SPECS).toHaveLength(45);
+    expect(Object.keys(COMPONENT_COURSE_SCRIMS)).toHaveLength(45);
+    expect(lessons).toHaveLength(45);
+    expect(items.filter((item) => item.type === 'reading')).toHaveLength(45);
+    expect(items.filter((item) => item.type === 'reasoning')).toHaveLength(45);
+    expect(items.filter((item) => item.type === 'debugging')).toHaveLength(45);
   });
 
   it('enseña Web Components antes de importar Lit', () => {
@@ -73,6 +75,81 @@ describe('curso profesional de Web Components y Lit', () => {
   it('mantiene una voz humana sin repetir las mismas transiciones en todo el curso', () => {
     expect(new Set(COMPONENT_COURSE_SPECS.map((spec) => spec.script[2])).size).toBeGreaterThanOrEqual(8);
     expect(new Set(COMPONENT_COURSE_SPECS.map((spec) => spec.script[5])).size).toBeGreaterThanOrEqual(8);
+  });
+
+  it('impide explicaciones superficiales y código ilegible', () => {
+    const countWords = (text: string) => text.trim().split(/\s+/).filter(Boolean).length;
+    for (const spec of COMPONENT_COURSE_SPECS) {
+      const readingText = [
+        spec.reading.mentalModel,
+        spec.reading.walkthrough,
+        spec.reading.whenToUse,
+        spec.reading.bestPractices,
+        spec.reading.investigation,
+        spec.reading.commonErrors,
+        spec.reading.diagram,
+      ].join(' ');
+      expect(countWords(spec.script.join(' ')), `guion ${spec.number}`).toBeGreaterThanOrEqual(500);
+      expect(countWords(readingText), `lectura ${spec.number}`).toBeGreaterThanOrEqual(650);
+      for (const code of [spec.example, spec.starter, spec.debug.starter, ...Object.values(spec.supportFiles || {})]) {
+        expect(Math.max(...code.split('\n').map((line) => line.length)), `código ${spec.number}`).toBeLessThanOrEqual(120);
+      }
+    }
+  });
+
+  it('mantiene ejemplos y starters como JavaScript válido aunque estén incompletos', async () => {
+    for (const spec of COMPONENT_COURSE_SPECS) {
+      const codeBlocks = [
+        ['ejemplo', spec.example],
+        ['starter', spec.starter],
+        ['debug', spec.debug.starter],
+        ...Object.entries(spec.supportFiles || {}).map(([path, code]) => [`soporte ${path}`, code]),
+      ] as const;
+      for (const [kind, code] of codeBlocks) {
+        await expect(transform(code, { loader: 'js', format: 'esm' }), `${kind} ${spec.number}`).resolves.toBeDefined();
+      }
+    }
+  });
+
+  it('mantiene trazabilidad explícita de las 27 clases heredadas', () => {
+    expect(LEGACY_LIT_MIGRATION).toHaveLength(27);
+    expect(new Set(LEGACY_LIT_MIGRATION.map((entry) => entry.legacyId)).size).toBe(27);
+    const available = new Set(COMPONENT_COURSE_SPECS.map((spec) => spec.number));
+    for (const entry of LEGACY_LIT_MIGRATION) {
+      expect(entry.migratedTo.length, entry.legacyId).toBeGreaterThan(0);
+      expect(entry.migratedTo.every((number) => available.has(number)), entry.legacyId).toBe(true);
+      expect(entry.improvement.length, entry.legacyId).toBeGreaterThan(40);
+    }
+    expect(LEGACY_LIT_MIGRATION.find((entry) => entry.legacyId === '19-mixins')?.migratedTo).toContain(41);
+    expect(LEGACY_LIT_MIGRATION.find((entry) => entry.legacyId === '27-proyecto-rele')?.migratedTo).toEqual([41, 42, 43, 44, 45]);
+  });
+
+  it('practica arquitectura multifichero en el proyecto Relé', () => {
+    const relay = COMPONENT_COURSE_SPECS.find((spec) => spec.number === 45);
+    expect(relay?.supportFiles?.['relay-engine.js']).toContain('export function evaluateRelay');
+    expect(relay?.starter).toContain("import { evaluateRelay } from './relay-engine.js'");
+    const workspace = COMPONENT_COURSE_SCRIMS['componentes-lit-45'].initialWorkspace;
+    expect(workspace.files['relay-engine.js']).toBeDefined();
+  });
+
+  it('cada laboratorio monta el componente roto que realmente debe depurarse', () => {
+    const debuggingItems = items.filter((item) => item.type === 'debugging');
+    for (const [index, debugItem] of debuggingItems.entries()) {
+      if (debugItem.type !== 'debugging') continue;
+      const registeredTags = [...COMPONENT_COURSE_SPECS[index].debug.starter.matchAll(
+        /customElements\.define\s*\(\s*['"]([^'"]+)/g,
+      )].map((match) => match[1]);
+      const browserContract = COMPONENT_COURSE_SPECS[index].debug.tests
+        .find((test) => test.validatorType === 'browser-script')
+        ?.customValidatorScript;
+      const mountedTag = browserContract?.match(/whenDefined\s*\(\s*['"]([^'"]+)/)?.[1]
+        ?? registeredTags.at(-1);
+      expect(mountedTag, `laboratorio ${index + 1}`).toBeDefined();
+      expect(
+        debugItem.initialWorkspace.files['index.html'].content,
+        `laboratorio ${index + 1} debe montar <${mountedTag}>`,
+      ).toContain(`<${mountedTag}`);
+    }
   });
 
   it('mantiene válidas todas las expresiones de comprobación curricular', () => {
