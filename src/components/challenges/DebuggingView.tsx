@@ -632,7 +632,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                               <CheckCircle2 size={16} />
                               Resuelto
                             </div>
-                            <button type="button" onClick={handleNext} className="w-full mt-2 neu-pill-btn bg-[#ffe600] justify-center" aria-label="Continuar">
+                            <button type="button" onClick={handleNext} className="w-full mt-2 neu-pill-btn btn-brand justify-center" aria-label="Continuar">
                               <span>Continuar</span>
                               <ChevronRight size={14} />
                             </button>

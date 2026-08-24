@@ -925,7 +925,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             <h3 className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Cómo quieres continuar?</h3>
             <p className="text-sm text-slate-300 mt-2">Puedes continuar desde donde lo dejaste la última vez o comenzar la lección desde cero.</p>
             <div className="flex flex-col gap-2 mt-4">
-              <button ref={branchRecoveryFirstActionRef} onClick={handleRestoreBranch} className="w-full neu-pill-btn bg-[#ffe600]" aria-label="Continuar donde lo dejé">Continuar donde lo dejé</button>
+              <button ref={branchRecoveryFirstActionRef} onClick={handleRestoreBranch} className="w-full neu-pill-btn btn-brand" aria-label="Continuar donde lo dejé">Continuar donde lo dejé</button>
               <button onClick={handleDiscardBranchRecovery} className="w-full neu-pill-btn" aria-label="Comenzar lección desde cero">Comenzar lección desde cero</button>
             </div>
           </div>
@@ -939,7 +939,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             <p className="text-sm text-slate-300 mt-2">Tienes cambios sin guardar. Puedes descartarlos para cambiar de momento o seguir editando aquí.</p>
             <div className="flex gap-2 mt-4">
               <button onClick={handleDiscardAndSeek} className="flex-1 neu-pill-btn bg-rose-100" aria-label="Descartar cambios e ir">Descartar cambios e ir</button>
-              <button onClick={handleKeepEditing} className="flex-1 neu-pill-btn bg-[#ffe600]" aria-label="Seguir editando">Seguir editando</button>
+              <button onClick={handleKeepEditing} className="flex-1 neu-pill-btn btn-brand" aria-label="Seguir editando">Seguir editando</button>
             </div>
           </div>
         </div>
@@ -951,7 +951,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             <h3 className="font-bold">¿Volver al contenido de la lección?</h3>
             <p className="text-sm text-slate-300 mt-2">Al volver se descartarán los cambios que hiciste mientras practicabas.</p>
             <div className="flex gap-2 mt-4">
-              <button onClick={() => doReturnToTape(learnerBranch?.baseTime ?? timeRef.current)} className="flex-1 neu-pill-btn bg-[#ffe600]" aria-label="Volver y descartar cambios">Volver y descartar cambios</button>
+              <button onClick={() => doReturnToTape(learnerBranch?.baseTime ?? timeRef.current)} className="flex-1 neu-pill-btn btn-brand" aria-label="Volver y descartar cambios">Volver y descartar cambios</button>
               <button onClick={() => setShowReturnConfirm(false)} className="flex-1 neu-pill-btn" aria-label="Seguir editando">Seguir editando</button>
             </div>
           </div>
@@ -964,7 +964,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             <h3 className="font-bold">¿Salir de esta pantalla?</h3>
             <p className="text-sm text-slate-300 mt-2">Tienes cambios sin guardar. Puedes guardarlos para continuar después o descartarlos antes de salir.</p>
             <div className="flex flex-col gap-2 mt-4">
-              <button onClick={() => confirmNavigation('save')} className="w-full neu-pill-btn bg-[#ffe600]" aria-label="Guardar cambios y salir">Guardar cambios y salir</button>
+              <button onClick={() => confirmNavigation('save')} className="w-full neu-pill-btn btn-brand" aria-label="Guardar cambios y salir">Guardar cambios y salir</button>
               <button onClick={() => confirmNavigation('discard')} className="w-full neu-pill-btn bg-slate-100 text-slate-900 border-rose-300" aria-label="Descartar cambios y salir">Descartar cambios y salir</button>
               <button onClick={cancelNavigation} className="w-full neu-pill-btn" aria-label="Seguir aquí">Seguir aquí</button>
             </div>
@@ -1111,7 +1111,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           <h4 className="font-bold text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Ejecutaste tus dos mensajes?</h4>
           <p className="text-xs text-slate-300 mt-1">Abre la consola y comprueba que los dos textos aparecen en el mismo orden que tus instrucciones. Después confirma para completar la clase.</p>
           <div className="flex gap-2 mt-3">
-            <button onClick={handleClosureConfirm} className="flex-1 neu-pill-btn bg-[#ffe600] text-sm" aria-label="He ejecutado mi programa, completar clase">He ejecutado mi programa</button>
+            <button onClick={handleClosureConfirm} className="flex-1 neu-pill-btn btn-brand text-sm" aria-label="He ejecutado mi programa, completar clase">He ejecutado mi programa</button>
             <button
               onClick={() => isLogicMode ? void logicRunnerRef.current?.run() : void previewRef.current?.reloadPreview()}
               className="neu-pill-btn text-sm"
@@ -1127,7 +1127,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-emerald-50 border-2 border-emerald-700 rounded-xl shadow-[4px_4px_0_#000] p-3 flex items-center gap-3 max-w-lg w-[90%]">
           <span className="text-emerald-700 font-bold text-sm">✓ Clase completada</span>
           <button onClick={handleRepeatFromEnd} className="ml-auto neu-pill-btn text-xs" aria-label="Repetir desde el inicio">Repetir</button>
-          {onNextLesson && <button onClick={onNextLesson} className="neu-pill-btn bg-[#ffe600] text-xs" aria-label="Siguiente lección">Siguiente</button>}
+          {onNextLesson && <button onClick={onNextLesson} className="neu-pill-btn btn-brand text-xs" aria-label="Siguiente lección">Siguiente</button>}
         </div>
       )}
 

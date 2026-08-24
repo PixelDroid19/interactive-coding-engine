@@ -197,7 +197,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
               type="button"
               onClick={onNext}
               disabled={!navigationState?.hasNext}
-              className="neu-pill-btn justify-center bg-[#ffe600] px-4 py-2 text-sm font-bold disabled:opacity-40"
+              className="neu-pill-btn btn-brand justify-center px-4 py-2 text-sm font-bold disabled:opacity-40"
               aria-label="Ir a la práctica"
             >
               Ir a la práctica
