@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-25",
+  "durationMs": 274560,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/25.md",
+  "cues": [
+    {
+      "timestamp": 20,
+      "end": 33950,
+      "text": "Define CSS encapsulado y una API de tema pequeña mediante :host y custom properties. En esta clase construiremos una tarjeta tematizable sin romper encapsulación. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 34100,
+      "end": 90370,
+      "text": "El tema es una perilla pública, no una ventana a todos los selectores internos. En términos concretos, static styles significa estilos compartidos y encapsulados de la clase En cambio, CSS custom property significa valor configurable que cruza la frontera por cascada. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 90520,
+      "end": 132130,
+      "text": "Vamos con una aplicación distinta antes del reto. En una tarjeta tematizable sin romper encapsulación, sigue la entrada, el cambio y la salida; después señala dónde aparecen static styles y CSS custom property. Primero, el consumidor define --card-accent. Después, :host recibe el valor. A continuación, static styles lo aplica internamente. Por último, la estructura privada permanece estable. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 132280,
+      "end": 192170,
+      "text": "Expón custom properties para decisiones de valor —color, espacio, tamaño— que consumidores realmente necesiten ajustar. La señal más útil para decidir es la frontera: pregunta si static styles y CSS custom property reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 192320,
+      "end": 249690,
+      "text": "Ofrece fallbacks, conserva contraste y evita convertir cada regla CSS en API. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: estilos dentro de render, variables sin fallback, nombres genéricos que colisionan o temas que rompen accesibilidad. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 249840,
+      "end": 274360,
+      "text": "Ahora cambia el contexto: construye una tarjeta tematizable sin romper encapsulación. Empieza por el contrato observable, resuelve una decisión cada vez y prueba una variante antes de Comprobar. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9811
+}

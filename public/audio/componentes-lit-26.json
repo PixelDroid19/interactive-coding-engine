@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-26",
+  "durationMs": 269960,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/26.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 34750,
+      "text": "Combina contenido proyectado, variables de valor y parts estructurales sin exponer toda la implementación. En esta clase construiremos un panel de aplicación personalizable. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 34900,
+      "end": 94670,
+      "text": "Variables ajustan perillas, parts permiten pintar una pieza y slots dejan traer contenido; cada puerta tiene un alcance diferente. En términos concretos, part significa nombre público de una pieza interna que puede estilizarse En cambio, ::slotted significa selector limitado para contenido proyectado. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 94820,
+      "end": 132010,
+      "text": "No leas el ejemplo como una receta. Pausa en cada paso de un panel de aplicación personalizable y predice qué observará el navegador antes de continuar. Primero, el consumidor proyecta header/body/actions. Después, lit coloca slots. A continuación, part expone una pieza interna. Por último, el tema ajusta sin conocer selectores privados. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 132160,
+      "end": 187250,
+      "text": "Usa slots para DOM aportado, custom properties para valores y parts para personalización estructural excepcional. La señal más útil para decidir es la frontera: pregunta si part y ::slotted reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 187400,
+      "end": 245390,
+      "text": "Expón pocos nombres semánticos, documenta su estabilidad y evita que el consumidor reconstruya internals. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: parts para cada nodo, ::slotted profundo que no funciona o cambiar nombres públicos como refactor interno. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 245540,
+      "end": 269740,
+      "text": "Te toca tomar las decisiones en un panel de aplicación personalizable. El starter prepara el escenario, pero la regla central sigue abierta; usa la vista previa como evidencia. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.965
+}

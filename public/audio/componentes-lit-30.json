@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-30",
+  "durationMs": 281600,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/30.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 35750,
+      "text": "Extrae estado con ciclo propio a un Reactive Controller y usa contexto solo para dependencias realmente transversales. En esta clase construiremos un panel de conectividad con lógica reutilizable. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 35900,
+      "end": 99770,
+      "text": "Un controller es un órgano reusable con su propio ciclo; el contexto es una red de distribución. Ninguno debe convertirse en un almacén global para cualquier dato. En términos concretos, Reactive Controller significa objeto que participa en el ciclo del host sin ser un componente En cambio, Context significa canal para datos transversales a través de un árbol de componentes. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 99920,
+      "end": 138510,
+      "text": "Antes de ejecutar, haz una apuesta: ¿qué debería ocurrir en un panel de conectividad con lógica reutilizable y por qué? Usa Reactive Controller y Context para justificar tu predicción. Primero, el host crea NetworkController. Después, el controlador se registra. A continuación, eventos externos cambian su estado. Por último, requestUpdate actualiza al host. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 138660,
+      "end": 193910,
+      "text": "Usa controller para lógica reusable con ciclo; usa contexto para tema, sesión o servicio compartido por ramas profundas. La señal más útil para decidir es la frontera: pregunta si Reactive Controller y Context reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 194060,
+      "end": 255970,
+      "text": "Mantén API estrecha, limpia recursos y prefiere propiedades/eventos cuando solo hay relación padre-hijo. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: mixins que contaminan prototipos, contexto para estado local, listeners sin cleanup o controller que renderiza DOM. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 256120,
+      "end": 281210,
+      "text": "Es tu turno con un panel de conectividad con lógica reutilizable. Haz primero el camino mínimo completo, compruébalo en el navegador y después añade el caso alternativo. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9695
+}

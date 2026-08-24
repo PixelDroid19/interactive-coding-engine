@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-28",
+  "durationMs": 274520,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/28.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 35170,
+      "text": "Aplica clases, estilos y referencias DOM con directivas específicas sin volver imperativo todo el componente. En esta clase construiremos una tabla interactiva con estado visual y foco. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 35320,
+      "end": 94410,
+      "text": "Las directivas son adaptadores estrechos: expresan una operación DOM concreta sin abandonar el flujo declarativo del template. En términos concretos, classMap/styleMap significa bindings declarativos para mapas de clase o estilo En cambio, ref significa referencia a un nodo cuando una API imperativa la necesita. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 94560,
+      "end": 133510,
+      "text": "Ahora pondremos el modelo bajo presión con una tabla interactiva con estado visual y foco. Primero identifica los datos; luego el ciclo que actúa sobre ellos; al final comprueba la interfaz. Primero, el estado define selección y ancho. Después, classMap/styleMap describen apariencia. A continuación, ref captura el input. Por último, una acción justificada usa focus. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 133660,
+      "end": 192550,
+      "text": "Usa classMap/styleMap con mapas dinámicos y ref para foco, medición o bibliotecas imperativas; no para leer datos que ya están en estado. La señal más útil para decidir es la frontera: pregunta si classMap/styleMap y ref reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 192700,
+      "end": 250550,
+      "text": "Mantén mapas pequeños, valores CSS controlados y acceso DOM encapsulado en métodos con nombre. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: styleMap con datos no validados, ref como sustituto de estado o classMap para una sola clase ternaria. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 250700,
+      "end": 274180,
+      "text": "El siguiente paso ya no es copiar. Construye una tabla interactiva con estado visual y foco, explica por qué funciona y busca un caso límite antes de enviar tu respuesta. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9616
+}

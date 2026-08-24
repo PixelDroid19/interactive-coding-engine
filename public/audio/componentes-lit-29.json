@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-29",
+  "durationMs": 259800,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/29.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 33150,
+      "text": "Modela argumentos, cancelación y estados de una tarea mediante @lit/task sin esconder reglas de red. En esta clase construiremos un catálogo remoto con Task. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 33300,
+      "end": 92010,
+      "text": "Task coordina el calendario de la operación; tu servicio conserva el contrato de datos y tu template decide cómo explicar cada estado. En términos concretos, Task significa controlador para trabajo asíncrono ligado a argumentos reactivos En cambio, Race safety significa solo el resultado de los argumentos vigentes llega a la vista. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 92160,
+      "end": 128490,
+      "text": "Fíjate en la frontera, no solo en la sintaxis. Mientras construimos un catálogo remoto con Task, separa responsabilidades de plataforma, componente y consumidor. Primero, query cambia. Después, task recibe argumentos y signal. A continuación, pending/complete/error seleccionan UI. Por último, solo la ejecución vigente completa. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 128640,
+      "end": 182590,
+      "text": "Úsalo cuando una operación depende de propiedades reactivas y necesitas coordinación de estados; una promesa puntual puede ser suficiente en casos simples. La señal más útil para decidir es la frontera: pregunta si Task y Race safety reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 182740,
+      "end": 238210,
+      "text": "Pasa signal a operaciones cancelables, separa normalización del componente y cubre vacío además de error. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: crear Task dentro de render, omitir args, ignorar signal o meter fetch, normalización y presentación en una sola función. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 238360,
+      "end": 259560,
+      "text": "Lleva el modelo a un catálogo remoto con Task. Si te atascas, vuelve al flujo de cuatro pasos; las pistas orientan la investigación, pero no entregan el programa. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9674
+}
