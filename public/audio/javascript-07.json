@@ -1,0 +1,30 @@
+{
+  "id": "javascript-07",
+  "durationMs": 50600,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/07.md",
+  "cues": [
+    {
+      "timestamp": 210,
+      "end": 12840,
+      "text": "Un nombre no existe en todos los lugares. Su alcance depende de dónde se declara. Esta frontera evita que funciones distintas pisen datos por accidente."
+    },
+    {
+      "timestamp": 12990,
+      "end": 27160,
+      "text": "Los parámetros y las variables creadas dentro de una función son locales. let y const también respetan los bloques entre llaves. Desde fuera no puedes leerlas directamente."
+    },
+    {
+      "timestamp": 27310,
+      "end": 40140,
+      "text": "En el ejemplo cada llamada crea su propio subtotal. precio e impuesto existen durante esa llamada y desaparecen de nuestro alcance cuando termina."
+    },
+    {
+      "timestamp": 40290,
+      "end": 50350,
+      "text": "Tu reto debe depender solo de parámetros y variables locales. Si la función necesita un dato, ponlo en la firma en vez de leer una variable global escondida."
+    }
+  ]
+}

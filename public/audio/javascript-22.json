@@ -1,0 +1,30 @@
+{
+  "id": "javascript-22",
+  "durationMs": 41960,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/22.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 11130,
+      "text": "Una clase es útil cuando muchos objetos comparten comportamiento y cada uno conserva su propio estado. No es obligatoria para organizar cualquier función."
+    },
+    {
+      "timestamp": 11280,
+      "end": 24030,
+      "text": "constructor recibe datos al crear una instancia. Los métodos se comparten mediante el prototipo; las propiedades como this.nombre pertenecen a cada objeto."
+    },
+    {
+      "timestamp": 24180,
+      "end": 33390,
+      "text": "El ejemplo crea dos contadores independientes. Ambos comparten incrementar, pero cambiar uno no cambia el valor del otro."
+    },
+    {
+      "timestamp": 33540,
+      "end": 41560,
+      "text": "Tu reto crea productos mediante una clase y una función fábrica pequeña para que podamos validar instancias con datos distintos."
+    }
+  ]
+}

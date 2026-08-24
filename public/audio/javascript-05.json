@@ -1,0 +1,30 @@
+{
+  "id": "javascript-05",
+  "durationMs": 48920,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/05.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 11670,
+      "text": "Una función empaqueta una tarea con nombre. Su firma actúa como contrato: dice qué datos necesita y la llamada entrega argumentos concretos."
+    },
+    {
+      "timestamp": 11820,
+      "end": 27230,
+      "text": "Los parámetros son nombres locales. return devuelve el resultado a quien llamó y termina esa ejecución. console.log solo muestra; no sustituye el valor devuelto."
+    },
+    {
+      "timestamp": 27380,
+      "end": 36830,
+      "text": "areaRectangulo recibe ancho y alto. La función no conoce el ejemplo cinco por tres: aplica la misma regla a cualquier par válido."
+    },
+    {
+      "timestamp": 36980,
+      "end": 48660,
+      "text": "En tu reto escribe una función pura. Primero prueba el cálculo con papel. Después usa dos entradas distintas para confirmar que ambos parámetros participan."
+    }
+  ]
+}

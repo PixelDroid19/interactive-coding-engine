@@ -1,0 +1,30 @@
+{
+  "id": "javascript-14",
+  "durationMs": 44320,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/14.md",
+  "cues": [
+    {
+      "timestamp": 660,
+      "end": 9250,
+      "text": "Una interfaz responde cuando ocurre algo. El navegador emite eventos y nosotros registramos una función para reaccionar."
+    },
+    {
+      "timestamp": 9400,
+      "end": 23810,
+      "text": "addEventListener recibe el nombre del evento y la función manejadora. Entregamos la función sin paréntesis; si la llamamos, se ejecuta durante el registro."
+    },
+    {
+      "timestamp": 23960,
+      "end": 34630,
+      "text": "El ejemplo espera el clic, lee el valor del input en ese momento y actualiza la salida. Leer antes guardaría una versión vieja."
+    },
+    {
+      "timestamp": 34780,
+      "end": 44060,
+      "text": "En tu reto el botón debe incrementar un contador. El estado vive en JavaScript y la vista se actualiza después de cada cambio."
+    }
+  ]
+}

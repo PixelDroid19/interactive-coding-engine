@@ -1,0 +1,30 @@
+{
+  "id": "javascript-12",
+  "durationMs": 47000,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/12.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 11070,
+      "text": "Los valores primitivos se comportan como valores independientes. Con arrays y objetos, una variable conserva una referencia al objeto administrado por el motor."
+    },
+    {
+      "timestamp": 11220,
+      "end": 24070,
+      "text": "Asignar un objeto a otro nombre copia la referencia, no la ficha. Por eso una modificación se observa desde ambos. El spread crea otro objeto con las propiedades del primer nivel."
+    },
+    {
+      "timestamp": 24220,
+      "end": 36610,
+      "text": "En el ejemplo copia comparte el objeto y cambia original. independiente usa llaves y tres puntos, así que su estado de primer nivel puede cambiar sin tocar original."
+    },
+    {
+      "timestamp": 36760,
+      "end": 46640,
+      "text": "Tu reto debe devolver un objeto nuevo con un estado actualizado. El recibido debe conservarse. Esa regla es clave para razonar sobre estado."
+    }
+  ]
+}

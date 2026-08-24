@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "audio:generate": "tsx scripts/export-cues.ts && bash -lc 'source /opt/intel/oneapi/setvars.sh >/dev/null; exec .venv-tts/bin/python scripts/generate_spanish_arc.py'",
-    "audio:gemini": "tsx scripts/generate-gemini-audio.ts"
+    "audio:gemini": "tsx scripts/generate-gemini-audio.ts",
+    "audio:align:javascript": ".venv-tts/bin/python scripts/align-javascript-audio.py"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",

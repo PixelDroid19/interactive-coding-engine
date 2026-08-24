@@ -1,0 +1,30 @@
+{
+  "id": "javascript-11",
+  "durationMs": 51160,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/11.md",
+  "cues": [
+    {
+      "timestamp": 50,
+      "end": 11960,
+      "text": "Un array responde “en qué posición”. Un objeto responde “con qué nombre”. Sirve para reunir datos que describen una misma entidad."
+    },
+    {
+      "timestamp": 12110,
+      "end": 27320,
+      "text": "Cada propiedad tiene clave y valor. El punto lee una clave conocida. Los corchetes permiten usar una clave que llega como dato. Una función guardada como propiedad se llama método."
+    },
+    {
+      "timestamp": 27470,
+      "end": 40380,
+      "text": "El libro del ejemplo tiene título, páginas y una función resumen. this representa el objeto receptor durante esa llamada."
+    },
+    {
+      "timestamp": 40530,
+      "end": 50610,
+      "text": "Tu reto no necesita métodos todavía. Recibe un objeto producto y produce un texto leyendo sus propiedades; pruébalo con productos distintos."
+    }
+  ]
+}

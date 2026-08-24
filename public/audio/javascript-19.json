@@ -1,0 +1,30 @@
+{
+  "id": "javascript-19",
+  "durationMs": 45280,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/19.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 10210,
+      "text": "Una promesa representa una operación que aún no terminó. Puede quedar pendiente, cumplirse con un valor o rechazarse con un error."
+    },
+    {
+      "timestamp": 10360,
+      "end": 24530,
+      "text": "La mayoría de las veces consumimos promesas ya creadas. await obtiene su valor dentro de una función async. try y catch permiten decidir qué hacer si se rechaza."
+    },
+    {
+      "timestamp": 24680,
+      "end": 35190,
+      "text": "El ejemplo espera un perfil simulado y devuelve su nombre. La función cargarNombre sigue devolviendo una promesa porque es async."
+    },
+    {
+      "timestamp": 35340,
+      "end": 45020,
+      "text": "Tu reto recibe una función que devuelve promesa. Debes esperarla y transformar el valor, no crear una promesa manual ni fijar un nombre."
+    }
+  ]
+}

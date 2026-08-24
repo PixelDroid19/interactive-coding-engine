@@ -1,0 +1,30 @@
+{
+  "id": "javascript-13",
+  "durationMs": 46160,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/13.md",
+  "cues": [
+    {
+      "timestamp": 210,
+      "end": 10900,
+      "text": "Hasta ahora observamos datos en la consola. El navegador también representa el HTML como un árbol de objetos llamado DOM."
+    },
+    {
+      "timestamp": 11050,
+      "end": 25190,
+      "text": "getElementById busca un elemento por su id. querySelector usa un selector CSS. Ambos pueden no encontrar nada, así que el HTML y el selector deben coincidir."
+    },
+    {
+      "timestamp": 25340,
+      "end": 36700,
+      "text": "El ejemplo encuentra salida y cambia textContent. La variable guarda la referencia al elemento; el texto nuevo aparece en la vista previa."
+    },
+    {
+      "timestamp": 36850,
+      "end": 45890,
+      "text": "En tu reto el elemento ya existe. No crees HTML nuevo. Selecciónalo y escribe un mensaje que use la variable nombre."
+    }
+  ]
+}

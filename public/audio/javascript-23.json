@@ -1,0 +1,30 @@
+{
+  "id": "javascript-23",
+  "durationMs": 53160,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/23.md",
+  "cues": [
+    {
+      "timestamp": 750,
+      "end": 13080,
+      "text": "Un Web Component une una etiqueta personalizada con una clase. Lo estudiaremos ahora porque ya conocemos DOM, eventos, módulos y clases."
+    },
+    {
+      "timestamp": 13230,
+      "end": 30420,
+      "text": "La clase extiende HTMLElement. connectedCallback se ejecuta al conectarse. customElements.define registra un nombre con guion. Sin registro, el navegador solo ve una etiqueta desconocida."
+    },
+    {
+      "timestamp": 30570,
+      "end": 43600,
+      "text": "Shadow DOM añade una frontera para estructura y estilos internos. No lo uses por decoración: úsalo cuando el componente necesita encapsulación y un contrato público."
+    },
+    {
+      "timestamp": 43750,
+      "end": 52930,
+      "text": "Tu reto define un componente mínimo. La práctica revisa las tres piezas del contrato y evita entregar una solución completa en la plantilla."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "id": "javascript-02",
+  "durationMs": 71920,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/02.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 18350,
+      "text": "Un programa necesita recordar datos. Una variable nos permite asociar un nombre con un valor para usarlo después. Por ahora piensa en esa asociación: JavaScript mantiene el valor disponible mientras el programa se ejecuta."
+    },
+    {
+      "timestamp": 18500,
+      "end": 37400,
+      "text": "Usa const cuando ese nombre no recibirá otro valor. Usa let cuando la historia del programa exige reasignarlo. El tipo pertenece al valor: “Ana” es texto, 18 es número y true es booleano."
+    },
+    {
+      "timestamp": 37550,
+      "end": 56700,
+      "text": "Aquí puntos empieza en diez y luego recibe doce. nombre permanece igual. Al mostrar ambos valores, podemos seguir el estado sin imaginarlo. Reasignar no crea una segunda variable; cambia el valor asociado al mismo nombre."
+    },
+    {
+      "timestamp": 56850,
+      "end": 71670,
+      "text": "En el reto elige nombres claros y representa tres tipos. Una de las variables debe cambiar. No copies el ejemplo: piensa qué dato de tu propio perfil permanecería y cuál podría actualizarse."
+    }
+  ]
+}

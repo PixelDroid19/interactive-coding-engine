@@ -1,0 +1,30 @@
+{
+  "id": "javascript-21",
+  "durationMs": 49160,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/21.md",
+  "cues": [
+    {
+      "timestamp": 560,
+      "end": 11970,
+      "text": "Separar archivos no crea arquitectura por sí solo. Un módulo sirve cuando tiene una responsabilidad clara y expone un contrato pequeño."
+    },
+    {
+      "timestamp": 12120,
+      "end": 26630,
+      "text": "export publica una capacidad. import la consume. Las reglas puras no deberían importar document; la interfaz puede importar reglas y decidir cuándo mostrarlas."
+    },
+    {
+      "timestamp": 26780,
+      "end": 38250,
+      "text": "El ejemplo coloca calcularTotal en reglas y la interfaz lo usa. La flecha va desde main hacia reglas, no en ambos sentidos."
+    },
+    {
+      "timestamp": 38400,
+      "end": 48860,
+      "text": "Tu reto escribe una exportación nombrada. La práctica posterior revisa responsabilidades, no una cantidad arbitraria de archivos."
+    }
+  ]
+}

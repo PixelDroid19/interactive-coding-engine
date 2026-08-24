@@ -1,0 +1,30 @@
+{
+  "id": "javascript-09",
+  "durationMs": 53640,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/09.md",
+  "cues": [
+    {
+      "timestamp": 240,
+      "end": 12450,
+      "text": "Cuando varios valores forman una misma colección, crear una variable por cada uno deja de escalar. Un array los reúne y conserva su orden."
+    },
+    {
+      "timestamp": 12600,
+      "end": 29170,
+      "text": "Las posiciones empiezan en cero. length indica cuántos elementos existen. push añade al final y modifica la lista; pop elimina el último. Antes de llamar un método pregunta si muta."
+    },
+    {
+      "timestamp": 29320,
+      "end": 43250,
+      "text": "En el ejemplo, la segunda tarea vive en el índice uno. push agrega una tercera y length cambia. Seguimos la lista antes y después para hacer visible el efecto."
+    },
+    {
+      "timestamp": 43400,
+      "end": 53380,
+      "text": "Tu reto recibe un array. No supongas su tamaño. Usa la posición y length para producir el resultado solicitado con listas distintas."
+    }
+  ]
+}

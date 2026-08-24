@@ -1,0 +1,30 @@
+{
+  "id": "javascript-18",
+  "durationMs": 47480,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/18.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 12950,
+      "text": "JavaScript ejecuta una tarea a la vez, pero el navegador puede encargarse de temporizadores, red y eventos. Cuando terminan, sus callbacks esperan un turno."
+    },
+    {
+      "timestamp": 13100,
+      "end": 25570,
+      "text": "setTimeout no pausa el archivo. Programa una función y la ejecución continúa. Incluso con cero milisegundos, la callback no interrumpe el código actual."
+    },
+    {
+      "timestamp": 25720,
+      "end": 37510,
+      "text": "El ejemplo muestra primero inicio, después fin y por último tarea. La predicción nace del modelo, no de la velocidad del equipo."
+    },
+    {
+      "timestamp": 37660,
+      "end": 47240,
+      "text": "Tu reto debe programar una callback sin bloquear. Las comprobaciones observan que la función se entrega al temporizador y que el código sigue siendo legible."
+    }
+  ]
+}

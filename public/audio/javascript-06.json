@@ -1,0 +1,30 @@
+{
+  "id": "javascript-06",
+  "durationMs": 61200,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/06.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 14210,
+      "text": "Un bucle evita copiar la misma instrucción muchas veces. Pero antes de escribirlo debes responder tres preguntas: dónde empieza, cuándo continúa y cómo avanza."
+    },
+    {
+      "timestamp": 14360,
+      "end": 32550,
+      "text": "En un for, la inicialización ocurre una vez. La condición se revisa antes de cada vuelta y el avance ocurre después. Una tabla con índice y acumulador hace visible el recorrido."
+    },
+    {
+      "timestamp": 32700,
+      "end": 47940,
+      "text": "El ejemplo suma uno, dos y tres. total empieza en cero y conserva lo acumulado. En cada vuelta añadimos el valor actual."
+    },
+    {
+      "timestamp": 48090,
+      "end": 60750,
+      "text": "Tu reto cuenta, no suma. El contador cambia solo cuando el número cumple la regla. Prueba una lista de valores escrita en el propio bucle sin usar arrays todavía."
+    }
+  ]
+}

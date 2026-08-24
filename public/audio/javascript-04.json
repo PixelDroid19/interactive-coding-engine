@@ -1,0 +1,30 @@
+{
+  "id": "javascript-04",
+  "durationMs": 62560,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/04.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 12250,
+      "text": "Una condición convierte una regla en una pregunta que solo puede responder true o false. Antes de escribir llaves, enumera las salidas posibles."
+    },
+    {
+      "timestamp": 12400,
+      "end": 36370,
+      "text": "if recorre el primer camino cuya condición sea verdadera. else cubre lo que queda. Con && exigimos dos reglas a la vez; con || basta una. No combines condiciones hasta poder decirlas en voz alta."
+    },
+    {
+      "timestamp": 36520,
+      "end": 51750,
+      "text": "La función del ejemplo acepta una compra desde cincuenta, pero solo si hay inventario. Cuarenta y nueve marca la frontera inferior; cincuenta debe aceptarse."
+    },
+    {
+      "timestamp": 51900,
+      "end": 62160,
+      "text": "En tu reto hay tres salidas. Decide primero qué ocurre debajo, exactamente en el límite y por encima. Después traduce ese mapa a código."
+    }
+  ]
+}

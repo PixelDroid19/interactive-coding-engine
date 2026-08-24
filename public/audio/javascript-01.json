@@ -1,0 +1,30 @@
+{
+  "id": "javascript-01",
+  "durationMs": 62320,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/01.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 15850,
+      "text": "JavaScript no adivina lo que quieres decir. Lee símbolos concretos, forma una instrucción y la ejecuta. Hoy no construiremos una página compleja: primero aprenderemos a producir una salida que podamos comprobar."
+    },
+    {
+      "timestamp": 16000,
+      "end": 33310,
+      "text": "En console.log, console es la herramienta y log es una operación de esa herramienta. Los paréntesis contienen el valor que queremos mostrar. El texto va entre comillas porque, sin ellas, JavaScript buscaría un nombre."
+    },
+    {
+      "timestamp": 33460,
+      "end": 49010,
+      "text": "Mira el archivo de arriba abajo. La primera llamada muestra “Inicio” y la segunda muestra “Listo”. Si intercambiamos las líneas, también cambia la salida. La consola nos deja verificar esa predicción."
+    },
+    {
+      "timestamp": 49160,
+      "end": 62040,
+      "text": "Ahora escribe dos mensajes tuyos. Conserva la forma completa de cada llamada y comprueba que aparecen en el mismo orden. El reto evalúa la salida, no una frase de código memorizada."
+    }
+  ]
+}

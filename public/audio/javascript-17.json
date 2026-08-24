@@ -1,0 +1,30 @@
+{
+  "id": "javascript-17",
+  "durationMs": 45840,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/17.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 12930,
+      "text": "Los objetos de JavaScript viven durante la ejecución. Para guardar o transportar datos necesitamos una representación de texto. JSON cumple ese papel para valores compatibles."
+    },
+    {
+      "timestamp": 13080,
+      "end": 25890,
+      "text": "JSON.stringify serializa; JSON.parse reconstruye una copia. localStorage solo guarda strings, por eso las dos operaciones suelen aparecer juntas."
+    },
+    {
+      "timestamp": 26040,
+      "end": 35150,
+      "text": "El ejemplo convierte una preferencia, la guarda y después la recupera. El objeto leído no es la misma referencia del original."
+    },
+    {
+      "timestamp": 35300,
+      "end": 45580,
+      "text": "Tu reto trabaja con funciones de serialización para que las pruebas sean seguras. Después podrás conectar ese contrato a localStorage sin mezclar almacenamiento con reglas."
+    }
+  ]
+}

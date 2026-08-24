@@ -1,0 +1,30 @@
+{
+  "id": "javascript-10",
+  "durationMs": 47600,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/10.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 11430,
+      "text": "Los métodos de arrays no son palabras mágicas. Cada uno responde una necesidad distinta. Antes de elegir, describe la forma del resultado."
+    },
+    {
+      "timestamp": 11580,
+      "end": 27390,
+      "text": "map produce una lista con una salida por elemento. filter conserva algunos. find devuelve el primer elemento que cumple. forEach ejecuta un efecto y no construye una lista útil."
+    },
+    {
+      "timestamp": 27540,
+      "end": 38270,
+      "text": "El ejemplo transforma precios con map. La callback recibe cada precio y devuelve su doble. El array original permanece igual."
+    },
+    {
+      "timestamp": 38420,
+      "end": 47140,
+      "text": "Tu reto debe filtrar. La salida necesita varios valores originales que cumplan una condición; eso descarta map y find."
+    }
+  ]
+}

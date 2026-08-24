@@ -5,13 +5,13 @@ import { fileURLToPath } from 'node:url';
 import { GoogleGenAI, Modality } from '@google/genai';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const GUIONES = path.join(ROOT, 'docs', 'guiones');
 const AUDIO = path.join(ROOT, 'public', 'audio');
 const TMP = path.join(ROOT, '.tmp-gemini-audio');
 const MODEL = 'gemini-3.1-flash-tts-preview';
 const VOICE = 'Aoede';
 
 interface ScriptData {
+  id: string;
   number: string;
   title: string;
   transcript: string;
@@ -19,12 +19,14 @@ interface ScriptData {
 }
 
 function parseArgs() {
+  const courseArg = process.argv.find((arg) => arg.startsWith('--course='));
+  const course = courseArg?.split('=', 2)[1] ?? 'fundamentos';
   const lessonArg = process.argv.find((arg) => arg.startsWith('--lesson='));
   const fromArg = process.argv.find((arg) => arg.startsWith('--from='));
   const lesson = lessonArg?.split('=', 2)[1]?.padStart(2, '0');
   const from = fromArg?.split('=', 2)[1]?.padStart(2, '0');
   if (process.argv.includes('--help')) {
-    console.log('Uso: GEMINI_API_KEY=... npm run audio:gemini -- [--lesson=01 | --from=02]');
+    console.log('Uso: GEMINI_API_KEY=... npm run audio:gemini -- [--course=fundamentos|javascript] [--lesson=01 | --from=02]');
     process.exit(0);
   }
   if (lesson && !/^\d{2}$/.test(lesson)) {
@@ -34,11 +36,15 @@ function parseArgs() {
     throw new Error('--from debe ser un número entre 01 y 24.');
   }
   if (lesson && from) throw new Error('Usa --lesson o --from, no ambos.');
-  return { lesson, from };
+  if (course !== 'fundamentos' && course !== 'javascript') throw new Error('--course debe ser fundamentos o javascript.');
+  return { course, lesson, from };
 }
 
-function loadScripts(onlyLesson?: string, fromLesson?: string): ScriptData[] {
-  const files = execFileSync('find', [GUIONES, '-maxdepth', '1', '-type', 'f', '-name', '*.md'], {
+function loadScripts(course: string, onlyLesson?: string, fromLesson?: string): ScriptData[] {
+  const scriptsDir = course === 'javascript'
+    ? path.join(ROOT, 'docs', 'guiones', 'javascript')
+    : path.join(ROOT, 'docs', 'guiones');
+  const files = execFileSync('find', [scriptsDir, '-maxdepth', '1', '-type', 'f', '-name', '[0-9][0-9]*.md'], {
     encoding: 'utf8',
   })
     .trim()
@@ -49,15 +55,17 @@ function loadScripts(onlyLesson?: string, fromLesson?: string): ScriptData[] {
   const scripts: ScriptData[] = [];
   for (const file of files) {
     const markdown = readFileSync(file, 'utf8');
-    const audioMatch = markdown.match(/^archivo:\s*fundamentos-(\d{2})\.mp3$/m);
-    const titleMatch = markdown.match(/^titulo:\s*"([^"]+)"$/m);
+    const lessonMatch = course === 'javascript'
+      ? markdown.match(/^lesson:\s*javascript-(\d{2})$/m)
+      : markdown.match(/^archivo:\s*fundamentos-(\d{2})\.mp3$/m);
+    const titleMatch = markdown.match(/^(?:titulo|title):\s*"([^"]+)"$/m);
     const bodyMatch = markdown.match(/^---\n[\s\S]*?\n---\n+([\s\S]+)$/);
-    if (!audioMatch || !titleMatch || !bodyMatch) continue;
-    if (onlyLesson && audioMatch[1] !== onlyLesson) continue;
-    if (fromLesson && audioMatch[1] < fromLesson) continue;
+    if (!lessonMatch || !titleMatch || !bodyMatch) continue;
+    if (onlyLesson && lessonMatch[1] !== onlyLesson) continue;
+    if (fromLesson && lessonMatch[1] < fromLesson) continue;
     const transcript = bodyMatch[1].trim();
     if (!transcript) throw new Error(`El guion ${file} no tiene texto hablado.`);
-    scripts.push({ number: audioMatch[1], title: titleMatch[1], transcript, sourceFile: file });
+    scripts.push({ id: `${course}-${lessonMatch[1]}`, number: lessonMatch[1], title: titleMatch[1], transcript, sourceFile: file });
   }
   if (onlyLesson && scripts.length !== 1) {
     throw new Error(`No se encontró el guion de la lección ${onlyLesson}.`);
@@ -147,7 +155,7 @@ function requestFor(script: ScriptData) {
 }
 
 function saveAudio(script: ScriptData, data: Buffer, mimeType: string) {
-  const label = `fundamentos-${script.number}`;
+  const label = script.id;
   const result = audioContainer(data, mimeType);
   mkdirSync(AUDIO, { recursive: true });
   mkdirSync(TMP, { recursive: true });
@@ -175,7 +183,7 @@ function saveAudio(script: ScriptData, data: Buffer, mimeType: string) {
 }
 
 async function generateLesson(ai: GoogleGenAI, script: ScriptData) {
-  const label = `fundamentos-${script.number}`;
+  const label = script.id;
   console.log(`[${script.number}/24] Generando ${script.title}…`);
   const result = await withRetry(async () => {
     const response = await ai.models.generateContentStream({ model: MODEL, ...requestFor(script) });
@@ -197,12 +205,15 @@ async function generateLesson(ai: GoogleGenAI, script: ScriptData) {
 }
 
 async function main() {
-  const { lesson, from } = parseArgs();
+  const { course, lesson, from } = parseArgs();
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('Falta GEMINI_API_KEY en el entorno. La clave no debe guardarse en archivos.');
   const ai = new GoogleGenAI({ apiKey });
-  const scripts = loadScripts(lesson, from);
+  const scripts = loadScripts(course, lesson, from);
   for (const script of scripts) await generateLesson(ai, script);
+  if (course === 'javascript') {
+    console.log('Ejecuta npm run audio:align:javascript para actualizar marcas y manifiesto.');
+  }
   rmSync(TMP, { recursive: true, force: true });
   console.log(`Generación terminada: ${scripts.length} ${scripts.length === 1 ? 'lección' : 'lecciones'}.`);
 }

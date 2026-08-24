@@ -1,0 +1,30 @@
+{
+  "id": "javascript-20",
+  "durationMs": 47160,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/20.md",
+  "cues": [
+    {
+      "timestamp": 20,
+      "end": 11850,
+      "text": "fetch no significa “traer JSON”. Primero realiza una petición y devuelve una Response. Después decidimos cómo interpretar su cuerpo."
+    },
+    {
+      "timestamp": 12000,
+      "end": 27150,
+      "text": "Una respuesta HTTP con error como 404 puede cumplir la promesa. Por eso comprobamos response.ok y lanzamos o devolvemos un error antes de llamar response.json()."
+    },
+    {
+      "timestamp": 27300,
+      "end": 37630,
+      "text": "El ejemplo separa tres pasos: pedir, validar y analizar. Esa secuencia hace visible dónde puede fallar."
+    },
+    {
+      "timestamp": 37780,
+      "end": 46660,
+      "text": "Tu reto construye una función de validación para Response. No depende de internet; las pruebas entregan respuestas simuladas con estados distintos."
+    }
+  ]
+}

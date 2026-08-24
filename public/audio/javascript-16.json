@@ -1,0 +1,30 @@
+{
+  "id": "javascript-16",
+  "durationMs": 56560,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/16.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 16850,
+      "text": "Depurar no es cambiar líneas hasta que desaparezca el mensaje. Es un ciclo de evidencia: reproducir, escribir esperado y observado, localizar la primera diferencia, formular una hipótesis y comprobar."
+    },
+    {
+      "timestamp": 17000,
+      "end": 29850,
+      "text": "Un error de sintaxis impide interpretar. Uno de ejecución aparece al usar algo inválido. Uno lógico termina, pero entrega el resultado equivocado."
+    },
+    {
+      "timestamp": 30000,
+      "end": 46230,
+      "text": "El ejemplo de total produce siete cuando esperamos doce. Los argumentos son correctos; la primera diferencia está en la operación. Cambiar suma por multiplicación confirma la hipótesis con otro caso."
+    },
+    {
+      "timestamp": 46380,
+      "end": 56260,
+      "text": "Tu reto tiene un fallo distinto. No escribas el resultado fijo. Usa las comprobaciones para demostrar que la regla funciona con más de una entrada."
+    }
+  ]
+}

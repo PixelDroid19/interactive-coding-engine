@@ -1,0 +1,30 @@
+{
+  "id": "javascript-15",
+  "durationMs": 43400,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/15.md",
+  "cues": [
+    {
+      "timestamp": 460,
+      "end": 10410,
+      "text": "Una lista visible no debería convertirse en una segunda fuente de verdad. Guardamos los datos en un array y usamos render para reconstruir la vista."
+    },
+    {
+      "timestamp": 10560,
+      "end": 24450,
+      "text": "createElement crea un nodo, textContent escribe texto y appendChild lo conecta. Antes de volver a pintar limpiamos el contenedor para evitar duplicados."
+    },
+    {
+      "timestamp": 24600,
+      "end": 33650,
+      "text": "El ejemplo recorre nombres y crea un li por cada uno. La función de render no inventa datos; recibe la lista."
+    },
+    {
+      "timestamp": 33800,
+      "end": 42820,
+      "text": "Tu reto completa una función de render. Las comprobaciones cambiarán la lista, por eso no fijes elementos concretos en HTML."
+    }
+  ]
+}

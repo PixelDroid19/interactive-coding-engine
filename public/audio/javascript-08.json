@@ -1,0 +1,30 @@
+{
+  "id": "javascript-08",
+  "durationMs": 49520,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/javascript/08.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 13730,
+      "text": "Un método es una función que se llama desde un receptor. En texto.trim(), el texto aparece antes del punto y trim es la operación disponible para ese valor."
+    },
+    {
+      "timestamp": 13880,
+      "end": 28150,
+      "text": "Para aprender un método no memorices una lista. Pregunta qué recibe, qué devuelve y si modifica el original. Los strings son inmutables: sus métodos producen un texto nuevo."
+    },
+    {
+      "timestamp": 28300,
+      "end": 39390,
+      "text": "El ejemplo limpia espacios, convierte a minúsculas y después pregunta si comienza con una palabra. Cada retorno alimenta la siguiente llamada."
+    },
+    {
+      "timestamp": 39540,
+      "end": 49220,
+      "text": "En tu reto aplicarás startsWith, que acabamos de usar. La función debe aceptar variaciones de mayúsculas y espacios sin cambiar el argumento original."
+    }
+  ]
+}
