@@ -253,12 +253,20 @@ export const Timeline: React.FC<TimelineProps> = ({
             flexShrink: 0,
           }}
         >
-          {/* track */}
+          {/* track - CodeSilk papel + lápiz */}
           <div
-            className="absolute left-0 right-0 rounded-full overflow-hidden"
-            style={{ height: 6, background: 'var(--bg-surface)', border: '1px solid var(--color-pencil)', top: '50%', transform: 'translateY(-50%)' }}
+            className="absolute left-0 right-0 overflow-hidden"
+            style={{
+              height: 8,
+              background: 'var(--bg-surface)',
+              border: '2px solid var(--color-pencil)',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              borderRadius: 'var(--radius-doodle-sm)',
+              boxShadow: '1px 1px 0 var(--color-sketch-shadow)',
+            }}
           >
-            <div className="absolute inset-y-0 left-0" style={{ background: 'var(--color-primary)', width: `${progressPercent}%` }} />
+            <div className="absolute inset-y-0 left-0" style={{ background: 'var(--color-primary)', width: `${progressPercent}%`, borderRadius: 'inherit' }} />
             {/* chapter notches dentro del track */}
             {chapters.map((chap, idx) => {
               if (chap.timestamp <= 0) return null;
@@ -282,17 +290,17 @@ export const Timeline: React.FC<TimelineProps> = ({
             })}
           </div>
 
-          {/* thumb */}
+          {/* thumb - sello lápiz */}
           <div
             className="absolute top-1/2 -translate-y-1/2 z-20"
             style={{
-              left: `calc(${progressPercent}% - 7px)`,
-              width: 14,
-              height: 14,
+              left: `calc(${progressPercent}% - 8px)`,
+              width: 16,
+              height: 16,
               background: 'var(--color-primary)',
-              border: '1.5px solid var(--color-pencil)',
-              boxShadow: '1px 1px 0 var(--color-sketch-shadow)',
-              borderRadius: 4,
+              border: '2px solid var(--color-pencil)',
+              boxShadow: '1.5px 1.5px 0 var(--color-sketch-shadow)',
+              borderRadius: 'var(--radius-doodle-sm)',
               transition: isScrubbing ? 'none' : 'left 0.08s linear',
             }}
           />
