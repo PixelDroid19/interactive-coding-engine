@@ -100,6 +100,8 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
         const maybePromise = (previewRef.current as any).reloadPreview?.();
         if (maybePromise && typeof maybePromise.then === 'function') {
           await maybePromise;
+          const currentIframe = previewRef.current?.getIframeElement();
+          if (currentIframe) (currentIframe as HTMLIFrameElement & { __generation?: number }).__generation = currentGen;
         } else {
           // Fallback: small delay if reloadPreview doesn't return promise
           await new Promise((resolve) => setTimeout(resolve, 100));
@@ -654,8 +656,14 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                 </div>
               )}
 
-              {activeTab === 'preview' && (
-                <div id={exercise.executionMode === 'logic' ? 'panel-output' : 'panel-preview'} role="tabpanel" aria-labelledby="tab-preview" className="debug-panel-pane">
+              <div
+                id={exercise.executionMode === 'logic' ? 'panel-output' : 'panel-preview'}
+                role="tabpanel"
+                aria-labelledby="tab-preview"
+                className="debug-panel-pane"
+                hidden={activeTab !== 'preview'}
+                style={{ display: activeTab === 'preview' ? undefined : 'none' }}
+              >
                   {exercise.executionMode === 'logic' ? (
                     <div className="debug-logic-output">
                       <LogicRunnerPanel ref={logicRunnerRef} workspace={workspace} />
@@ -676,8 +684,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                       <p className="text-[11px] text-zinc-500 mt-1">Vista previa bajo demanda. Usa Ejecutar para actualizar tras editar.</p>
                     </div>
                   )}
-                </div>
-              )}
+              </div>
             </div>
           </div>
         </div>

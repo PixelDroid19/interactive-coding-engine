@@ -143,6 +143,29 @@ console.log("Estoy aprendiendo JavaScript");`;
     expect(screen.queryAllByLabelText('error de evaluación')).toHaveLength(0);
   });
 
+  it('Comprobar prepara la vista previa aunque el estudiante no abra esa pestaña', async () => {
+    const domExercise = DEBUG_EXERCISES.find(e => e.id === 'fundamentos-10-debug')!;
+    const browserExercise = {
+      ...domExercise,
+      executionMode: 'browser' as const,
+      tests: [{
+        id: 'browser-ready',
+        description: 'La vista previa está disponible para la comprobación',
+        validatorType: 'browser-script' as const,
+        customValidatorScript: `({document}) => Boolean(document.querySelector('[data-never-present]'))`,
+      }],
+    };
+    render(<DebuggingView exercise={browserExercise} onBack={() => {}} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Comprobar' }));
+
+    await waitFor(() => {
+      expect(screen.getByText('0 de 1 comprobaciones superadas')).toBeTruthy();
+    });
+    expect(screen.queryAllByLabelText('error de evaluación')).toHaveLength(0);
+    expect(screen.queryByText(/La vista previa todavía no está lista/)).toBeNull();
+  });
+
   it('editar y pulsar Comprobar rápido evalúa la última versión', async () => {
     const { runChallengeValidation } = await import('../../engine/testRunner');
     const jsRoto = `console.log("Me llamo Ana");`;
