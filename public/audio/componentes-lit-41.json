@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-41",
+  "durationMs": 283360,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/41.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 35150,
+      "text": "Comprende los mixins de clases que encontrarás en proyectos existentes y decide cuándo reemplazarlos por controllers o composición. En esta clase construiremos un panel de viewport reutilizable que conserva toda la cadena de ciclo de vida. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 35300,
+      "end": 97170,
+      "text": "Un mixin añade una capa a la cadena de herencia. Esa capa puede ofrecer estado y métodos, pero también hereda la obligación de no cortar los callbacks que LitElement necesita para conectarse, actualizar y limpiar. En términos concretos, Class mixin significa función que recibe una clase base y devuelve otra clase que la extiende En cambio, Cadena de super significa secuencia de callbacks heredados que cada capa debe continuar. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 97320,
+      "end": 135630,
+      "text": "Vamos con una aplicación distinta antes del reto. En un panel de viewport reutilizable que conserva toda la cadena de ciclo de vida, sigue la entrada, el cambio y la salida; después señala dónde aparecen Class mixin y Cadena de super. Primero, litElement entra al mixin. Después, el mixin añade estado y ciclo. A continuación, viewportPanel hereda la nueva clase. Por último, cada callback llama a super y mantiene la cadena. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 135780,
+      "end": 194850,
+      "text": "Mantén un mixin cuando debes ampliar varias clases y el contrato heredado ya es estable; prefiere Reactive Controller para lógica con ciclo que no necesita modificar la clase ni participar en super. La señal más útil para decidir es la frontera: pregunta si Class mixin y Cadena de super reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 195000,
+      "end": 257970,
+      "text": "Documenta propiedades y callbacks añadidos, conserva super en cada capa, evita colisiones de nombres y no apiles mixins cuyo orden cambie silenciosamente el resultado. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: confundir mezcla de objetos con class mixin, omitir super, crear listeners anónimos, sobrescribir static properties de otra capa o esconder demasiadas responsabilidades en herencia. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 258120,
+      "end": 283140,
+      "text": "Ahora cambia el contexto: construye un panel de viewport reutilizable que conserva toda la cadena de ciclo de vida. Empieza por el contrato observable, resuelve una decisión cada vez y prueba una variante antes de Comprobar. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.955
+}

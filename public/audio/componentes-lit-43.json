@@ -1,0 +1,41 @@
+{
+  "id": "componentes-lit-43",
+  "durationMs": 281480,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/web-components-lit/43.md",
+  "cues": [
+    {
+      "timestamp": 0,
+      "end": 35690,
+      "text": "Evalúa un grafo acíclico por dependencias y desacopla cada tipo de nodo mediante una tabla de implementaciones. En esta clase construiremos un circuito que calcula fuentes y operadores en el orden real de sus dependencias. Antes de tocar el editor, vamos a nombrar el problema, el contrato público y la evidencia que demostraría que funciona. La meta no es recordar una forma exacta de escribir la API: es poder predecir qué ocurre, justificar la frontera del componente y reconocer cuándo esa decisión no conviene."
+    },
+    {
+      "timestamp": 35840,
+      "end": 99610,
+      "text": "El orden topológico responde cuándo puede calcularse un nodo; el Bridge responde cómo se calcula ese tipo. Separar ambas preguntas permite añadir operadores sin reescribir el recorrido del grafo. En términos concretos, Orden topológico significa orden donde cada nodo aparece después de todas sus dependencias En cambio, Bridge de evaluadores significa tabla que separa el tipo de nodo de la implementación que calcula su salida. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación. Quédate con esta pregunta: si otra persona usa el componente sin leer su implementación, ¿qué debería poder configurar, observar y esperar? Esa respuesta será nuestra guía durante toda la clase."
+    },
+    {
+      "timestamp": 99760,
+      "end": 137050,
+      "text": "La demostración cambia de contexto a propósito. Recorre un circuito que calcula fuentes y operadores en el orden real de sus dependencias desde su contrato público hasta el DOM y pregunta qué sabe cada pieza. Primero, calcula indegree por nodo. Después, encola fuentes sin entradas. A continuación, evalúa y libera sus destinos. Por último, el Bridge elige la función sin cambiar el motor. No avances por inercia: en cada transición señala el dueño del estado y la salida observable. Después cambia mentalmente una entrada y decide qué partes deberían permanecer estables."
+    },
+    {
+      "timestamp": 137200,
+      "end": 193390,
+      "text": "Usa orden topológico para dependencias acíclicas como builds, fórmulas y circuitos; un recorrido lineal basta cuando el orden ya está fijado por el contrato. La señal más útil para decidir es la frontera: pregunta si Orden topológico y Bridge de evaluadores reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade. En un equipo real también tendrás que explicar por qué no elegiste una alternativa más sencilla. Una abstracción gana su lugar cuando hace el contrato más claro y el cambio futuro menos peligroso, no cuando solo reduce unas pocas líneas."
+    },
+    {
+      "timestamp": 193540,
+      "end": 256790,
+      "text": "Devuelve order, outputs y errores como snapshot, detecta si quedan nodos sin procesar, nombra puertos faltantes y pasa la tabla de evaluadores como dependencia. Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona. El error que más veremos es este: evaluar de izquierda a derecha, usar la posición del array, mezclar render con cálculo, devolver NaN por puertos ausentes o codificar cada kind dentro de un switch gigante. Cuando aparezca, reproduce primero el síntoma, clasifícalo y corrige una sola causa. Así podrás distinguir una solución real de un parche que casualmente hace pasar el ejemplo."
+    },
+    {
+      "timestamp": 256940,
+      "end": 281240,
+      "text": "Cierra la explicación y trabaja desde el comportamiento esperado. Para completar un circuito que calcula fuentes y operadores en el orden real de sus dependencias, predice, implementa y comprueba más de una entrada. Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón."
+    }
+  ],
+  "transcriptCoverage": 0.9663
+}
