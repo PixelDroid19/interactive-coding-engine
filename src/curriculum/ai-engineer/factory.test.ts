@@ -102,7 +102,7 @@ describe('fábrica del curso AI Engineer', () => {
     expect(bundle.debug.tests).toHaveLength(2);
   });
 
-  it('declara los trece módulos en el orden pedagógico acordado', () => {
+  it('declara los catorce módulos en el orden pedagógico acordado', () => {
     expect(AI_ENGINEER_MODULES.map((module) => module.id)).toEqual([
       'ai-mod-00-trabajo',
       'ai-mod-01-llm',
@@ -116,7 +116,8 @@ describe('fábrica del curso AI Engineer', () => {
       'ai-mod-09-seguridad',
       'ai-mod-10-evaluacion',
       'ai-mod-11-multimodal',
-      'ai-mod-12-proyecto-final',
+      'ai-mod-12-ecosistema',
+      'ai-mod-13-proyecto-final',
     ]);
   });
 });

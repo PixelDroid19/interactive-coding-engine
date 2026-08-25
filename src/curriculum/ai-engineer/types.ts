@@ -27,7 +27,28 @@ export type AISourceId =
   | 'owasp-genai-top10'
   | 'owasp-prompt-injection'
   | 'ragas-metrics'
-  | 'deepeval-evaluation';
+  | 'deepeval-evaluation'
+  | 'ollama-api'
+  | 'lmstudio-api'
+  | 'openrouter-api'
+  | 'jina-embeddings'
+  | 'langchain-retrieval'
+  | 'llamaindex-rag'
+  | 'haystack-intro'
+  | 'ragflow-docs'
+  | 'openai-agents-sdk'
+  | 'anthropic-agent-sdk'
+  | 'google-adk'
+  | 'vertex-agent-builder'
+  | 'langsmith-observability'
+  | 'langfuse-docs'
+  | 'helicone-docs'
+  | 'arize-phoenix'
+  | 'openai-image-audio'
+  | 'google-video-understanding'
+  | 'datahub-docs'
+  | 'atlan-docs'
+  | 'posthog-llm-analytics';
 
 export interface AILanguageCode {
   example: string;

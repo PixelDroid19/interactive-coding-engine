@@ -9,13 +9,13 @@ describe('auditoría integral de AI Engineer', () => {
   const items = AI_ENGINEER_COURSE.modules.flatMap((module) => module.items);
 
   it('entrega el inventario completo sin ids duplicados', () => {
-    expect(AI_ENGINEER_COURSE.modules).toHaveLength(13);
-    expect(AI_SPECS).toHaveLength(67);
-    expect(Object.keys(AI_ENGINEER_SCRIMS)).toHaveLength(67);
-    expect(items.filter((item) => item.type === 'scrim')).toHaveLength(67);
-    expect(items.filter((item) => item.type === 'reading')).toHaveLength(67);
-    expect(items.filter((item) => item.type === 'reasoning')).toHaveLength(67);
-    expect(items.filter((item) => item.type === 'debugging')).toHaveLength(67);
+    expect(AI_ENGINEER_COURSE.modules).toHaveLength(14);
+    expect(AI_SPECS).toHaveLength(79);
+    expect(Object.keys(AI_ENGINEER_SCRIMS)).toHaveLength(79);
+    expect(items.filter((item) => item.type === 'scrim')).toHaveLength(79);
+    expect(items.filter((item) => item.type === 'reading')).toHaveLength(79);
+    expect(items.filter((item) => item.type === 'reasoning')).toHaveLength(79);
+    expect(items.filter((item) => item.type === 'debugging')).toHaveLength(79);
     expect(items.filter((item) => item.type === 'solo-project')).toHaveLength(9);
     expect(new Set(items.map((item) => item.id)).size).toBe(items.length);
     expect(AI_ENGINEER_PROJECTS).toHaveLength(9);
@@ -42,7 +42,7 @@ describe('auditoría integral de AI Engineer', () => {
     }
   });
 
-  it('hace fallar cada starter JavaScript y aprobar su solución con entradas variadas', async () => {
+  it('hace fallar cada starter JavaScript y aprobar sus 79 soluciones con entradas variadas', async () => {
     for (const spec of AI_SPECS) {
       const bundle = buildAiLessonBundle(spec);
       const challenge = bundle.lesson.languageVariants!.javascript.lessonTape!.challenges[0];

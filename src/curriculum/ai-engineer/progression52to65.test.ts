@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { AI_SPECS } from './modules';
 
-describe('progresión final de AI Engineer', () => {
-  const finalSpecs = AI_SPECS.filter((spec) => spec.number >= 52);
+describe('progresión de seguridad a herramientas multimodales', () => {
+  const specs = AI_SPECS.filter((spec) => spec.number >= 52 && spec.number <= 65);
 
-  it('completa las lecciones 52 a 67 sin saltos', () => {
-    expect(finalSpecs.map((spec) => spec.number)).toEqual(Array.from({ length: 16 }, (_, index) => index + 52));
-    expect(AI_SPECS).toHaveLength(67);
+  it('completa las lecciones 52 a 65 sin saltos', () => {
+    expect(specs.map((spec) => spec.number)).toEqual(Array.from({ length: 14 }, (_, index) => index + 52));
+    expect(AI_SPECS).toHaveLength(79);
   });
 
-  it('solo usa habilidades previamente enseñadas', () => {
+  it('solo usa habilidades previamente enseñadas en todo el curso', () => {
     const taught = new Set<string>();
     for (const spec of AI_SPECS) {
       for (const required of spec.skillsRequired) {
@@ -20,7 +20,7 @@ describe('progresión final de AI Engineer', () => {
   });
 
   it('mantiene contenido, fuentes y prácticas en ambos lenguajes', () => {
-    for (const spec of finalSpecs) {
+    for (const spec of specs) {
       expect(spec.script).toHaveLength(4);
       expect(spec.reading.sections.length).toBeGreaterThanOrEqual(4);
       expect(spec.reading.sourceIds.length).toBeGreaterThanOrEqual(2);
@@ -39,7 +39,7 @@ describe('progresión final de AI Engineer', () => {
   });
 
   it('no crea narración de audio para contenido multimodal', () => {
-    const multimodal = finalSpecs.filter((spec) => spec.module === 11);
+    const multimodal = specs.filter((spec) => spec.module === 11);
     expect(multimodal).toHaveLength(4);
     expect(multimodal.find((spec) => spec.number === 63)?.reading.sections.some((section) => section.content.includes('no usa audio como narración'))).toBe(true);
   });

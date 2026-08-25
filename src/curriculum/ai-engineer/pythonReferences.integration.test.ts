@@ -26,7 +26,7 @@ print(__aula_json.dumps(__aula_values, ensure_ascii=False, allow_nan=False))
 }
 
 describe('referencias Python del curso AI Engineer', () => {
-  it('hace fallar cada starter y aprobar las 67 soluciones con los mismos casos', () => {
+  it('hace fallar cada starter y aprobar las 79 soluciones con los mismos casos', () => {
     for (const spec of AI_SPECS) {
       const args = spec.practice.cases.map((testCase) => testCase.args);
       const expected = spec.practice.cases.map((testCase) => testCase.expected);

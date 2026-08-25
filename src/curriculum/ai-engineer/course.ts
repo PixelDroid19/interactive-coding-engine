@@ -17,7 +17,8 @@ const MODULE_DEFINITIONS: CourseModule[] = [
   { id: 'ai-mod-09-seguridad', title: 'Módulo 9: Seguridad, privacidad y uso responsable', description: 'Inyección, permisos, datos, sesgos, controles y registros.', items: [] },
   { id: 'ai-mod-10-evaluacion', title: 'Módulo 10: Evaluación y observabilidad', description: 'Casos, métricas, trazas, costes y regresiones.', items: [] },
   { id: 'ai-mod-11-multimodal', title: 'Módulo 11: IA multimodal y herramientas', description: 'Imagen, audio, aplicaciones multimodales y asistencia al desarrollo.', items: [] },
-  { id: 'ai-mod-12-proyecto-final', title: 'Módulo 12: Proyecto final', description: 'Diseño, construcción, ataque, medición y presentación.', items: [] },
+  { id: 'ai-mod-12-ecosistema', title: 'Módulo 12: Ecosistema y decisiones de implementación', description: 'Roles, plataformas locales, frameworks, MCP, observabilidad y herramientas de desarrollo.', items: [] },
+  { id: 'ai-mod-13-proyecto-final', title: 'Módulo 13: Proyecto final', description: 'Diseño, construcción, ataque, medición y presentación.', items: [] },
 ];
 
 const built = AI_SPECS.map((spec) => ({ spec, ...buildAiLessonBundle(spec) }));

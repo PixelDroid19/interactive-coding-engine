@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Añadir un curso de AI Engineer con 67 clases, prácticas equivalentes en JavaScript y Python, embeddings locales, proyectos y material con fuentes.
+**Goal:** Añadir un curso de AI Engineer con 79 clases, prácticas equivalentes en JavaScript y Python, embeddings locales, proyectos y material con fuentes.
 
 **Architecture:** El motor obtiene una interfaz común para ejecutar JavaScript o Python. Pyodide y Transformers.js viven en Workers cargados bajo demanda. El currículo se genera desde especificaciones pequeñas y ofrece una variante por lenguaje sin duplicar la explicación.
 
@@ -487,7 +487,7 @@ Append the course to built-in courses and merge the scrim catalog.
 
 - [ ] **Step 3: Add course metadata and prerequisite message**
 
-Use level `Intermediate`, 67 classes and tags `IA aplicada`, `JavaScript`, `Python`.
+Use level `Intermediate`, 79 classes and tags `IA aplicada`, `JavaScript`, `Python`.
 
 - [ ] **Step 4: Verify navigation tests**
 
@@ -514,7 +514,7 @@ git commit -m "feat: register AI engineer course"
 
 - [ ] **Step 1: Add inventory and progression audit**
 
-Assert 67 scrims, 67 readings, 67 reasoning items, 67 debug labs, nine projects and complete roadmap topic coverage.
+Assert 79 scrims, 79 readings, 79 reasoning items, 79 debug labs, nine projects and complete roadmap topic coverage.
 
 - [ ] **Step 2: Add dual-language audit**
 

@@ -11,6 +11,7 @@ import { AI_MODULE_09 } from './module09';
 import { AI_MODULE_10 } from './module10';
 import { AI_MODULE_11 } from './module11';
 import { AI_MODULE_12 } from './module12';
+import { AI_MODULE_13 } from './module13';
 
 export const AI_SPECS_01_TO_27 = [
   ...AI_MODULE_00,
@@ -34,4 +35,5 @@ export const AI_SPECS = [
   ...AI_MODULE_10,
   ...AI_MODULE_11,
   ...AI_MODULE_12,
+  ...AI_MODULE_13,
 ];

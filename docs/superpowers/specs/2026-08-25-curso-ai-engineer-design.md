@@ -49,7 +49,7 @@ La clase no entrega el programa de la práctica. El ejemplo y el ejercicio usan 
 
 ## Estructura del curso
 
-El curso tiene 67 clases, 13 módulos y 9 proyectos.
+El curso tiene 79 clases, 14 módulos y 9 proyectos.
 
 ### Módulo 0: Preparar el trabajo
 
@@ -176,10 +176,27 @@ Proyecto: tablero local que compara dos versiones de una función de IA.
 
 Las clases explican APIs y modelos locales. No generan audio para la narración del curso.
 
-### Módulo 12: Proyecto final
+### Módulo 12: Ecosistema y operación
 
-66. Diseñar un corte vertical y su evaluación.
-67. Construir, atacar, medir y presentar.
+66. AI Engineer, ML Engineer y AGI.
+67. Casos de uso de embeddings: recomendación, clasificación y anomalías.
+68. Ollama, LM Studio y OpenRouter.
+69. Modelos y APIs de embeddings.
+70. SDK directo y frameworks RAG.
+71. SDKs y plataformas para agentes.
+72. Construir y conectar MCP local o remoto.
+73. Catálogos y fuentes de contexto.
+74. Plataformas de observabilidad para LLM.
+75. Identidad, moderación y límites de producción.
+76. Video y APIs multimodales.
+77. Comparar asistentes de desarrollo.
+
+Este módulo completa los nombres y decisiones operativas del roadmap. Los presenta después de los fundamentos para que el estudiante compare herramientas por sus contratos, límites y evidencia, en vez de memorizar marcas.
+
+### Módulo 13: Proyecto final
+
+78. Diseñar un corte vertical y su evaluación.
+79. Construir, atacar, medir y presentar.
 
 El estudiante elige uno de estos productos:
 
@@ -346,14 +363,14 @@ src/engine/ai/
 src/components/runtime/
 ```
 
-Los módulos del currículo se dividen en archivos de cuatro a siete clases. No se crea un archivo único con las 67 clases.
+Los módulos del currículo se dividen en archivos pequeños. No se crea un archivo único con las 79 clases.
 
 ## Validación
 
 La entrega se acepta cuando:
 
 - El catálogo muestra el cuarto curso sin alterar los otros tres.
-- Las 67 clases abren.
+- Las 79 clases abren.
 - No hay `audioUrl` en el curso y no se reproduce voz.
 - Todas las clases tienen lectura, razonamiento y laboratorio.
 - Todos los temas de las capturas del roadmap aparecen en una clase o sección identificable.

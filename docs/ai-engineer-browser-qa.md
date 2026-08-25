@@ -4,12 +4,12 @@ Fecha: 2026-08-25
 
 ## Estado automatizado
 
-- 67 clases registradas en 13 módulos.
-- 67 lecturas, 67 actividades de razonamiento y 67 laboratorios de depuración.
+- 79 clases registradas en 14 módulos.
+- 79 lecturas, 79 actividades de razonamiento y 79 laboratorios de depuración.
 - 9 proyectos con variantes JavaScript y Python.
 - Las clases usan narración visual silenciosa y no contienen URL de audio.
-- Las 67 soluciones JavaScript pasan sus casos variables y los starters fallan.
-- Las 67 soluciones Python se ejecutan con sus casos variables y los starters fallan.
+- Las 79 soluciones JavaScript pasan sus casos variables y los starters fallan.
+- Las 79 soluciones Python se ejecutan con sus casos variables y los starters fallan.
 - El build contiene Workers separados para Pyodide y embeddings locales.
 - Las claves de API opcionales permanecen en memoria; la interfaz advierte que producción necesita backend seguro.
 
