@@ -355,39 +355,20 @@
   filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.5));
 }
 
-/* Roadmap Nodes */
-.hud [data-augmented-ui~="hud-node"] {
+/* Roadmap Hero Briefing Box */
+.hud [data-augmented-ui~="hud-hero"] {
   --aug-border-all: 1.5px;
-  --aug-border-bg: #3a3a48;
-  --aug-inlay-all: 1px;
-  --aug-inlay-bg: #0a0a0e;
-  --aug-inlay-opacity: 1;
-  --aug-tl: 8px;
-  --aug-br: 8px;
-}
-.hud [data-augmented-ui~="hud-node"]:hover {
-  --aug-border-bg: rgba(255, 255, 255, 0.5);
-  --aug-inlay-bg: #12121a;
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
-}
-
-.hud [data-augmented-ui~="hud-node"].rm-node-main {
-  --aug-border-all: 2px;
   --aug-border-bg: var(--hud-yellow);
-  --aug-inlay-bg: #151509;
-  filter: drop-shadow(0 0 10px rgba(255, 230, 0, 0.35));
-}
-.hud [data-augmented-ui~="hud-node"].rm-node-main:hover {
-  --aug-border-bg: #fff066;
-  filter: drop-shadow(0 0 14px rgba(255, 230, 0, 0.65));
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #07080e;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 12px;
+  --aug-tr: 6px;
+  --aug-br: 12px;
+  --aug-bl: 6px;
 }
 
-.hud [data-augmented-ui~="hud-node"].is-done {
-  --aug-border-all: 2px;
-  --aug-border-bg: var(--hud-green);
-  --aug-inlay-bg: #07170e;
-  filter: drop-shadow(0 0 10px rgba(0, 255, 102, 0.35));
-}
+/* (Roadmap nodes use CSS borders, not augmented-ui clip-path) */
 
 /* Fallback for environments lacking full clip-path */
 @supports not ((clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%))) {

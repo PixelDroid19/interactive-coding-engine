@@ -888,7 +888,13 @@
 
 .hud .course-catalog__brand span,
 .hud .rm-wordmark span {
-  color: var(--hud-yellow) !important;
+  background: #ffe600 !important;
+  color: #000000 !important;
+  border: 0 !important;
+  border-radius: 3px !important;
+  padding: 1px 6px !important;
+  font-weight: 900 !important;
+  text-shadow: none !important;
 }
 
 .hud .course-catalog__main {
@@ -980,11 +986,70 @@
 }
 
 /* Roadmap */
+.hud .roadmap-home {
+  background: #020204 !important;
+  color: #f8fafc !important;
+}
+
+.hud .rm-nav {
+  height: 48px !important;
+  border-bottom: 2px solid var(--hud-yellow) !important;
+  background: #040407 !important;
+  box-shadow: 0 0 16px rgba(255, 230, 0, 0.25) !important;
+}
+
+.hud .rm-brand .rm-logo {
+  border: 1.5px solid var(--hud-yellow) !important;
+  background: #0a0a0f !important;
+  color: var(--hud-yellow) !important;
+  border-radius: 4px !important;
+}
+
+.hud .rm-wordmark {
+  color: #ffffff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 15px !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+}
+
+.hud .rm-wordmark span {
+  background: #ffe600 !important;
+  color: #000000 !important;
+  border: 0 !important;
+  border-radius: 3px !important;
+  padding: 1px 6px !important;
+  font-weight: 900 !important;
+  text-shadow: none !important;
+}
+
+.hud .rm-play-btn {
+  border: 1.5px solid #272733 !important;
+  background: #0d0d14 !important;
+  color: #e2e8f0 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 11px !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  border-radius: 4px !important;
+  padding: 5px 12px !important;
+  transition: all 0.15s ease;
+}
+
+.hud .rm-play-btn:hover {
+  border-color: var(--hud-yellow) !important;
+  color: var(--hud-yellow) !important;
+  box-shadow: 0 0 10px var(--hud-yellow-glow) !important;
+}
+
 .hud .rm-main {
   background:
-    radial-gradient(rgba(176, 38, 255, 0.09) 1px, transparent 1px),
-    var(--hud-bg) !important;
-  background-size: 18px 18px !important;
+    linear-gradient(rgba(255, 230, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 230, 0, 0.02) 1px, transparent 1px),
+    #020204 !important;
+  background-size: 28px 28px !important;
 }
 
 .hud .rm-hero,
@@ -992,62 +1057,298 @@
 .hud .rm-empty {
   border: 0 !important;
   border-radius: 0 !important;
-  background: #08080c !important;
+  background: #06060a !important;
   box-shadow: none !important;
   color: #fff !important;
+  padding: 24px 28px !important;
 }
 
-.hud .rm-pill,
+.hud .rm-hero h1 {
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 24px !important;
+  letter-spacing: .04em !important;
+  text-transform: uppercase !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 20px rgba(255, 230, 0, 0.35);
+  margin-top: 8px !important;
+}
+
+.hud .rm-hero p {
+  color: #94a3b8 !important;
+  font-family: "Space Grotesk", sans-serif !important;
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+  max-width: 680px;
+}
+
+.hud .rm-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hud .rm-hero-meta .rm-pill {
+  border: 1px solid var(--hud-yellow) !important;
+  background: rgba(255, 230, 0, 0.15) !important;
+  color: var(--hud-yellow) !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 11px !important;
+  letter-spacing: .1em !important;
+  text-transform: uppercase !important;
+  padding: 2px 8px !important;
+  border-radius: 2px !important;
+}
+
+.hud .rm-hero-meta .rm-time {
+  color: var(--hud-cyan) !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+}
+
+.hud .rm-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hud .rm-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  color: #cbd5e1 !important;
+}
+
+.hud .rm-swatch {
+  width: 9px !important;
+  height: 9px !important;
+  border-radius: 2px !important;
+  display: inline-block;
+}
+
+.hud .rm-swatch-yellow {
+  background: var(--hud-yellow) !important;
+  box-shadow: 0 0 8px var(--hud-yellow-glow) !important;
+}
+
+.hud .rm-swatch-dark {
+  background: #ff9900 !important;
+  box-shadow: 0 0 8px rgba(255, 153, 0, 0.6) !important;
+}
+
+.hud .rm-swatch-reading {
+  background: var(--hud-cyan) !important;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.6) !important;
+}
+
+.hud .rm-swatch-reasoning {
+  background: var(--hud-magenta) !important;
+  box-shadow: 0 0 8px rgba(255, 0, 127, 0.6) !important;
+}
+
+.hud .rm-swatch-white {
+  background: #ffffff !important;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6) !important;
+}
+
 .hud .rm-phase-badge {
-  border: 1px solid rgba(176, 38, 255, 0.65) !important;
-  border-radius: 0 !important;
-  background: #100817 !important;
-  color: #d29cff !important;
+  border: 1px solid rgba(255, 230, 0, 0.25) !important;
+  border-radius: 6px !important;
+  background: rgba(255, 230, 0, 0.06) !important;
+  color: #ffe600 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+  padding: 6px 20px !important;
   box-shadow: none !important;
-  text-transform: uppercase;
 }
 
-.hud .rm-line,
+.hud .rm-line {
+  stroke: rgba(255, 230, 0, 0.5) !important;
+  stroke-width: 2px !important;
+  filter: none !important;
+}
+
 .hud .rm-line-dot {
-  stroke: var(--hud-purple) !important;
+  stroke: rgba(0, 240, 255, 0.35) !important;
+  stroke-width: 1.5px !important;
+  stroke-dasharray: 4 4 !important;
+  filter: none !important;
 }
 
+/* ── All roadmap nodes: reset base styles ── */
 .hud .rm-node-main,
 .hud .rm-node-cp,
 .hud .rm-node-tag {
-  border-radius: 0 !important;
   box-shadow: none !important;
-  border: 0 !important;
+  border-radius: 8px !important;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
+/* ── Main lesson node (yellow accent) ── */
 .hud .rm-node-main {
-  border-color: var(--hud-yellow) !important;
-  background: #151509 !important;
-  color: #fff !important;
+  border: 1px solid rgba(255, 230, 0, 0.45) !important;
+  background: #0c0e16 !important;
+  color: #f1f5f9 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: .01em !important;
 }
 
+.hud .rm-node-main:hover {
+  border-color: #ffe600 !important;
+  background: #131622 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 12px rgba(255, 230, 0, 0.12) !important;
+}
+
+.hud .rm-node-main.is-done {
+  border-color: rgba(0, 255, 102, 0.4) !important;
+  background: #071210 !important;
+  color: #d1fae5 !important;
+}
+
+.hud .rm-node-main.is-current {
+  border-color: rgba(255, 0, 127, 0.5) !important;
+  background: #120610 !important;
+  color: #ffffff !important;
+  outline: none !important;
+}
+
+.hud .rm-node-main .rm-reto-flag {
+  background: #ffe600 !important;
+  color: #000000 !important;
+  border: 0 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  letter-spacing: .06em !important;
+  padding: 2px 6px !important;
+  border-radius: 3px !important;
+  box-shadow: none !important;
+}
+
+.hud .rm-node-main svg {
+  color: rgba(255, 230, 0, 0.7) !important;
+}
+
+.hud .rm-node-main:hover svg {
+  color: #ffe600 !important;
+  transform: translateX(2px);
+}
+
+/* ── Checkpoint nodes (left column) ── */
 .hud .rm-node-cp {
-  border-color: #383842 !important;
-  background: #0a0a0e !important;
-  color: #dddde3 !important;
+  border: 1px solid #2a2e3d !important;
+  background: #0a0c14 !important;
+  color: #c8cdd8 !important;
+  font-family: "Space Grotesk", sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
 }
 
-.hud .rm-node-cp.is-reading,
+.hud .rm-node-cp:hover {
+  border-color: #4a5068 !important;
+  background: #10132a !important;
+  transform: translateY(-1px) !important;
+  box-shadow: none !important;
+}
+
+.hud .rm-cp-tag {
+  border-radius: 3px !important;
+  padding: 2px 6px !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  border: 0 !important;
+  flex-shrink: 0;
+}
+
+/* Reading (cyan) */
+.hud .rm-node-cp.is-reading {
+  border-color: rgba(0, 240, 255, 0.25) !important;
+  background: #060d14 !important;
+  color: #a5d8e6 !important;
+}
+.hud .rm-node-cp.is-reading:hover {
+  border-color: rgba(0, 240, 255, 0.5) !important;
+  background: #091620 !important;
+}
+.hud .rm-node-cp.is-reading .rm-cp-tag {
+  background: #00f0ff !important;
+  color: #000000 !important;
+}
+
+/* Reasoning (magenta) */
+.hud .rm-node-cp.is-reasoning {
+  border-color: rgba(255, 0, 127, 0.25) !important;
+  background: #100610 !important;
+  color: #e8b4d0 !important;
+}
+.hud .rm-node-cp.is-reasoning:hover {
+  border-color: rgba(255, 0, 127, 0.5) !important;
+  background: #180a18 !important;
+}
+.hud .rm-node-cp.is-reasoning .rm-cp-tag {
+  background: #ff007f !important;
+  color: #ffffff !important;
+}
+
+/* Debugging (amber) */
+.hud .rm-node-cp:not(.is-reading):not(.is-reasoning) {
+  border-color: rgba(255, 153, 0, 0.25) !important;
+  background: #100c06 !important;
+  color: #e0c8a0 !important;
+}
+.hud .rm-node-cp:not(.is-reading):not(.is-reasoning):hover {
+  border-color: rgba(255, 153, 0, 0.5) !important;
+  background: #181208 !important;
+}
+.hud .rm-node-cp:not(.is-reading):not(.is-reasoning) .rm-cp-tag {
+  background: #ff9900 !important;
+  color: #000000 !important;
+}
+
+/* ── Concept tags (right column) ── */
 .hud .rm-node-tag {
-  border-color: rgba(0, 240, 255, 0.42) !important;
-  background: #061014 !important;
-  color: #9ceef7 !important;
+  border: 1px solid #1e293b !important;
+  background: #080c14 !important;
+  color: #7dd3fc !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: .02em !important;
 }
 
-.hud .rm-node-main.is-current,
-.hud .rm-node-cp.is-current {
-  outline-color: var(--hud-magenta) !important;
+.hud .rm-node-tag:hover {
+  border-color: rgba(0, 240, 255, 0.4) !important;
+  background: #0c1420 !important;
+  color: #e0f2fe !important;
+  transform: translateY(-1px) !important;
+  box-shadow: none !important;
 }
 
-.hud .rm-node-main.is-done,
-.hud .rm-node-cp.is-done {
-  border-color: var(--hud-green) !important;
-  background: #07140e !important;
+.hud .rm-node-tag.is-open {
+  border-color: #00f0ff !important;
+  background: #0a1822 !important;
+  color: #ffffff !important;
 }
 
 /* Reading, reasoning, debugging and playground surfaces */

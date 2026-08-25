@@ -61,10 +61,12 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
       for (let i = 0; i < mains.length - 1; i++) links.push({ from: mains[i], to: mains[i + 1] });
       for (const phase of phases) {
         for (const row of phase.rows) {
-          if (row.checkpoint) links.push({ from: row.main.id, to: row.checkpoint.id, dotted: true });
           if (row.reading) links.push({ from: row.main.id, to: row.reading.id, dotted: true });
           if (row.reasoning) links.push({ from: row.main.id, to: row.reasoning.id, dotted: true });
-          if (row.concepts[0]) links.push({ from: row.main.id, to: row.concepts[0].id, dotted: true });
+          if (row.checkpoint) links.push({ from: row.main.id, to: row.checkpoint.id, dotted: true });
+          for (const concept of row.concepts) {
+            links.push({ from: row.main.id, to: concept.id, dotted: true });
+          }
         }
       }
 
@@ -74,13 +76,41 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
         if (!a || !b) continue;
         const ra = a.getBoundingClientRect();
         const rb = b.getBoundingClientRect();
-        const x1 = ra.left + ra.width / 2 - box.left;
-        const y1 = ra.top + ra.height / 2 - box.top;
-        const x2 = rb.left + rb.width / 2 - box.left;
-        const y2 = rb.top + rb.height / 2 - box.top;
+
+        let x1: number, y1: number, x2: number, y2: number;
+        let d: string;
+
+        if (!link.dotted) {
+          // Vertical central spine (main node to main node)
+          x1 = ra.left + ra.width / 2 - box.left;
+          y1 = ra.bottom - box.top;
+          x2 = rb.left + rb.width / 2 - box.left;
+          y2 = rb.top - box.top;
+          const cy = (y1 + y2) / 2;
+          d = `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${cy}, ${x2} ${y2}`;
+        } else {
+          // Horizontal branch connections
+          if (rb.left < ra.left) {
+            // Target is on the left (checkpoints)
+            x1 = ra.left - box.left;
+            y1 = ra.top + ra.height / 2 - box.top;
+            x2 = rb.right - box.left;
+            y2 = rb.top + rb.height / 2 - box.top;
+            const cx = (x1 + x2) / 2;
+            d = `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`;
+          } else {
+            // Target is on the right (concepts)
+            x1 = ra.right - box.left;
+            y1 = ra.top + ra.height / 2 - box.top;
+            x2 = rb.left - box.left;
+            y2 = rb.top + rb.height / 2 - box.top;
+            const cx = (x1 + x2) / 2;
+            d = `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`;
+          }
+        }
+
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        const cy = (y1 + y2) / 2;
-        path.setAttribute('d', `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${cy}, ${x2} ${y2}`);
+        path.setAttribute('d', d);
         path.setAttribute('class', link.dotted ? 'rm-line-dot' : 'rm-line');
         svg.appendChild(path);
       }
