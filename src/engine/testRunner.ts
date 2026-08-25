@@ -1,6 +1,7 @@
 import { ChallengeTest, ScrimChallenge, WorkspaceSnapshot } from '../types/scrim';
 import { ChallengeValidationResult, TestResultItem } from '../types/runtime';
 import { buildPreviewDocument } from './previewDocument';
+import { runPythonChallengeValidation } from './python/pythonChallengeValidator';
 
 function normalizeForMatch(str: string, opts: { caseInsensitive?: boolean; normalizeSpaces?: boolean; ignorePunctuation?: boolean }): string {
   let s = str;
@@ -175,6 +176,11 @@ export async function runChallengeValidation(
   iframeElement?: HTMLIFrameElement | null,
   generation?: number
 ): Promise<ChallengeValidationResult> {
+  const hasPython = Object.values(workspace.files).some(
+    (file) => file.language === 'python' || file.path.endsWith('.py'),
+  );
+  if (hasPython) return runPythonChallengeValidation(challenge, workspace);
+
   const testResults: TestResultItem[] = [];
   let passedCount = 0;
   let evaluationErrors = 0;
