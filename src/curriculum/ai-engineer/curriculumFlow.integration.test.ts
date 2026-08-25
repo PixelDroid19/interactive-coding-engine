@@ -1,10 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import { runChallengeValidation } from '../../engine/testRunner';
+import { createInitialReasoningAttempt, validateReasoningAttempt } from '../../engine/reasoningRunner';
+import type { ReasoningActivity, ReasoningAttempt } from '../../types/curriculum';
 import { buildRoadmap } from '../fundamentos/roadmap';
 import { AI_ENGINEER_COURSE, AI_ENGINEER_SCRIMS } from './course';
 import { buildAiLessonBundle } from './factory';
 import { AI_SPECS } from './modules';
 import { AI_ENGINEER_PROJECTS } from './projects';
+
+function reasoningAttempts(activity: ReasoningActivity): { initial: ReasoningAttempt; correct: ReasoningAttempt } {
+  switch (activity.kind) {
+    case 'sequence':
+      return { initial: { kind: 'sequence', order: activity.steps.map((step) => step.id) }, correct: { kind: 'sequence', order: [...activity.expectedOrder] } };
+    case 'trace-table':
+      return { initial: { kind: 'trace-table', cells: {} }, correct: { kind: 'trace-table', cells: { ...activity.expectedCells } } };
+    case 'flowchart':
+      return { initial: { kind: 'flowchart', connections: [] }, correct: { kind: 'flowchart', connections: structuredClone(activity.expectedConnections) } };
+    case 'decision-table':
+      return { initial: { kind: 'decision-table', outcomes: {} }, correct: { kind: 'decision-table', outcomes: { ...activity.expectedOutcomes } } };
+    case 'dependency-map':
+      return { initial: { kind: 'dependency-map', dependencies: [] }, correct: { kind: 'dependency-map', dependencies: structuredClone(activity.expectedDependencies) } };
+    case 'vector-ranking':
+      return { initial: { kind: 'vector-ranking', order: activity.candidates.map((item) => item.id) }, correct: { kind: 'vector-ranking', order: [...activity.expectedOrder] } };
+    case 'context-budget':
+      return { initial: { kind: 'context-budget', selected: activity.blocks.filter((block) => block.required).map((block) => block.id) }, correct: { kind: 'context-budget', selected: [...activity.expectedSelected] } };
+  }
+}
 
 describe('auditoría integral de AI Engineer', () => {
   const items = AI_ENGINEER_COURSE.modules.flatMap((module) => module.items);
@@ -75,6 +96,55 @@ describe('auditoría integral de AI Engineer', () => {
       const solutionResult = await runChallengeValidation(challenge, solution);
       expect(solutionResult.allPassed, `${spec.number} tiene una solución de referencia inválida: ${solutionResult.feedbackMessage}`).toBe(true);
       expect(challenge.tests.length, `${spec.number} solo prueba un valor`).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it('hace fallar las 79 depuraciones JavaScript y acepta la corrección de referencia', async () => {
+    for (const spec of AI_SPECS) {
+      const bundle = buildAiLessonBundle(spec);
+      const debug = bundle.debug.languageVariants!.javascript;
+      const challenge = {
+        id: bundle.debug.id,
+        title: bundle.debug.title,
+        timestamp: 0,
+        instructions: bundle.debug.description ?? '',
+        tests: debug.tests,
+        hints: [],
+      };
+
+      const brokenResult = await runChallengeValidation(challenge, debug.workspace);
+      expect(brokenResult.allPassed, `${spec.number} entrega la depuración ya resuelta`).toBe(false);
+
+      const corrected = structuredClone(debug.workspace);
+      corrected.files['app.js'].content = bundle.solutions.javascript;
+      const correctedResult = await runChallengeValidation(challenge, corrected);
+      expect(correctedResult.allPassed, `${spec.number} no acepta una corrección general válida`).toBe(true);
+    }
+  });
+
+  it('hace evaluables los 79 razonamientos sin entregarlos resueltos al abrir', () => {
+    for (const spec of AI_SPECS) {
+      const activity = buildAiLessonBundle(spec).reasoning.activity;
+      const { correct } = reasoningAttempts(activity);
+      const initial = createInitialReasoningAttempt(activity);
+      expect(validateReasoningAttempt(activity, initial).allPassed, `${spec.number} abre el razonamiento ya resuelto`).toBe(false);
+      expect(validateReasoningAttempt(activity, correct).allPassed, `${spec.number} no reconoce su respuesta correcta`).toBe(true);
+    }
+  });
+
+  it('evalúa comportamiento con entradas distintas y explica cómo investigar con valores propios', () => {
+    for (const spec of AI_SPECS) {
+      const bundle = buildAiLessonBundle(spec);
+      const challenge = bundle.lesson.challenges[0];
+      const serializedArgs = challenge.tests.map((test) => JSON.stringify(test.args));
+      expect(challenge.tests.length, `${spec.number} no prueba variación`).toBeGreaterThanOrEqual(2);
+      expect(new Set(serializedArgs).size, `${spec.number} repite la misma entrada`).toBe(challenge.tests.length);
+      challenge.tests.forEach((test) => {
+        expect(test.validatorType, `${spec.number} depende del texto fuente`).toBe('function-call');
+        expect(test.targetFunction, `${spec.number} no llama la función del estudiante`).toBe(spec.practice.functionName);
+      });
+      expect(challenge.instructions, `${spec.number} no explica cómo probar datos propios`).toMatch(/datos distintos/i);
+      expect(challenge.instructions, `${spec.number} no aclara el papel de console\.log`).toMatch(/console\.log es opcional/i);
     }
   });
 });

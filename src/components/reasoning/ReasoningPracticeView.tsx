@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, Lightbulb, Network, RotateCcw } from 'lucide-react';
 import { ReasoningAttempt, ReasoningConnection, ReasoningExerciseItem } from '../../types/curriculum';
 import { NavigationState } from '../../engine/navigation';
-import { validateReasoningAttempt } from '../../engine/reasoningRunner';
+import { createInitialReasoningAttempt, validateReasoningAttempt } from '../../engine/reasoningRunner';
 import { createReasoningActivityVersion, loadReasoningDraft, markItemCompleted, saveReasoningDraft } from '../../engine/persistence';
 import { SequenceDiagram } from './diagrams/SequenceDiagram';
 import { TraceTable } from './diagrams/TraceTable';
@@ -21,17 +21,6 @@ interface Props {
   onCompleted?: () => void;
 }
 
-function initialAttempt(item: ReasoningExerciseItem): ReasoningAttempt {
-  const activity = item.activity;
-  if (activity.kind === 'sequence') return { kind: 'sequence', order: activity.steps.map((step) => step.id) };
-  if (activity.kind === 'trace-table') return { kind: 'trace-table', cells: {} };
-  if (activity.kind === 'decision-table') return { kind: 'decision-table', outcomes: {} };
-  if (activity.kind === 'flowchart') return { kind: 'flowchart', connections: [] };
-  if (activity.kind === 'vector-ranking') return { kind: 'vector-ranking', order: activity.candidates.map((item) => item.id) };
-  if (activity.kind === 'context-budget') return { kind: 'context-budget', selected: activity.blocks.filter((block) => block.required).map((block) => block.id) };
-  return { kind: 'dependency-map', dependencies: [] };
-}
-
 function sameConnection(left: ReasoningConnection, right: ReasoningConnection) {
   return left.from === right.from && left.to === right.to && (left.label ?? '') === (right.label ?? '');
 }
@@ -39,7 +28,7 @@ function sameConnection(left: ReasoningConnection, right: ReasoningConnection) {
 export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPrevious, onNext, navigationState, onCompleted }: Props) {
   const version = useMemo(() => createReasoningActivityVersion(item.activity), [item.activity]);
   const restored = useMemo(() => loadReasoningDraft(item.id, version), [item.id, version]);
-  const [attempt, setAttempt] = useState<ReasoningAttempt>(() => restored?.attempt ?? initialAttempt(item));
+  const [attempt, setAttempt] = useState<ReasoningAttempt>(() => restored?.attempt ?? createInitialReasoningAttempt(item.activity));
   const [revealedHints, setRevealedHints] = useState(restored?.revealedHints ?? 0);
   const [result, setResult] = useState<ReturnType<typeof validateReasoningAttempt> | null>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -114,7 +103,7 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
           </div>
           <div className="reasoning-actions">
             <button type="button" className="reasoning-check" onClick={check}><CheckCircle2 size={18} /> Comprobar mi razonamiento</button>
-            <button type="button" onClick={() => { setAttempt(initialAttempt(item)); setResult(null); }}><RotateCcw size={16} /> Reiniciar</button>
+            <button type="button" onClick={() => { setAttempt(createInitialReasoningAttempt(item.activity)); setResult(null); }}><RotateCcw size={16} /> Reiniciar</button>
           </div>
           {result && <section className={`reasoning-feedback ${result.allPassed ? 'is-success' : 'is-error'}`} aria-live="polite"><h2>{result.allPassed ? 'Resuelto' : 'Todavía no'}</h2><p>{result.feedbackMessage}</p><ul>{result.checks.map((entry) => <li key={entry.id}>{entry.passed ? '✓' : '○'} {entry.label}: {entry.message}</li>)}</ul></section>}
           <aside className="reasoning-hints"><h2><Lightbulb size={16} /> Pistas graduadas</h2>{item.hints.slice(0, revealedHints).map((hint) => <p key={hint.level}>{hint.level}. {hint.text}</p>)}{revealedHints < item.hints.length && <button type="button" onClick={() => setRevealedHints((value) => value + 1)}>Mostrar una pista</button>}{revealedHints === item.hints.length && <details><summary>Ver explicación completa</summary><p>{item.explanation}</p></details>}</aside>

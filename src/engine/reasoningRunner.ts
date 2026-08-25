@@ -18,6 +18,29 @@ export interface ReasoningValidationResult {
   isEvaluationError?: boolean;
 }
 
+export function createInitialReasoningAttempt(activity: ReasoningActivity): ReasoningAttempt {
+  if (activity.kind === 'sequence') {
+    const order = activity.steps.map((step) => step.id);
+    const startsSolved = JSON.stringify(order) === JSON.stringify(activity.expectedOrder);
+    return { kind: 'sequence', order: startsSolved ? [...order.slice(1), ...order.slice(0, 1)] : order };
+  }
+  if (activity.kind === 'trace-table') return { kind: 'trace-table', cells: {} };
+  if (activity.kind === 'decision-table') return { kind: 'decision-table', outcomes: {} };
+  if (activity.kind === 'flowchart') return { kind: 'flowchart', connections: [] };
+  if (activity.kind === 'vector-ranking') {
+    const order = activity.candidates.map((candidate) => candidate.id);
+    const startsSolved = JSON.stringify(order) === JSON.stringify(activity.expectedOrder);
+    return { kind: 'vector-ranking', order: startsSolved ? [...order.slice(1), ...order.slice(0, 1)] : order };
+  }
+  if (activity.kind === 'context-budget') {
+    const selected = activity.blocks.filter((block) => block.required).map((block) => block.id);
+    const expected = [...new Set(activity.expectedSelected)].sort();
+    const startsSolved = JSON.stringify([...new Set(selected)].sort()) === JSON.stringify(expected);
+    return { kind: 'context-budget', selected: startsSolved ? [] : selected };
+  }
+  return { kind: 'dependency-map', dependencies: [] };
+}
+
 function normalize(value: string): string {
   return value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('es');
 }

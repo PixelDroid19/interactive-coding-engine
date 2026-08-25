@@ -32,7 +32,13 @@ const project: SoloProjectItem = {
 };
 
 describe('SoloProjectView', () => {
-  beforeEach(() => localStorage.clear());
+  beforeEach(() => {
+    localStorage.clear();
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockReturnValue({ matches: true, addListener: vi.fn(), removeListener: vi.fn() }),
+    });
+  });
   afterEach(cleanup);
 
   it('comprueba el codigo y no permite completar el proyecto solo marcando una lista', async () => {
@@ -44,5 +50,20 @@ describe('SoloProjectView', () => {
     await waitFor(() => expect(screen.getByText('0 de 1 comprobaciones superadas')).toBeTruthy());
     expect(screen.getByText('Usa la entrada')).toBeTruthy();
     expect(screen.queryByText('Completado')).toBeNull();
+  });
+
+  it('exige aprobar el codigo y revisar los requisitos antes de completar', async () => {
+    const solved = structuredClone(project);
+    solved.initialWorkspace.files['app.js'].content = 'function decidir(entrada) { return entrada.valor * 2; }';
+    render(<SoloProjectView project={solved} onBack={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Comprobar proyecto' }));
+    await waitFor(() => expect(screen.getByText('1 de 1 comprobaciones superadas')).toBeTruthy());
+    expect(screen.getByText(/Falta revisar la lista de requisitos/i)).toBeTruthy();
+    expect(screen.queryByText('Completado')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: /Contrato.*Devuelve el valor esperado/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Comprobar proyecto' }));
+    await waitFor(() => expect(screen.getByText('Completado')).toBeTruthy());
   });
 });

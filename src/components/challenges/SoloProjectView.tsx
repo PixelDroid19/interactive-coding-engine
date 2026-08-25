@@ -71,6 +71,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
       ...prev,
       [reqId]: !prev[reqId],
     }));
+    setIsCompleted(false);
   };
 
   const completedCount = Object.values(checkedRequirements).filter(Boolean).length;
@@ -99,7 +100,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
         hints: [],
       }, workspace, previewRef.current?.getIframeElement());
       setValidationResult(result);
-      if (result.allPassed) {
+      if (result.allPassed && completedCount === totalCount) {
         setIsCompleted(true);
         markItemCompleted(project.id);
         const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -243,10 +244,11 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
                 const isChecked = !!checkedRequirements[req.id];
 
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={req.id}
                     onClick={() => toggleRequirement(req.id)}
-                    className={`p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                    className={`w-full p-2.5 rounded-lg border cursor-pointer text-left transition-colors ${
                       isChecked
                         ? 'bg-emerald-950/20 border-emerald-800/60 text-emerald-100'
                         : 'bg-zinc-900/60 border-zinc-800 text-zinc-300 hover:border-zinc-700'
@@ -265,7 +267,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
                         <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">{req.description}</p>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -296,6 +298,11 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
                     </li>
                   ))}
                 </ul>
+                {validationResult.allPassed && completedCount < totalCount && (
+                  <p className="mt-2 border-t border-amber-900 pt-2 text-[11px] text-amber-200">
+                    El código funciona. Falta revisar la lista de requisitos antes de completar el proyecto.
+                  </p>
+                )}
               </div>
             )}
 

@@ -34,6 +34,12 @@ function spokenMarkdown(markdown: string) {
   return markdown.split('\n').filter((line) => line.trim() && line !== '---' && !/^(lesson|title|mode):/.test(line)).join('\n');
 }
 
+function returnedExpressions(source: string) {
+  return source.split('\n')
+    .map((line) => line.trim())
+    .filter((line) => /^(?:return\b|\s*return\b)/.test(line) && line.length >= 12);
+}
+
 describe('calidad editorial de AI Engineer', () => {
   it('mantiene guion y subtítulos con las mismas palabras', async () => {
     for (const spec of AI_SPECS) {
@@ -68,6 +74,17 @@ describe('calidad editorial de AI Engineer', () => {
           const words = sentence.trim().split(/\s+/).filter(Boolean).length;
           expect(words, `${spec.number} tiene una oración de ${words} palabras: ${sentence}`).toBeLessThanOrEqual(38);
         }
+      }
+    }
+  });
+
+  it('mantiene pistas graduadas sin copiar retornos completos de las soluciones', () => {
+    for (const spec of AI_SPECS) {
+      const hints = [...spec.practice.hints, ...spec.debug.hints].join('\n').toLocaleLowerCase('es');
+      expect(spec.practice.hints.length, `${spec.number} no gradúa las pistas de práctica`).toBeGreaterThanOrEqual(3);
+      expect(spec.debug.hints.length, `${spec.number} no gradúa las pistas de depuración`).toBeGreaterThanOrEqual(3);
+      for (const expression of [...returnedExpressions(spec.javascript.solution), ...returnedExpressions(spec.python.solution)]) {
+        expect(hints, `${spec.number} copia una expresión completa de la solución`).not.toContain(expression.toLocaleLowerCase('es'));
       }
     }
   });

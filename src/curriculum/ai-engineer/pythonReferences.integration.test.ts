@@ -44,4 +44,22 @@ describe('referencias Python del curso AI Engineer', () => {
       });
     }
   }, 20_000);
+
+  it('hace fallar las 79 depuraciones Python y acepta la corrección de referencia', () => {
+    for (const spec of AI_SPECS) {
+      const args = spec.practice.cases.map((testCase) => testCase.args);
+      const expected = spec.practice.cases.map((testCase) => testCase.expected);
+      const broken = execute(spec.python.debugStarter, spec.practice.functionName, args);
+      const brokenPasses = !broken.error
+        && broken.values.length === expected.length
+        && broken.values.every((result, index) => result.ok && evaluationValuesEqual(result.value, expected[index]));
+      expect(brokenPasses, `${spec.number} entrega la depuración Python ya resuelta`).toBe(false);
+
+      const corrected = execute(spec.python.solution, spec.practice.functionName, args);
+      expect(corrected.error, `${spec.number} no ejecuta la corrección: ${corrected.error}`).toBe('');
+      corrected.values.forEach((result, index) => {
+        expect(result.ok && evaluationValuesEqual(result.value, expected[index]), `${spec.number}/${index + 1}: la depuración no acepta la corrección`).toBe(true);
+      });
+    }
+  }, 20_000);
 });
