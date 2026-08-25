@@ -2,6 +2,7 @@ import type { Course, CourseModule } from '../../types/curriculum';
 import type { ScrimLessonData } from '../../types/scrim';
 import { buildAiLessonBundle } from './factory';
 import { AI_SPECS } from './modules';
+import { AI_ENGINEER_PROJECTS_BY_MODULE } from './projects';
 
 const MODULE_DEFINITIONS: CourseModule[] = [
   { id: 'ai-mod-00-trabajo', title: 'Módulo 0: Preparar el trabajo', description: 'Del problema de producto al entorno y los contratos básicos.', items: [] },
@@ -23,9 +24,12 @@ const built = AI_SPECS.map((spec) => ({ spec, ...buildAiLessonBundle(spec) }));
 
 export const AI_ENGINEER_MODULES: CourseModule[] = MODULE_DEFINITIONS.map((module, index) => ({
   ...module,
-  items: built
-    .filter(({ spec }) => spec.module === index)
-    .flatMap(({ item, reading, reasoning, debug }) => [item, reading, reasoning, debug]),
+  items: [
+    ...built
+      .filter(({ spec }) => spec.module === index)
+      .flatMap(({ item, reading, reasoning, debug }) => [item, reading, reasoning, debug]),
+    ...(AI_ENGINEER_PROJECTS_BY_MODULE[index] ?? []),
+  ],
 }));
 
 export const AI_ENGINEER_SCRIMS: Record<string, ScrimLessonData> = Object.fromEntries(
