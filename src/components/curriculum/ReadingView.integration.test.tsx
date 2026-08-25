@@ -17,7 +17,10 @@ describe('ReadingView', () => {
       estimatedMinutes: 5,
       summary: 'Primero lo esencial.',
       sections: [
-        { title: 'Lo esencial', content: 'Una variable une un nombre y un valor.' },
+        {
+          title: 'Lo esencial',
+          content: 'Una variable une un nombre y un valor.',
+        },
         {
           title: 'Para curiosos: ¿dónde vive el dato?',
           content: 'El motor administra la memoria.',
@@ -63,14 +66,32 @@ describe('ReadingView', () => {
         { title: 'La idea central', content: 'El Hub distribuye artefactos.' },
         { title: 'Cómo funciona', content: 'El modelo corre en un Worker.' },
         { title: 'Cómo decidir', content: 'Compara tamaño y compatibilidad.' },
-        { title: 'Errores comunes', content: 'No ocultes una salida corrupta.' },
+        {
+          title: 'Errores comunes',
+          content: 'No ocultes una salida corrupta.',
+        },
       ],
       keyPoints: ['Inspecciona antes de descargar', 'Mide en el equipo real'],
-      frequentQuestions: [{ question: '¿Se descarga cada vez?', answer: 'Puede conservarse en caché.' }],
+      frequentQuestions: [
+        {
+          question: '¿Se descarga cada vez?',
+          answer: 'Puede conservarse en caché.',
+        },
+      ],
       transferPrompt: 'Compara dos model cards.',
       sources: [
-        { title: 'Transformers.js', publisher: 'Hugging Face', url: 'https://huggingface.co/docs/transformers.js/index', purpose: 'Documentación del runtime.' },
-        { title: 'Transformers.js v4', publisher: 'Hugging Face', url: 'https://huggingface.co/blog/transformersjs-v4', purpose: 'Cambios de WebGPU.' },
+        {
+          title: 'Transformers.js',
+          publisher: 'Hugging Face',
+          url: 'https://huggingface.co/docs/transformers.js/index',
+          purpose: 'Documentación del runtime.',
+        },
+        {
+          title: 'Transformers.js v4',
+          publisher: 'Hugging Face',
+          url: 'https://huggingface.co/blog/transformersjs-v4',
+          purpose: 'Cambios de WebGPU.',
+        },
       ],
       interactiveLab: {
         title: 'WebGPU en acción',
@@ -102,7 +123,9 @@ describe('ReadingView', () => {
       />,
     );
 
-    const concepts = screen.getByRole('region', { name: 'Conceptos de la lectura' });
+    const concepts = screen.getByRole('region', {
+      name: 'Conceptos de la lectura',
+    });
     expect(concepts.querySelectorAll('article')).toHaveLength(4);
 
     const lab = screen.getByRole('region', { name: 'WebGPU en acción' });
@@ -124,11 +147,19 @@ describe('ReadingView', () => {
         { title: 'La idea central', content: 'El Hub distribuye artefactos.' },
         { title: 'Cómo funciona', content: 'El modelo corre en un Worker.' },
         { title: 'Cómo decidir', content: 'Compara tamaño y compatibilidad.' },
-        { title: 'Errores comunes', content: 'No ocultes una salida corrupta.' },
+        {
+          title: 'Errores comunes',
+          content: 'No ocultes una salida corrupta.',
+        },
       ],
       keyPoints: ['Inspecciona antes de descargar'],
       sources: [
-        { title: 'Transformers.js', publisher: 'Hugging Face', url: 'https://huggingface.co/docs/transformers.js/index', purpose: 'Documentación del runtime.' },
+        {
+          title: 'Transformers.js',
+          publisher: 'Hugging Face',
+          url: 'https://huggingface.co/docs/transformers.js/index',
+          purpose: 'Documentación del runtime.',
+        },
       ],
       interactiveLab: {
         title: 'WebGPU en acción',
@@ -164,5 +195,9 @@ describe('ReadingView', () => {
     expect(screen.getByRole('region', { name: 'Mapa de la lectura' }).classList.contains('reading-overview')).toBe(true);
     expect(screen.getByRole('region', { name: 'Laboratorio interactivo' }).classList.contains('reading-lab-zone')).toBe(true);
     expect(screen.getByRole('region', { name: 'Biblioteca de campo' }).classList.contains('reading-library-zone')).toBe(true);
+    expect(screen.getByRole('navigation', { name: 'Secciones de la lectura' })).toBeTruthy();
+    expect(screen.getByRole('main').querySelector('.reading-page-grid')).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Conceptos de la lectura' }).classList.contains('reading-concepts-zone')).toBe(true);
+    expect(screen.getByRole('list', { name: 'Fuentes recomendadas' }).classList.contains('reading-source-grid')).toBe(true);
   });
 });
