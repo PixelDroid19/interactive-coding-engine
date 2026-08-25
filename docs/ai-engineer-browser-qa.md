@@ -33,6 +33,10 @@ Fecha: 2026-08-25
 - El laboratorio ahora detecta señales de salida corrupta o truncada y muestra un diagnóstico; no presenta ese texto como una respuesta válida.
 - Los modos Resume y Escribe muestran sus controles específicos y regresan a Compara prompts sin perder la navegación de la lectura.
 - Las lecturas con laboratorio usan un ancho mayor que las lecturas normales. A 900 × 700 el laboratorio apila sus zonas y conserva edición, tabs y navegación sin desbordamiento horizontal.
+- La lectura dejó de ser una tarjeta vertical única: el encabezado, mapa de conceptos, esenciales, laboratorio, dudas, transferencia y biblioteca son superficies independientes.
+- Los cuatro conceptos se muestran en una cuadrícula 2 × 2; las cinco fuentes se distribuyen en tres columnas de escritorio y el runtime local usa una franja horizontal sin altura vacía.
+- A 900 × 700 el contenido mantiene `scrollWidth === clientWidth` (894 px), por lo que no existe desbordamiento horizontal.
+- Los tabs Compara prompts, Resume y Escribe alternan sus controles específicos después del rediseño.
 - La consola del recorrido final no registró errores ni advertencias.
 
 ## Riesgos observados, no bloqueantes

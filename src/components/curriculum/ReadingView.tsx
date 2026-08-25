@@ -63,97 +63,102 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
         </header>
 
         <main
-          className={`mx-auto min-h-0 w-full flex-1 overflow-y-auto px-5 py-6 select-text ${reading.interactiveLab ? 'max-w-6xl' : 'max-w-3xl'}`}
+          className="mx-auto min-h-0 w-full max-w-[88rem] flex-1 overflow-y-auto px-4 py-5 select-text sm:px-6 sm:py-7 lg:px-8"
           aria-label="Contenido de la lectura"
         >
-          <article className="overflow-hidden rounded-xl border-2 border-zinc-700 bg-zinc-950 shadow-[5px_5px_0_#000]">
-            <header className="border-b-2 border-dashed border-zinc-700 bg-zinc-950 px-5 py-5 sm:px-7 sm:py-6">
+          <header className="relative overflow-hidden rounded-2xl border-2 border-zinc-700 bg-[#101218] px-6 py-7 shadow-[6px_6px_0_#000] sm:px-9 sm:py-9">
+            <div className="absolute inset-y-0 left-0 w-1.5 bg-yellow-300" aria-hidden="true" />
+            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-yellow-300">Lectura de preparación</p>
             <h1
               ref={titleRef}
               tabIndex={-1}
-                className="text-2xl font-bold leading-tight text-zinc-100"
+              className="mt-2 max-w-5xl text-2xl font-bold leading-tight text-zinc-100 outline-none sm:text-3xl"
               style={{ fontFamily: 'Space Grotesk, sans-serif' }}
             >
               {reading.title}
             </h1>
-              <p className="mt-3 max-w-3xl text-[15px] leading-relaxed text-zinc-300">
-                {reading.summary}
-              </p>
-            </header>
+            <p className="mt-4 max-w-3xl text-base leading-relaxed text-zinc-300 sm:text-[17px]">
+              {reading.summary}
+            </p>
+          </header>
 
-            <div className="divide-y divide-dashed divide-zinc-800">
-            {reading.sections.map((section) => section.kind === 'curiosity' ? (
-              <details
-                key={section.title}
-                className="group mx-5 my-5 rounded-xl border border-cyan-800 bg-cyan-950/25 open:border-cyan-600 sm:mx-7 sm:my-6"
-              >
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 text-zinc-100 marker:content-none">
-                  <span className="text-base font-bold leading-snug" style={{ fontFamily: 'Patrick Hand, cursive' }}>
-                    {section.title}
-                  </span>
-                  <span className="shrink-0 rounded-full border border-cyan-700 bg-zinc-950 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
-                    Opcional
-                  </span>
-                </summary>
-                <div className="border-t border-cyan-900 px-4 pb-4 pt-4">
-                  <p className="text-[15px] leading-relaxed text-zinc-300">{section.content}</p>
-                  {section.example && (
-                    <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-lg bg-[#12151e] p-4 font-mono text-xs leading-relaxed text-slate-200">
-                      {section.example}
-                    </pre>
-                  )}
-                  {section.exampleCaption && (
-                    <p className="mt-3 text-xs italic text-zinc-400">{section.exampleCaption}</p>
-                  )}
-                  <p className="mt-4 text-xs font-medium text-cyan-200">
-                    Contenido opcional: no necesitas memorizarlo para continuar
-                  </p>
+          <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+            <section aria-labelledby="reading-concepts-title" className="rounded-2xl border border-zinc-700 bg-zinc-950/70 p-4 sm:p-6">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-300">Mapa mental</p>
+                  <h2 id="reading-concepts-title" className="mt-1 text-xl font-bold text-zinc-100">Conceptos de la lectura</h2>
                 </div>
-              </details>
-            ) : (
-              <article key={section.title} className="px-5 py-5 sm:px-7 sm:py-6">
-                <h2
-                  className="text-lg font-bold leading-snug text-zinc-100"
-                  style={{ fontFamily: 'Patrick Hand, cursive' }}
-                >
-                  {section.title}
-                </h2>
-                <p className="mt-3 text-[15px] leading-relaxed text-zinc-300">{section.content}</p>
-                {section.example && (
-                  <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-lg bg-[#12151e] p-4 font-mono text-xs leading-relaxed text-slate-200">
-                    {section.example}
-                  </pre>
-                )}
-                {section.exampleCaption && (
-                  <p className="mt-3 text-xs italic text-zinc-400">{section.exampleCaption}</p>
-                )}
-              </article>
-            ))}
+                <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs font-bold text-zinc-400">
+                  {reading.sections.length} bloques
+                </span>
+              </div>
 
-              <aside className="border-t-2 border-yellow-400 bg-amber-950/40 px-5 py-5 sm:px-7 sm:py-6">
-            <h2
-              className="flex items-center gap-2 text-base font-bold text-amber-100"
-              style={{ fontFamily: 'Patrick Hand, cursive' }}
-            >
-              <Lightbulb size={16} />
-              Lo esencial antes de practicar
-            </h2>
-            <ul className="mt-3 list-disc space-y-1.5 pl-5 text-sm leading-relaxed text-zinc-200">
-              {reading.keyPoints.map((point) => (
-                <li key={point}>{point}</li>
-              ))}
-            </ul>
-              </aside>
-              {reading.interactiveLab && (
-                <div className="px-4 py-5 sm:px-6 sm:py-6">
-                  <AIInteractivePractice lab={reading.interactiveLab} />
-                </div>
-              )}
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                {reading.sections.map((section, index) => section.kind === 'curiosity' ? (
+                  <details
+                    key={section.title}
+                    className="group rounded-xl border border-cyan-800 bg-cyan-950/25 open:border-cyan-500 md:col-span-2"
+                  >
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-zinc-100 marker:content-none">
+                      <span className="text-lg font-bold leading-snug" style={{ fontFamily: 'Patrick Hand, cursive' }}>
+                        {section.title}
+                      </span>
+                      <span className="shrink-0 rounded-full border border-cyan-700 bg-zinc-950 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-200">
+                        Opcional
+                      </span>
+                    </summary>
+                    <div className="border-t border-cyan-900 px-5 pb-5 pt-4">
+                      <p className="text-[15px] leading-relaxed text-zinc-300">{section.content}</p>
+                      {section.example && <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-lg bg-[#12151e] p-4 font-mono text-xs leading-relaxed text-slate-200">{section.example}</pre>}
+                      {section.exampleCaption && <p className="mt-3 text-xs italic text-zinc-400">{section.exampleCaption}</p>}
+                      <p className="mt-4 text-xs font-medium text-cyan-200">Contenido opcional: no necesitas memorizarlo para continuar</p>
+                    </div>
+                  </details>
+                ) : (
+                  <article key={section.title} className="relative min-h-48 overflow-hidden rounded-xl border border-zinc-700 bg-[#15171d] p-5 shadow-[3px_3px_0_#050505]">
+                    <span className="absolute right-4 top-3 font-mono text-3xl font-black text-zinc-800" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+                    <h2 className="relative max-w-[85%] text-xl font-bold leading-snug text-zinc-100" style={{ fontFamily: 'Patrick Hand, cursive' }}>
+                      {section.title}
+                    </h2>
+                    <p className="relative mt-3 text-[15px] leading-relaxed text-zinc-300">{section.content}</p>
+                    {section.example && <pre className="relative mt-4 overflow-x-auto whitespace-pre-wrap rounded-lg bg-[#0c0e13] p-4 font-mono text-xs leading-relaxed text-slate-200">{section.example}</pre>}
+                    {section.exampleCaption && <p className="relative mt-3 text-xs italic text-zinc-400">{section.exampleCaption}</p>}
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <aside className="rounded-2xl border-2 border-yellow-400 bg-[#26180d] p-6 shadow-[5px_5px_0_#000] lg:sticky lg:top-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-yellow-300 bg-zinc-950 text-yellow-300">
+                <Lightbulb size={18} />
+              </div>
+              <h2 className="mt-4 text-xl font-bold text-amber-100" style={{ fontFamily: 'Patrick Hand, cursive' }}>
+                Lo esencial antes de practicar
+              </h2>
+              <ul className="mt-4 space-y-3 text-sm leading-relaxed text-zinc-200">
+                {reading.keyPoints.map((point) => (
+                  <li key={point} className="flex gap-3 border-t border-amber-900/70 pt-3 first:border-0 first:pt-0">
+                    <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-yellow-300" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          </div>
+
+          {reading.interactiveLab && (
+            <div className="mt-7">
+              <AIInteractivePractice lab={reading.interactiveLab} />
+            </div>
+          )}
+
+          {(reading.frequentQuestions?.length || reading.transferPrompt) && (
+            <div className="mt-7 grid gap-5 lg:grid-cols-2">
               {reading.frequentQuestions && reading.frequentQuestions.length > 0 && (
-                <section className="border-t-2 border-sky-900 bg-sky-950/30 px-5 py-5 sm:px-7 sm:py-6" aria-labelledby="reading-faq-title">
-                  <h2 id="reading-faq-title" className="text-lg font-bold text-sky-100" style={{ fontFamily: 'Patrick Hand, cursive' }}>
-                    Dudas frecuentes de quien empieza
-                  </h2>
+                <section className="rounded-2xl border border-sky-800 bg-sky-950/25 p-6" aria-labelledby="reading-faq-title">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-300">Aclara antes de seguir</p>
+                  <h2 id="reading-faq-title" className="mt-1 text-xl font-bold text-sky-100" style={{ fontFamily: 'Patrick Hand, cursive' }}>Dudas frecuentes de quien empieza</h2>
                   <div className="mt-4 grid gap-3">
                     {reading.frequentQuestions.map((entry) => (
                       <details key={entry.question} className="rounded-lg border border-sky-900 bg-zinc-950 px-4 py-3">
@@ -165,37 +170,41 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                 </section>
               )}
               {reading.transferPrompt && (
-                <aside className="border-t-2 border-violet-900 bg-violet-950/30 px-5 py-5 sm:px-7 sm:py-6">
-                  <h2 className="text-base font-bold text-violet-100">Llévalo a otro problema</h2>
-                  <p className="mt-2 text-sm leading-relaxed text-zinc-200">{reading.transferPrompt}</p>
-                  <p className="mt-2 text-xs text-zinc-400">Respóndelo con palabras o un diagrama antes de abrir el editor.</p>
+                <aside className="rounded-2xl border border-violet-800 bg-violet-950/25 p-6">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-violet-300">Transfiere lo aprendido</p>
+                  <h2 className="mt-1 text-xl font-bold text-violet-100" style={{ fontFamily: 'Patrick Hand, cursive' }}>Llévalo a otro problema</h2>
+                  <p className="mt-4 text-[15px] leading-relaxed text-zinc-200">{reading.transferPrompt}</p>
+                  <p className="mt-4 border-t border-violet-900 pt-4 text-xs text-zinc-400">Respóndelo con palabras o un diagrama antes de abrir el editor.</p>
                 </aside>
               )}
-              {reading.sources && reading.sources.length > 0 && (
-                <section className="border-t-2 border-emerald-900 bg-emerald-950/25 px-5 py-5 sm:px-7 sm:py-6" aria-labelledby="reading-sources-title">
-                  <h2 id="reading-sources-title" className="text-lg font-bold text-emerald-100" style={{ fontFamily: 'Patrick Hand, cursive' }}>
-                    Aprende a consultar la documentación
-                  </h2>
-                  <p className="mt-2 text-sm leading-relaxed text-zinc-300">
-                    No intentes memorizar la página. Busca el receptor, los parámetros, el retorno y si la operación modifica el valor original.
-                  </p>
-                  <ul className="mt-4 grid gap-3">
-                    {reading.sources.map((source) => (
-                      <li key={source.url} className="rounded-lg border border-emerald-900 bg-zinc-950 p-4">
-                        <a className="inline-flex items-center gap-2 font-bold text-emerald-200 underline decoration-emerald-700 underline-offset-4" href={source.url} target="_blank" rel="noreferrer">
-                          {source.title} <ExternalLink size={13} />
-                        </a>
-                        <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">{source.publisher}</p>
-                        <p className="mt-2 text-sm leading-relaxed text-zinc-300">{source.purpose}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </section>
-              )}
             </div>
-          </article>
+          )}
 
-          <footer className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {reading.sources && reading.sources.length > 0 && (
+            <section className="mt-7 rounded-2xl border border-emerald-800 bg-emerald-950/20 p-5 sm:p-7" aria-labelledby="reading-sources-title">
+              <div className="max-w-3xl">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Biblioteca de campo</p>
+                <h2 id="reading-sources-title" className="mt-1 text-xl font-bold text-emerald-100" style={{ fontFamily: 'Patrick Hand, cursive' }}>Documentación para explorar</h2>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-300">No memorices las páginas. Localiza tarea, parámetros, retorno, compatibilidad y límites.</p>
+              </div>
+              <ul aria-label="Fuentes recomendadas" className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {reading.sources.map((source, index) => (
+                  <li key={source.url} className="group flex min-h-44 flex-col rounded-xl border border-emerald-900 bg-[#101412] p-5 transition hover:-translate-y-0.5 hover:border-emerald-500">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-500">{source.publisher}</p>
+                      <span className="font-mono text-xs text-zinc-600">{String(index + 1).padStart(2, '0')}</span>
+                    </div>
+                    <a className="mt-3 inline-flex items-start gap-2 text-base font-bold leading-snug text-emerald-200 underline decoration-emerald-800 underline-offset-4 group-hover:text-emerald-100" href={source.url} target="_blank" rel="noreferrer">
+                      {source.title} <ExternalLink size={14} className="mt-1 shrink-0" />
+                    </a>
+                    <p className="mt-auto pt-4 text-sm leading-relaxed text-zinc-400">{source.purpose}</p>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <footer className="mt-7 flex flex-col gap-3 rounded-2xl border border-zinc-700 bg-[#101218] p-5 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-zinc-300">
               Cuando lo tengas claro, pasa al ejercicio. Puedes volver a esta lectura cuando quieras.
             </p>

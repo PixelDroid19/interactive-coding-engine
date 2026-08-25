@@ -50,4 +50,65 @@ describe('ReadingView', () => {
     expect(screen.getByText('Lo esencial').closest('details')).toBeNull();
     expect(screen.getByText('Contenido opcional: no necesitas memorizarlo para continuar')).toBeTruthy();
   });
+
+  it('separa conceptos, laboratorio y fuentes en superficies independientes', () => {
+    const reading: ReadingItem = {
+      id: 'ai-engineer-26-lectura',
+      relatedLessonId: 'ai-engineer-26',
+      title: 'Lectura: Transformers.js',
+      type: 'reading',
+      estimatedMinutes: 9,
+      summary: 'Aprende a ejecutar un modelo local.',
+      sections: [
+        { title: 'La idea central', content: 'El Hub distribuye artefactos.' },
+        { title: 'Cómo funciona', content: 'El modelo corre en un Worker.' },
+        { title: 'Cómo decidir', content: 'Compara tamaño y compatibilidad.' },
+        { title: 'Errores comunes', content: 'No ocultes una salida corrupta.' },
+      ],
+      keyPoints: ['Inspecciona antes de descargar', 'Mide en el equipo real'],
+      frequentQuestions: [{ question: '¿Se descarga cada vez?', answer: 'Puede conservarse en caché.' }],
+      transferPrompt: 'Compara dos model cards.',
+      sources: [
+        { title: 'Transformers.js', publisher: 'Hugging Face', url: 'https://huggingface.co/docs/transformers.js/index', purpose: 'Documentación del runtime.' },
+        { title: 'Transformers.js v4', publisher: 'Hugging Face', url: 'https://huggingface.co/blog/transformersjs-v4', purpose: 'Cambios de WebGPU.' },
+      ],
+      interactiveLab: {
+        title: 'WebGPU en acción',
+        description: 'Ejecuta un modelo local.',
+        defaultMode: 'prompt',
+        allowedModes: ['prompt'],
+        systemPrompt: 'Responde en español.',
+        promptA: 'Explica.',
+        promptB: 'Explica con un ejemplo.',
+        input: 'Una función recibe una entrada y puede devolver un resultado.',
+        observationPrompt: '¿Qué cambió?',
+      },
+    };
+
+    render(
+      <ReadingView
+        reading={reading}
+        onBack={vi.fn()}
+        onNext={vi.fn()}
+        navigationState={{
+          hasPrevious: false,
+          hasNext: true,
+          isFirst: true,
+          isLast: false,
+          previous: null,
+          next: null,
+          current: null,
+        }}
+      />,
+    );
+
+    const concepts = screen.getByRole('region', { name: 'Conceptos de la lectura' });
+    expect(concepts.querySelectorAll('article')).toHaveLength(4);
+
+    const lab = screen.getByRole('region', { name: 'WebGPU en acción' });
+    expect(lab.closest('article')).toBeNull();
+
+    const sources = screen.getByRole('list', { name: 'Fuentes recomendadas' });
+    expect(sources.querySelectorAll('li')).toHaveLength(2);
+  });
 });
