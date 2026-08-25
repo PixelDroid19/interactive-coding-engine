@@ -38,9 +38,10 @@ describe('laboratorios interactivos de AI Engineer', () => {
     expect(modelUrls).toContain('https://huggingface.co/blog/transformersjs-v4');
     expect(modelUrls).toContain('https://huggingface.co/onnx-community/LFM2.5-350M-ONNX');
     expect(modelUrls).toContain('https://huggingface.co/onnx-community/Qwen2.5-0.5B-Instruct');
-    expect(modelUrls).toContain('https://github.com/mlc-ai/web-llm');
+    expect(modelUrls).toContain('https://webllm.mlc.ai/docs/');
     expect(modelUrls).toContain('https://huggingface.co/mlc-ai/Qwen2.5-0.5B-Instruct-q4f16_1-MLC');
     expect(modelUrls).toContain('https://codepen.io/manz/pen/qEayoMQ');
+    expect(reading(26)?.sections.map((section) => section.content).join(' ')).toMatch(/modo JSON nativo|response_format/i);
 
     const browserUrls = reading(27)?.sources?.map((source) => source.url) ?? [];
     expect(browserUrls).toContain('https://developer.chrome.com/docs/ai/built-in/overview?hl=es-419');

@@ -79,7 +79,7 @@ describe('LocalGenerationService', () => {
     expect(second.text).toBe('Respuesta local en español.');
   });
 
-  it('valida como JSON real la salida cuando la práctica lo solicita', async () => {
+  it('activa el modo JSON nativo y conserva la validación de la práctica', async () => {
     const { service, engine } = harness({ output: ['{"resultado":true}'] });
     await service.generate({
       messages: [{ role: 'user', content: 'Devuelve JSON.' }],
@@ -88,7 +88,29 @@ describe('LocalGenerationService', () => {
       expectedJsonKeys: ['resultado'],
     });
 
-    expect(engine.chat.completions.create).toHaveBeenCalledWith(expect.not.objectContaining({ response_format: expect.anything() }));
+    expect(engine.chat.completions.create).toHaveBeenCalledWith(expect.objectContaining({
+      response_format: {
+        type: 'json_object',
+        schema: JSON.stringify({
+          type: 'object',
+          properties: { resultado: {} },
+          required: ['resultado'],
+          additionalProperties: false,
+        }),
+      },
+    }));
+  });
+
+  it('recrea el motor cuando se solicita otro modelo en lugar de etiquetar mal la salida', async () => {
+    const { service, createEngine, engine, worker } = harness();
+    const request = { messages: [{ role: 'user' as const, content: 'Hola' }], maxNewTokens: 24 };
+
+    await service.generate(request, { model: 'modelo-a' });
+    await service.generate(request, { model: 'modelo-b' });
+
+    expect(createEngine).toHaveBeenNthCalledWith(1, worker, 'modelo-a', expect.any(Function));
+    expect(createEngine).toHaveBeenNthCalledWith(2, worker, 'modelo-b', expect.any(Function));
+    expect(engine.unload).toHaveBeenCalledTimes(1);
   });
 
   it('rechaza una respuesta que incumple el contrato JSON sin inventar una corrección', async () => {

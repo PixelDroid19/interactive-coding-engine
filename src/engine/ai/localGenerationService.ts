@@ -108,10 +108,27 @@ function withTimeoutAndAbort<T>(
   });
 }
 
+function responseFormatFor(request: LocalGenerationRequest) {
+  if (request.expectedFormat !== 'json_object') return undefined;
+  const keys = [...new Set(request.expectedJsonKeys ?? [])];
+  if (keys.length === 0) return { type: 'json_object' as const };
+  return {
+    type: 'json_object' as const,
+    schema: JSON.stringify({
+      type: 'object',
+      properties: Object.fromEntries(keys.map((key) => [key, {}])),
+      required: keys,
+      additionalProperties: false,
+    }),
+  };
+}
+
 export class LocalGenerationService {
   private worker: GenerationWorkerLike | null = null;
   private engine: WebLlmEngineLike | null = null;
   private enginePromise: Promise<WebLlmEngineLike> | null = null;
+  private activeModel: string | null = null;
+  private loadingModel: string | null = null;
 
   constructor(private readonly dependencies: Partial<LocalGenerationDependencies> = {}) {}
 
@@ -146,6 +163,7 @@ export class LocalGenerationService {
     );
     options.onProgress?.({ status: 'inference', label: 'Generando con WebLLM en la GPU de este dispositivo…' });
     const startedAt = performance.now();
+    const responseFormat = responseFormatFor(request);
 
     const generate = async () => {
       const stream = await engine.chat.completions.create({
@@ -154,6 +172,7 @@ export class LocalGenerationService {
         top_p: Math.max(0.1, Math.min(1, request.topP ?? 0.9)),
         max_tokens: Math.max(16, Math.min(256, request.maxNewTokens)),
         stream: true,
+        ...(responseFormat ? { response_format: responseFormat } : {}),
       });
       let text = '';
       for await (const chunk of stream) {
@@ -224,6 +243,8 @@ export class LocalGenerationService {
     this.worker?.terminate();
     this.engine = null;
     this.enginePromise = null;
+    this.activeModel = null;
+    this.loadingModel = null;
     this.worker = null;
   }
 
@@ -231,11 +252,23 @@ export class LocalGenerationService {
     return { ...defaultDependencies, ...this.dependencies };
   }
 
-  private ensureEngine(model: string, onProgress?: LocalGenerationOptions['onProgress']) {
-    if (this.engine) return Promise.resolve(this.engine);
+  private async ensureEngine(model: string, onProgress?: LocalGenerationOptions['onProgress']) {
+    if (this.engine && this.activeModel === model) return this.engine;
+    if (this.enginePromise && this.loadingModel === model) return this.enginePromise;
+    if (this.enginePromise) await this.enginePromise.catch(() => undefined);
+    if (this.engine && this.activeModel !== model) {
+      const previousEngine = this.engine;
+      const previousWorker = this.worker;
+      this.engine = null;
+      this.worker = null;
+      this.activeModel = null;
+      await previousEngine.unload();
+      previousWorker?.terminate();
+    }
     if (!this.enginePromise) {
       const dependencies = this.resolvedDependencies();
       this.worker = dependencies.createWorker();
+      this.loadingModel = model;
       this.enginePromise = dependencies.createEngine(this.worker, model, (report) => {
         const progress = Number.isFinite(report.progress) ? Math.max(0, Math.min(1, report.progress)) : undefined;
         onProgress?.({
@@ -245,11 +278,15 @@ export class LocalGenerationService {
         });
       }).then((engine) => {
         this.engine = engine;
+        this.enginePromise = null;
+        this.activeModel = model;
+        this.loadingModel = null;
         return engine;
       }).catch((error) => {
         this.worker?.terminate();
         this.worker = null;
         this.enginePromise = null;
+        this.loadingModel = null;
         throw error;
       });
     }
@@ -263,5 +300,7 @@ export class LocalGenerationService {
     this.worker = null;
     this.engine = null;
     this.enginePromise = null;
+    this.activeModel = null;
+    this.loadingModel = null;
   }
 }
