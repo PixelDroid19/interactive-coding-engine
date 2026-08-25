@@ -1802,7 +1802,7 @@ body.dark {
   position: fixed;
   inset: 0;
   background: rgba(30, 36, 51, 0.28);
-  z-index: 50;
+  z-index: 150;
   animation: fadeIn 0.15s ease-out;
 }
 
@@ -1862,7 +1862,7 @@ body.dark {
   box-shadow: -8px 0px 0px var(--color-text-main);
   display: flex;
   flex-direction: column;
-  z-index: 55;
+  z-index: 155;
   animation: slideInRight 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -3802,6 +3802,76 @@ body.dark {
   background: #fef3c7 !important;
   border-color: #f59e0b !important;
   color: #78350f !important;
+}
+
+/* Estado discreto del lenguaje: no tapa el código ni compite con la consola. */
+.editor-language-status {
+  position: absolute;
+  z-index: 24;
+  right: 10px;
+  bottom: 7px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: min(520px, calc(100% - 62px));
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid #3f3f46;
+  border-radius: 5px;
+  background: rgba(18, 18, 20, 0.94);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  color: #cbd5e1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  line-height: 1.2;
+  pointer-events: none;
+  backdrop-filter: blur(7px);
+}
+
+.editor-language-status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #4ade80;
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.14);
+}
+
+.editor-language-status.has-errors {
+  color: #fecdd3;
+  border-color: rgba(251, 113, 133, 0.6);
+}
+
+.editor-language-status.has-errors .editor-language-status-dot {
+  background: #fb7185;
+  box-shadow: 0 0 0 2px rgba(251, 113, 133, 0.14);
+}
+
+.editor-language-status.has-warnings {
+  color: #fef08a;
+  border-color: rgba(250, 204, 21, 0.55);
+}
+
+.editor-language-status.has-warnings .editor-language-status-dot {
+  background: #facc15;
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.14);
+}
+
+.editor-language-status kbd {
+  margin-left: 2px;
+  padding: 1px 4px;
+  border: 1px solid #52525b;
+  border-bottom-color: #71717a;
+  border-radius: 3px;
+  color: #94a3b8;
+  font: inherit;
+  font-size: 9px;
+}
+
+@media (max-width: 720px) {
+  .editor-language-status kbd {
+    display: none;
+  }
 }
 
 /* Responsive for new debug layout */

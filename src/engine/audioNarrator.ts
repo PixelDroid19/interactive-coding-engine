@@ -342,7 +342,7 @@ export class AudioNarrator {
         const item = this.narrationScript[i];
         if (currentMs >= item.timestamp) {
           this.lastSpokenIndex = i;
-          this.speakText(item.text, item.voiceRate, this.captionAt(i, currentMs));
+          this.speakText(item.text, item.voiceRate, this.captionAt(i, currentMs) ?? undefined);
         } else {
           break;
         }
@@ -380,7 +380,7 @@ export class AudioNarrator {
       const item = this.narrationScript[idx];
       const nextTime = idx + 1 < this.narrationScript.length ? this.narrationScript[idx + 1].timestamp : item.timestamp + 4000;
       if (timeMs >= item.timestamp && timeMs < nextTime) {
-        this.speakText(item.text, item.voiceRate, this.captionAt(idx, timeMs));
+        this.speakText(item.text, item.voiceRate, this.captionAt(idx, timeMs) ?? undefined);
       }
     }
   }

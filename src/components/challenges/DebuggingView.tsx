@@ -360,6 +360,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
               <div className="editor-body relative min-h-0 overflow-hidden" style={{ flex: 1 }}>
                 <CodeEditor
                   file={activeFile}
+                  workspaceFiles={workspace.files}
                   readOnly={false}
                   lessonId={exercise.relatedLessonId}
                   onCodeChange={(content) => {

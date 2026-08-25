@@ -1103,7 +1103,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             <div className="editor-body relative min-h-0 overflow-hidden">
               <CodeEditor
                 file={activeFile}
-                readOnly={false}
+                workspaceFiles={workspace.files}
+                readOnly={!playerState.isForked && playbackStatus === 'playing'}
                 lessonId={lessonData.id}
                 onCodeChange={handleCodeChange}
                 instructorCursor={workspace.cursorPosition}

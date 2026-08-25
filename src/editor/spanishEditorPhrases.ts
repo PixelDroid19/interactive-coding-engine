@@ -1,0 +1,25 @@
+import { EditorState } from '@codemirror/state';
+
+export const spanishEditorPhrases = EditorState.phrases.of({
+  Completions: 'Sugerencias',
+  close: 'cerrar',
+  filter: 'filtrar',
+  options: 'opciones',
+  'other options': 'otras opciones',
+  Delete: 'Eliminar',
+  Revert: 'Deshacer',
+  undo: 'deshacer',
+  redo: 'rehacer',
+  Fold: 'Plegar',
+  Unfold: 'Desplegar',
+  'fold line': 'plegar línea',
+  'unfold line': 'desplegar línea',
+  'fold gutter': 'marcador de plegado',
+  'Code context': 'Contexto del código',
+  Diagnostics: 'Problemas del código',
+  error: 'error',
+  warning: 'advertencia',
+  'Go to': 'Ir a',
+  'go to definition': 'ir a la definición',
+  'jump to variable': 'saltar a la variable',
+});

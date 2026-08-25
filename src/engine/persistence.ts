@@ -709,12 +709,16 @@ export async function loadCustomScrims(): Promise<Record<string, ScrimLessonData
     }
     try {
       const audioBlob = await readCustomAudio(storageKey);
+      const audioTrack = scrim.audioTrack;
+      if (!audioTrack) return;
       scrim.audioTrack = audioBlob
-        ? { ...scrim.audioTrack, audioBlob, audioError: undefined }
-        : { ...scrim.audioTrack, audioError: 'El audio guardado no se encontró. Vuelve a grabar la clase para recuperar la narración.' };
+        ? { ...audioTrack, audioBlob, audioError: undefined }
+        : { ...audioTrack, audioError: 'El audio guardado no se encontró. Vuelve a grabar la clase para recuperar la narración.' };
     } catch {
+      const audioTrack = scrim.audioTrack;
+      if (!audioTrack) return;
       scrim.audioTrack = {
-        ...scrim.audioTrack,
+        ...audioTrack,
         audioError: 'No se pudo acceder al almacenamiento del audio. Recarga la aplicación e inténtalo de nuevo.',
       };
     }

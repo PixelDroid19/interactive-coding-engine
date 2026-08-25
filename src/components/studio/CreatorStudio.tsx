@@ -435,6 +435,7 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
             <div className="flex-1 w-full h-full bg-[#18181b]">
               <CodeEditor
                 file={activeFile}
+                workspaceFiles={workspace.files}
                 readOnly={false}
                 onCodeChange={handleCodeChange}
                 onCursorMove={(pos) => {

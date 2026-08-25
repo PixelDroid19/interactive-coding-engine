@@ -1,0 +1,7 @@
+allowBuilds:
+  '@google/genai': set this to true or false
+  esbuild: set this to true or false
+  protobufjs: set this to true or false
+minimumReleaseAgeExclude:
+  - '@types/node@26.3.0'
+  - lucide-react@1.34.0

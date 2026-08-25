@@ -79,9 +79,9 @@ describe('curso de JavaScript independiente y progresivo', () => {
       expect('solutionFiles' in lab, `${lab.id} incluye una solución`).toBe(false);
       const result = await runChallengeValidation({
         id: lab.id,
-        title: lab.title,
+        title: lab.title ?? lab.id,
         timestamp: 0,
-        instructions: lab.description,
+        instructions: lab.description ?? '',
         tests: lab.tests,
         hints: [],
       }, lab.initialWorkspace);
@@ -93,7 +93,7 @@ describe('curso de JavaScript independiente y progresivo', () => {
     for (const spec of JAVASCRIPT_SPECS) {
       const id = `javascript-${String(spec.number).padStart(2, '0')}`;
       const lesson = JAVASCRIPT_SCRIMS[id];
-      const spoken = lesson.audioTrack?.narrationScript.map((cue) => cue.text) ?? [];
+      const spoken = (lesson.audioTrack?.narrationScript ?? []).map((cue) => cue.text);
       expect(spoken).toEqual(spec.script);
       const guion = readFileSync(resolve(process.cwd(), `docs/guiones/javascript/${String(spec.number).padStart(2, '0')}.md`), 'utf8');
       for (const paragraph of spec.script) expect(guion).toContain(paragraph);
@@ -165,7 +165,7 @@ describe('curso de JavaScript independiente y progresivo', () => {
       expect(lesson.durationMs).toBe(audio.durationMs);
       expect(metadata.cues.map((cue) => cue.timestamp)).toEqual(audio.cues);
       expect(metadata.cues.map((cue) => cue.end)).toEqual(audio.ends);
-      expect(lesson.audioTrack?.narrationScript.map((cue) => cue.timestamp)).toEqual(audio.cues);
+      expect(lesson.audioTrack?.narrationScript?.map((cue) => cue.timestamp)).toEqual(audio.cues);
       expect(lesson.challenges[0].timestamp).toBeGreaterThan(metadata.cues[3].end);
       expect(lesson.challenges[0].timestamp).toBeLessThan(lesson.durationMs);
     }

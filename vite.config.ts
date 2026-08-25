@@ -1,11 +1,43 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import fs from 'node:fs';
 import path from 'path';
+import { createRequire } from 'node:module';
 import {defineConfig} from 'vite';
+
+const require = createRequire(import.meta.url);
+const TYPE_SCRIPT_LIBS_ID = 'virtual:typescript-libraries';
+const RESOLVED_TYPE_SCRIPT_LIBS_ID = `\0${TYPE_SCRIPT_LIBS_ID}`;
+
+function typeScriptLibrariesPlugin() {
+  return {
+    name: 'aula-typescript-libraries',
+    resolveId(id: string) {
+      return id === TYPE_SCRIPT_LIBS_ID ? RESOLVED_TYPE_SCRIPT_LIBS_ID : null;
+    },
+    load(id: string) {
+      if (id !== RESOLVED_TYPE_SCRIPT_LIBS_ID) return null;
+      const packagePath = require.resolve('typescript/package.json');
+      const libraryDirectory = path.join(path.dirname(packagePath), 'lib');
+      const libraries = Object.fromEntries(
+        fs.readdirSync(libraryDirectory)
+          .filter((fileName) => /^lib\..+\.d\.ts$/.test(fileName))
+          .map((fileName) => [
+            `/${fileName}`,
+            fs.readFileSync(path.join(libraryDirectory, fileName), 'utf8'),
+          ]),
+      );
+      return `export const typeScriptLibraries = ${JSON.stringify(libraries)};`;
+    },
+  };
+}
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [typeScriptLibrariesPlugin(), react(), tailwindcss()],
+    worker: {
+      plugins: () => [typeScriptLibrariesPlugin()],
+    },
     test: {
       setupFiles: ['./src/test-setup.ts'],
     },

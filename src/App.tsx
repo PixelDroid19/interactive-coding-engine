@@ -380,7 +380,7 @@ export default function App() {
             aria-live="polite"
             role={activeScrimError || customScrimsStatus === 'error' ? 'alert' : 'status'}
           >
-            <h1 className="text-xl font-bold">{activeItem.title}</h1>
+            <h1 className="text-xl font-bold">{activeItem?.title ?? 'Clase'}</h1>
             <p className="mt-3 text-sm">
               {activeScrimError
                 || (customScrimsStatus === 'loading'

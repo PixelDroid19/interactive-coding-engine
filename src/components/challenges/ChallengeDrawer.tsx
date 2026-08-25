@@ -186,10 +186,7 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
   const handleSkipForNowClick = () => {
     if (handleSkipForNow) {
       markChallengeSkipped(challenge.id);
-      handleSkipForNow();
-    } else if (onSkip) {
-      markChallengeSkipped(challenge.id);
-      onSkip();
+      (onSkipForNow ?? onSkip)?.();
     }
   };
 

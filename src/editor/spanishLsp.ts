@@ -468,6 +468,12 @@ export function getSpanishDocsForLesson(lessonId?: string): DocEntry[] {
   return SPANISH_DOCS.filter((entry) => levels.includes(entry.level));
 }
 
+export function getSpanishDocByLabel(label: string, lessonId?: string): DocEntry | undefined {
+  const normalized = label.replace(/\(\)$/, '').toLowerCase();
+  return getSpanishDocsForLesson(lessonId)
+    .find((entry) => entry.label.toLowerCase() === normalized);
+}
+
 const SPANISH_WORD_PATTERN = /[A-Za-z_$][A-Za-z0-9_$]*/g;
 
 export interface SpanishWordMatch {

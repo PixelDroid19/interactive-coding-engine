@@ -114,7 +114,7 @@ describe('progresión integrada del curso de Fundamentos', () => {
       ].join('\n');
 
       expect(source, `${id} usa for...of sin haberlo enseñado`).not.toMatch(/for\s*\([^;)]*\bof\b/);
-      expect(lesson.audioTrack?.narrationScript.map((cue) => cue.text).join(' ')).not.toMatch(/for of/i);
+      expect((lesson.audioTrack?.narrationScript ?? []).map((cue) => cue.text).join(' ')).not.toMatch(/for of/i);
     }
   });
 
@@ -213,10 +213,11 @@ describe('progresión integrada del curso de Fundamentos', () => {
       .filter((section) => section.kind !== 'curiosity')
       .map((section) => `${section.title} ${section.content} ${section.example ?? ''}`)
       .join('\n');
+    const lesson03 = FUNDAMENTOS_SCRIMS['fundamentos-03'];
     const lesson03TeachingCopy = [
-      ...FUNDAMENTOS_SCRIMS['fundamentos-03'].teachNotes.map((note) => `${note.title} ${note.body}`),
-      ...FUNDAMENTOS_SCRIMS['fundamentos-03'].frequentQuestions.map((entry) => `${entry.question} ${entry.answer}`),
-      ...FUNDAMENTOS_SCRIMS['fundamentos-03'].audioTrack.narrationScript.map((cue) => cue.text),
+      ...(lesson03.teachNotes ?? []).map((note) => `${note.title} ${note.body}`),
+      ...(lesson03.frequentQuestions ?? []).map((entry) => `${entry.question} ${entry.answer}`),
+      ...(lesson03.audioTrack?.narrationScript ?? []).map((cue) => cue.text),
     ].join('\n');
 
     expect(lesson03Core).toMatch(/nombre.+valor|valor.+nombre/i);
@@ -240,7 +241,7 @@ describe('progresión integrada del curso de Fundamentos', () => {
       challenge.instructions,
       ...challenge.tests.flatMap((test) => [test.description, test.errorMessage ?? '', test.hintTip ?? '']),
       ...challenge.hints.map((hint) => hint.text),
-      ...FUNDAMENTOS_SCRIMS['fundamentos-03'].audioTrack.narrationScript
+      ...(FUNDAMENTOS_SCRIMS['fundamentos-03'].audioTrack?.narrationScript ?? [])
         .filter((cue) => cue.timestamp >= 96_000)
         .map((cue) => cue.text),
     ].join('\n');
@@ -284,9 +285,9 @@ describe('progresión integrada del curso de Fundamentos', () => {
       workspace.files['app.js'].content = source;
       const result = await runChallengeValidation({
         id: exercise.id,
-        title: exercise.title,
+        title: exercise.title ?? exercise.id,
         timestamp: 0,
-        instructions: exercise.description,
+        instructions: exercise.description ?? '',
         tests: exercise.tests,
         hints: [],
       }, workspace);
@@ -392,7 +393,7 @@ describe('progresión integrada del curso de Fundamentos', () => {
     for (let number = 15; number <= 24; number += 1) {
       const id = `fundamentos-${number}`;
       const lesson = FUNDAMENTOS_SCRIMS[id];
-      const captions = lesson.audioTrack?.narrationScript.map((cue) => cue.text) ?? [];
+      const captions = lesson.audioTrack?.narrationScript?.map((cue) => cue.text) ?? [];
       expect(captions.length, `${id} tiene una explicación demasiado corta`).toBeGreaterThanOrEqual(10);
 
       for (const paragraph of captions) {

@@ -195,10 +195,14 @@
   --aug-inlay-bg: #061014;
 }
 
-.hud [data-augmented-ui~="hud-file"].file-item-btn-active,
-.hud [data-augmented-ui~="hud-tab"].tab-btn-active {
+.hud [data-augmented-ui~="hud-file"].file-item-btn-active {
   --aug-border-bg: var(--hud-yellow);
   --aug-inlay-bg: #151509;
+}
+
+.hud [data-augmented-ui~="hud-tab"].tab-btn-active {
+  --aug-border-bg: var(--hud-yellow);
+  --aug-inlay-bg: var(--hud-yellow);
 }
 
 @supports not ((clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%))) {
