@@ -32,6 +32,9 @@ describe('laboratorios interactivos de AI Engineer', () => {
     expect(modelUrls).toContain('https://huggingface.co/docs/transformers.js/index');
     expect(modelUrls).toContain('https://huggingface.co/blog/transformersjs-v4');
     expect(modelUrls).toContain('https://huggingface.co/onnx-community/LFM2.5-350M-ONNX');
+    expect(modelUrls).toContain('https://huggingface.co/onnx-community/Qwen2.5-0.5B-Instruct');
+    expect(modelUrls).toContain('https://github.com/mlc-ai/web-llm');
+    expect(modelUrls).toContain('https://huggingface.co/mlc-ai/Qwen2.5-0.5B-Instruct-q4f16_1-MLC');
     expect(modelUrls).toContain('https://codepen.io/manz/pen/qEayoMQ');
 
     const browserUrls = reading(27)?.sources?.map((source) => source.url) ?? [];
@@ -40,10 +43,12 @@ describe('laboratorios interactivos de AI Engineer', () => {
     expect(browserUrls).toContain('https://developer.chrome.com/docs/ai/writer-api?hl=es-419');
   });
 
-  it('usa LFM2.5-350M para una tarea recomendada por su model card', () => {
+  it('usa un modelo pequeño multilingüe para una tarea estructurada', () => {
     const lab = reading(26)?.interactiveLab;
     expect(lab?.systemPrompt).toMatch(/extrae|json|campos/i);
     expect(`${lab?.promptA}\n${lab?.promptB}\n${lab?.input}`).toMatch(/incidencia|prioridad|equipo/i);
     expect(lab?.systemPrompt).not.toMatch(/tutor de programación/i);
+    expect(lab?.title).toMatch(/WebLLM.*WebGPU/i);
+    expect(lab?.expectedJsonKeys).toEqual(['problema', 'prioridad', 'equipo']);
   });
 });
