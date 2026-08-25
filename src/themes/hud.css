@@ -808,14 +808,54 @@
   background: #1e1e2d !important;
 }
 
-/* Challenge and explanation overlays */
-.hud [role="dialog"].modal-dialog,
+/* Challenge and explanation overlays & Modals */
+.hud [role="dialog"] > div,
 .hud .modal-dialog {
   border: 0 !important;
   border-radius: 0 !important;
-  background: #08080c !important;
-  box-shadow: 0 0 28px rgb(0 0 0 / 74%) !important;
+  background: #08080d !important;
+  box-shadow: 0 0 32px rgba(0, 0, 0, 0.9), 0 0 12px rgba(255, 230, 0, 0.2) !important;
   color: var(--hud-text) !important;
+  font-family: "Chakra Petch", -apple-system, sans-serif !important;
+}
+
+.hud .modal-dialog h3,
+.hud [role="dialog"] h3 {
+  color: var(--hud-yellow) !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  text-shadow: 0 0 10px var(--hud-yellow-glow) !important;
+}
+
+.hud .modal-dialog p,
+.hud [role="dialog"] p {
+  color: #cbd5e1 !important;
+  font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+.hud .modal-dialog .neu-pill-btn,
+.hud [role="dialog"] .neu-pill-btn {
+  min-height: 38px !important;
+  height: 38px !important;
+  border-radius: 0 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  box-shadow: none !important;
+}
+
+.hud .modal-dialog .btn-brand,
+.hud [role="dialog"] .btn-brand {
+  color: #000000 !important;
+  background: var(--hud-yellow) !important;
+  font-weight: 900 !important;
 }
 
 .hud .modal-header {

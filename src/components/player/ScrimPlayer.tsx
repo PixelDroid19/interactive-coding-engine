@@ -969,7 +969,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
       {showBranchRecovery && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Continuar lección">
-          <div className="bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
+          <div className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
             <h3 className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Cómo quieres continuar?</h3>
             <p className="text-sm text-slate-300 mt-2">Puedes continuar desde donde lo dejaste la última vez o comenzar la lección desde cero.</p>
             <div className="flex flex-col gap-2 mt-4">
@@ -982,7 +982,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
       {pendingSeekMs !== null && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Cambiar de momento">
-          <div className="bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
+          <div className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
             <h3 className="font-bold">¿Ir a otro momento de la lección?</h3>
             <p className="text-sm text-slate-300 mt-2">Tienes cambios sin guardar. Puedes descartarlos para cambiar de momento o seguir editando aquí.</p>
             <div className="flex gap-2 mt-4">
@@ -995,7 +995,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
       {showReturnConfirm && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Volver a la lección">
-          <div className="bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
+          <div className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
             <h3 className="font-bold">¿Volver al contenido de la lección?</h3>
             <p className="text-sm text-slate-300 mt-2">Al volver se descartarán los cambios que hiciste mientras practicabas.</p>
             <div className="flex gap-2 mt-4">
@@ -1008,7 +1008,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
       {pendingNavigation && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Salir con cambios">
-          <div className="bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
+          <div className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
             <h3 className="font-bold">¿Salir de esta pantalla?</h3>
             <p className="text-sm text-slate-300 mt-2">Tienes cambios sin guardar. Puedes guardarlos para continuar después o descartarlos antes de salir.</p>
             <div className="flex flex-col gap-2 mt-4">
