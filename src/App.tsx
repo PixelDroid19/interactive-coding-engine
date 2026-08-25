@@ -143,10 +143,26 @@ export default function App() {
   useEffect(() => {
     document.documentElement.classList.add('dark');
     document.documentElement.style.colorScheme = 'dark';
-    // HUD theme — activación sin tocar tema por defecto: ?theme=hud o localStorage hud=1
+    // HUD/Cyber theme — usa localStorage (default es tema estándar a menos que haya sido activado)
     const params = new URLSearchParams(window.location.search);
-    const hudParam = params.get('theme') === 'hud' || params.get('hud') === '1';
-    const hudStored = (() => { try { return localStorage.getItem('theme') === 'hud' || localStorage.getItem('hud') === '1'; } catch { return false; } })();
+    const themeParam = params.get('theme');
+    const hudParam = themeParam === 'hud' || params.get('hud') === '1';
+    const defaultParam = themeParam === 'default' || themeParam === 'paper' || themeParam === 'classic';
+
+    if (hudParam) {
+      try { localStorage.setItem('theme', 'hud'); } catch {}
+    } else if (defaultParam) {
+      try { localStorage.setItem('theme', 'default'); } catch {}
+    }
+
+    const hudStored = (() => {
+      try {
+        return localStorage.getItem('theme') === 'hud';
+      } catch {
+        return false;
+      }
+    })();
+
     const applyHudAugs = () => {
       const isHud = document.documentElement.classList.contains('hud');
       const map: Array<[string, string, boolean?]> = [
@@ -189,9 +205,11 @@ export default function App() {
         });
       });
     };
-    if (hudParam || hudStored) {
+
+    if (hudParam || (!defaultParam && hudStored)) {
       document.documentElement.classList.add('hud');
-      try { localStorage.setItem('theme', 'hud'); } catch {}
+    } else {
+      document.documentElement.classList.remove('hud');
     }
     applyHudAugs();
     // Observar cambios de clase hud para aplicar/quitar augs
