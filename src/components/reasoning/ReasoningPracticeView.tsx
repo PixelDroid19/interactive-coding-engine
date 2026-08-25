@@ -84,21 +84,36 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
           <header><span>Práctica de razonamiento</span><h1 ref={titleRef} tabIndex={-1}>{item.title}</h1><p>{activity.prompt}</p></header>
           <div className="reasoning-workspace">
             {activity.kind === 'sequence' && attempt.kind === 'sequence' && (
-              <div>
-                <SequenceDiagram steps={attempt.order.map((id) => activity.steps.find((step) => step.id === id)!)} />
-                <div className="reasoning-order-controls">
-                  {attempt.order.map((id, index) => {
-                    const step = activity.steps.find((candidate) => candidate.id === id)!;
-                    return <div key={id}><strong>{step.label}</strong><button type="button" onClick={() => moveStep(id, -1)} disabled={index === 0}>Subir</button><button type="button" onClick={() => moveStep(id, 1)} disabled={index === attempt.order.length - 1}>Bajar</button></div>;
-                  })}
-                </div>
-              </div>
+              <SequenceDiagram
+                steps={attempt.order.map((id) => activity.steps.find((step) => step.id === id)!)}
+                onMove={moveStep}
+                onReorder={(fromIndex, toIndex) => {
+                  const order = [...attempt.order];
+                  const [moved] = order.splice(fromIndex, 1);
+                  order.splice(toIndex, 0, moved);
+                  setAttempt({ kind: 'sequence', order });
+                  setResult(null);
+                }}
+              />
             )}
             {activity.kind === 'trace-table' && attempt.kind === 'trace-table' && <TraceTable columns={activity.columns} rows={activity.rows} cells={attempt.cells} onChange={(cellId, value) => { setAttempt({ kind: 'trace-table', cells: { ...attempt.cells, [cellId]: value } }); setResult(null); }} />}
             {activity.kind === 'decision-table' && attempt.kind === 'decision-table' && <div className="reasoning-decisions">{activity.cases.map((currentCase) => <label key={currentCase.id}><span>{currentCase.label}</span><select aria-label={currentCase.label} value={attempt.outcomes[currentCase.id] ?? ''} onChange={(event) => { setAttempt({ kind: 'decision-table', outcomes: { ...attempt.outcomes, [currentCase.id]: event.target.value } }); setResult(null); }}><option value="">Elige un resultado</option>{currentCase.options.map((option) => <option key={option}>{option}</option>)}</select></label>)}</div>}
             {activity.kind === 'flowchart' && <><FlowchartDiagram nodes={activity.nodes} connections={selectedConnections} /><ConnectionChoices choices={activity.connectionOptions} selected={selectedConnections} labels={Object.fromEntries(activity.nodes.map((node) => [node.id, node.label]))} onToggle={toggleConnection} /></>}
             {activity.kind === 'dependency-map' && <><ModuleDependencyDiagram modules={activity.modules} dependencies={selectedConnections} /><ConnectionChoices choices={activity.dependencyOptions} selected={selectedConnections} labels={Object.fromEntries(activity.modules.map((module) => [module.id, module.label]))} onToggle={toggleConnection} /></>}
-            {activity.kind === 'vector-ranking' && attempt.kind === 'vector-ranking' && <VectorRankingDiagram candidates={activity.candidates} order={attempt.order} onMove={moveStep} />}
+            {activity.kind === 'vector-ranking' && attempt.kind === 'vector-ranking' && (
+              <VectorRankingDiagram
+                candidates={activity.candidates}
+                order={attempt.order}
+                onMove={moveStep}
+                onReorder={(fromIndex, toIndex) => {
+                  const order = [...attempt.order];
+                  const [moved] = order.splice(fromIndex, 1);
+                  order.splice(toIndex, 0, moved);
+                  setAttempt({ kind: 'vector-ranking', order });
+                  setResult(null);
+                }}
+              />
+            )}
             {activity.kind === 'context-budget' && attempt.kind === 'context-budget' && <ContextBudgetDiagram budget={activity.budget} blocks={activity.blocks} selected={attempt.selected} onToggle={(id) => { const selected = attempt.selected.includes(id) ? attempt.selected.filter((item) => item !== id) : [...attempt.selected, id]; setAttempt({ kind: 'context-budget', selected }); setResult(null); }} />}
           </div>
           <div className="reasoning-actions">
