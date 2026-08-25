@@ -50,87 +50,102 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
 
   useEffect(() => {
     const draw = () => {
-      const svg = document.getElementById('rm-connectors');
-      const tree = document.getElementById('rm-tree');
-      if (!svg || !tree) return;
-      svg.replaceChildren();
-      const box = tree.getBoundingClientRect();
+      requestAnimationFrame(() => {
+        const svg = document.getElementById('rm-connectors');
+        const tree = document.getElementById('rm-tree');
+        if (!svg || !tree) return;
+        svg.replaceChildren();
+        const box = tree.getBoundingClientRect();
+        if (box.width === 0 || box.height === 0) return;
 
-      const mains = phases.flatMap((phase) => phase.rows.map((row) => row.main.id));
-      const links: { from: string; to: string; dotted?: boolean }[] = [];
-      for (let i = 0; i < mains.length - 1; i++) links.push({ from: mains[i], to: mains[i + 1] });
-      for (const phase of phases) {
-        for (const row of phase.rows) {
-          if (row.reading) links.push({ from: row.main.id, to: row.reading.id, dotted: true });
-          if (row.reasoning) links.push({ from: row.main.id, to: row.reasoning.id, dotted: true });
-          if (row.checkpoint) links.push({ from: row.main.id, to: row.checkpoint.id, dotted: true });
-          for (const concept of row.concepts) {
-            links.push({ from: row.main.id, to: concept.id, dotted: true });
-          }
-        }
-      }
-
-      for (const link of links) {
-        const a = document.getElementById(link.from);
-        const b = document.getElementById(link.to);
-        if (!a || !b) continue;
-        const ra = a.getBoundingClientRect();
-        const rb = b.getBoundingClientRect();
-
-        let x1: number, y1: number, x2: number, y2: number;
-        let d: string;
-
-        if (!link.dotted) {
-          // Vertical central spine (main node to main node)
-          x1 = ra.left + ra.width / 2 - box.left;
-          y1 = ra.bottom - box.top;
-          x2 = rb.left + rb.width / 2 - box.left;
-          y2 = rb.top - box.top;
-          if (Math.abs(x1 - x2) < 2) {
-            d = `M ${x1} ${y1} L ${x2} ${y2}`;
-          } else {
-            const cy = (y1 + y2) / 2;
-            d = `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${cy}, ${x2} ${y2}`;
-          }
-        } else {
-          // Horizontal fan-out branch connections (roadmap.sh style)
-          if (rb.left < ra.left) {
-            // Target is on the left (checkpoints)
-            x1 = ra.left - box.left;
-            y1 = ra.top + ra.height / 2 - box.top;
-            x2 = rb.right - box.left;
-            y2 = rb.top + rb.height / 2 - box.top;
-            const dx = x1 - x2;
-            const cp1x = x1 - dx * 0.45;
-            const cp2x = x2 + dx * 0.45;
-            d = `M ${x1} ${y1} C ${cp1x} ${y1}, ${cp2x} ${y2}, ${x2} ${y2}`;
-          } else {
-            // Target is on the right (concepts)
-            x1 = ra.right - box.left;
-            y1 = ra.top + ra.height / 2 - box.top;
-            x2 = rb.left - box.left;
-            y2 = rb.top + rb.height / 2 - box.top;
-            const dx = x2 - x1;
-            const cp1x = x1 + dx * 0.45;
-            const cp2x = x2 - dx * 0.45;
-            d = `M ${x1} ${y1} C ${cp1x} ${y1}, ${cp2x} ${y2}, ${x2} ${y2}`;
+        const mains = phases.flatMap((phase) => phase.rows.map((row) => row.main.id));
+        const links: { from: string; to: string; dotted?: boolean }[] = [];
+        for (let i = 0; i < mains.length - 1; i++) links.push({ from: mains[i], to: mains[i + 1] });
+        for (const phase of phases) {
+          for (const row of phase.rows) {
+            if (row.reading) links.push({ from: row.main.id, to: row.reading.id, dotted: true });
+            if (row.reasoning) links.push({ from: row.main.id, to: row.reasoning.id, dotted: true });
+            if (row.checkpoint) links.push({ from: row.main.id, to: row.checkpoint.id, dotted: true });
+            for (const concept of row.concepts) {
+              links.push({ from: row.main.id, to: concept.id, dotted: true });
+            }
           }
         }
 
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', d);
-        path.setAttribute('class', link.dotted ? 'rm-line-dot' : 'rm-line');
-        svg.appendChild(path);
-      }
+        for (const link of links) {
+          const a = document.getElementById(link.from);
+          const b = document.getElementById(link.to);
+          if (!a || !b) continue;
+          const ra = a.getBoundingClientRect();
+          const rb = b.getBoundingClientRect();
+
+          let x1: number, y1: number, x2: number, y2: number;
+          let d: string;
+
+          if (!link.dotted) {
+            // Vertical central spine (main node to main node)
+            x1 = ra.left + ra.width / 2 - box.left;
+            y1 = ra.bottom - box.top;
+            x2 = rb.left + rb.width / 2 - box.left;
+            y2 = rb.top - box.top;
+            if (Math.abs(x1 - x2) < 2) {
+              d = `M ${x1} ${y1} L ${x2} ${y2}`;
+            } else {
+              const cy = (y1 + y2) / 2;
+              d = `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${cy}, ${x2} ${y2}`;
+            }
+          } else {
+            // Horizontal fan-out branch connections (roadmap.sh style)
+            if (rb.left < ra.left) {
+              // Target is on the left (checkpoints)
+              x1 = ra.left - box.left;
+              y1 = ra.top + ra.height / 2 - box.top;
+              x2 = rb.right - box.left;
+              y2 = rb.top + rb.height / 2 - box.top;
+              const dx = x1 - x2;
+              const cp1x = x1 - dx * 0.45;
+              const cp2x = x2 + dx * 0.45;
+              d = `M ${x1} ${y1} C ${cp1x} ${y1}, ${cp2x} ${y2}, ${x2} ${y2}`;
+            } else {
+              // Target is on the right (concepts)
+              x1 = ra.right - box.left;
+              y1 = ra.top + ra.height / 2 - box.top;
+              x2 = rb.left - box.left;
+              y2 = rb.top + rb.height / 2 - box.top;
+              const dx = x2 - x1;
+              const cp1x = x1 + dx * 0.45;
+              const cp2x = x2 - dx * 0.45;
+              d = `M ${x1} ${y1} C ${cp1x} ${y1}, ${cp2x} ${y2}, ${x2} ${y2}`;
+            }
+          }
+
+          const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+          path.setAttribute('d', d);
+          path.setAttribute('class', link.dotted ? 'rm-line-dot' : 'rm-line');
+          svg.appendChild(path);
+        }
+      });
     };
 
     draw();
-    const onResize = () => draw();
-    window.addEventListener('resize', onResize);
-    const timer = window.setTimeout(draw, 40);
+    const tree = document.getElementById('rm-tree');
+    const resizeObserver = new ResizeObserver(() => draw());
+    if (tree) resizeObserver.observe(tree);
+
+    const mutationObserver = new MutationObserver(() => draw());
+    mutationObserver.observe(document.body, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+    mutationObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+
+    window.addEventListener('resize', draw);
+    const timer1 = window.setTimeout(draw, 50);
+    const timer2 = window.setTimeout(draw, 250);
+
     return () => {
-      window.removeEventListener('resize', onResize);
-      window.clearTimeout(timer);
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+      window.removeEventListener('resize', draw);
+      window.clearTimeout(timer1);
+      window.clearTimeout(timer2);
     };
   }, [phases, openConcept]);
 

@@ -2777,13 +2777,14 @@ body.dark {
 }
 
 .dark .rm-briefing-close {
-  background: #1b202c;
-  border-color: #64748b;
+  background: #1e293b;
+  border-color: #475569;
   color: #e2e8f0;
 }
 
 .dark .rm-briefing-close:hover {
-  background: #252b38;
+  background: #334155;
+  color: #ffffff;
 }
 
 .dark .rm-legend {
@@ -2879,12 +2880,23 @@ body.dark {
   position: absolute;
   top: 14px;
   right: 14px;
-  width: 32px;
-  height: 32px;
-  border: 2px solid var(--color-black);
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--color-black);
+  border-radius: 6px;
   background: #f1f5f9;
   cursor: pointer;
+  padding: 0;
+  color: #334155;
+  transition: all 0.15s ease;
+}
+
+.rm-briefing-close:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
 }
 
 .rm-briefing-title {
