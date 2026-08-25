@@ -22,6 +22,7 @@ class FakeGenerationWorker implements GenerationWorkerLike {
         type: 'generation/model-info',
         requestId: message.requestId,
         model: message.model,
+        dtype: message.dtype,
         cached: false,
         downloadBytes: 238_000_000,
         dtypes: ['q4', 'q4f16'],
@@ -72,11 +73,12 @@ describe('LocalGenerationService', () => {
 
     expect(info).toEqual({
       model: 'onnx-community/LFM2.5-350M-ONNX',
+      dtype: 'q4',
       cached: false,
       downloadBytes: 238_000_000,
       dtypes: ['q4', 'q4f16'],
     });
-    expect(worker.messages[0]).toMatchObject({ type: 'generation/inspect' });
+    expect(worker.messages[0]).toMatchObject({ type: 'generation/inspect', dtype: 'q4' });
   });
 
   it('genera con WebGPU, conserva los controles e informa progreso', async () => {

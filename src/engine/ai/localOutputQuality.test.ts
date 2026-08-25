@@ -7,10 +7,21 @@ describe('validateSpanishGeneration', () => {
     expect(validateSpanishGeneration('- Problema: carga repetida\n- Decisión: usar caché\n- Paso: medir otra vez')).toBeNull();
   });
 
+  it('acepta JSON válido aunque use pocos conectores del lenguaje natural', () => {
+    expect(validateSpanishGeneration('{"problema":"pantalla de pagos en blanco","prioridad":"alta","equipo":"web"}')).toBeNull();
+    expect(validateSpanishGeneration('```json\n{"problema":"sesión cerrada","prioridad":null,"equipo":"cuentas"}\n```')).toBeNull();
+  });
+
   it('rechaza salidas truncadas o con señales de corrupción numérica', () => {
     expect(validateSpanishGeneration('Una')).toMatch(/incompleta/i);
     expect(validateSpanishGeneration('Una funciónTable-fieldo Codřejáss Cyclcomed ect athletes Ripascoascoasco œaukoths Lymeoby')).toMatch(/inestable/i);
     expect(validateSpanishGeneration('texto !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! final')).toMatch(/inestable/i);
     expect(validateSpanishGeneration('respuesta � rota')).toMatch(/inestable/i);
+  });
+
+  it('distingue una respuesta en otro idioma de una salida numéricamente corrupta', () => {
+    const error = validateSpanishGeneration('This response ignored the requested language and returned a long explanation without the required format.');
+    expect(error).toMatch(/idioma|formato/i);
+    expect(error).not.toMatch(/numéricamente inestable/i);
   });
 });

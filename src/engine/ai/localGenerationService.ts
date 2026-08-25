@@ -4,6 +4,7 @@ import {
   type GenerationWorkerInbound,
   type GenerationWorkerOutbound,
   type LocalGenerationRequest,
+  type LocalGenerationDtype,
   type LocalGenerationResult,
   type LocalModelInfo,
 } from './localGenerationProtocol';
@@ -20,6 +21,7 @@ interface RequestOptions {
   timeoutMs?: number;
   onProgress?: (progress: GenerationProgress) => void;
   onChunk?: (text: string) => void;
+  dtype?: LocalGenerationDtype;
 }
 
 interface PendingRequest<T> {
@@ -43,7 +45,7 @@ export class LocalGenerationService {
 
   inspectModel(model = DEFAULT_LOCAL_GENERATION_MODEL, options: RequestOptions = {}): Promise<LocalModelInfo> {
     return this.request<LocalModelInfo>(
-      (requestId) => ({ type: 'generation/inspect', requestId, model }),
+      (requestId) => ({ type: 'generation/inspect', requestId, model, dtype: options.dtype ?? 'q4' }),
       options,
     );
   }
@@ -54,7 +56,7 @@ export class LocalGenerationService {
   ): Promise<LocalGenerationResult> {
     const model = options.model ?? DEFAULT_LOCAL_GENERATION_MODEL;
     return this.request<LocalGenerationResult>(
-      (requestId) => ({ type: 'generation/run', requestId, model, ...structuredClone(request) }),
+      (requestId) => ({ type: 'generation/run', requestId, model, dtype: options.dtype ?? 'q4', ...structuredClone(request) }),
       { ...options, timeoutMs: options.timeoutMs ?? 180_000 },
     );
   }
@@ -138,4 +140,3 @@ export class LocalGenerationService {
     pending.resolve(result);
   };
 }
-

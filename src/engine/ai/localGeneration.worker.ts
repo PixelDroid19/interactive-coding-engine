@@ -10,15 +10,19 @@ import type {
   GenerationWorkerInbound,
   GenerationWorkerOutbound,
   LocalChatMessage,
+  LocalGenerationDtype,
 } from './localGenerationProtocol';
-import { DEFAULT_LOCAL_GENERATION_DTYPE } from './localGenerationProtocol';
 import { validateSpanishGeneration } from './localOutputQuality';
+import { explainLocalGenerationError } from './localGenerationErrors';
 
 declare const self: DedicatedWorkerGlobalScope;
 
 const generators = new Map<string, Promise<TextGenerationPipeline>>();
 const cancelled = new Set<number>();
-const MODEL_OPTIONS = { device: 'webgpu' as const, dtype: DEFAULT_LOCAL_GENERATION_DTYPE };
+
+function modelOptions(dtype: LocalGenerationDtype) {
+  return { device: 'webgpu' as const, dtype };
+}
 
 function send(message: GenerationWorkerOutbound) {
   self.postMessage(message);
@@ -32,11 +36,12 @@ function progressNumber(value: unknown): number | undefined {
 
 async function inspect(message: Extract<GenerationWorkerInbound, { type: 'generation/inspect' }>) {
   try {
+    const options = modelOptions(message.dtype);
     send({ type: 'generation/progress', requestId: message.requestId, status: 'inspect', label: 'Consultando archivos y caché del modelo…' });
-    const files = await ModelRegistry.get_pipeline_files('text-generation', message.model, MODEL_OPTIONS);
+    const files = await ModelRegistry.get_pipeline_files('text-generation', message.model, options);
     const [metadata, cached, dtypes] = await Promise.all([
       Promise.all(files.map((file) => ModelRegistry.get_file_metadata(message.model, file))),
-      ModelRegistry.is_pipeline_cached('text-generation', message.model, MODEL_OPTIONS),
+      ModelRegistry.is_pipeline_cached('text-generation', message.model, options),
       ModelRegistry.get_available_dtypes(message.model),
     ]);
     if (cancelled.delete(message.requestId)) return;
@@ -44,21 +49,23 @@ async function inspect(message: Extract<GenerationWorkerInbound, { type: 'genera
       type: 'generation/model-info',
       requestId: message.requestId,
       model: message.model,
+      dtype: message.dtype,
       cached,
       downloadBytes: metadata.reduce((total, file) => total + (file.size ?? 0), 0),
       dtypes,
     });
   } catch (error) {
-    send({ type: 'generation/error', requestId: message.requestId, message: error instanceof Error ? error.message : String(error) });
+    send({ type: 'generation/error', requestId: message.requestId, message: explainLocalGenerationError(error) });
   }
 }
 
-function getGenerator(model: string, requestId: number) {
-  let current = generators.get(model);
+function getGenerator(model: string, dtype: LocalGenerationDtype, requestId: number) {
+  const key = `${model}:${dtype}`;
+  let current = generators.get(key);
   if (!current) {
     send({ type: 'generation/progress', requestId, status: 'load', label: 'Preparando Transformers.js y WebGPU…' });
     current = pipeline('text-generation', model, {
-      ...MODEL_OPTIONS,
+      ...modelOptions(dtype),
       progress_callback: (event: unknown) => {
         const detail = event && typeof event === 'object' ? event as Record<string, unknown> : {};
         const totalProgress = detail.status === 'progress_total' ? progressNumber(detail.progress) : undefined;
@@ -73,8 +80,8 @@ function getGenerator(model: string, requestId: number) {
         });
       },
     });
-    generators.set(model, current);
-    current.catch(() => generators.delete(model));
+    generators.set(key, current);
+    current.catch(() => generators.delete(key));
   }
   return current;
 }
@@ -93,7 +100,7 @@ function responseText(output: unknown): string {
 async function generate(message: Extract<GenerationWorkerInbound, { type: 'generation/run' }>) {
   try {
     if (!('gpu' in navigator)) throw new Error('WebGPU no está disponible en este navegador o dispositivo.');
-    const generator = await getGenerator(message.model, message.requestId);
+    const generator = await getGenerator(message.model, message.dtype, message.requestId);
     if (cancelled.delete(message.requestId)) return;
     send({ type: 'generation/progress', requestId: message.requestId, status: 'inference', label: 'Generando en la GPU de este dispositivo…' });
     const startedAt = performance.now();
@@ -130,7 +137,7 @@ async function generate(message: Extract<GenerationWorkerInbound, { type: 'gener
     });
   } catch (error) {
     if (cancelled.delete(message.requestId)) return;
-    send({ type: 'generation/error', requestId: message.requestId, message: error instanceof Error ? error.message : String(error) });
+    send({ type: 'generation/error', requestId: message.requestId, message: explainLocalGenerationError(error) });
   }
 }
 

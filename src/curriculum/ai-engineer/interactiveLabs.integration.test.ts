@@ -39,4 +39,11 @@ describe('laboratorios interactivos de AI Engineer', () => {
     expect(browserUrls).toContain('https://developer.chrome.com/docs/ai/summarizer-api?hl=es-419');
     expect(browserUrls).toContain('https://developer.chrome.com/docs/ai/writer-api?hl=es-419');
   });
+
+  it('usa LFM2.5-350M para una tarea recomendada por su model card', () => {
+    const lab = reading(26)?.interactiveLab;
+    expect(lab?.systemPrompt).toMatch(/extrae|json|campos/i);
+    expect(`${lab?.promptA}\n${lab?.promptB}\n${lab?.input}`).toMatch(/incidencia|prioridad|equipo/i);
+    expect(lab?.systemPrompt).not.toMatch(/tutor de programación/i);
+  });
 });
