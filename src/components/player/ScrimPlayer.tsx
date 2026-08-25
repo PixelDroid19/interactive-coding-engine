@@ -464,6 +464,9 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
   // Student edits code
   const handleCodeChange = (newContent: string, changes: { from: number; to: number; text: string }[]) => {
+    // A result only describes the exact workspace that was evaluated. As soon as
+    // the learner edits again, require a fresh check instead of showing stale green tests.
+    setValidationResult(null);
     const wasForked = isForkedRef.current;
     if (!wasForked) {
       engineRef.current?.pause();
@@ -1034,6 +1037,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
                 playerState.isForked
                   ? (file) => {
                       forkLearnerBranch(currentTimeMs);
+                      setValidationResult(null);
                       setWorkspace((prev) => ({
                         ...prev,
                         files: { ...prev.files, [file.path]: file },
@@ -1045,6 +1049,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
               }
               onFileDelete={(path) => {
                 forkLearnerBranch(currentTimeMs);
+                setValidationResult(null);
                 setWorkspace((prev) => {
                   const copy = { ...prev.files };
                   delete copy[path];

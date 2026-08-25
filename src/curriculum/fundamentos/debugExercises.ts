@@ -379,6 +379,7 @@ console.log(ultimo(numeros));
 `,
     [
       fn('pri', 'El primero es la posición 0', 'primero', [[4, 8, 15]], 4, 'lista[1] es el segundo.'),
+      fn('pri-otro', 'El primer valor cambia con otra lista', 'primero', [['sol', 'luna']], 'sol', 'La función debe leer la posición cero de la lista recibida.'),
       fn('ult', 'El último está en length - 1', 'ultimo', [[4, 8, 15]], 15, 'lista[lista.length] se sale: no hay nada ahí.'),
       fn('un-solo', 'Con un solo elemento, primero y último coinciden', 'ultimo', [[9]], 9, 'length es 1, el único índice válido es 0.'),
     ],

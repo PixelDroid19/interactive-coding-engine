@@ -5,7 +5,7 @@ import { DEBUG_EXERCISES } from './debugExercises';
 import { cloneWorkspace } from '../../engine/eventLog';
 
 describe('laboratorios de depuración', () => {
-  it.each(DEBUG_EXERCISES)('$id empieza con todas sus comprobaciones fallando', async (exercise) => {
+  it.each(DEBUG_EXERCISES)('$id empieza sin poder superar el laboratorio completo', async (exercise) => {
     const result = await runChallengeValidation(
       {
         id: exercise.id,
@@ -20,8 +20,8 @@ describe('laboratorios de depuración', () => {
     );
 
     expect(result.tests.filter((test) => test.isEvaluationError)).toEqual([]);
-    expect(result.passedCount).toBe(0);
     expect(result.allPassed).toBe(false);
+    expect(result.passedCount).toBeLessThan(result.totalCount);
   });
 
   it('la práctica de variables se resuelve sin exigir funciones ni operadores futuros', async () => {

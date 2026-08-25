@@ -1,0 +1,128 @@
+import { describe, expect, it } from 'vitest';
+import { Course, DebuggingExerciseItem } from '../types/curriculum';
+import { ChallengeTest, ScrimChallenge, ScrimLessonData } from '../types/scrim';
+import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './fundamentos/course';
+import { JAVASCRIPT_COURSE, JAVASCRIPT_SCRIMS } from './javascript/course';
+import { COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS } from './web-components-lit/course';
+
+interface AuditedExercise {
+  id: string;
+  courseId: string;
+  copy: string;
+  hints: string[];
+  tests: ChallengeTest[];
+  solutionFiles?: Record<string, string>;
+}
+
+type ScrimCatalog = Record<string, ScrimLessonData>;
+
+const catalogs: Array<[Course, ScrimCatalog]> = [
+  [FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS],
+  [JAVASCRIPT_COURSE, JAVASCRIPT_SCRIMS],
+  [COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS],
+];
+
+function fromChallenge(courseId: string, challenge: ScrimChallenge): AuditedExercise {
+  return {
+    id: challenge.id,
+    courseId,
+    copy: `${challenge.title}\n${challenge.instructions}`,
+    hints: challenge.hints.map((hint) => `${hint.title} ${hint.text}`),
+    tests: challenge.tests,
+    solutionFiles: challenge.solutionFiles,
+  };
+}
+
+function fromDebug(courseId: string, exercise: DebuggingExerciseItem): AuditedExercise {
+  return {
+    id: exercise.id,
+    courseId,
+    copy: [exercise.title, exercise.description, exercise.expectedBehavior, exercise.observedBehavior].join('\n'),
+    hints: exercise.hints.map((hint) => hint.text),
+    tests: exercise.tests,
+  };
+}
+
+function collectExercises(): AuditedExercise[] {
+  return catalogs.flatMap(([course, scrims]) => course.modules.flatMap((module) =>
+    module.items.flatMap((item) => {
+      if (item.type === 'scrim') {
+        return scrims[item.scrimDataId].challenges.map((challenge) => fromChallenge(course.id, challenge));
+      }
+      if (item.type === 'challenge') return [fromChallenge(course.id, item.challenge)];
+      if (item.type === 'debugging') return [fromDebug(course.id, item)];
+      return [];
+    }),
+  ));
+}
+
+function invocationCases(test: ChallengeTest): Array<{ expected: unknown }> {
+  if (test.callSequence) {
+    return test.callSequence.map((step) => ({ expected: step.expectedReturn }));
+  }
+  return [{ expected: test.expectedErrorContains ?? test.expectedReturn }];
+}
+
+describe('auditoría integrada de todos los ejercicios', () => {
+  const exercises = collectExercises();
+
+  it('recorre los 186 retos y laboratorios de los tres cursos', () => {
+    expect(exercises).toHaveLength(186);
+    expect(exercises.filter((exercise) => exercise.courseId === FUNDAMENTOS_COURSE.id)).toHaveLength(48);
+    expect(exercises.filter((exercise) => exercise.courseId === JAVASCRIPT_COURSE.id)).toHaveLength(48);
+    expect(exercises.filter((exercise) => exercise.courseId === COMPONENT_COURSE.id)).toHaveLength(90);
+  });
+
+  it('mantiene contratos identificables, explicados y sin soluciones adjuntas', () => {
+    expect(new Set(exercises.map((exercise) => exercise.id)).size).toBe(exercises.length);
+
+    for (const exercise of exercises) {
+      expect(exercise.copy.trim().length, `${exercise.id} no explica el trabajo`).toBeGreaterThan(30);
+      expect(exercise.tests.length, `${exercise.id} no tiene comprobaciones`).toBeGreaterThan(0);
+      expect(exercise.hints.length, `${exercise.id} no ofrece ayuda progresiva`).toBeGreaterThanOrEqual(3);
+      expect(exercise.solutionFiles, `${exercise.id} expone la solución`).toBeUndefined();
+
+      const testIds = exercise.tests.map((test) => test.id);
+      expect(new Set(testIds).size, `${exercise.id} repite identificadores de prueba`).toBe(testIds.length);
+      for (const test of exercise.tests) {
+        expect(test.description.trim().length, `${exercise.id}/${test.id} no explica qué comprueba`).toBeGreaterThan(5);
+        if (test.validatorType === 'source-regex') {
+          expect(() => new RegExp(test.regexPattern || '', 'i'), `${exercise.id}/${test.id} tiene un patrón inválido`).not.toThrow();
+        }
+        if (test.validatorType === 'function-call') {
+          expect(test.targetFunction, `${exercise.id}/${test.id} no indica qué función invoca`).toBeTruthy();
+        }
+        if (test.validatorType === 'browser-script') {
+          expect(test.customValidatorScript?.trim().length, `${exercise.id}/${test.id} no ejecuta una comprobación real`).toBeGreaterThan(20);
+        }
+      }
+    }
+  });
+
+  it('prueba cada contrato de función con entradas y resultados diferentes', () => {
+    for (const exercise of exercises) {
+      const testsByFunction = new Map<string, ChallengeTest[]>();
+      for (const test of exercise.tests.filter((candidate) => candidate.validatorType === 'function-call')) {
+        const functionName = test.targetFunction || '';
+        testsByFunction.set(functionName, [...(testsByFunction.get(functionName) || []), test]);
+      }
+
+      for (const [functionName, functionTests] of testsByFunction) {
+        const cases = functionTests.flatMap(invocationCases);
+        expect(cases.length, `${exercise.id}/${functionName} solo prueba una entrada`).toBeGreaterThanOrEqual(2);
+        expect(
+          new Set(cases.map((currentCase) => JSON.stringify(currentCase.expected))).size,
+          `${exercise.id}/${functionName} permite devolver siempre el mismo resultado`,
+        ).toBeGreaterThanOrEqual(2);
+      }
+    }
+  });
+
+  it('no convierte console.log en requisito oculto de una función', () => {
+    for (const exercise of exercises) {
+      const callsFunctions = exercise.tests.some((test) => test.validatorType === 'function-call');
+      if (!callsFunctions || !/console\.log/i.test(exercise.copy)) continue;
+      expect(exercise.copy, `${exercise.id} exige console.log aunque las pruebas llaman la función`).toMatch(/opcional|no es obligatorio/i);
+    }
+  });
+});

@@ -364,6 +364,8 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                   lessonId={exercise.relatedLessonId}
                   onCodeChange={(content) => {
                     generationRef.current++;
+                    // The previous result belongs to the previous source revision.
+                    setValidationResult(null);
                     setWorkspace((prev) => ({
                       ...prev,
                       files: {
