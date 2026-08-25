@@ -60,6 +60,22 @@ describe('TypeScriptWorkerClient', () => {
     expect(completions).toEqual([expect.objectContaining({ label: 'doble', insertText: 'doble' })]);
   });
 
+  it('traduce los ids del HTML a tipos DOM sin enviar HTML como JavaScript', () => {
+    const worker = new FakeWorker();
+    const client = new TypeScriptWorkerClient(() => worker);
+
+    client.replaceWorkspace([
+      { path: 'app.js', content: 'document.getElementById("nombre").value;', language: 'javascript' },
+      { path: 'index.html', content: '<label for="nombre">Nombre</label><input id="nombre">', language: 'html' },
+    ]);
+
+    const message = worker.messages[0] as { files: Array<{ path: string; content: string }> };
+    expect(message.files.map((file) => file.path)).toEqual(['app.js', '/__aula_dom__.d.ts']);
+    expect(message.files[1]?.content).toContain('elementId: "nombre"');
+    expect(message.files[1]?.content).toContain('HTMLInputElement');
+    expect(message.files.some((file) => file.path.endsWith('.html'))).toBe(false);
+  });
+
   it('termina el worker y rechaza respuestas pendientes al desmontar el editor', async () => {
     const worker = new FakeWorker();
     const client = new TypeScriptWorkerClient(() => worker);

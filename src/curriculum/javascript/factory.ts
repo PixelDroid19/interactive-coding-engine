@@ -3,6 +3,7 @@ import { DebuggingExerciseItem, ReadingItem, ScrimCurriculumItem } from '../../t
 import { ScrimLessonData, WorkspaceSnapshot } from '../../types/scrim';
 import { JavaScriptLessonSpec } from './types';
 import { JAVASCRIPT_AUDIO_BY_LESSON } from './audioManifest';
+import { withGuidedChallenges } from '../challengeGuidance';
 
 const BASE_HTML = (title: string, moduleScript = false) => `<!doctype html>
 <html lang="es">
@@ -82,7 +83,7 @@ export function buildLesson(spec: JavaScriptLessonSpec): ScrimLessonData {
   const audio = JAVASCRIPT_AUDIO_BY_LESSON[id];
   const cues = audio?.cues;
   const cueEnds = audio?.ends;
-  return compileLesson({
+  return withGuidedChallenges(compileLesson({
     id,
     title: `${spec.number}. ${spec.title}`,
     description: spec.summary,
@@ -131,7 +132,7 @@ export function buildLesson(spec: JavaScriptLessonSpec): ScrimLessonData {
         },
       },
     ],
-  });
+  }));
 }
 
 export function lessonItem(lesson: ScrimLessonData): ScrimCurriculumItem {

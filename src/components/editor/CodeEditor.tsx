@@ -313,8 +313,10 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             update.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
               changes.push({ from: fromA, to: toA, text: inserted.toString() });
             });
-            const activePath = fileRef.current?.path;
-            if (activePath) getClient().updateFile(activePath, newDoc);
+            const activeFile = fileRef.current;
+            if (activeFile && isJavaScriptLike(activeFile)) {
+              getClient().updateFile(activeFile.path, newDoc);
+            }
             callbacksRef.current.onCodeChange?.(newDoc, changes);
           }
           if (update.selectionSet) {

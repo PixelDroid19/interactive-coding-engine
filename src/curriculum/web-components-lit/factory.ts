@@ -4,6 +4,7 @@ import { ScrimLessonData, WorkspaceSnapshot } from '../../types/scrim';
 import { appHtml, BASE_CSS } from './helpers';
 import { ComponentCourseLessonSpec } from './types';
 import { COMPONENT_AUDIO_BY_LESSON } from './audioManifest';
+import { withGuidedChallenges } from '../challengeGuidance';
 
 function workspace(spec: ComponentCourseLessonSpec, content: string, html = spec.html): WorkspaceSnapshot {
   return workspaceOf('app.js', {
@@ -48,7 +49,7 @@ export function buildLesson(spec: ComponentCourseLessonSpec): ScrimLessonData {
   const cues = audio?.cues;
   const ends = audio?.ends;
   const demoPage = examplePage(spec);
-  return compileLesson({
+  return withGuidedChallenges(compileLesson({
     id,
     title: `${spec.number}. ${spec.title}`,
     description: spec.summary,
@@ -103,7 +104,7 @@ export function buildLesson(spec: ComponentCourseLessonSpec): ScrimLessonData {
         },
       },
     ],
-  });
+  }));
 }
 
 export function lessonItem(lessonData: ScrimLessonData): ScrimCurriculumItem {

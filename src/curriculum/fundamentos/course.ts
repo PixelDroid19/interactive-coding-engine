@@ -29,11 +29,12 @@ import { conceptLabels } from './roadmap';
 import { DEBUG_BY_LESSON } from './debugExercises';
 import { REASONING_BY_LESSON } from './reasoningExercises';
 import { PEDAGOGICAL_PROFILE_BY_LESSON } from './pedagogicalProfiles';
+import { withGuidedChallenges } from '../challengeGuidance';
 
 function withLessonTerms(lesson: ScrimLessonData): ScrimLessonData {
   const labels = conceptLabels(lesson.id);
   const profile = PEDAGOGICAL_PROFILE_BY_LESSON[lesson.id];
-  return { ...lesson, ...(labels.length ? { concepts: labels } : {}), ...profile };
+  return withGuidedChallenges({ ...lesson, ...(labels.length ? { concepts: labels } : {}), ...profile });
 }
 
 export const FUNDAMENTOS_SCRIMS: Record<string, ScrimLessonData> = {

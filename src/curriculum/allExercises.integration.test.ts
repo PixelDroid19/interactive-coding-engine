@@ -8,6 +8,7 @@ import { COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS } from './web-components-lit/
 interface AuditedExercise {
   id: string;
   courseId: string;
+  kind: 'challenge' | 'debug';
   copy: string;
   hints: string[];
   tests: ChallengeTest[];
@@ -26,6 +27,7 @@ function fromChallenge(courseId: string, challenge: ScrimChallenge): AuditedExer
   return {
     id: challenge.id,
     courseId,
+    kind: 'challenge',
     copy: `${challenge.title}\n${challenge.instructions}`,
     hints: challenge.hints.map((hint) => `${hint.title} ${hint.text}`),
     tests: challenge.tests,
@@ -37,6 +39,7 @@ function fromDebug(courseId: string, exercise: DebuggingExerciseItem): AuditedEx
   return {
     id: exercise.id,
     courseId,
+    kind: 'debug',
     copy: [exercise.title, exercise.description, exercise.expectedBehavior, exercise.observedBehavior].join('\n'),
     hints: exercise.hints.map((hint) => hint.text),
     tests: exercise.tests,
@@ -96,6 +99,15 @@ describe('auditoría integrada de todos los ejercicios', () => {
           expect(test.customValidatorScript?.trim().length, `${exercise.id}/${test.id} no ejecuta una comprobación real`).toBeGreaterThan(20);
         }
       }
+    }
+  });
+
+  it('cada reto reúne el modelo previo, el punto de partida y los criterios de éxito', () => {
+    for (const exercise of exercises.filter((candidate) => candidate.kind === 'challenge')) {
+      expect(exercise.copy, `${exercise.id} no recuerda el modelo ya enseñado`).toMatch(/Antes de empezar/i);
+      expect(exercise.copy, `${exercise.id} no explica qué archivo o starter modificar`).toMatch(/Punto de partida/i);
+      expect(exercise.copy, `${exercise.id} no dice cómo verificar el resultado`).toMatch(/Cómo comprobarlo/i);
+      expect(exercise.copy, `${exercise.id} no explica cómo pedir ayuda sin revelar la respuesta`).toMatch(/pistas.*una.*vez/i);
     }
   });
 
