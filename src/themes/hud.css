@@ -1,21 +1,22 @@
 /* Cyberpunk theme inspired by the supplied player reference.
    It is opt-in through <html class="hud"> and never changes the default theme. */
 
-.hud {
-  --hud-bg: #030305;
-  --hud-panel: #07070b;
-  --hud-panel-raised: #0d0d12;
-  --hud-panel-soft: #12121a;
-  --hud-yellow: #efff00;
-  --hud-yellow-soft: rgb(239 255 0 / 42%);
-  --hud-magenta: #ff2aa1;
-  --hud-purple: #a73cff;
-  --hud-cyan: #00e5ff;
-  --hud-green: #16f38b;
-  --hud-danger: #ff315e;
-  --hud-text: #f7f7f4;
-  --hud-muted: #9a9aa8;
-  --hud-line: #272731;
+:root, .hud {
+  --hud-bg: #040406;
+  --hud-panel: #0a0a0f;
+  --hud-panel-raised: #0b0b10;
+  --hud-panel-soft: #111118;
+  --hud-yellow: #ffe600;
+  --hud-yellow-glow: rgba(255, 230, 0, 0.4);
+  --hud-magenta: #ff007f;
+  --hud-magenta-glow: rgba(255, 0, 127, 0.8);
+  --hud-purple: #b026ff;
+  --hud-cyan: #00f0ff;
+  --hud-green: #00ff66;
+  --hud-danger: #ff0055;
+  --hud-text: #e2e8f0;
+  --hud-muted: #94a3b8;
+  --hud-line: #232334;
   color-scheme: dark;
 }
 
@@ -53,7 +54,7 @@
 }
 
 .hud ::selection {
-  background: rgb(167 60 255 / 42%);
+  background: rgb(176 38 255 / 42%);
   color: #fff;
 }
 
@@ -63,13 +64,13 @@
 }
 
 .hud ::-webkit-scrollbar-track {
-  background: #060609;
+  background: #07070b;
 }
 
 .hud ::-webkit-scrollbar-thumb {
   border: 0 !important;
-  border-radius: 0 !important;
-  background: #30303a !important;
+  border-radius: 2px !important;
+  background: #232334 !important;
 }
 
 .hud ::-webkit-scrollbar-thumb:hover {
@@ -79,19 +80,18 @@
 /* Shared cyber surfaces */
 .hud .workspace-container,
 .hud .studio-center-area {
-  gap: 8px !important;
-  padding: 7px 8px 8px !important;
+  gap: 10px !important;
+  padding: 6px 8px 8px !important;
   background:
-    linear-gradient(90deg, rgb(167 60 255 / 4%) 1px, transparent 1px),
-    linear-gradient(rgb(167 60 255 / 3%) 1px, transparent 1px),
+    radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0),
     var(--hud-bg) !important;
-  background-size: 28px 28px !important;
+  background-size: 20px 20px !important;
 }
 
 .hud .window-topbar {
-  min-height: 44px !important;
-  height: 44px !important;
-  padding: 4px 7px !important;
+  min-height: 42px !important;
+  height: 42px !important;
+  padding: 4px 10px !important;
   gap: 8px !important;
   border: 0 !important;
   background: #050507 !important;
@@ -100,11 +100,12 @@
 
 .hud .window-titlebar-left {
   min-width: 0;
-  gap: 5px !important;
+  gap: 6px !important;
+  align-items: center;
 }
 
 .hud .topbar-divider {
-  width: 18px !important;
+  width: 14px !important;
   height: 1px !important;
   background: var(--hud-magenta) !important;
   opacity: .75 !important;
@@ -113,59 +114,63 @@
 
 .hud .topbar-lesson-title {
   position: relative;
-  max-width: min(42vw, 580px);
-  color: var(--hud-text) !important;
-  font-size: clamp(12px, 1.35vw, 17px) !important;
+  max-width: min(45vw, 620px);
+  color: #f1f5f9 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: clamp(12px, 1.25vw, 16px) !important;
   font-style: normal;
   font-weight: 800 !important;
-  letter-spacing: .055em !important;
-  line-height: 1;
+  letter-spacing: .06em !important;
+  line-height: 1.2;
   text-transform: uppercase;
 }
 
 .hud .topbar-lesson-title::first-letter {
   color: var(--hud-magenta);
+  font-style: italic;
+  text-shadow: 0 0 10px var(--hud-magenta-glow);
 }
 
 .hud .window-topbar .neu-pill-btn,
 .hud .window-topbar button {
-  min-height: 30px;
+  min-height: 32px;
+  height: 32px;
   border: 0 !important;
   border-radius: 0 !important;
-  background: #0b0b10 !important;
   box-shadow: none !important;
-  color: #d9d9df !important;
+  color: #cbd5e1 !important;
+  font-family: "Chakra Petch", sans-serif !important;
   font-size: 11px !important;
-  font-weight: 800 !important;
-  letter-spacing: .055em !important;
+  font-weight: 700 !important;
+  letter-spacing: .06em !important;
   text-transform: uppercase;
   transform: none !important;
+  padding: 0 12px !important;
 }
 
 .hud .window-topbar .window-titlebar-left > button:first-child {
-  padding-inline: 14px !important;
-  background: var(--hud-yellow) !important;
-  color: #050505 !important;
+  color: #000 !important;
+  font-weight: 900 !important;
+  letter-spacing: .08em !important;
 }
 
 .hud .window-topbar .window-titlebar-left > button:first-child svg {
-  color: #050505 !important;
+  color: #000 !important;
 }
 
 .hud .window-topbar .btn-explain {
-  background: var(--hud-yellow) !important;
-  color: #050505 !important;
-  box-shadow: 0 0 12px rgb(239 255 0 / 18%) !important;
+  color: #000 !important;
+  font-weight: 900 !important;
+  box-shadow: 0 0 12px var(--hud-yellow-glow) !important;
 }
 
 .hud .window-topbar button[aria-label*="flotante" i],
 .hud .window-topbar button[aria-label*="lado" i] {
-  border-color: rgb(255 42 161 / 70%) !important;
   color: #ff76c2 !important;
 }
 
+.hud .window-topbar .btn-next-lesson,
 .hud .window-topbar button[aria-label="Siguiente"] {
-  border-color: rgb(0 229 255 / 54%) !important;
   color: var(--hud-cyan) !important;
 }
 
@@ -180,10 +185,12 @@
 
 /* File explorer */
 .hud .files-sidebar {
-  width: 178px !important;
-  flex: 0 0 178px !important;
+  width: 185px !important;
+  flex: 0 0 185px !important;
   border: 0 !important;
-  background: var(--hud-panel) !important;
+  background: #0a0a0f !important;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 0) !important;
+  background-size: 14px 14px !important;
   box-shadow: none !important;
   box-sizing: border-box !important;
   overflow: hidden !important;
@@ -199,18 +206,16 @@
   height: 100% !important;
   min-height: 0 !important;
   padding: 0 !important;
-  background:
-    repeating-linear-gradient(135deg, transparent 0 8px, rgb(255 255 255 / 2%) 8px 10px),
-    var(--hud-panel) !important;
+  background: transparent !important;
   overflow: hidden !important;
 }
 
 .hud .tree-header {
-  min-height: 42px;
+  min-height: 38px;
   margin: 0 !important;
-  padding: 10px 11px !important;
-  border-bottom: 1px solid rgb(239 255 0 / 42%) !important;
-  background: #07070a !important;
+  padding: 8px 12px !important;
+  border-bottom: 1px solid rgba(255, 230, 0, 0.25) !important;
+  background: transparent !important;
   position: relative;
   z-index: 2;
   overflow: visible !important;
@@ -227,10 +232,10 @@
   margin-left: auto !important;
   position: relative;
   z-index: 3;
-  min-width: 28px !important;
-  min-height: 28px !important;
-  width: 28px !important;
-  height: 28px !important;
+  min-width: 26px !important;
+  min-height: 26px !important;
+  width: 26px !important;
+  height: 26px !important;
   box-sizing: border-box !important;
   max-width: 100% !important;
   display: grid !important;
@@ -246,8 +251,11 @@
   box-sizing: border-box !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 10px 8px 10px !important;
+  padding: 8px 6px !important;
   align-self: stretch !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
 }
 
 .hud .files-list > div {
@@ -256,13 +264,17 @@
   box-sizing: border-box !important;
   min-width: 0 !important;
   align-self: stretch !important;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .hud .tree-title {
   color: var(--hud-yellow) !important;
+  font-family: "Chakra Petch", sans-serif !important;
   font-size: 12px !important;
   font-weight: 700 !important;
-  letter-spacing: .09em !important;
+  letter-spacing: .12em !important;
   text-transform: uppercase;
 }
 
@@ -271,41 +283,42 @@
 }
 
 .hud .file-item-btn {
-  min-height: 42px;
-  margin: 0 2px 7px 2px !important;
-  padding: 7px 10px !important;
+  min-height: 38px;
+  margin: 0 !important;
+  padding: 6px 8px !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: #09090d !important;
+  background: #111118 !important;
   box-shadow: none !important;
-  color: #c4c4cc !important;
+  color: #cbd5e1 !important;
   font-family: "Fira Code", monospace !important;
   font-size: 12px !important;
   box-sizing: border-box !important;
-  max-width: calc(100% - 4px) !important;
+  max-width: 100% !important;
   min-width: 0 !important;
-  width: auto !important;
+  width: 100% !important;
   align-self: stretch !important;
   overflow: hidden !important;
 }
 
 .hud .file-item-btn:hover {
-  background: #0f0f12 !important;
+  background: #181822 !important;
   color: #fff !important;
   transform: none !important;
 }
 
 .hud .file-item-btn-active {
-  background: #111109 !important;
-  color: #fff !important;
-  box-shadow: inset 0 0 0 1px rgb(239 255 0 / 10%) !important;
+  background: #171705 !important;
+  color: var(--hud-yellow) !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
 }
 
-.hud .file-item-btn-active::after {
+.hud .file-item-btn-active > button::after {
   content: "▶";
   margin-left: auto;
   color: var(--hud-yellow);
-  font-size: 8px;
+  font-size: 9px;
 }
 
 .hud .badge-html,
@@ -313,33 +326,50 @@
 .hud .badge-js {
   width: 20px !important;
   height: 20px !important;
-  border: 1px solid currentColor !important;
   border-radius: 2px !important;
   transform: none !important;
-  font-size: 9px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
 }
 
-.hud .badge-html { background: #ff4f1f !important; color: #fff !important; }
-.hud .badge-css { background: #08bddd !important; color: #041116 !important; }
-.hud .badge-js { background: var(--hud-yellow) !important; color: #070707 !important; }
+.hud .badge-html {
+  background: rgba(234, 88, 12, 0.35) !important;
+  color: #fb923c !important;
+  border: 1px solid rgba(251, 146, 60, 0.4) !important;
+}
+
+.hud .badge-css {
+  background: rgba(8, 189, 221, 0.35) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+}
+
+.hud .badge-js {
+  background: var(--hud-yellow) !important;
+  color: #000 !important;
+  border: 0 !important;
+  font-weight: 900 !important;
+}
 
 .hud button[aria-label="Abrir conceptos"] {
-  bottom: 12px !important;
-  left: 12px !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: #0e0715 !important;
-  color: #c57aff !important;
-  box-shadow: 0 0 10px rgb(167 60 255 / 12%) !important;
-  font-family: "Fira Code", monospace !important;
+  background: #120817 !important;
+  color: var(--hud-magenta) !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
   font-size: 11px !important;
-  letter-spacing: .05em;
+  letter-spacing: .1em;
   text-transform: uppercase;
 }
 
-/* Editor */
+/* Editor & Preview */
 .hud .lesson-stage {
-  gap: 8px !important;
+  gap: 10px !important;
 }
 
 .hud .editor-window-wrapper,
@@ -347,7 +377,7 @@
   overflow: hidden !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: #050507 !important;
+  background: #07070b !important;
   box-shadow: none !important;
 }
 
@@ -356,15 +386,16 @@
 }
 
 .hud .editor-tabs-bar {
-  min-height: 36px !important;
-  height: 36px !important;
-  padding: 0 7px !important;
-  border-bottom: 1px solid rgb(239 255 0 / 50%) !important;
-  background: #060609 !important;
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 0 6px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: #050508 !important;
+  gap: 4px !important;
 }
 
 .hud .editor-tabs-group {
-  gap: 2px !important;
+  gap: 4px !important;
 }
 
 .hud .editor-action-btn,
@@ -376,15 +407,16 @@
 }
 
 .hud .tab-btn {
-  min-height: 28px;
+  min-height: 26px;
   margin: 0 !important;
-  padding: 5px 12px !important;
+  padding: 4px 10px !important;
   border: 0 !important;
   border-radius: 0 !important;
   background: #0b0b10 !important;
   box-shadow: none !important;
-  color: #d1d5db !important;
-  font-size: 12px !important;
+  color: #94a3b8 !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 11px !important;
 }
 
 .hud .tab-btn:hover {
@@ -393,27 +425,27 @@
 
 .hud .tab-btn-active {
   background: var(--hud-yellow) !important;
-  color: #050505 !important;
-  box-shadow: 0 0 10px rgb(239 255 0 / 15%) !important;
-  font-weight: 700 !important;
+  color: #000 !important;
+  box-shadow: 0 0 10px var(--hud-yellow-glow) !important;
+  font-weight: 800 !important;
 }
 
 .hud .editor-body,
 .hud .cm-editor,
 .hud .cm-scroller,
 .hud .cm-gutters {
-  background: #050507 !important;
+  background: #07070b !important;
 }
 
 .hud .cm-gutters {
-  border-right: 1px solid #2a2a33 !important;
-  color: #9ca3af !important;
+  border-right: 1px solid #1a1a24 !important;
+  color: #64748b !important;
 }
 
 .hud .cm-content,
 .hud .cm-line {
   font-family: "Fira Code", monospace !important;
-  font-size: 14px !important;
+  font-size: 13px !important;
   line-height: 1.65 !important;
   color: #e2e8f0 !important;
 }
@@ -433,7 +465,7 @@
 
 .hud .cm-activeLine,
 .hud .cm-activeLineGutter {
-  background: rgb(167 60 255 / 6%) !important;
+  background: rgb(176 38 255 / 8%) !important;
 }
 
 .hud .cm-cursor {
@@ -442,19 +474,19 @@
 
 .hud .caption-chip {
   position: relative;
-  width: min(650px, 64vw) !important;
+  width: min(650px, 92%) !important;
   max-width: 100% !important;
-  min-height: 72px;
-  padding: 13px 18px 13px 44px !important;
+  min-height: 68px;
+  padding: 12px 24px 12px 42px !important;
   gap: 10px !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: #0c0711 !important;
-  box-shadow: 0 0 16px rgb(167 60 255 / 13%) !important;
-  color: #ececf0 !important;
+  background: #0f0718 !important;
+  box-shadow: 0 0 20px rgba(176, 38, 255, 0.25) !important;
+  color: #f1f5f9 !important;
   font-family: "Chakra Petch", sans-serif !important;
   font-size: 12px !important;
-  line-height: 1.48 !important;
+  line-height: 1.55 !important;
 }
 
 .hud .editor-window-wrapper.has-floating-preview .caption-overlay {
@@ -464,25 +496,37 @@
 
 .hud .caption-chip > svg {
   position: absolute;
-  left: 16px;
-  color: #d19aff;
+  left: 14px;
+  top: 14px;
+  color: #d8b4fe;
 }
 
-.hud .caption-chip::after {
+.hud .caption-chip > p::before {
+  content: "✚";
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  color: var(--hud-purple);
+  font-family: monospace;
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.hud .caption-chip > p::after {
   content: "";
   position: absolute;
   right: 10px;
-  bottom: 7px;
-  width: 58px;
-  height: 5px;
-  background: repeating-linear-gradient(135deg, var(--hud-purple) 0 3px, transparent 3px 6px);
+  bottom: 5px;
+  width: 44px;
+  height: 4px;
+  background: repeating-linear-gradient(-45deg, rgba(176, 38, 255, 0.4) 0 4px, transparent 4px 8px);
 }
 
 .hud .instructor-pointer-tag {
   border: 1px solid var(--hud-purple) !important;
   border-radius: 0 !important;
   background: #100817 !important;
-  box-shadow: 0 0 8px rgb(167 60 255 / 18%) !important;
+  box-shadow: 0 0 8px rgb(176 38 255 / 25%) !important;
   color: #e1b9ff !important;
   font-family: "Fira Code", monospace !important;
   font-size: 10px !important;
@@ -493,7 +537,7 @@
   overflow: hidden !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: #050507 !important;
+  background: #07070b !important;
   box-shadow: 0 0 24px rgb(0 0 0 / 75%) !important;
 }
 
@@ -504,27 +548,31 @@
 }
 
 .hud .browser-header-clean {
-  min-height: 38px !important;
-  padding: 7px 9px !important;
-  border-bottom: 1px solid #202028 !important;
-  background: #07070a !important;
+  min-height: 36px !important;
+  padding: 6px 10px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: #060609 !important;
 }
 
 .hud .browser-header-title {
-  color: #fff !important;
+  color: #f8fafc !important;
+  font-family: "Chakra Petch", sans-serif !important;
   font-size: 11px !important;
   font-weight: 800 !important;
-  letter-spacing: .05em;
+  letter-spacing: .08em;
   text-transform: uppercase;
 }
 
 .hud .browser-preview-badge {
-  border: 1px solid rgb(22 243 139 / 60%) !important;
-  border-radius: 0 !important;
-  background: rgb(22 243 139 / 10%) !important;
+  border: 1px solid rgba(0, 255, 102, 0.5) !important;
+  border-radius: 2px !important;
+  background: rgba(0, 255, 102, 0.1) !important;
   color: var(--hud-green) !important;
-  font-size: 10px !important;
-  letter-spacing: .05em;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: .08em;
+  padding: 1px 4px !important;
 }
 
 .hud .browser-window-actions {
@@ -532,53 +580,82 @@
 }
 
 .hud .browser-btn {
-  width: 25px !important;
-  height: 25px !important;
+  width: 24px !important;
+  height: 24px !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: #09090d !important;
-  color: var(--hud-yellow) !important;
+  background: transparent !important;
+  color: #94a3b8 !important;
 }
 
 .hud .browser-btn:hover {
-  background: #15150f !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--hud-yellow) !important;
 }
 
 .hud .browser-navbar {
-  min-height: 30px !important;
-  padding: 3px 6px !important;
-  border-bottom: 1px solid rgb(167 60 255 / 40%) !important;
-  background: #050507 !important;
+  min-height: 28px !important;
+  padding: 2px 8px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: #040407 !important;
 }
 
 .hud .browser-url-box {
-  min-height: 24px;
+  min-height: 20px;
   border: 0 !important;
   border-radius: 0 !important;
-  background: #07040b !important;
-  color: #c58cff !important;
+  background: transparent !important;
+  color: #94a3b8 !important;
 }
 
 .hud .browser-url-text {
+  font-family: "Fira Code", monospace !important;
   font-size: 11px !important;
+  color: #64748b !important;
 }
 
 .hud .browser-viewport {
   background:
-    radial-gradient(rgb(167 60 255 / 14%) 1px, transparent 1px),
-    #020203 !important;
-  background-size: 18px 18px !important;
+    radial-gradient(rgba(176, 38, 255, 0.08) 1px, transparent 0),
+    #040407 !important;
+  background-size: 14px 14px !important;
+  position: relative;
+}
+
+.hud .browser-viewport::before {
+  content: "+";
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  color: rgba(176, 38, 255, 0.35);
+  font-family: monospace;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.hud .browser-viewport::after {
+  content: "+";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  color: rgba(176, 38, 255, 0.35);
+  font-family: monospace;
+  font-size: 12px;
+  pointer-events: none;
+  z-index: 10;
 }
 
 .hud .console-trigger-btn {
-  min-height: 34px !important;
-  border-top: 1px solid #282832 !important;
+  min-height: 32px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: 0 !important;
   background: #060609 !important;
   color: var(--hud-yellow) !important;
   font-family: "Fira Code", monospace !important;
-  font-size: 10px !important;
-  letter-spacing: .05em;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  letter-spacing: .06em;
   text-transform: uppercase;
 }
 
@@ -588,13 +665,13 @@
   min-width: 290px !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: #050507 !important;
+  background: #07070b !important;
   box-shadow: none !important;
 }
 
 .hud .logic-runner-header {
-  min-height: 48px !important;
-  border-bottom: 1px solid #25252d !important;
+  min-height: 44px !important;
+  border-bottom: 1px solid #1e1e28 !important;
   background: #08080c !important;
 }
 
@@ -608,68 +685,105 @@
 
 /* Timeline */
 .hud .player-bar {
-  min-height: 54px !important;
-  height: 54px !important;
-  max-height: 54px !important;
-  padding: 0 9px !important;
-  gap: 9px !important;
+  min-height: 50px !important;
+  height: 50px !important;
+  max-height: 50px !important;
+  padding: 0 12px !important;
+  gap: 10px !important;
   border: 0 !important;
-  background: #050507 !important;
+  background: #06060a !important;
   background-image: none !important;
   box-shadow: none !important;
 }
 
 .hud .play-main-btn {
-  width: 38px !important;
-  height: 38px !important;
+  width: 34px !important;
+  height: 34px !important;
   border: 0 !important;
   border-radius: 0 !important;
   background: var(--hud-yellow) !important;
-  box-shadow: 0 0 10px rgb(239 255 0 / 18%) !important;
-  color: #050505 !important;
+  box-shadow: 0 0 12px var(--hud-yellow-glow) !important;
+  color: #000 !important;
 }
 
 .hud .timestamp-text {
-  color: #e4e4e8 !important;
-  font-size: 10px !important;
+  color: #e2e8f0 !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 11px !important;
+  letter-spacing: 0.05em !important;
 }
 
 .hud .category-tag {
-  border: 0 !important;
+  border: 1px solid rgba(255, 0, 127, 0.5) !important;
   border-radius: 0 !important;
-  background: repeating-linear-gradient(135deg, rgb(255 49 94 / 20%) 0 4px, transparent 4px 8px) !important;
+  background: repeating-linear-gradient(-45deg, rgba(255, 0, 80, 0.25), rgba(255, 0, 80, 0.25) 5px, transparent 5px, transparent 10px) !important;
   box-shadow: none !important;
-  color: #ff6685 !important;
-  font-family: "Fira Code", monospace !important;
-  font-size: 9px !important;
-  letter-spacing: .055em;
+  color: #ff007f !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 10px !important;
+  letter-spacing: .08em;
   text-transform: uppercase;
   transform: none !important;
 }
 
 .hud .player-center [role="slider"] > div:first-child {
-  background: #16161d !important;
+  background: #111118 !important;
+  border: 1px solid #232334 !important;
+  height: 6px !important;
+  border-radius: 9999px !important;
+  box-shadow: none !important;
+}
+
+.hud .player-center [role="slider"] > div:first-child > div:first-child {
+  background: var(--hud-cyan) !important;
+  box-shadow: 0 0 8px var(--hud-cyan) !important;
+  border-radius: 9999px !important;
+}
+
+.hud .player-center [role="slider"] > div:nth-child(2) {
+  width: 12px !important;
+  height: 12px !important;
+  background: var(--hud-cyan) !important;
+  border: 1px solid #fff !important;
+  box-shadow: 0 0 8px var(--hud-cyan) !important;
+  border-radius: 1px !important;
+}
+
+.hud .player-center [role="slider"] button.rotate-45 {
+  background: var(--hud-yellow) !important;
+  border: 1px solid #000 !important;
+  box-shadow: 0 0 6px var(--hud-yellow-glow) !important;
 }
 
 .hud .player-right {
-  color: #a8a8b2 !important;
+  color: #94a3b8 !important;
 }
 
 .hud .player-right button {
   border-radius: 0 !important;
-  color: #a8a8b2 !important;
+  color: #94a3b8 !important;
   font-family: "Fira Code", monospace !important;
-  font-size: 10px !important;
+  font-size: 11px !important;
+}
+
+.hud .player-right button:hover {
+  color: #fff !important;
 }
 
 .hud .player-right button[aria-label*="subtítulos"] {
-  border: 1px solid var(--hud-yellow) !important;
   background: var(--hud-yellow) !important;
-  color: #050505 !important;
+  color: #000 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 10px !important;
+  border: 0 !important;
+  border-radius: 2px !important;
 }
 
-.hud input[type="range"] {
+.hud .player-right input[type="range"] {
   accent-color: var(--hud-purple) !important;
+  background: #1e1e2d !important;
 }
 
 /* Challenge and explanation overlays */
@@ -692,14 +806,13 @@
 .hud .rm-enter-btn {
   border-radius: 0 !important;
   box-shadow: none !important;
-  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
 }
 
 /* Catalog */
 .hud .course-catalog__nav,
 .hud .rm-nav {
-  border-bottom: 1px solid rgb(239 255 0 / 42%) !important;
-  background: rgb(3 3 5 / 96%) !important;
+  border-bottom: 1px solid rgba(255, 230, 0, 0.4) !important;
+  background: rgba(4, 4, 6, 0.95) !important;
   box-shadow: none !important;
 }
 
@@ -746,16 +859,16 @@
   border: 0 !important;
   border-radius: 0 !important;
   background:
-    radial-gradient(rgb(167 60 255 / 8%) 1px, transparent 1px),
+    radial-gradient(rgba(176, 38, 255, 0.08) 1px, transparent 1px),
     #08080c !important;
   background-size: 16px 16px !important;
   box-shadow: none !important;
   color: #fff !important;
 }
 
-.hud .course-card--green { --aug-border-bg: rgb(22 243 139 / 72%) !important; }
-.hud .course-card--yellow { --aug-border-bg: rgb(239 255 0 / 76%) !important; }
-.hud .course-card--red { --aug-border-bg: rgb(255 49 94 / 76%) !important; }
+.hud .course-card--green { --aug-border-bg: rgba(0, 255, 102, 0.72) !important; }
+.hud .course-card--yellow { --aug-border-bg: rgba(255, 230, 0, 0.76) !important; }
+.hud .course-card--red { --aug-border-bg: rgba(255, 0, 85, 0.76) !important; }
 
 .hud .course-card__icon {
   border: 1px solid currentColor !important;
@@ -791,7 +904,7 @@
 
 .hud .course-card__progress > div span {
   background: var(--hud-cyan) !important;
-  box-shadow: 0 0 8px rgb(0 229 255 / 35%);
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
 }
 
 .hud .course-card > button {
@@ -799,14 +912,15 @@
   border-radius: 0 !important;
   background: var(--hud-yellow) !important;
   box-shadow: none !important;
-  color: #050505 !important;
+  color: #000 !important;
+  font-weight: 800 !important;
   text-transform: uppercase;
 }
 
 /* Roadmap */
 .hud .rm-main {
   background:
-    radial-gradient(rgb(167 60 255 / 9%) 1px, transparent 1px),
+    radial-gradient(rgba(176, 38, 255, 0.09) 1px, transparent 1px),
     var(--hud-bg) !important;
   background-size: 18px 18px !important;
 }
@@ -823,7 +937,7 @@
 
 .hud .rm-pill,
 .hud .rm-phase-badge {
-  border: 1px solid rgb(167 60 255 / 65%) !important;
+  border: 1px solid rgba(176, 38, 255, 0.65) !important;
   border-radius: 0 !important;
   background: #100817 !important;
   color: #d29cff !important;
@@ -858,7 +972,7 @@
 
 .hud .rm-node-cp.is-reading,
 .hud .rm-node-tag {
-  border-color: rgb(0 229 255 / 42%) !important;
+  border-color: rgba(0, 240, 255, 0.42) !important;
   background: #061014 !important;
   color: #9ceef7 !important;
 }
@@ -907,22 +1021,21 @@
   }
 
   .hud .files-sidebar {
-    width: 152px !important;
-    flex-basis: 152px !important;
+    width: 160px !important;
+    flex-basis: 160px !important;
   }
-
 }
 
 @media (max-width: 767px) {
   .hud .window-topbar {
     height: auto !important;
-    min-height: 48px !important;
-    padding: 5px 6px !important;
+    min-height: 44px !important;
+    padding: 4px 6px !important;
   }
 
   .hud .topbar-lesson-title {
     max-width: 42vw;
-    font-size: 10px !important;
+    font-size: 11px !important;
   }
 
   .hud .workspace-container {
@@ -933,7 +1046,7 @@
   .hud .files-sidebar {
     width: 100% !important;
     flex-basis: auto !important;
-    max-height: 132px !important;
+    max-height: 140px !important;
   }
 
   .hud .editor-window-wrapper.has-floating-preview {
@@ -949,28 +1062,6 @@
     width: min(94vw, 620px) !important;
     min-height: 58px;
     padding: 10px 14px 10px 38px !important;
-    font-size: 10px !important;
-  }
-
-  .hud .editor-window-wrapper.has-floating-preview .caption-overlay {
-    left: 50% !important;
-    width: min(94vw, 620px) !important;
-  }
-
-  .hud .player-bar {
-    min-height: 52px !important;
-    height: 52px !important;
-    max-height: 52px !important;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hud *,
-  .hud *::before,
-  .hud *::after {
-    scroll-behavior: auto !important;
-    transition-duration: .01ms !important;
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
+    font-size: 11px !important;
   }
 }

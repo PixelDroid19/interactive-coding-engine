@@ -2,50 +2,114 @@
 
 .hud [data-augmented-ui~="hud-topbar"] {
   --aug-border-all: 1px;
-  --aug-border-bg: linear-gradient(90deg, var(--hud-yellow), rgb(239 255 0 / 18%) 44%, var(--hud-yellow));
+  --aug-border-bg: linear-gradient(90deg, var(--hud-yellow), rgba(255, 230, 0, 0.35) 44%, var(--hud-yellow));
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #050507;
+  --aug-inlay-opacity: 1;
   --aug-tl: 0px;
   --aug-br: 10px;
 }
 
 .hud [data-augmented-ui~="hud-sidebar"] {
-  --aug-border-all: 1px;
-  --aug-border-bg: linear-gradient(180deg, var(--hud-yellow), rgb(239 255 0 / 30%) 65%, var(--hud-purple));
-  --aug-tl: 10px;
-  --aug-br: 13px;
+  --aug-border-all: 1.5px;
+  --aug-border-bg: rgba(255, 230, 0, 0.45);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #0a0a0f;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 12px;
+  --aug-br: 12px;
 }
 
 .hud [data-augmented-ui~="hud-editor"] {
-  --aug-border-all: 1px;
-  --aug-border-bg: linear-gradient(135deg, var(--hud-yellow), rgb(239 255 0 / 32%) 48%, var(--hud-purple));
+  --aug-border-all: 1.5px;
+  --aug-border-bg: rgba(255, 230, 0, 0.45);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #07070b;
+  --aug-inlay-opacity: 1;
   --aug-tl: 12px;
-  --aug-br: 14px;
+  --aug-br: 12px;
 }
 
 .hud [data-augmented-ui~="hud-browser"] {
-  --aug-border-all: 1px;
-  --aug-border-bg: linear-gradient(135deg, var(--hud-yellow), rgb(239 255 0 / 36%) 58%, var(--hud-purple));
+  --aug-border-all: 1.5px;
+  --aug-border-bg: rgba(255, 230, 0, 0.45);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #07070b;
+  --aug-inlay-opacity: 1;
   --aug-tl: 12px;
-  --aug-br: 14px;
+  --aug-br: 12px;
 }
 
 .hud [data-augmented-ui~="hud-player"] {
-  --aug-border-all: 1px;
-  --aug-border-bg: linear-gradient(90deg, var(--hud-yellow), var(--hud-purple) 52%, var(--hud-yellow));
+  --aug-border-all: 1.5px;
+  --aug-border-bg: rgba(255, 230, 0, 0.45);
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #050507;
+  --aug-inlay-bg: #06060a;
   --aug-inlay-opacity: 1;
   --aug-tl: 8px;
   --aug-tr: 8px;
 }
 
 .hud [data-augmented-ui~="hud-narration"] {
-  --aug-border-all: 1px;
-  --aug-border-bg: linear-gradient(90deg, var(--hud-purple), rgb(255 42 161 / 72%));
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #b026ff;
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #0c0711;
+  --aug-inlay-bg: #0f0718;
   --aug-inlay-opacity: 1;
   --aug-tl: 10px;
+  --aug-tr: 10px;
   --aug-br: 10px;
+  --aug-bl: 10px;
+}
+
+.hud [data-augmented-ui~="hud-roadmap"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #ffe600;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #ffe600;
+  --aug-inlay-opacity: 1;
+  --aug-tr: 8px;
+  --aug-bl: 8px;
+}
+
+.hud [data-augmented-ui~="hud-prev"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: rgba(255, 255, 255, 0.2);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #0a0a0f;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 8px;
+  --aug-br: 8px;
+}
+
+.hud [data-augmented-ui~="hud-explain"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #ffe600;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #ffe600;
+  --aug-inlay-opacity: 1;
+  --aug-tr: 8px;
+  --aug-bl: 8px;
+}
+
+.hud [data-augmented-ui~="hud-floating"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #ff007f;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: rgba(255, 0, 127, 0.1);
+  --aug-inlay-opacity: 1;
+  --aug-tl: 6px;
+  --aug-br: 6px;
+}
+
+.hud [data-augmented-ui~="hud-next"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #00f0ff;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: rgba(0, 240, 255, 0.08);
+  --aug-inlay-opacity: 1;
+  --aug-tl: 6px;
+  --aug-br: 6px;
 }
 
 .hud [data-augmented-ui~="hud-action"] {
@@ -60,12 +124,22 @@
 
 .hud [data-augmented-ui~="hud-file"] {
   --aug-border-all: 1px;
-  --aug-border-bg: #30303a;
+  --aug-border-bg: rgba(255, 255, 255, 0.12);
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #09090d;
+  --aug-inlay-bg: #111118;
   --aug-inlay-opacity: 1;
-  --aug-tl: 7px;
-  --aug-br: 7px;
+  --aug-tl: 6px;
+  --aug-br: 6px;
+}
+
+.hud [data-augmented-ui~="hud-file"].file-item-btn-active {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #ffe600;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #171705;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 6px;
+  --aug-br: 6px;
 }
 
 .hud [data-augmented-ui~="hud-tab"] {
@@ -74,8 +148,18 @@
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #0b0b10;
   --aug-inlay-opacity: 1;
-  --aug-tl: 6px;
-  --aug-br: 6px;
+  --aug-tl: 4px;
+  --aug-tr: 4px;
+}
+
+.hud [data-augmented-ui~="hud-tab"].tab-btn-active {
+  --aug-border-all: 0px;
+  --aug-border-bg: #ffe600;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #ffe600;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 4px;
+  --aug-tr: 4px;
 }
 
 .hud [data-augmented-ui~="hud-control"] {
@@ -90,7 +174,7 @@
 
 .hud [data-augmented-ui~="hud-url"] {
   --aug-border-all: 1px;
-  --aug-border-bg: rgb(167 60 255 / 72%);
+  --aug-border-bg: rgb(176 38 255 / 72%);
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #07040b;
   --aug-inlay-opacity: 1;
@@ -99,37 +183,43 @@
 }
 
 .hud [data-augmented-ui~="hud-concepts"] {
-  --aug-border-all: 1px;
-  --aug-border-bg: rgb(167 60 255 / 86%);
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #ff007f;
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #0e0715;
+  --aug-inlay-bg: #120817;
   --aug-inlay-opacity: 1;
   --aug-tl: 8px;
-  --aug-br: 8px;
+  --aug-tr: 8px;
 }
 
 .hud [data-augmented-ui~="hud-play"] {
   --aug-border-all: 1px;
-  --aug-border-bg: var(--hud-yellow);
+  --aug-border-bg: #ffe600;
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: var(--hud-yellow);
+  --aug-inlay-bg: #ffe600;
   --aug-inlay-opacity: 1;
-  --aug-tl: 6px;
-  --aug-br: 6px;
+  --aug-tl: 4px;
+  --aug-br: 4px;
 }
 
 .hud [data-augmented-ui~="hud-category"] {
   --aug-border-all: 1px;
-  --aug-border-bg: var(--hud-danger);
+  --aug-border-bg: #ff0055;
+  --aug-tr: 6px;
+  --aug-bl: 6px;
+}
+
+.hud [data-augmented-ui~="hud-console"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: rgba(255, 255, 255, 0.1);
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #12070b;
+  --aug-inlay-bg: #060609;
   --aug-inlay-opacity: 1;
-  --aug-tl: 7px;
-  --aug-br: 7px;
+  --aug-br: 8px;
 }
 
 .hud [data-augmented-ui~="hud-panel"] {
-  --aug-border-all: 1px;
+  --aug-border-all: 1.5px;
   --aug-border-bg: linear-gradient(135deg, var(--hud-yellow), var(--hud-purple));
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #08080c;
@@ -176,33 +266,6 @@
 .hud [data-augmented-ui~="hud-node"].is-done {
   --aug-border-bg: var(--hud-green);
   --aug-inlay-bg: #07140e;
-}
-
-.hud .window-topbar .window-titlebar-left > [data-augmented-ui~="hud-action"]:first-child,
-.hud [data-augmented-ui~="hud-action"].btn-explain {
-  --aug-border-bg: var(--hud-yellow);
-  --aug-inlay-bg: var(--hud-yellow);
-}
-
-.hud [data-augmented-ui~="hud-action"][aria-label*="flotante" i],
-.hud [data-augmented-ui~="hud-action"][aria-label*="lado" i] {
-  --aug-border-bg: var(--hud-magenta);
-  --aug-inlay-bg: #12070e;
-}
-
-.hud [data-augmented-ui~="hud-action"][aria-label="Siguiente"] {
-  --aug-border-bg: var(--hud-cyan);
-  --aug-inlay-bg: #061014;
-}
-
-.hud [data-augmented-ui~="hud-file"].file-item-btn-active {
-  --aug-border-bg: var(--hud-yellow);
-  --aug-inlay-bg: #151509;
-}
-
-.hud [data-augmented-ui~="hud-tab"].tab-btn-active {
-  --aug-border-bg: var(--hud-yellow);
-  --aug-inlay-bg: var(--hud-yellow);
 }
 
 @supports not ((clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%))) {
