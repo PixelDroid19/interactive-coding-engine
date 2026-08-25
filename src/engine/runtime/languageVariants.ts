@@ -10,6 +10,14 @@ export function resolveLessonLanguage(
   if (lessonVariant) {
     resolved.initialWorkspace = structuredClone(lessonVariant.workspace);
     resolved.runtimePackages = [...(lessonVariant.packages ?? [])];
+    if (lessonVariant.lessonTape) {
+      resolved.events = structuredClone(lessonVariant.lessonTape.events);
+      resolved.snapshots = structuredClone(lessonVariant.lessonTape.snapshots);
+      resolved.challenges = structuredClone(lessonVariant.lessonTape.challenges);
+      resolved.chapters = structuredClone(lessonVariant.lessonTape.chapters ?? []);
+      resolved.durationMs = lessonVariant.lessonTape.durationMs;
+      if (resolved.audioTrack) resolved.audioTrack.durationMs = lessonVariant.lessonTape.durationMs;
+    }
   }
   resolved.challenges = lesson.challenges.map((challenge, index) => {
     const challengeVariant = challenge.languageVariants?.[language];

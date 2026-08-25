@@ -172,6 +172,14 @@ export interface PracticeVariant {
   workspace: WorkspaceSnapshot;
   tests: ChallengeTest[];
   packages?: string[];
+  /** Cinta específica cuando la demostración también cambia de lenguaje. */
+  lessonTape?: {
+    events: ScrimEvent[];
+    snapshots: SnapshotPoint[];
+    challenges: ScrimChallenge[];
+    chapters?: { timestamp: number; title: string }[];
+    durationMs: number;
+  };
 }
 
 export type LanguageVariants = Record<CourseLanguage, PracticeVariant>;

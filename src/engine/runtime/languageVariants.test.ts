@@ -12,6 +12,12 @@ const variants: LanguageVariants = {
     workspace: { activeFilePath: 'main.py', files: { 'main.py': { name: 'main.py', path: 'main.py', language: 'python', content: 'print(1)' } } },
     tests: [{ id: 'py', description: 'Python', validatorType: 'source-regex', regexPattern: 'print' }],
     packages: ['numpy'],
+    lessonTape: {
+      events: [{ id: 'py-write', timestamp: 100, type: 'file-switch', filePath: 'main.py' }],
+      snapshots: [],
+      challenges: [],
+      durationMs: 2_000,
+    },
   },
 };
 
@@ -28,6 +34,8 @@ it('resuelve una clase y su primer reto sin mutar el original', () => {
   expect(resolved.initialWorkspace.activeFilePath).toBe('main.py');
   expect(resolved.challenges[0].tests[0].id).toBe('py');
   expect(resolved.runtimePackages).toEqual(['numpy']);
+  expect(resolved.events[0]).toMatchObject({ filePath: 'main.py' });
+  expect(resolved.durationMs).toBe(2_000);
   expect(lesson.initialWorkspace.activeFilePath).toBe('app.js');
 });
 
