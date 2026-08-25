@@ -91,6 +91,7 @@ describe('ChallengeDrawer', () => {
 
     expect(markup).toContain('Puedes usar tus propios valores');
     expect(markup).toContain('datos distintos');
+    expect(markup).toContain('console.log');
   });
 
   it('tras validación fallida muestra mensaje útil', () => {

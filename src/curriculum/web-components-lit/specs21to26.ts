@@ -209,7 +209,7 @@ class TaxTotal extends LitElement {
   }
 }
 customElements.define('tax-total', TaxTotal);`,
-      tests: [sourceTest('lit23-d1', 'Deriva antes del render', String.raw`willUpdate\s*\(`), sourceTest('lit23-d2', 'No acumula sobre total anterior', String.raw`this\.total\s*=\s*this\.subtotal\s*\+`) ],
+      tests: [browserTest('lit23-d0', 'Otro subtotal produce un único total estable', `async ({document,customElements})=>{await customElements.whenDefined('tax-total');const el=document.querySelector('tax-total');el.subtotal=40;await el.updateComplete;await new Promise(resolve=>setTimeout(resolve,30));return el.total===44&&el.shadowRoot?.textContent.includes('44');}`), sourceTest('lit23-d1', 'Deriva antes del render', String.raw`willUpdate\s*\(`), sourceTest('lit23-d2', 'No acumula sobre total anterior', String.raw`this\.total\s*=\s*this\.subtotal\s*\+`) ],
       hints: ['updated ocurre después y cambiar total programa otro ciclo.', 'El total depende solo de subtotal.', 'Calcula de forma idempotente antes de render.'] },
   }),
   lesson({
@@ -274,7 +274,7 @@ class SearchBox extends LitElement {
   }
 }
 customElements.define('search-box', SearchBox);`,
-      tests: [sourceTest('lit24-d1', 'Mueve el foco a firstUpdated', String.raw`firstUpdated\s*\(`), sourceTest('lit24-d2', 'Conserva focus', String.raw`querySelector\s*\(\s*['"]input['"]\s*\)\.focus\s*\(`)],
+      tests: [browserTest('lit24-d0', 'El input queda enfocado después del primer render', `async ({document,customElements})=>{await customElements.whenDefined('search-box');const el=document.querySelector('search-box');await el.updateComplete;const input=el.shadowRoot?.querySelector('input');return el.shadowRoot?.activeElement===input;}`), sourceTest('lit24-d1', 'Mueve el foco a firstUpdated', String.raw`firstUpdated\s*\(`), sourceTest('lit24-d2', 'Conserva focus', String.raw`querySelector\s*\(\s*['"]input['"]\s*\)\.focus\s*\(`)],
       hints: ['constructor ocurre antes del primer template.', 'El hook posterior al primer render existe para este caso.', 'Mueve la consulta completa.'] },
   }),
   lesson({

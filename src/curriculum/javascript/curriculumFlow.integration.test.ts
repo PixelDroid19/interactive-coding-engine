@@ -118,6 +118,32 @@ describe('curso de JavaScript independiente y progresivo', () => {
     expect(result.allPassed, result.feedbackMessage).toBe(true);
   });
 
+  it('rechaza atajos fijos y comprueba ramas que antes quedaban sin ejecutar', async () => {
+    const attempts: Array<[string, string]> = [
+      ['javascript-04', 'function clasificarTemperatura(grados) { return grados < 10 ? "frío" : "calor"; }'],
+      ['javascript-12', 'function completarTarea(tarea) { tarea.completada = true; return tarea; }'],
+      ['javascript-20', 'function validarRespuesta(respuesta) { if (!respuesta.ok) {} return respuesta; }'],
+      ['javascript-21', 'export function esPrioridadValida() { return true; }'],
+      ['javascript-22', 'class Producto { etiqueta() { return "etiqueta"; } } function crearProducto() { return { nombre: "Libro", precio: 8 }; }'],
+      ['javascript-24', 'function crearTarea(texto, prioridad) { if (prioridad === 4) return undefined; return { texto: "Leer", prioridad: 2, completada: false }; }'],
+    ];
+
+    for (const [lessonId, source] of attempts) {
+      const lesson = JAVASCRIPT_SCRIMS[lessonId];
+      const challenge = lesson.challenges[0];
+      const workspace = reconstructWorkspaceAt(
+        lesson.initialWorkspace,
+        lesson.events,
+        lesson.snapshots,
+        challenge.timestamp,
+      ).workspace;
+      workspace.files['app.js'].content = source;
+
+      const result = await runChallengeValidation(challenge, workspace);
+      expect(result.allPassed, `${lessonId} aceptó una solución fija`).toBe(false);
+    }
+  });
+
   it('usa los 24 MP3 de Gemini 3.1 TTS con su duración real', () => {
     expect(Object.keys(JAVASCRIPT_AUDIO_BY_LESSON)).toHaveLength(24);
     for (const item of ordered) {

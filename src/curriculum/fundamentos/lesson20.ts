@@ -37,6 +37,7 @@ export const LESSON_20 = advancedLesson({
   tests: [
     { id: 'limite-inferior', description: 'Acepta exactamente 18', validatorType: 'function-call', targetFunction: 'esEdadValida', args: [18], expectedReturn: true },
     { id: 'limite-superior', description: 'Acepta exactamente 120', validatorType: 'function-call', targetFunction: 'esEdadValida', args: [120], expectedReturn: true },
+    { id: 'debajo-rango', description: 'Rechaza 17', validatorType: 'function-call', targetFunction: 'esEdadValida', args: [17], expectedReturn: false },
     { id: 'fuera-rango', description: 'Rechaza 121', validatorType: 'function-call', targetFunction: 'esEdadValida', args: [121], expectedReturn: false },
   ],
   skillsRequired: ['functions', 'conditionals', 'operators'],

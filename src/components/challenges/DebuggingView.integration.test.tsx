@@ -61,6 +61,14 @@ describe('DebuggingView integración', () => {
     expect(screen.queryByRole('region', { name: 'Salida de JavaScript' })).toBeNull();
   });
 
+  it('una práctica de función explica cómo probar valores propios en consola', () => {
+    const functionExercise = DEBUG_EXERCISES.find(e => e.id === 'fundamentos-15-debug')!;
+    render(<DebuggingView exercise={functionExercise} onBack={() => {}} />);
+
+    expect(screen.getByText(/Puedes probar la función con valores propios/i)).toBeTruthy();
+    expect(screen.getAllByText(/console\.log/i).length).toBeGreaterThan(0);
+  });
+
   it('pestañas funcionan con teclado', async () => {
     const { container } = render(<DebuggingView exercise={exercise} onBack={() => {}} />);
     const tablist = container.querySelector('[role="tablist"]');

@@ -82,7 +82,7 @@ class EditableList extends LitElement {
   }
 }
 customElements.define('editable-list', EditableList);`,
-      tests: [sourceTest('lit27-d1', 'La clave usa id', String.raw`repeat\s*\(\s*this\.items\s*,\s*(?:\([^)]*\)|\w+)\s*=>\s*(?:\w+\.)?id`), sourceTest('lit27-d2', 'Conserva repeat', String.raw`repeat\s*\(`)],
+      tests: [browserTest('lit27-d0', 'La identidad acompaña al elemento al reordenar', `async ({document,customElements})=>{await customElements.whenDefined('editable-list');const el=document.querySelector('editable-list');await el.updateComplete;const inputs=el.shadowRoot.querySelectorAll('input');inputs[1].dataset.identity='b';el.items=[...el.items].reverse();el.requestUpdate();await el.updateComplete;return el.shadowRoot.querySelectorAll('input')[0].dataset.identity==='b';}`), sourceTest('lit27-d1', 'La clave usa id', String.raw`repeat\s*\(\s*this\.items\s*,\s*(?:\([^)]*\)|\w+)\s*=>\s*(?:\w+\.)?id`), sourceTest('lit27-d2', 'Conserva repeat', String.raw`repeat\s*\(`)],
       hints: ['La posición cambia cuando insertas.', 'El objeto ya tiene identidad.', 'Devuelve item.id en la función de clave.'] },
   }),
   lesson({
@@ -142,7 +142,7 @@ class SearchToolbar extends LitElement {
   }
 }
 customElements.define('search-toolbar', SearchToolbar);`,
-      tests: [sourceTest('lit28-d1', 'Usa la directiva ref', String.raw`from\s*['"]lit/directives/ref\.js['"]`), sourceTest('lit28-d2', 'Expone una acción de foco', String.raw`focusSearch\s*\(`)],
+      tests: [browserTest('lit28-d0', 'La acción enfoca el campo cuando se solicita', `async ({document,customElements})=>{await customElements.whenDefined('search-toolbar');const el=document.querySelector('search-toolbar');await el.updateComplete;el.focusSearch();return el.shadowRoot?.activeElement===el.shadowRoot?.querySelector('#q');}`), sourceTest('lit28-d1', 'Usa la directiva ref', String.raw`from\s*['"]lit/directives/ref\.js['"]`), sourceTest('lit28-d2', 'Expone una acción de foco', String.raw`focusSearch\s*\(`)],
       hints: ['render debe describir, no ejecutar foco.', 'Captura el nodo con ref.', 'Mueve focus a un método público o interno con intención.'] },
   }),
   lesson({
@@ -200,17 +200,23 @@ customElements.define('remote-catalog', RemoteCatalog);`,
     commonErrors: 'crear Task dentro de render, omitir args, ignorar signal o meter fetch, normalización y presentación en una sola función.',
     transfer: 'Diseña Task para detalle por id y para sugerencias por query; identifica argumentos y estados.',
     sources: [source('Async tasks', 'https://lit.dev/docs/data/task/', 'Aprende Task, args y render de estados.', 'Lit'), source('@lit/task API', 'https://lit.dev/docs/api/task/', 'Consulta opciones.', 'Lit')],
-    debug: { title: 'Se crea una tarea en cada render', expected: 'weather-panel conserva una Task en constructor.', observed: 'render instancia Task y programa trabajo sin fin.',
+    debug: { title: 'Se crea una tarea en cada render', expected: 'weather-panel conserva una Task en constructor.', observed: 'render vuelve a instanciar Task; un tope de seguridad detiene la cadena para que puedas depurarla.',
       starter: `import { LitElement, html } from 'lit';
 import { Task } from '@lit/task';
 class WeatherPanel extends LitElement {
+  _renderAttempts = 0;
   render() {
+    this._renderAttempts += 1;
+    // Este tope evita congelar el laboratorio, pero no corrige la identidad de Task.
+    if (this._renderAttempts > 2) {
+      return html\`<p>Task se recreó durante render.</p>\`;
+    }
     const task = new Task(this, { task: async () => ({ temp: 20 }), args: () => [] });
     return task.render({ complete: (data) => html\`<p>\${data.temp}</p>\` });
   }
 }
 customElements.define('weather-panel', WeatherPanel);`,
-      tests: [sourceTest('lit29-d1', 'La tarea se crea fuera de render', String.raw`constructor\s*\([^)]*\)[\s\S]*new\s+Task`), sourceTest('lit29-d2', 'render reutiliza la tarea', String.raw`this\._[\w$]*task\.render\s*\(`)],
+      tests: [browserTest('lit29-d0', 'Varios renders terminan en una única salida estable', `async ({document,customElements})=>{await customElements.whenDefined('weather-panel');const el=document.querySelector('weather-panel');await el.updateComplete;el.requestUpdate();await el.updateComplete;await new Promise(resolve=>setTimeout(resolve,30));return el.shadowRoot?.textContent.includes('20');}`), sourceTest('lit29-d1', 'La tarea se crea fuera de render', String.raw`constructor\s*\([^)]*\)[\s\S]*new\s+Task`), sourceTest('lit29-d2', 'render reutiliza la tarea', String.raw`this\._[\w$]*task\.render\s*\(`)],
       hints: ['render puede ejecutarse muchas veces.', 'Task tiene ciclo propio y necesita identidad estable.', 'Créala una vez en la instancia.'] },
   }),
   lesson({
@@ -303,7 +309,7 @@ class CounterPanel extends LitElement {
   }
 }
 customElements.define('counter-panel', CounterPanel);`,
-      tests: [sourceTest('lit30-d1', 'El controlador solicita update', String.raw`increment\s*\([^)]*\)[\s\S]*requestUpdate\s*\(`), sourceTest('lit30-d2', 'Conserva addController', String.raw`addController\s*\(`)],
+      tests: [browserTest('lit30-d0', 'El clic actualiza el contador visible', `async ({document,customElements})=>{await customElements.whenDefined('counter-panel');const el=document.querySelector('counter-panel');await el.updateComplete;el.shadowRoot.querySelector('button').click();await el.updateComplete;return el.shadowRoot.textContent.includes('1');}`), sourceTest('lit30-d1', 'El controlador solicita update', String.raw`increment\s*\([^)]*\)[\s\S]*requestUpdate\s*\(`), sourceTest('lit30-d2', 'Conserva addController', String.raw`addController\s*\(`)],
       hints: ['value no es propiedad reactiva del host.', 'El controller conoce al host.', 'Después del cambio llama host.requestUpdate().'] },
   }),
   lesson({
@@ -361,7 +367,7 @@ customElements.define(
   'status-chip',
   customElements.get('status-chip') || class extends LitElement {},
 );`,
-      tests: [sourceTest('lit31-d1', 'Exporta StatusChip por nombre', String.raw`export\s+class\s+StatusChip`), sourceTest('lit31-d2', 'Registra la misma clase', String.raw`customElements\.define\s*\(\s*['"]status-chip['"]\s*,\s*StatusChip`) ],
+      tests: [browserTest('lit31-d0', 'La clase registrada conserva la vista pública', `async ({document,customElements})=>{await customElements.whenDefined('status-chip');const el=document.querySelector('status-chip');await el.updateComplete;return el.shadowRoot?.textContent.includes('Listo');}`), sourceTest('lit31-d1', 'Exporta StatusChip por nombre', String.raw`export\s+class\s+StatusChip`), sourceTest('lit31-d2', 'Registra la misma clase', String.raw`customElements\.define\s*\(\s*['"]status-chip['"]\s*,\s*StatusChip`) ],
       hints: ['La clase pública necesita identidad.', 'Export y registro deben referir la misma clase.', 'No escondas el contrato detrás de default anónimo.'] },
   }),
   lesson({

@@ -278,7 +278,7 @@ customElements.define('quantity-field', QuantityField);`,
   }
 }
 customElements.define('coupon-field', CouponField);`,
-      tests: [sourceTest('wc12-d1', 'Adjunta ElementInternals', String.raw`attachInternals\s*\(`), sourceTest('wc12-d2', 'Publica el valor', String.raw`setFormValue\s*\(`)],
+      tests: [browserTest('wc12-d0', 'FormData recibe un código elegido por la persona', `async ({document,customElements,Event})=>{await customElements.whenDefined('coupon-field');const el=document.querySelector('coupon-field');const form=document.createElement('form');el.setAttribute('name','coupon');form.appendChild(el);document.body.appendChild(form);const input=el.querySelector('input');input.value='MIO25';input.dispatchEvent(new Event('input',{bubbles:true}));return new FormData(form).get('coupon')==='MIO25';}`), sourceTest('wc12-d1', 'Adjunta ElementInternals', String.raw`attachInternals\s*\(`), sourceTest('wc12-d2', 'Publica el valor', String.raw`setFormValue\s*\(`)],
       hints: ['formAssociated solo anuncia capacidad.', 'La instancia necesita su objeto internals.', 'Publica el valor inicial y cambios.'] },
   }),
   lesson({

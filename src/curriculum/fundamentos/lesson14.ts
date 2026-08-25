@@ -50,6 +50,7 @@ export const LESSON_14 = compileLesson({
         tests: [
           { id: 'ignora-vacio', description: 'Un texto vacío no se agrega', validatorType: 'function-call', targetFunction: 'agregarTarea', args: [''], expectedReturn: 0, errorMessage: 'La función debe ignorar el texto vacío.', hintTip: 'La decisión de salir debe ocurrir antes de push.' },
           { id: 'agrega-una', description: 'La primera tarea devuelve cantidad 1', validatorType: 'function-call', targetFunction: 'agregarTarea', args: ['Leer'], expectedReturn: 1, errorMessage: 'Una tarea válida debe guardarse en el array.', hintTip: 'Usa push con el parámetro texto y devuelve length.' },
+          { id: 'acumula-dos', description: 'Dos textos elegidos por la persona producen dos tareas', validatorType: 'function-call', targetFunction: 'agregarTarea', callSequence: [{ args: ['Mi primera tarea'], expectedReturn: 1 }, { args: ['Otra tarea distinta'], expectedReturn: 2 }], errorMessage: 'La función debe usar cada texto recibido y conservar las tareas ya agregadas.', hintTip: 'Prueba dos llamadas seguidas con textos distintos y observa tareas.length.' },
         ],
         hints: [
           { level: 1, title: 'Primero valida', text: 'Pregunta si texto es una cadena vacía antes de modificar el array.' },

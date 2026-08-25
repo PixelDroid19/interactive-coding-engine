@@ -362,7 +362,7 @@ class ShippingCard extends LitElement {
   }
 }
 customElements.define('shipping-card', ShippingCard);`,
-      tests: [sourceTest('lit36-d1', 'Existe un adapter con quote', String.raw`class\s+ShippingAdapter[\s\S]*async\s+quote`), sourceTest('lit36-d2', 'Normaliza el costo', String.raw`cost\s*:`)],
+      tests: [browserTest('lit36-d0', 'La tarjeta acepta otro adapter normalizado', `async ({document,customElements})=>{await customElements.whenDefined('shipping-card');const el=document.querySelector('shipping-card');const key=Object.keys(el).find(name=>typeof el[name]?.quote==='function');if(!key)return false;el[key]={quote:async()=>({cost:17,currency:'EUR'})};await el.load();await el.updateComplete;return el.shadowRoot?.textContent.includes('17')&&!el.shadowRoot?.textContent.includes('total_cents');}`), sourceTest('lit36-d1', 'Existe un adapter con quote', String.raw`class\s+ShippingAdapter[\s\S]*async\s+quote`), sourceTest('lit36-d2', 'Normaliza el costo', String.raw`cost\s*:`)],
       hints: ['La vista no debería conocer total_cents.', 'Crea ShippingAdapter alrededor del provider.', 'Devuelve {cost,currency} desde el adapter.'] },
   }),
   lesson({
@@ -634,7 +634,7 @@ class ViewportCard extends LitElement {
   }
 }
 customElements.define('viewport-card', ViewportCard);`,
-      tests: [sourceTest('lit39-d1', 'No lee window en el nivel del módulo', String.raw`typeof\s+window\s*!==\s*['"]undefined['"]`), sourceTest('lit39-d2', 'Conserva un fallback', String.raw`\?\?|\?\s*window\.`)],
+      tests: [browserTest('lit39-d0', 'En navegador muestra un ancho disponible', `async ({document,customElements})=>{await customElements.whenDefined('viewport-card');const el=document.querySelector('viewport-card');await el.updateComplete;return /Ancho:\s*\d+/.test(el.shadowRoot?.textContent||'');}`), sourceTest('lit39-d1', 'No lee window en el nivel del módulo', String.raw`typeof\s+window\s*!==\s*['"]undefined['"]`), sourceTest('lit39-d2', 'Conserva un fallback', String.raw`\?\?|\?\s*window\.`)],
       hints: ['El nivel del módulo también se ejecuta en servidor.', 'Comprueba si window existe antes de leerlo.', 'Define un valor seguro cuando no hay viewport.'] },
   }),
   lesson({
@@ -734,7 +734,7 @@ class ProjectBoard extends LitElement {
   }
 }
 customElements.define('project-board', ProjectBoard);`,
-      tests: [sourceTest('lit40-d1', 'Calcula una próxima versión', String.raw`const\s+next\s*=`), sourceTest('lit40-d2', 'Guarda la misma versión asignada', String.raw`this\.cards\s*=\s*next[\s\S]*save\s*\(\s*next\s*\)|save\s*\(\s*next\s*\)[\s\S]*this\.cards\s*=\s*next`)],
+      tests: [browserTest('lit40-d0', 'Guarda exactamente la colección que muestra', `async ({document,customElements})=>{await customElements.whenDefined('project-board');const el=document.querySelector('project-board');let saved=null;el.storage={save:async(cards)=>{saved=cards;}};await el.add('Mi tarjeta');await el.updateComplete;return saved===el.cards&&saved.length===1&&saved[0].title==='Mi tarjeta'&&el.shadowRoot?.textContent.includes('1');}`), sourceTest('lit40-d1', 'Calcula una próxima versión', String.raw`const\s+next\s*=`), sourceTest('lit40-d2', 'Guarda la misma versión asignada', String.raw`this\.cards\s*=\s*next[\s\S]*save\s*\(\s*next\s*\)|save\s*\(\s*next\s*\)[\s\S]*this\.cards\s*=\s*next`)],
       hints: ['Persistencia y UI deben referirse a la misma colección.', 'Calcula next una sola vez.', 'Usa next tanto para this.cards como para save.'] },
   }),
 ];

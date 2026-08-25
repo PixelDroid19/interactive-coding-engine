@@ -135,8 +135,16 @@ export interface ChallengeTest {
   validatorType: 'function-call' | 'dom-check' | 'source-regex' | 'console-check' | 'browser-script';
   targetFunction?: string;
   args?: any[];
+  /** Varias llamadas consecutivas sobre la misma evaluación del programa. */
+  callSequence?: { args: any[]; expectedReturn: any }[];
   returnedFunctionCallCounts?: number[];
   expectedReturn?: any;
+  /** La llamada debe lanzar un error cuyo mensaje contenga este texto. */
+  expectedErrorContains?: string;
+  /** Comprueba que la función no altere ninguno de los argumentos recibidos. */
+  expectArgsUnchanged?: boolean;
+  /** Exige que el retorno no sea la misma referencia que el argumento indicado. */
+  expectNewReferenceFromArg?: number;
   domSelector?: string;
   domProperty?: 'innerText' | 'textContent' | 'innerHTML' | 'value' | 'className' | 'style' | 'exists' | 'count';
   expectedValue?: any;

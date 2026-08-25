@@ -133,9 +133,40 @@ function isStringMatch(result: any, test: ChallengeTest): { passed: boolean; err
   return { passed: true };
 }
 
+function cloneEvaluationValue<T>(value: T, seen = new Map<object, unknown>()): T {
+  if (typeof value === 'function' || value === null || typeof value !== 'object') return value;
+  if (seen.has(value)) return seen.get(value) as T;
+  if (Array.isArray(value)) {
+    const copy: unknown[] = [];
+    seen.set(value, copy);
+    value.forEach((item) => copy.push(cloneEvaluationValue(item, seen)));
+    return copy as T;
+  }
+  if (Object.getPrototypeOf(value) === Object.prototype) {
+    const copy: Record<string, unknown> = {};
+    seen.set(value, copy);
+    for (const [key, item] of Object.entries(value)) copy[key] = cloneEvaluationValue(item, seen);
+    return copy as T;
+  }
+  try {
+    return structuredClone(value);
+  } catch {
+    return value;
+  }
+}
+
 function cloneEvaluationArgs(args: unknown[] | undefined): unknown[] {
-  if (!args) return [];
-  return structuredClone(args);
+  return args ? cloneEvaluationValue(args) : [];
+}
+
+function prepareExecutableJavaScript(source: string): string {
+  let anonymousDefaultClassIndex = 0;
+  return source
+    .replace(/^\s*import\s+[^;]+;?\s*$/gm, '')
+    .replace(/\bexport\s+default\s+class(?=\s*(?:extends|\{))/g, () =>
+      `class __DefaultExport${anonymousDefaultClassIndex++}`)
+    .replace(/\bexport\s+default\s+/g, '')
+    .replace(/\bexport\s+(?=(?:async\s+)?(?:function|class|const|let|var)\b)/g, '');
 }
 
 export async function runChallengeValidation(
@@ -155,13 +186,7 @@ export async function runChallengeValidation(
     (f) => f.language === 'javascript' || f.language === 'typescript' || f.name.endsWith('.js') || f.name.endsWith('.jsx')
   );
   const combinedJsPre = jsFilesPre.map((f) => f.content).join('\n\n');
-  let anonymousDefaultClassIndex = 0;
-  const syntaxProbe = combinedJsPre
-    .replace(/^\s*import\s+[^;]+;?\s*$/gm, '')
-    .replace(/\bexport\s+default\s+class(?=\s*(?:extends|\{))/g, () =>
-      `class __DefaultExport${anonymousDefaultClassIndex++}`)
-    .replace(/\bexport\s+default\s+/g, '')
-    .replace(/\bexport\s+(?=(?:async\s+)?(?:function|class|const|let|var)\b)/g, '');
+  const syntaxProbe = prepareExecutableJavaScript(combinedJsPre);
   let syntaxError: string | null = null;
   if (combinedJsPre.trim().length > 0) {
     try {
@@ -377,7 +402,7 @@ async function evaluateSingleTest(
         const evalScope = new Function(
           'document',
           'window',
-          `${combinedJs}\n; return typeof ${test.targetFunction} === "function" ? ${test.targetFunction} : null;`
+          `${prepareExecutableJavaScript(combinedJs)}\n; return typeof ${test.targetFunction} === "function" ? ${test.targetFunction} : null;`
         );
         targetFn = evalScope(stubDocument, { document: stubDocument });
       } catch (e: any) {
@@ -404,6 +429,39 @@ async function evaluateSingleTest(
       }
 
       try {
+        if (test.callSequence) {
+          if (test.callSequence.length === 0) {
+            return {
+              id: test.id,
+              description: test.description,
+              passed: false,
+              status: 'evaluation-error',
+              isEvaluationError: true,
+              errorMessage: 'Prueba mal configurada: la secuencia de llamadas está vacía.',
+              hint: test.hintTip,
+            };
+          }
+
+          const received: unknown[] = [];
+          const expected: unknown[] = [];
+          for (const step of test.callSequence) {
+            const value = await targetFn(...cloneEvaluationArgs(step.args));
+            received.push(value);
+            expected.push(step.expectedReturn);
+          }
+          const passed = JSON.stringify(received) === JSON.stringify(expected);
+          return {
+            id: test.id,
+            description: test.description,
+            passed,
+            status: passed ? 'passed' : 'failed',
+            receivedValue: received,
+            expectedValue: expected,
+            errorMessage: passed ? undefined : (test.errorMessage || `Esperábamos la secuencia '${JSON.stringify(expected)}' pero obtuvimos '${JSON.stringify(received)}'.`),
+            hint: test.hintTip,
+          };
+        }
+
         if (test.returnedFunctionCallCounts) {
           const counts = test.returnedFunctionCallCounts;
           if (
@@ -461,7 +519,7 @@ async function evaluateSingleTest(
           const args = cloneEvaluationArgs(test.args);
           let result: any;
           try {
-            result = targetFn(...args);
+            result = await targetFn(...args);
           } catch (e: any) {
             return {
               id: test.id,
@@ -487,10 +545,25 @@ async function evaluateSingleTest(
         }
 
         const args = cloneEvaluationArgs(test.args);
+        const argsBefore = cloneEvaluationArgs(args);
         let result: any;
         try {
-          result = targetFn(...args);
+          result = await targetFn(...args);
         } catch (e: any) {
+          if (test.expectedErrorContains !== undefined) {
+            const message = e instanceof Error ? e.message : String(e);
+            const passed = message.includes(test.expectedErrorContains);
+            return {
+              id: test.id,
+              description: test.description,
+              passed,
+              status: passed ? 'passed' : 'failed',
+              receivedValue: message,
+              expectedValue: test.expectedErrorContains,
+              errorMessage: passed ? undefined : (test.errorMessage || `El error debe incluir "${test.expectedErrorContains}", pero recibimos "${message}".`),
+              hint: test.hintTip,
+            };
+          }
           return {
             id: test.id,
             description: test.description,
@@ -498,6 +571,44 @@ async function evaluateSingleTest(
             status: 'evaluation-error',
             isEvaluationError: true,
             errorMessage: `La función '${test.targetFunction}' lanzó un error: ${e.message}`,
+            hint: test.hintTip,
+          };
+        }
+
+        if (test.expectedErrorContains !== undefined) {
+          return {
+            id: test.id,
+            description: test.description,
+            passed: false,
+            status: 'failed',
+            receivedValue: result,
+            expectedValue: test.expectedErrorContains,
+            errorMessage: test.errorMessage || `Esperábamos un error que incluyera "${test.expectedErrorContains}", pero la función no lanzó ninguno.`,
+            hint: test.hintTip,
+          };
+        }
+
+        if (test.expectArgsUnchanged && JSON.stringify(args) !== JSON.stringify(argsBefore)) {
+          return {
+            id: test.id,
+            description: test.description,
+            passed: false,
+            status: 'failed',
+            receivedValue: args,
+            expectedValue: argsBefore,
+            errorMessage: test.errorMessage || 'La función cambió el dato original. Conserva los argumentos recibidos y construye el resultado aparte.',
+            hint: test.hintTip,
+          };
+        }
+
+        if (test.expectNewReferenceFromArg !== undefined && result === args[test.expectNewReferenceFromArg]) {
+          return {
+            id: test.id,
+            description: test.description,
+            passed: false,
+            status: 'failed',
+            receivedValue: result,
+            errorMessage: test.errorMessage || 'La función debe devolver un objeto nuevo, no la misma referencia que recibió.',
             hint: test.hintTip,
           };
         }

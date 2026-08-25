@@ -204,11 +204,30 @@ describe('curso profesional de Web Components y Lit', () => {
     }
   });
 
+  it('cada laboratorio ejecuta comportamiento en navegador salvo el contrato puro de suscripción', () => {
+    const sourceOnlyByDesign = new Set([35]);
+
+    for (const spec of COMPONENT_COURSE_SPECS) {
+      if (sourceOnlyByDesign.has(spec.number)) continue;
+      expect(
+        spec.debug.tests.some((test) => test.validatorType === 'browser-script'),
+        `laboratorio ${spec.number} solo revisa texto del código`,
+      ).toBe(true);
+    }
+  });
+
   it('mantiene acotado el ciclo roto del laboratorio 23 para no congelar la práctica', () => {
     const debugStarter = COMPONENT_COURSE_SPECS.find((spec) => spec.number === 23)?.debug.starter ?? '';
     const updatedBody = debugStarter.match(/updated\s*\(\s*\)\s*\{([\s\S]*?)\n\s*\}/)?.[1] ?? '';
 
     expect(updatedBody).toMatch(/\bif\s*\(/);
+    expect(debugStarter).toContain('evita congelar el laboratorio');
+  });
+
+  it('mantiene acotada la recreación rota de Task para no congelar el laboratorio 29', () => {
+    const debugStarter = COMPONENT_COURSE_SPECS.find((spec) => spec.number === 29)?.debug.starter ?? '';
+
+    expect(debugStarter).toMatch(/if\s*\([^)]*(?:render|creation|intento)/i);
     expect(debugStarter).toContain('evita congelar el laboratorio');
   });
 

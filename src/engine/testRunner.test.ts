@@ -220,6 +220,128 @@ export default class extends LitElement {}`);
     expect(result2.tests[0].errorMessage).toContain('Esperábamos');
   });
 
+  it('function-call evalúa una función exportada sin exigir una sintaxis distinta', async () => {
+    const ws = wsFromJs('export function doble(numero) { return numero * 2; }');
+    const reto = {
+      id: 'export-behavior',
+      title: 'Exportación con comportamiento',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'doble-exportado',
+        description: 'La función exportada conserva su contrato',
+        validatorType: 'function-call' as const,
+        targetFunction: 'doble',
+        args: [7],
+        expectedReturn: 14,
+      }],
+      hints: [],
+    };
+
+    const result = await runChallengeValidation(reto, ws, null);
+
+    expect(result.allPassed, result.feedbackMessage).toBe(true);
+  });
+
+  it('function-call espera el resultado de una función asíncrona', async () => {
+    const ws = wsFromJs('async function resolver(valor) { return valor.toUpperCase(); }');
+    const reto = {
+      id: 'async-behavior',
+      title: 'Resultado asíncrono',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'resolver-async',
+        description: 'Espera la promesa',
+        validatorType: 'function-call' as const,
+        targetFunction: 'resolver',
+        args: ['listo'],
+        expectedReturn: 'LISTO',
+      }],
+      hints: [],
+    };
+
+    const result = await runChallengeValidation(reto, ws, null);
+
+    expect(result.allPassed, result.feedbackMessage).toBe(true);
+  });
+
+  it('function-call conserva callbacks usados como argumentos de prueba', async () => {
+    const ws = wsFromJs('async function cargar(obtener) { const dato = await obtener(); return dato.titulo.toUpperCase(); }');
+    const reto = {
+      id: 'async-callback',
+      title: 'Callback asíncrona',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'usa-proveedor',
+        description: 'Usa el proveedor recibido',
+        validatorType: 'function-call' as const,
+        targetFunction: 'cargar',
+        args: [async () => ({ titulo: 'otro valor' })],
+        expectedReturn: 'OTRO VALOR',
+      }],
+      hints: [],
+    };
+
+    const result = await runChallengeValidation(reto, ws, null);
+
+    expect(result.allPassed, result.feedbackMessage).toBe(true);
+  });
+
+  it('function-call puede comprobar un error esperado como comportamiento válido', async () => {
+    const ws = wsFromJs('function validar(respuesta) { if (!respuesta.ok) throw new Error(`HTTP ${respuesta.status}`); return respuesta; }');
+    const reto = {
+      id: 'expected-error',
+      title: 'Error esperado',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'rechaza-404',
+        description: 'Rechaza respuestas fallidas',
+        validatorType: 'function-call' as const,
+        targetFunction: 'validar',
+        args: [{ ok: false, status: 404 }],
+        expectedErrorContains: '404',
+      }],
+      hints: [],
+    };
+
+    const result = await runChallengeValidation(reto as any, ws, null);
+
+    expect(result.allPassed, result.feedbackMessage).toBe(true);
+
+  });
+
+  it('function-call distingue una copia nueva de una mutación del argumento', async () => {
+    const reto = {
+      id: 'immutable-copy',
+      title: 'Copia sin mutar',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'copia-nueva',
+        description: 'Conserva la entrada y devuelve otro objeto',
+        validatorType: 'function-call' as const,
+        targetFunction: 'completar',
+        args: [{ id: 1, completada: false }],
+        expectedReturn: { id: 1, completada: true },
+        expectArgsUnchanged: true,
+        expectNewReferenceFromArg: 0,
+      }],
+      hints: [],
+    };
+
+    const mutating = wsFromJs('function completar(tarea) { tarea.completada = true; return tarea; }');
+    const mutationResult = await runChallengeValidation(reto as any, mutating, null);
+    expect(mutationResult.allPassed).toBe(false);
+    expect(mutationResult.tests[0].errorMessage).toMatch(/original|objeto nuevo/i);
+
+    const copying = wsFromJs('function completar(tarea) { return { ...tarea, completada: true }; }');
+    const copyResult = await runChallengeValidation(reto as any, copying, null);
+    expect(copyResult.allPassed, copyResult.feedbackMessage).toBe(true);
+  });
+
   it('comprueba secuencias e independencia cuando la función devuelve otra función', async () => {
     const reto = {
       id: 'closure',
@@ -246,6 +368,35 @@ export default class extends LitElement {}`);
     expect(correctResult.allPassed).toBe(true);
     expect(sharedResult.allPassed).toBe(false);
     expect(sharedResult.tests[0].receivedValue).toEqual([[1, 2, 3], [4]]);
+  });
+
+  it('function-call puede comprobar varias llamadas consecutivas sobre el mismo estado', async () => {
+    const ws = wsFromJs('const tareas = []; function agregar(texto) { if (texto) tareas.push(texto); return tareas.length; }');
+    const reto = {
+      id: 'call-sequence',
+      title: 'Secuencia con estado',
+      timestamp: 0,
+      instructions: '',
+      tests: [{
+        id: 'dos-altas',
+        description: 'Dos llamadas válidas acumulan dos tareas',
+        validatorType: 'function-call' as const,
+        targetFunction: 'agregar',
+        callSequence: [
+          { args: ['Leer'], expectedReturn: 1 },
+          { args: ['Practicar'], expectedReturn: 2 },
+        ],
+      }],
+      hints: [],
+    };
+
+    const result = await runChallengeValidation(reto as any, ws, null);
+
+    expect(result.allPassed, result.feedbackMessage).toBe(true);
+
+    const broken = wsFromJs('function agregar() { return 1; }');
+    const brokenResult = await runChallengeValidation(reto as any, broken, null);
+    expect(brokenResult.allPassed).toBe(false);
   });
 
   it('dom-check mensajes en español', async () => {

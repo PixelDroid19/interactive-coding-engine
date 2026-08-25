@@ -283,7 +283,7 @@ class DataPanel extends LitElement {
   }
 }
 customElements.define('data-panel', DataPanel);`,
-      tests: [sourceTest('lit19-d1', 'Usa estado interno', String.raw`_loading\s*:\s*\{\s*state\s*:\s*true`), sourceTest('lit19-d2', 'No refleja loading público', String.raw`this\._loading`) ],
+      tests: [browserTest('lit19-d0', 'La carga funciona sin publicar un atributo', `async ({document,customElements})=>{await customElements.whenDefined('data-panel');const el=document.querySelector('data-panel');await el.updateComplete;return el._loading===true&&!el.hasAttribute('loading')&&el.shadowRoot?.textContent.includes('Cargando');}`), sourceTest('lit19-d1', 'Usa estado interno', String.raw`_loading\s*:\s*\{\s*state\s*:\s*true`), sourceTest('lit19-d2', 'No refleja loading público', String.raw`this\._loading`) ],
       hints: ['La carga pertenece al proceso interno.', 'Renombra y declara state:true.', 'Actualiza render para leer la misma fuente.'] },
   }),
   lesson({

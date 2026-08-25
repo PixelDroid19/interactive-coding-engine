@@ -38,7 +38,9 @@ export const LESSON_21 = advancedLesson({
   challengeInstructions: 'Completa actualizarCantidad. sumar aumenta uno; restar disminuye sin bajar de cero; otra acción conserva el valor.',
   tests: [
     { id: 'estado-suma', description: 'Sumar produce el estado siguiente', validatorType: 'function-call', targetFunction: 'actualizarCantidad', args: [2, 'sumar'], expectedReturn: 3 },
+    { id: 'estado-resta', description: 'Restar disminuye una cantidad positiva', validatorType: 'function-call', targetFunction: 'actualizarCantidad', args: [3, 'restar'], expectedReturn: 2 },
     { id: 'estado-cero', description: 'No permite bajar de cero', validatorType: 'function-call', targetFunction: 'actualizarCantidad', args: [0, 'restar'], expectedReturn: 0 },
+    { id: 'estado-desconocido', description: 'Otra acción conserva la cantidad', validatorType: 'function-call', targetFunction: 'actualizarCantidad', args: [4, 'pausar'], expectedReturn: 4 },
   ],
   skillsRequired: ['events', 'state-and-render', 'functions', 'conditionals'],
   skillsIntroduced: ['state-transition', 'single-source-of-truth', 'unidirectional-flow'],

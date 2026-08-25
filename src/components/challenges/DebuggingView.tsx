@@ -224,6 +224,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   );
   const visibleFileMap = Object.fromEntries(visibleFiles.map((file) => [file.path, file]));
   const activeFile = visibleFileMap[workspace.activeFilePath] || visibleFiles[0] || null;
+  const testsFunctionDirectly = exercise.tests.some((test) => test.validatorType === 'function-call');
 
   const handleRoadmap = () => {
     if (onBackToRoadmap) onBackToRoadmap();
@@ -459,6 +460,12 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                         <p>{exercise.observedBehavior}</p>
                       </div>
                     </details>
+
+                    {testsFunctionDirectly && (
+                      <p className="debug-hint mt-3">
+                        Puedes probar la función con valores propios antes de pulsar Comprobar. Añade temporalmente una llamada con <code>console.log</code>; las comprobaciones usarán otros datos para revisar que la regla sea general.
+                      </p>
+                    )}
 
                     {exercise.troubleshootingTips && exercise.troubleshootingTips.length > 0 && (
                       <details className="debug-details">

@@ -4,6 +4,8 @@ import { resolve } from 'node:path';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './course';
 import { DEBUG_EXERCISES } from './debugExercises';
 import { validateReasoningAttempt } from '../../engine/reasoningRunner';
+import { reconstructWorkspaceAt } from '../../engine/eventLog';
+import { runChallengeValidation } from '../../engine/testRunner';
 import { ReasoningAttempt } from '../../types/curriculum';
 
 describe('progresión integrada del curso de Fundamentos', () => {
@@ -246,6 +248,50 @@ describe('progresión integrada del curso de Fundamentos', () => {
     expect(exposedHelp).not.toMatch(/const\s+nombre\s*=|let\s+edad\s*=|(?:const|let)\s+listo\s*=/i);
     expect(exposedHelp).not.toMatch(/nombre\s+con\s+const|edad\s+con\s+let/i);
     expect(challenge.instructions).toMatch(/texto|n[uú]mero|boolean/i);
+  });
+
+  it('las prácticas de reglas rechazan respuestas constantes y recorren sus ramas', async () => {
+    const challengeAttempts: Array<[string, string]> = [
+      ['fundamentos-20', 'function esEdadValida(edad) { return edad !== 121; }'],
+      ['fundamentos-21', 'function actualizarCantidad(actual, accion) { if (accion === "sumar") return actual + 1; return 0; }'],
+    ];
+
+    for (const [lessonId, source] of challengeAttempts) {
+      const lesson = FUNDAMENTOS_SCRIMS[lessonId];
+      const challenge = lesson.challenges[0];
+      const workspace = reconstructWorkspaceAt(
+        lesson.initialWorkspace,
+        lesson.events,
+        lesson.snapshots,
+        challenge.timestamp,
+      ).workspace;
+      workspace.files['app.js'].content = source;
+      const result = await runChallengeValidation(challenge, workspace);
+      expect(result.allPassed, `${lessonId} aceptó una regla incompleta`).toBe(false);
+    }
+
+    const debugAttempts: Array<[string, string]> = [
+      ['fundamentos-16-debug', 'function terminaEnJs() { return true; }'],
+      ['fundamentos-17-debug', 'function clasificarSaldo(saldo) { return saldo === 0 ? "cero" : "negativo"; }'],
+      ['fundamentos-19-debug', 'function contieneNumero() { return true; }'],
+      ['fundamentos-20-debug', 'function enRango() { return true; }'],
+      ['fundamentos-24-debug', 'function prioridadValida() { return false; }'],
+    ];
+
+    for (const [exerciseId, source] of debugAttempts) {
+      const exercise = DEBUG_EXERCISES.find((candidate) => candidate.id === exerciseId)!;
+      const workspace = structuredClone(exercise.initialWorkspace);
+      workspace.files['app.js'].content = source;
+      const result = await runChallengeValidation({
+        id: exercise.id,
+        title: exercise.title,
+        timestamp: 0,
+        instructions: exercise.description,
+        tests: exercise.tests,
+        hints: [],
+      }, workspace);
+      expect(result.allPassed, `${exerciseId} aceptó una respuesta constante`).toBe(false);
+    }
   });
 
   it('cada lección del segundo nivel exige construir un modelo en Piensa', () => {
