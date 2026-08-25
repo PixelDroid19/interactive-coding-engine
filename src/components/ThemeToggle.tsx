@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Palette, Sparkles } from 'lucide-react';
+import { Palette, Sparkles, Zap } from 'lucide-react';
 
 export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const [isHud, setIsHud] = useState(false);
+  const [isGlitching, setIsGlitching] = useState(false);
 
   useEffect(() => {
     const check = () => setIsHud(document.documentElement.classList.contains('hud'));
@@ -12,7 +13,20 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
     return () => obs.disconnect();
   }, []);
 
+  // Periodic automatic glitch pulse every 3.2 seconds to draw immediate visual attention
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsGlitching(true);
+      const timer = setTimeout(() => setIsGlitching(false), 450);
+      return () => clearTimeout(timer);
+    }, 3200);
+    return () => clearInterval(interval);
+  }, []);
+
   const toggle = () => {
+    setIsGlitching(true);
+    setTimeout(() => setIsGlitching(false), 550);
+
     const next = !isHud;
     if (next) {
       document.documentElement.classList.add('hud');
@@ -24,6 +38,8 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
     setIsHud(next);
   };
 
+  const labelText = isHud ? 'CYBER ✓' : 'CYBER';
+
   if (compact) {
     return (
       <button
@@ -31,18 +47,20 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
         onClick={toggle}
         aria-label={isHud ? 'Cambiar a tema por defecto' : 'Cambiar a tema cyberpunk'}
         title={isHud ? 'Tema cyberpunk activo — volver al tema por defecto' : 'Activar tema cyberpunk'}
-        className="cyber-theme-toggle grid place-items-center"
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: 6,
-          border: isHud ? '1.5px solid #ffe600' : '1.5px solid #374151',
-          background: isHud ? '#ffe600' : '#1a1a1f',
-          color: isHud ? '#000000' : '#cbd5e1',
-          boxShadow: isHud ? '0 0 10px rgba(255,230,0,0.4)' : 'none',
-        }}
+        className={`cyber-theme-toggle cyber-glitch-btn cyber-glitch-compact ${isHud ? 'is-hud' : ''} ${isGlitching ? 'is-glitching' : ''}`}
       >
-        {isHud ? <Sparkles size={14} style={{ color: '#000000' }} /> : <Palette size={14} />}
+        <span className="cyber-glitch-scanlines" />
+        <span className="cyber-glitch-content flex items-center justify-center">
+          {isHud ? <Sparkles size={14} className="cyber-icon" /> : <Zap size={14} className="cyber-icon" />}
+        </span>
+        <span className="cyber-glitch-ghost cyan" aria-hidden="true">
+          {isHud ? <Sparkles size={14} /> : <Zap size={14} />}
+        </span>
+        <span className="cyber-glitch-ghost pink" aria-hidden="true">
+          {isHud ? <Sparkles size={14} /> : <Zap size={14} />}
+        </span>
+        <span className="cyber-corner-tl" />
+        <span className="cyber-corner-br" />
       </button>
     );
   }
@@ -53,18 +71,37 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
       onClick={toggle}
       aria-label={isHud ? 'Cambiar a tema por defecto' : 'Cambiar a tema cyberpunk'}
       title={isHud ? 'Tema cyberpunk activo — volver al tema por defecto' : 'Activar tema cyberpunk'}
-      className="cyber-theme-toggle flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase tracking-wider"
-      style={{
-        borderRadius: 6,
-        border: isHud ? '1.5px solid #ffe600' : '1.5px solid #374151',
-        background: isHud ? '#ffe600' : '#1a1a1f',
-        color: isHud ? '#000000' : '#cbd5e1',
-        boxShadow: isHud ? '0 0 12px rgba(255,230,0,0.45)' : '1px 1px 0 #000',
-        fontFamily: isHud ? 'Chakra Petch, Space Grotesk, sans-serif' : 'Space Grotesk, sans-serif',
-      }}
+      className={`cyber-theme-toggle cyber-glitch-btn ${isHud ? 'is-hud' : ''} ${isGlitching ? 'is-glitching' : ''}`}
     >
-      <Palette size={13} style={{ color: isHud ? '#000000' : 'inherit' }} />
-      <span style={{ color: isHud ? '#000000' : 'inherit', fontWeight: 900 }}>{isHud ? 'CYBER ✓' : 'CYBER'}</span>
+      {/* Scanline & grid background */}
+      <span className="cyber-glitch-scanlines" />
+
+      {/* HUD status badge */}
+      <span className="cyber-hud-badge">
+        <span className="cyber-pulse-dot" />
+        <span className="cyber-hud-text">{isHud ? 'ON' : 'OFF'}</span>
+      </span>
+
+      {/* Main Content */}
+      <span className="cyber-glitch-content">
+        {isHud ? <Sparkles size={13} className="cyber-icon" /> : <Zap size={13} className="cyber-icon" />}
+        <span className="cyber-text-main">{labelText}</span>
+      </span>
+
+      {/* RGB Chromatic Ghost Layers */}
+      <span className="cyber-glitch-ghost cyan" aria-hidden="true">
+        {isHud ? <Sparkles size={13} /> : <Zap size={13} />}
+        <span>{labelText}</span>
+      </span>
+      <span className="cyber-glitch-ghost pink" aria-hidden="true">
+        {isHud ? <Sparkles size={13} /> : <Zap size={13} />}
+        <span>{labelText}</span>
+      </span>
+
+      {/* Chamfer corner brackets */}
+      <span className="cyber-corner-tl" />
+      <span className="cyber-corner-br" />
     </button>
   );
 };
+
