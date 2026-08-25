@@ -1,4 +1,4 @@
-# Aula viva
+# ExDev
 
 Motor de clases interactivas de programación. Reproduces una lección como si alguien estuviera escribiendo al lado: el código se mueve, el cursor apunta, el preview ejecuta, y el audio va a tiempo. En cualquier momento pausas, editas y corres el resultado.
 
