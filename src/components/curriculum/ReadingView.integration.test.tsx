@@ -111,4 +111,58 @@ describe('ReadingView', () => {
     const sources = screen.getByRole('list', { name: 'Fuentes recomendadas' });
     expect(sources.querySelectorAll('li')).toHaveLength(2);
   });
+
+  it('presenta la lectura como zonas amplias y no como una unica columna anidada', () => {
+    const reading: ReadingItem = {
+      id: 'ai-engineer-26-lectura',
+      relatedLessonId: 'ai-engineer-26',
+      title: 'Lectura: Transformers.js',
+      type: 'reading',
+      estimatedMinutes: 9,
+      summary: 'Aprende a ejecutar un modelo local.',
+      sections: [
+        { title: 'La idea central', content: 'El Hub distribuye artefactos.' },
+        { title: 'Cómo funciona', content: 'El modelo corre en un Worker.' },
+        { title: 'Cómo decidir', content: 'Compara tamaño y compatibilidad.' },
+        { title: 'Errores comunes', content: 'No ocultes una salida corrupta.' },
+      ],
+      keyPoints: ['Inspecciona antes de descargar'],
+      sources: [
+        { title: 'Transformers.js', publisher: 'Hugging Face', url: 'https://huggingface.co/docs/transformers.js/index', purpose: 'Documentación del runtime.' },
+      ],
+      interactiveLab: {
+        title: 'WebGPU en acción',
+        description: 'Ejecuta un modelo local.',
+        defaultMode: 'prompt',
+        allowedModes: ['prompt'],
+        systemPrompt: 'Responde en español.',
+        promptA: 'Explica.',
+        promptB: 'Explica con un ejemplo.',
+        input: 'Una función recibe una entrada y puede devolver un resultado.',
+        observationPrompt: '¿Qué cambió?',
+      },
+    };
+
+    render(
+      <ReadingView
+        reading={reading}
+        onBack={vi.fn()}
+        onNext={vi.fn()}
+        navigationState={{
+          hasPrevious: false,
+          hasNext: true,
+          isFirst: true,
+          isLast: false,
+          previous: null,
+          next: null,
+          current: null,
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('main').classList.contains('reading-canvas')).toBe(true);
+    expect(screen.getByRole('region', { name: 'Mapa de la lectura' }).classList.contains('reading-overview')).toBe(true);
+    expect(screen.getByRole('region', { name: 'Laboratorio interactivo' }).classList.contains('reading-lab-zone')).toBe(true);
+    expect(screen.getByRole('region', { name: 'Biblioteca de campo' }).classList.contains('reading-library-zone')).toBe(true);
+  });
 });

@@ -63,26 +63,33 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
         </header>
 
         <main
-          className="mx-auto min-h-0 w-full max-w-[88rem] flex-1 overflow-y-auto px-4 py-5 select-text sm:px-6 sm:py-7 lg:px-8"
+          className="reading-canvas mx-auto min-h-0 w-full flex-1 overflow-y-auto px-4 py-5 select-text sm:px-6 sm:py-7 lg:px-8"
           aria-label="Contenido de la lectura"
         >
-          <header className="relative overflow-hidden rounded-2xl border-2 border-zinc-700 bg-[#101218] px-6 py-7 shadow-[6px_6px_0_#000] sm:px-9 sm:py-9">
+          <header className="reading-hero relative overflow-hidden rounded-2xl border-2 border-zinc-700 bg-[#101218] px-6 py-7 shadow-[6px_6px_0_#000] sm:px-9 sm:py-9">
             <div className="absolute inset-y-0 left-0 w-1.5 bg-yellow-300" aria-hidden="true" />
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-yellow-300">Lectura de preparación</p>
-            <h1
-              ref={titleRef}
-              tabIndex={-1}
-              className="mt-2 max-w-5xl text-2xl font-bold leading-tight text-zinc-100 outline-none sm:text-3xl"
-              style={{ fontFamily: 'Space Grotesk, sans-serif' }}
-            >
-              {reading.title}
-            </h1>
-            <p className="mt-4 max-w-3xl text-base leading-relaxed text-zinc-300 sm:text-[17px]">
-              {reading.summary}
-            </p>
+            <div className="reading-hero-copy">
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-yellow-300">Lectura de preparación</p>
+              <h1
+                ref={titleRef}
+                tabIndex={-1}
+                className="mt-2 max-w-5xl text-2xl font-bold leading-tight text-zinc-100 outline-none sm:text-3xl"
+                style={{ fontFamily: 'Space Grotesk, sans-serif' }}
+              >
+                {reading.title}
+              </h1>
+              <p className="mt-4 max-w-3xl text-base leading-relaxed text-zinc-300 sm:text-[17px]">
+                {reading.summary}
+              </p>
+            </div>
+            <div className="reading-hero-meta" aria-label="Duración y recorrido">
+              <span><strong>{reading.estimatedMinutes}</strong> min</span>
+              <span><strong>{reading.sections.length}</strong> ideas</span>
+              {reading.interactiveLab && <span><strong>1</strong> laboratorio</span>}
+            </div>
           </header>
 
-          <div className="mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          <section className="reading-overview mt-6 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]" aria-label="Mapa de la lectura">
             <section aria-labelledby="reading-concepts-title" className="rounded-2xl border border-zinc-700 bg-zinc-950/70 p-4 sm:p-6">
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -145,12 +152,19 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                 ))}
               </ul>
             </aside>
-          </div>
+          </section>
 
           {reading.interactiveLab && (
-            <div className="mt-7">
+            <section className="reading-lab-zone mt-9" aria-label="Laboratorio interactivo">
+              <div className="reading-zone-heading">
+                <span>02</span>
+                <div>
+                  <p>Ahora hazlo tú</p>
+                  <h2>Laboratorio interactivo</h2>
+                </div>
+              </div>
               <AIInteractivePractice lab={reading.interactiveLab} />
-            </div>
+            </section>
           )}
 
           {(reading.frequentQuestions?.length || reading.transferPrompt) && (
@@ -181,7 +195,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
           )}
 
           {reading.sources && reading.sources.length > 0 && (
-            <section className="mt-7 rounded-2xl border border-emerald-800 bg-emerald-950/20 p-5 sm:p-7" aria-labelledby="reading-sources-title">
+            <section className="reading-library-zone mt-9" aria-label="Biblioteca de campo">
               <div className="max-w-3xl">
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">Biblioteca de campo</p>
                 <h2 id="reading-sources-title" className="mt-1 text-xl font-bold text-emerald-100" style={{ fontFamily: 'Patrick Hand, cursive' }}>Documentación para explorar</h2>

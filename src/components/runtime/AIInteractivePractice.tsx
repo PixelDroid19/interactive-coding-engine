@@ -168,7 +168,7 @@ export function AIInteractivePractice({
   const runLabel = `${modelInfo?.cached ? 'Ejecutar y' : 'Descargar y'} ${actionCopy}`;
 
   return (
-    <section className="overflow-hidden rounded-3xl border-2 border-fuchsia-800 bg-[#0b0d14] p-5 text-zinc-100 shadow-[7px_7px_0_#000] sm:p-7 lg:p-9" aria-labelledby="interactive-ai-title">
+    <section className="ai-lab-shell overflow-hidden rounded-3xl border-2 border-fuchsia-800 bg-[#0b0d14] p-5 text-zinc-100 shadow-[7px_7px_0_#000] sm:p-7 lg:p-9" aria-labelledby="interactive-ai-title">
       <header className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-fuchsia-300">Práctica interactiva · WebGPU</p>
@@ -187,8 +187,8 @@ export function AIInteractivePractice({
         })}
       </div>
 
-      <div className="mt-5 space-y-5">
-        <div className="space-y-4 rounded-2xl border border-zinc-700 bg-zinc-900/80 p-5 sm:p-6">
+      <div className="ai-lab-workflow mt-5 space-y-5">
+        <div className="ai-lab-config space-y-4 rounded-2xl border border-zinc-700 bg-zinc-900/80 p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-700 pb-4">
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.16em] text-fuchsia-300">Paso 1</p>
@@ -219,7 +219,7 @@ export function AIInteractivePractice({
           {mode === 'prompt' && <p className="text-[11px] leading-relaxed text-zinc-500">Empieza con ambas temperaturas en 0 para comparar solo el texto de los prompts. Después cambia una temperatura si quieres estudiar variación.</p>}
         </div>
 
-        <aside aria-label="Runtime local" className="rounded-2xl border border-yellow-700/70 bg-[#17150e] p-5 sm:p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-center lg:gap-8">
+        <aside aria-label="Runtime local" className="ai-lab-runtime rounded-2xl border border-yellow-700/70 bg-[#17150e] p-5 sm:p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(17rem,22rem)] lg:items-center lg:gap-8">
           <div>
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-full border border-yellow-500 bg-zinc-950"><Gauge size={16} className="text-yellow-300" /></span>

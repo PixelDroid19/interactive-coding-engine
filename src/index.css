@@ -535,6 +535,164 @@ body.dark {
   transform: rotate(8deg);
 }
 
+/* ==========================================================================
+   Reading canvas — separated editorial zones instead of one long card
+   ========================================================================== */
+.reading-canvas {
+  max-width: 112rem;
+  scroll-padding-top: 24px;
+}
+
+.reading-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: clamp(24px, 5vw, 84px);
+}
+
+.reading-hero h1:focus,
+.reading-hero h1:focus-visible {
+  outline: none;
+}
+
+.reading-hero-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(84px, 1fr));
+  align-self: stretch;
+  min-width: min(100%, 320px);
+  overflow: hidden;
+  border: 1px solid #3f3f46;
+  background: rgba(9, 9, 11, 0.72);
+}
+
+.reading-hero-meta span {
+  display: flex;
+  min-height: 76px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 12px 16px;
+  border-left: 1px solid #3f3f46;
+  color: #a1a1aa;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.reading-hero-meta span:first-child {
+  border-left: 0;
+}
+
+.reading-hero-meta strong {
+  color: #fef08a;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.reading-overview {
+  grid-template-columns: minmax(0, 3fr) minmax(18rem, 1fr);
+}
+
+.reading-zone-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.reading-zone-heading > span {
+  color: #d946ef;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+.reading-zone-heading p {
+  margin: 0;
+  color: #e879f9;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+}
+
+.reading-zone-heading h2 {
+  margin: 2px 0 0;
+  color: #f4f4f5;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(20px, 2vw, 28px);
+}
+
+.reading-lab-zone {
+  padding: clamp(20px, 3vw, 44px) 0 4px;
+  border-top: 1px solid #52525b;
+}
+
+.reading-library-zone {
+  padding: clamp(24px, 3vw, 42px);
+  border-top: 2px solid #047857;
+  border-bottom: 1px solid #064e3b;
+  background:
+    linear-gradient(90deg, rgba(6, 78, 59, .2), transparent 44%),
+    rgba(2, 44, 34, .12);
+}
+
+@media (min-width: 1500px) {
+  .ai-lab-workflow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(25rem, .48fr);
+    align-items: start;
+    gap: 24px;
+  }
+
+  .ai-lab-runtime {
+    position: sticky;
+    top: 16px;
+    display: block !important;
+  }
+
+  .ai-lab-runtime > div + div {
+    margin-top: 24px !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .reading-hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .reading-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .reading-hero-meta {
+    width: 100%;
+  }
+}
+
+@media (max-width: 639px) {
+  .reading-hero-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .reading-hero-meta span {
+    min-height: 54px;
+    border-top: 1px solid #3f3f46;
+    border-left: 0;
+  }
+
+  .reading-hero-meta span:first-child {
+    border-top: 0;
+  }
+
+  .reading-library-zone {
+    padding: 22px 0;
+  }
+}
+
 .topbar-lesson-title {
   font-size: 13px;
   color: var(--color-text-muted);
