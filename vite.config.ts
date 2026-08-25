@@ -36,6 +36,9 @@ export default defineConfig(() => {
   return {
     plugins: [typeScriptLibrariesPlugin(), react(), tailwindcss()],
     worker: {
+      // Pyodide loads its WebAssembly runtime as ES modules. IIFE workers cannot
+      // represent that code-split graph, so every application Worker uses ESM.
+      format: 'es',
       plugins: () => [typeScriptLibrariesPlugin()],
     },
     test: {

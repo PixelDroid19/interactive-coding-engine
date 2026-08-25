@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { DebuggingExerciseItem } from '../../types/curriculum';
-import { ChallengeTest, WorkspaceFile, WorkspaceSnapshot } from '../../types/scrim';
+import { type CourseLanguage, ChallengeTest, WorkspaceFile, WorkspaceSnapshot } from '../../types/scrim';
 import { ChallengeValidationResult } from '../../types/runtime';
 import { cloneWorkspace } from '../../engine/eventLog';
 import { createDebuggingDraftVersion, loadDebuggingDraft, markItemCompleted, markChallengeSkipped, markChallengeSolutionViewed, saveDebuggingDraft } from '../../engine/persistence';
@@ -27,6 +27,7 @@ import { FileTree } from '../editor/FileTree';
 import { PreviewPane, PreviewPaneRef } from '../preview/PreviewPane';
 import { LogicRunnerPanel, LogicRunnerPanelRef } from '../preview/LogicRunnerPanel';
 import { NavigationState } from '../../engine/navigation';
+import { LanguageSelector } from '../runtime/LanguageSelector';
 
 interface DebuggingViewProps {
   exercise: DebuggingExerciseItem;
@@ -36,6 +37,8 @@ interface DebuggingViewProps {
   onPrevious?: () => void;
   onNext?: () => void;
   navigationState?: NavigationState;
+  language?: CourseLanguage;
+  onLanguageChange?: (language: CourseLanguage) => void;
 }
 
 function inferValidator(test: ChallengeTest): ChallengeTest['validatorType'] {
@@ -46,7 +49,7 @@ function inferValidator(test: ChallengeTest): ChallengeTest['validatorType'] {
 }
 
 function isLogicFile(file: WorkspaceFile): boolean {
-  return file.language === 'javascript' || file.language === 'typescript' || file.language === 'json';
+  return file.language === 'javascript' || file.language === 'typescript' || file.language === 'json' || file.language === 'python';
 }
 
 function normalizeWorkspace(exercise: DebuggingExerciseItem, source: WorkspaceSnapshot): WorkspaceSnapshot {
@@ -76,9 +79,12 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   onPrevious,
   onNext,
   navigationState,
+  language = 'javascript',
+  onLanguageChange,
 }) => {
+  const draftKey = exercise.languageVariants ? `${exercise.id}:${language}` : exercise.id;
   const exerciseVersion = createDebuggingDraftVersion(exercise.initialWorkspace, exercise.tests);
-  const [initialDraft] = useState(() => loadDebuggingDraft(exercise.id, exerciseVersion));
+  const [initialDraft] = useState(() => loadDebuggingDraft(draftKey, exerciseVersion));
   const [showDraftChoice, setShowDraftChoice] = useState(() => hasMeaningfulDraft(exercise, initialDraft));
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() =>
     normalizeWorkspace(exercise, initialDraft?.workspace ?? exercise.initialWorkspace),
@@ -95,8 +101,8 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   const generationRef = useRef(0);
 
   useEffect(() => {
-    saveDebuggingDraft(exercise.id, { workspace, revealedHints, exerciseVersion });
-  }, [exercise.id, exerciseVersion, revealedHints, workspace]);
+    saveDebuggingDraft(draftKey, { workspace, revealedHints, exerciseVersion });
+  }, [draftKey, exerciseVersion, revealedHints, workspace]);
 
   const handleValidate = async () => {
     if (isEvaluating) return;
@@ -334,6 +340,9 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {exercise.languageVariants && onLanguageChange && (
+              <LanguageSelector value={language} onChange={onLanguageChange} compact />
+            )}
             {validationResult?.allPassed && (
               <span className="category-tag" style={{ background: 'var(--color-highlighter-mint)' }}>
                 <CheckCircle2 size={12} style={{ display: 'inline', marginRight: 4 }} />
@@ -718,7 +727,12 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
               >
                   {exercise.executionMode === 'logic' ? (
                     <div className="debug-logic-output">
-                      <LogicRunnerPanel ref={logicRunnerRef} workspace={workspace} />
+                      <LogicRunnerPanel
+                        ref={logicRunnerRef}
+                        workspace={workspace}
+                        language={language}
+                        packages={exercise.languageVariants?.[language].packages}
+                      />
                       <button type="button" onClick={() => setActiveTab('resultado')} className="neu-pill-btn justify-center" aria-label="Volver a resultado">Volver a resultado</button>
                     </div>
                   ) : (

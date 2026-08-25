@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import { ScrimLessonData, WorkspaceSnapshot } from '../types/scrim';
-import { saveLearnerBranch, loadLearnerBranch, loadLastBranchForLesson, clearBranch, clearBranchesForLesson, saveLearnerBranchDebounced, flushBranchSave, markChallengeCompleted, markChallengeSkipped, markChallengeSolutionViewed, getChallengeState, clearChallengeState, getChallengeStates, saveAppNavigationState, loadAppNavigationState, loadDebuggingDraft, saveDebuggingDraft, loadCustomScrims, saveCustomScrim, createReasoningActivityVersion, loadReasoningDraft, saveReasoningDraft } from './persistence';
+import { saveLearnerBranch, loadLearnerBranch, loadLastBranchForLesson, clearBranch, clearBranchesForLesson, saveLearnerBranchDebounced, flushBranchSave, markChallengeCompleted, markChallengeSkipped, markChallengeSolutionViewed, getChallengeState, clearChallengeState, getChallengeStates, saveAppNavigationState, loadAppNavigationState, loadDebuggingDraft, saveDebuggingDraft, loadCustomScrims, saveCustomScrim, createReasoningActivityVersion, loadReasoningDraft, saveReasoningDraft, loadCourseLanguage, saveCourseLanguage, loadLanguageWorkspaceDraft, saveLanguageWorkspaceDraft } from './persistence';
 import { createInitialState } from './playerMachine';
 import { cloneWorkspace } from './eventLog';
 
@@ -26,6 +26,32 @@ describe('persistence branches', () => {
     } as any;
     (globalThis as any).localStorage.clear();
     vi.useFakeTimers();
+  });
+
+  it('guarda la preferencia de lenguaje por curso sin mezclar cursos', () => {
+    saveCourseLanguage('course-ai-engineer', 'python');
+    saveCourseLanguage('course-js', 'javascript');
+
+    expect(loadCourseLanguage('course-ai-engineer')).toBe('python');
+    expect(loadCourseLanguage('course-js')).toBe('javascript');
+    expect(loadCourseLanguage('curso-sin-preferencia')).toBe('javascript');
+  });
+
+  it('ignora preferencias de lenguaje corruptas', () => {
+    localStorage.setItem('aula_course_language_v1', JSON.stringify({ roto: 'ruby' }));
+
+    expect(loadCourseLanguage('roto')).toBe('javascript');
+  });
+
+  it('conserva borradores separados de JavaScript y Python', () => {
+    saveLanguageWorkspaceDraft('proyecto-ai', 'javascript', makeWs('const tema = "ventas";'));
+    saveLanguageWorkspaceDraft('proyecto-ai', 'python', {
+      activeFilePath: 'main.py',
+      files: { 'main.py': { name: 'main.py', path: 'main.py', language: 'python', content: 'tema = "soporte"' } },
+    });
+
+    expect(loadLanguageWorkspaceDraft('proyecto-ai', 'javascript')?.files['app.js'].content).toContain('ventas');
+    expect(loadLanguageWorkspaceDraft('proyecto-ai', 'python')?.files['main.py'].content).toContain('soporte');
   });
 
   it('primera edición se persiste determinísticamente', () => {

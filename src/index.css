@@ -734,6 +734,51 @@ body.dark {
 .logic-runner-footer .is-success { color: #86efac; }
 .logic-runner-footer .is-error { color: #fda4af; }
 
+.course-language-selector {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid #3f4656;
+  border-radius: 8px;
+  background: #151821;
+  box-shadow: 2px 2px 0 #07080b;
+}
+
+.course-language-selector button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 6px 11px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: #aeb7c8;
+  font-size: 12px;
+  font-weight: 800;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.course-language-selector button:hover:not(:disabled) {
+  background: #242937;
+  color: #f8fafc;
+}
+
+.course-language-selector button.is-active {
+  border-color: #ffe600;
+  background: #ffe600;
+  color: #111318;
+}
+
+.course-language-selector button:focus-visible {
+  outline: 2px solid #7dd3fc;
+  outline-offset: 2px;
+}
+
+.course-language-selector button:disabled { cursor: not-allowed; opacity: .55; }
+.course-language-selector.is-compact button { min-height: 27px; padding: 4px 8px; font-size: 10px; }
+
 /* Sidebar Styles — Sketched Icon Rail & Files Tree */
 .sidebar-container {
   display: flex;

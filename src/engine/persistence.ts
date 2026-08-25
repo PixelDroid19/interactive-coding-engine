@@ -1,5 +1,5 @@
 import { Course, ItemType, ReasoningAttempt, UserProgressRecord } from '../types/curriculum';
-import { ChallengeTest, ScrimLessonData, LearnerBranch, WorkspaceSnapshot } from '../types/scrim';
+import { ChallengeTest, ScrimLessonData, LearnerBranch, WorkspaceSnapshot, type CourseLanguage } from '../types/scrim';
 import { TemplateDefinition } from '../types/runtime';
 
 const STORAGE_KEYS = {
@@ -14,6 +14,8 @@ const STORAGE_KEYS = {
   LEARNER_BRANCHES: 'aula_learner_branches_v1',
   VOICE_VOLUME: 'aula_voice_volume_v1',
   CHALLENGE_STATES: 'aula_challenge_states_v1',
+  COURSE_LANGUAGE: 'aula_course_language_v1',
+  LANGUAGE_WORKSPACE_DRAFTS: 'aula_language_workspace_drafts_v1',
 };
 
 const CUSTOM_AUDIO_DATABASE = 'aula_custom_audio_v1';
@@ -74,7 +76,35 @@ export function saveReasoningDraft(exerciseId: string, draft: ReasoningDraft): v
 }
 
 const PLAYGROUND_TEMPLATE_IDS: TemplateDefinition['id'][] = ['vanilla-js', 'js-only', 'lit', 'react'];
-const WORKSPACE_LANGUAGES = ['javascript', 'html', 'css', 'typescript', 'json'];
+const WORKSPACE_LANGUAGES = ['javascript', 'html', 'css', 'typescript', 'json', 'python', 'markdown'];
+
+export function loadCourseLanguage(courseId: string): CourseLanguage {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.COURSE_LANGUAGE);
+    if (!raw) return 'javascript';
+    const language = (JSON.parse(raw) as Record<string, unknown>)?.[courseId];
+    return language === 'python' ? 'python' : 'javascript';
+  } catch {
+    return 'javascript';
+  }
+}
+
+export function saveCourseLanguage(courseId: string, language: CourseLanguage): void {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.COURSE_LANGUAGE);
+    let preferences: Record<string, CourseLanguage> = {};
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        preferences = parsed as Record<string, CourseLanguage>;
+      }
+    }
+    preferences[courseId] = language;
+    localStorage.setItem(STORAGE_KEYS.COURSE_LANGUAGE, JSON.stringify(preferences));
+  } catch {
+    // Language preference is helpful, but must never block a lesson.
+  }
+}
 
 function isWorkspaceSnapshot(value: unknown): value is WorkspaceSnapshot {
   if (!value || typeof value !== 'object') return false;
@@ -92,6 +122,40 @@ function isWorkspaceSnapshot(value: unknown): value is WorkspaceSnapshot {
       && WORKSPACE_LANGUAGES.includes(file.language),
     ),
   );
+}
+
+function languageDraftKey(itemId: string, language: CourseLanguage) {
+  return `${itemId}:${language}`;
+}
+
+export function loadLanguageWorkspaceDraft(
+  itemId: string,
+  language: CourseLanguage,
+): WorkspaceSnapshot | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.LANGUAGE_WORKSPACE_DRAFTS);
+    if (!raw) return null;
+    const workspace = (JSON.parse(raw) as Record<string, unknown>)?.[languageDraftKey(itemId, language)];
+    return isWorkspaceSnapshot(workspace) ? structuredClone(workspace) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveLanguageWorkspaceDraft(
+  itemId: string,
+  language: CourseLanguage,
+  workspace: WorkspaceSnapshot,
+): void {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.LANGUAGE_WORKSPACE_DRAFTS);
+    const parsed = raw ? JSON.parse(raw) : {};
+    const drafts = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+    drafts[languageDraftKey(itemId, language)] = structuredClone(workspace);
+    localStorage.setItem(STORAGE_KEYS.LANGUAGE_WORKSPACE_DRAFTS, JSON.stringify(drafts));
+  } catch {
+    // Draft persistence is best-effort and must not interrupt editing.
+  }
 }
 
 export function loadPlaygroundDraft(): PlaygroundDraft | null {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useReducer, useCallback } from 'react';
-import { ScrimChallenge, ScrimLessonData, WorkspaceFile, WorkspaceSnapshot, LearnerBranch } from '../../types/scrim';
+import { type CourseLanguage, ScrimChallenge, ScrimLessonData, WorkspaceFile, WorkspaceSnapshot, LearnerBranch } from '../../types/scrim';
 import { PlaybackEngine, PlaybackStatus } from '../../engine/playbackEngine';
 import { SyncTelemetry } from '../../engine/syncEngine';
 import { cloneWorkspace, reconstructWorkspaceAt } from '../../engine/eventLog';
@@ -33,6 +33,7 @@ import {
 
 import { NavigationState } from '../../engine/navigation';
 import { ThemeToggle } from '../ThemeToggle';
+import { LanguageSelector } from '../runtime/LanguageSelector';
 
 interface ScrimPlayerProps {
   lessonData: ScrimLessonData;
@@ -46,6 +47,8 @@ interface ScrimPlayerProps {
   initialTimeMs?: number;
   navigationState?: NavigationState;
   onPositionChange?: (timeMs: number) => void;
+  language?: CourseLanguage;
+  onLanguageChange?: (language: CourseLanguage) => void;
 }
 
 export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
@@ -60,6 +63,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   initialTimeMs = 0,
   navigationState,
   onPositionChange,
+  language = 'javascript',
+  onLanguageChange,
 }) => {
   const [playerState, dispatch] = useReducer(playerReducer, lessonData.id, createInitialState);
   // Playback & workspace state
@@ -100,6 +105,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const [showClosure, setShowClosure] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<'previous' | 'next' | 'roadmap' | null>(null);
   const isLogicMode = lessonData.executionMode === 'logic';
+  const branchScopeId = lessonData.languageVariants ? `${lessonData.id}:${language}` : lessonData.id;
 
   const engineRef = useRef<PlaybackEngine | null>(null);
   const previewRef = useRef<FloatingBrowserRef | null>(null);
@@ -137,8 +143,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const forkLearnerBranch = useCallback((baseTime: number, activeChallengeId?: string) => {
     if (isForkedRef.current) return;
     const branch: LearnerBranch = {
-      id: `branch-${lessonData.id}-${Date.now()}`,
-      lessonId: lessonData.id,
+      id: `branch-${branchScopeId}-${Date.now()}`,
+      lessonId: branchScopeId,
       baseTime,
       baseSequence: 0,
       workspace: cloneWorkspace(workspaceRef.current),
@@ -151,12 +157,12 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     saveLearnerBranch(branch);
     publishInstructorPointer(undefined);
     dispatch({ type: 'FORK', baseTime });
-  }, [lessonData.id]);
+  }, [branchScopeId]);
 
   // Branch recovery on mount
   useEffect(() => {
     try {
-      const last = loadLastBranchForLesson(lessonData.id);
+      const last = loadLastBranchForLesson(branchScopeId);
       if (last && last.workspace && typeof last.baseTime === 'number') {
         // Only show recovery if branch is from same lesson and not too old (within 7 days)
         const ageMs = Date.now() - (last.lastSavedAt || 0);
@@ -167,7 +173,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     } catch {
       // ignore corrupted
     }
-  }, [lessonData.id]);
+  }, [branchScopeId]);
 
   useEffect(() => {
     if (!showBranchRecovery) return;
@@ -289,12 +295,12 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     engine.loadLesson(lessonData, initialTimeMs);
 
     return () => {
-      flushBranchSave(lessonData.id);
+      flushBranchSave(branchScopeId);
       engine.destroy();
       engineRef.current = null;
       publishInstructorPointer(undefined);
     };
-  }, [lessonData.id]);
+  }, [lessonData.id, language]);
 
   function setIsForkedStateFalse() {
     isForkedRef.current = false;
@@ -385,8 +391,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   };
 
   const doReturnToTape = (baseTime: number) => {
-    flushBranchSave(lessonData.id);
-    clearBranchesForLesson(lessonData.id);
+    flushBranchSave(branchScopeId);
+    clearBranchesForLesson(branchScopeId);
     isForkedRef.current = false;
     dispatch({ type: 'RETURN_TO_TAPE', baseTime });
     setLearnerBranch(null);
@@ -446,12 +452,12 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     const action = pendingNavigation;
     setPendingNavigation(null);
     if (mode === 'discard') {
-      flushBranchSave(lessonData.id);
-      clearBranchesForLesson(lessonData.id);
+      flushBranchSave(branchScopeId);
+      clearBranchesForLesson(branchScopeId);
       setLearnerBranch(null);
       setHasPendingEdits(false);
     } else {
-      flushBranchSave(lessonData.id);
+      flushBranchSave(branchScopeId);
       setHasPendingEdits(false);
     }
     if (action === 'previous' && onPrevious) onPrevious();
@@ -503,8 +509,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           // This is the first edit case where branch was just forked but state update async
           // Create new branch directly from current workspace and save immediately
           const fresh: LearnerBranch = {
-            id: `branch-${lessonData.id}-${Date.now()}`,
-            lessonId: lessonData.id,
+            id: `branch-${branchScopeId}-${Date.now()}`,
+            lessonId: branchScopeId,
             baseTime: timeRef.current,
             baseSequence: 0,
             workspace: cloneWorkspace(newWs),
@@ -611,8 +617,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       skipTime
     );
     const restoredWorkspace = cloneWorkspace(reconstructed.workspace);
-    flushBranchSave(lessonData.id);
-    clearBranchesForLesson(lessonData.id);
+    flushBranchSave(branchScopeId);
+    clearBranchesForLesson(branchScopeId);
     isForkedRef.current = false;
     dispatch({ type: 'CHALLENGE_SKIP' });
     setLearnerBranch(null);
@@ -640,8 +646,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       nextTime
     );
     const restoredWorkspace = cloneWorkspace(reconstructed.workspace);
-    flushBranchSave(lessonData.id);
-    clearBranchesForLesson(lessonData.id);
+    flushBranchSave(branchScopeId);
+    clearBranchesForLesson(branchScopeId);
     isForkedRef.current = false;
     dispatch({ type: 'CHALLENGE_CONTINUE' });
     setLearnerBranch(null);
@@ -681,8 +687,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     }
     if (isForkedRef.current) {
       // Discard branch without pending edits
-      flushBranchSave(lessonData.id);
-      clearBranchesForLesson(lessonData.id);
+      flushBranchSave(branchScopeId);
+      clearBranchesForLesson(branchScopeId);
       isForkedRef.current = false;
       dispatch({ type: 'DISCARD_BRANCH', baseTime: targetMs });
       setLearnerBranch(null);
@@ -714,8 +720,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       return;
     }
     if (isForkedRef.current) {
-      flushBranchSave(lessonData.id);
-      clearBranchesForLesson(lessonData.id);
+      flushBranchSave(branchScopeId);
+      clearBranchesForLesson(branchScopeId);
       isForkedRef.current = false;
       dispatch({ type: 'DISCARD_BRANCH', baseTime: challenge.timestamp });
       setLearnerBranch(null);
@@ -730,8 +736,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     if (pendingSeekMs !== null) {
       const target = pendingSeekMs;
       setPendingSeekMs(null);
-      flushBranchSave(lessonData.id);
-      clearBranchesForLesson(lessonData.id);
+      flushBranchSave(branchScopeId);
+      clearBranchesForLesson(branchScopeId);
       isForkedRef.current = false;
       dispatch({ type: 'DISCARD_BRANCH', baseTime: target });
       setLearnerBranch(null);
@@ -753,7 +759,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   };
 
   const handleRestoreBranch = () => {
-    const last = loadLastBranchForLesson(lessonData.id);
+    const last = loadLastBranchForLesson(branchScopeId);
     if (!last) {
       setShowBranchRecovery(false);
       return;
@@ -781,8 +787,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   };
 
   const handleDiscardBranchRecovery = () => {
-    flushBranchSave(lessonData.id);
-    clearBranchesForLesson(lessonData.id);
+    flushBranchSave(branchScopeId);
+    clearBranchesForLesson(branchScopeId);
     setShowBranchRecovery(false);
   };
 
@@ -850,6 +856,14 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         </div>
 
         <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {lessonData.languageVariants && onLanguageChange && (
+            <LanguageSelector
+              value={language}
+              onChange={onLanguageChange}
+              disabled={playbackStatus === 'playing'}
+              compact
+            />
+          )}
           <ThemeToggle />
           {!isLogicMode && (
             <button
@@ -1154,6 +1168,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
               key={`${lessonData.id}-logic`}
               ref={logicRunnerRef}
               workspace={workspace}
+              language={language}
+              packages={lessonData.runtimePackages}
               onRunClick={handleManualRun}
             />
           )}

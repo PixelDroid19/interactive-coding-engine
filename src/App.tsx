@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Course, CurriculumItem, UserProgressRecord } from './types/curriculum';
-import { ScrimLessonData } from './types/scrim';
+import { type CourseLanguage, ScrimLessonData } from './types/scrim';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './curriculum/fundamentos/course';
 import { JAVASCRIPT_COURSE, JAVASCRIPT_SCRIMS } from './curriculum/javascript/course';
 import { COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS } from './curriculum/web-components-lit/course';
-import { AppNavigationState, loadAppNavigationState, loadUserProgress, loadCustomCourses, loadCustomScrims, markItemCompleted, saveAppNavigationState, saveCustomCourse, updateRecentPosition } from './engine/persistence';
+import { AppNavigationState, loadAppNavigationState, loadUserProgress, loadCustomCourses, loadCustomScrims, loadCourseLanguage, markItemCompleted, saveAppNavigationState, saveCourseLanguage, saveCustomCourse, updateRecentPosition } from './engine/persistence';
+import { resolveDebuggingLanguage, resolveLessonLanguage, resolveProjectLanguage, resolveStandaloneChallengeLanguage } from './engine/runtime/languageVariants';
 import { getNavigationState } from './engine/navigation';
 import { RoadmapHome } from './components/curriculum/RoadmapHome';
 import { ReadingView } from './components/curriculum/ReadingView';
@@ -131,6 +132,7 @@ export default function App() {
   const [currentView, setCurrentView] = useState<AppView>(initialAppState.view);
   const [courses, setCourses] = useState<Course[]>(initialCourses);
   const [course, setCourse] = useState<Course>(initialCourse);
+  const [courseLanguage, setCourseLanguage] = useState<CourseLanguage>(() => loadCourseLanguage(initialCourse.id));
   const [activeItem, setActiveItem] = useState<CurriculumItem | null>(initialAppState.item);
   const [activeModuleId, setActiveModuleId] = useState<string>(initialAppState.moduleId);
   const [scrimsMap, setScrimsMap] = useState<Record<string, ScrimLessonData>>({ ...FUNDAMENTOS_SCRIMS, ...JAVASCRIPT_SCRIMS, ...COMPONENT_COURSE_SCRIMS });
@@ -287,6 +289,7 @@ export default function App() {
     const selected = courses.find((candidate) => candidate.id === courseId);
     if (!selected) return;
     setCourse(selected);
+    setCourseLanguage(loadCourseLanguage(selected.id));
     setActiveItem(null);
     setActiveModuleId(selected.modules[0]?.id || '');
     setScrimInitialTimeMs(0);
@@ -362,6 +365,26 @@ export default function App() {
 
   const navigationState = getNavigationState(course, activeItem?.id || null);
   const activeScrimData = activeItem?.type === 'scrim' ? scrimsMap[activeItem.scrimDataId] : undefined;
+  const resolvedScrimData = useMemo(
+    () => activeScrimData ? resolveLessonLanguage(activeScrimData, courseLanguage) : undefined,
+    [activeScrimData, courseLanguage],
+  );
+  const resolvedChallengeItem = useMemo(
+    () => activeItem?.type === 'challenge' ? resolveStandaloneChallengeLanguage(activeItem, courseLanguage) : undefined,
+    [activeItem, courseLanguage],
+  );
+  const resolvedDebuggingItem = useMemo(
+    () => activeItem?.type === 'debugging' ? resolveDebuggingLanguage(activeItem, courseLanguage) : undefined,
+    [activeItem, courseLanguage],
+  );
+  const resolvedProjectItem = useMemo(
+    () => activeItem?.type === 'solo-project' ? resolveProjectLanguage(activeItem, courseLanguage) : undefined,
+    [activeItem, courseLanguage],
+  );
+  const handleCourseLanguageChange = (language: CourseLanguage) => {
+    saveCourseLanguage(course.id, language);
+    setCourseLanguage(language);
+  };
   const activeScrimIsUnavailable = currentView === 'scrim' && activeItem?.type === 'scrim' && !activeScrimData;
   const activeScrimError = activeScrimData?.audioTrack?.audioError;
   const activeScrimCannotPlay = activeScrimIsUnavailable || Boolean(activeScrimError);
@@ -420,21 +443,22 @@ export default function App() {
 
       {currentView === 'scrim' && activeItem && !activeScrimCannotPlay && (
         <ScrimPlayer
-          key={activeItem.id}
+          key={`${activeItem.id}:${courseLanguage}`}
           lessonData={
-            activeItem.type === 'scrim' && activeScrimData
-              ? activeScrimData
-              : activeItem.type === 'challenge'
+            activeItem.type === 'scrim' && resolvedScrimData
+              ? resolvedScrimData
+              : activeItem.type === 'challenge' && resolvedChallengeItem
               ? {
-                  id: activeItem.id,
-                  title: activeItem.title,
-                  description: activeItem.description || '',
-                  templateId: activeItem.templateId,
+                  id: resolvedChallengeItem.id,
+                  title: resolvedChallengeItem.title,
+                  description: resolvedChallengeItem.description || '',
+                  templateId: resolvedChallengeItem.templateId,
                   durationMs: 8000,
-                  initialWorkspace: activeItem.initialWorkspace,
+                  initialWorkspace: resolvedChallengeItem.initialWorkspace,
+                  languageVariants: resolvedChallengeItem.languageVariants,
                   events: [],
                   snapshots: [],
-                  challenges: [activeItem.challenge],
+                  challenges: [resolvedChallengeItem.challenge],
                   skillsIntroduced: [],
                   skillsRequired: [],
                   learningObjectives: [activeItem.description || activeItem.title],
@@ -453,6 +477,8 @@ export default function App() {
           onNextLesson={handleNext}
           initialTimeMs={scrimInitialTimeMs}
           navigationState={navigationState}
+          language={courseLanguage}
+          onLanguageChange={handleCourseLanguageChange}
           onPositionChange={(timeMs) => {
             saveRoute({
               view: 'scrim',
@@ -465,15 +491,18 @@ export default function App() {
         />
       )}
 
-      {currentView === 'debugging' && activeItem && activeItem.type === 'debugging' && (
+      {currentView === 'debugging' && resolvedDebuggingItem && (
         <DebuggingView
-          exercise={activeItem}
+          key={`${resolvedDebuggingItem.id}:${courseLanguage}`}
+          exercise={resolvedDebuggingItem}
           courseTitle={course.title}
           onBack={handleBackToRoadmap}
           onBackToRoadmap={handleBackToRoadmap}
           onPrevious={navigationState.hasPrevious ? handlePrevious : undefined}
           onNext={navigationState.hasNext ? handleNext : handleBackToRoadmap}
           navigationState={navigationState}
+          language={courseLanguage}
+          onLanguageChange={handleCourseLanguageChange}
         />
       )}
 
@@ -501,15 +530,18 @@ export default function App() {
         />
       )}
 
-      {currentView === 'solo-project' && activeItem && activeItem.type === 'solo-project' && (
+      {currentView === 'solo-project' && resolvedProjectItem && (
         <SoloProjectView
-          project={activeItem}
+          key={`${resolvedProjectItem.id}:${courseLanguage}`}
+          project={resolvedProjectItem}
           courseTitle={course.title}
           onBack={handleBackToRoadmap}
           onBackToRoadmap={handleBackToRoadmap}
           onPrevious={navigationState.hasPrevious ? handlePrevious : undefined}
           onNext={navigationState.hasNext ? handleNext : handleBackToRoadmap}
           navigationState={navigationState}
+          language={courseLanguage}
+          onLanguageChange={handleCourseLanguageChange}
         />
       )}
 

@@ -1,11 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { SoloProjectItem } from '../../types/curriculum';
-import { WorkspaceSnapshot, WorkspaceFile } from '../../types/scrim';
+import { type CourseLanguage, WorkspaceSnapshot, WorkspaceFile } from '../../types/scrim';
 import { cloneWorkspace } from '../../engine/eventLog';
-import { markItemCompleted } from '../../engine/persistence';
+import { loadLanguageWorkspaceDraft, markItemCompleted, saveLanguageWorkspaceDraft } from '../../engine/persistence';
 import { CodeEditor } from '../editor/CodeEditor';
 import { FileTree } from '../editor/FileTree';
 import { PreviewPane, PreviewPaneRef } from '../preview/PreviewPane';
+import { LogicRunnerPanel } from '../preview/LogicRunnerPanel';
+import { LanguageSelector } from '../runtime/LanguageSelector';
 import {
   ArrowLeft,
   Sparkles,
@@ -30,6 +32,8 @@ interface SoloProjectViewProps {
   onPrevious?: () => void;
   onNext?: () => void;
   navigationState?: NavigationState;
+  language?: CourseLanguage;
+  onLanguageChange?: (language: CourseLanguage) => void;
 }
 
 export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
@@ -40,12 +44,20 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
   onPrevious,
   onNext,
   navigationState,
+  language = 'javascript',
+  onLanguageChange,
 }) => {
-  const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() => cloneWorkspace(project.initialWorkspace));
+  const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() =>
+    loadLanguageWorkspaceDraft(project.id, language) ?? cloneWorkspace(project.initialWorkspace),
+  );
   const [checkedRequirements, setCheckedRequirements] = useState<Record<string, boolean>>({});
   const [isCompleted, setIsCompleted] = useState(false);
   const [showFileTree, setShowFileTree] = useState(true);
   const previewRef = useRef<PreviewPaneRef | null>(null);
+
+  useEffect(() => {
+    saveLanguageWorkspaceDraft(project.id, language, workspace);
+  }, [language, project.id, workspace]);
 
   const toggleRequirement = (reqId: string) => {
     setCheckedRequirements((prev) => ({
@@ -112,6 +124,9 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
+          {project.languageVariants && onLanguageChange && (
+            <LanguageSelector value={language} onChange={onLanguageChange} compact />
+          )}
           <div className="text-xs font-mono text-zinc-400">
             Requirements: <span className="text-zinc-200 font-bold">{completedCount}/{totalCount}</span>
           </div>
@@ -313,7 +328,15 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
 
         {/* Right: Live Preview & Runtime Console */}
         <div className="w-[45%] shrink-0 h-full flex flex-col">
-          <PreviewPane ref={previewRef} workspace={workspace} />
+          {language === 'python' ? (
+            <LogicRunnerPanel
+              workspace={workspace}
+              language="python"
+              packages={project.languageVariants?.python.packages}
+            />
+          ) : (
+            <PreviewPane ref={previewRef} workspace={workspace} />
+          )}
         </div>
       </div>
     </div>

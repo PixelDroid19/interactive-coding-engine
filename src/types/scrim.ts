@@ -223,6 +223,8 @@ export interface ScrimLessonData {
   durationMs: number;
   initialWorkspace: WorkspaceSnapshot;
   languageVariants?: LanguageVariants;
+  /** Paquetes de Pyodide que necesita la variante activa. */
+  runtimePackages?: string[];
   events: ScrimEvent[];
   snapshots: SnapshotPoint[];
   audioTrack?: AudioTrackInfo;
