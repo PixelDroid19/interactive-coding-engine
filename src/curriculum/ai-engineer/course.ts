@@ -1,7 +1,7 @@
 import type { Course, CourseModule } from '../../types/curriculum';
 import type { ScrimLessonData } from '../../types/scrim';
 import { buildAiLessonBundle } from './factory';
-import { AI_SPECS_01_TO_27 } from './modules';
+import { AI_SPECS } from './modules';
 
 const MODULE_DEFINITIONS: CourseModule[] = [
   { id: 'ai-mod-00-trabajo', title: 'Módulo 0: Preparar el trabajo', description: 'Del problema de producto al entorno y los contratos básicos.', items: [] },
@@ -19,7 +19,7 @@ const MODULE_DEFINITIONS: CourseModule[] = [
   { id: 'ai-mod-12-proyecto-final', title: 'Módulo 12: Proyecto final', description: 'Diseño, construcción, ataque, medición y presentación.', items: [] },
 ];
 
-const built = AI_SPECS_01_TO_27.map((spec) => ({ spec, ...buildAiLessonBundle(spec) }));
+const built = AI_SPECS.map((spec) => ({ spec, ...buildAiLessonBundle(spec) }));
 
 export const AI_ENGINEER_MODULES: CourseModule[] = MODULE_DEFINITIONS.map((module, index) => ({
   ...module,
