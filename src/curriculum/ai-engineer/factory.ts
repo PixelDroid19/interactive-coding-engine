@@ -13,6 +13,7 @@ import type {
   WorkspaceSnapshot,
 } from '../../types/scrim';
 import { withGuidedChallenges } from '../challengeGuidance';
+import { AI_INTERACTIVE_LABS } from './interactiveLabs';
 import { sourcesFor } from './sources';
 import type { AIEngineerLessonSpec, AILanguageCode } from './types';
 
@@ -174,6 +175,9 @@ export function buildAiLessonBundle(spec: AIEngineerLessonSpec): AILessonBundle 
     frequentQuestions: structuredClone(spec.reading.questions),
     transferPrompt: spec.reading.transfer,
     sources: sourcesFor(spec.reading.sourceIds),
+    ...(AI_INTERACTIVE_LABS[spec.number]
+      ? { interactiveLab: structuredClone(AI_INTERACTIVE_LABS[spec.number]) }
+      : {}),
   };
 
   const reasoning: ReasoningExerciseItem = {

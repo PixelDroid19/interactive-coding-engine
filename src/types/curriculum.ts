@@ -40,6 +40,20 @@ export interface ReadingSource {
   purpose: string;
 }
 
+export type InteractiveAILabMode = 'prompt' | 'summarize' | 'write';
+
+export interface InteractiveAILab {
+  title: string;
+  description: string;
+  defaultMode: InteractiveAILabMode;
+  allowedModes: InteractiveAILabMode[];
+  systemPrompt: string;
+  promptA: string;
+  promptB: string;
+  input: string;
+  observationPrompt: string;
+}
+
 export interface DebuggingExerciseItem extends BaseCurriculumItem {
   type: 'debugging';
   relatedLessonId?: string;
@@ -65,6 +79,7 @@ export interface ReadingItem extends BaseCurriculumItem {
   transferPrompt?: string;
   practiceItemId?: string;
   sources?: ReadingSource[];
+  interactiveLab?: InteractiveAILab;
 }
 
 export interface ReasoningNode {

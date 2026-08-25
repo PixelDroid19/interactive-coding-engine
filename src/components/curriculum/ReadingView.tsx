@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ChevronLeft, ExternalLink, Lightbulb } from 'lucide-react';
 import { ReadingItem } from '../../types/curriculum';
 import { NavigationState } from '../../engine/navigation';
+import { AIInteractivePractice } from '../runtime/AIInteractivePractice';
 
 interface ReadingViewProps {
   reading: ReadingItem;
@@ -62,7 +63,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
         </header>
 
         <main
-          className="mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-5 py-6 select-text"
+          className={`mx-auto min-h-0 w-full flex-1 overflow-y-auto px-5 py-6 select-text ${reading.interactiveLab ? 'max-w-6xl' : 'max-w-3xl'}`}
           aria-label="Contenido de la lectura"
         >
           <article className="overflow-hidden rounded-xl border-2 border-zinc-700 bg-zinc-950 shadow-[5px_5px_0_#000]">
@@ -143,6 +144,11 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
               ))}
             </ul>
               </aside>
+              {reading.interactiveLab && (
+                <div className="px-4 py-5 sm:px-6 sm:py-6">
+                  <AIInteractivePractice lab={reading.interactiveLab} />
+                </div>
+              )}
               {reading.frequentQuestions && reading.frequentQuestions.length > 0 && (
                 <section className="border-t-2 border-sky-900 bg-sky-950/30 px-5 py-5 sm:px-7 sm:py-6" aria-labelledby="reading-faq-title">
                   <h2 id="reading-faq-title" className="text-lg font-bold text-sky-100" style={{ fontFamily: 'Patrick Hand, cursive' }}>
