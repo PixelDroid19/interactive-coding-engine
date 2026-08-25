@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, Route, Terminal, X } from 'lucide-react';
 import { ThemeToggle } from '../ThemeToggle';
+import { AILearningLab } from '../runtime/AILearningLab';
 import { Course, CurriculumItem, UserProgressRecord } from '../../types/curriculum';
 import { ScrimLessonData } from '../../types/scrim';
 import {
@@ -204,6 +205,8 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             </span>
           </div>
         </section>
+
+        {course.id === 'course-ai-engineer' && <AILearningLab />}
 
         <div className="rm-canvas">
           <div id="rm-tree" className="rm-tree">
