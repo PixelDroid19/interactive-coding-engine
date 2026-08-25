@@ -17,6 +17,8 @@ function attemptFor(item: ReasoningExerciseItem): ReasoningAttempt {
   if (activity.kind === 'trace-table') return { kind: 'trace-table', cells: activity.expectedCells };
   if (activity.kind === 'flowchart') return { kind: 'flowchart', connections: activity.expectedConnections };
   if (activity.kind === 'decision-table') return { kind: 'decision-table', outcomes: activity.expectedOutcomes };
+  if (activity.kind === 'vector-ranking') return { kind: 'vector-ranking', order: activity.expectedOrder };
+  if (activity.kind === 'context-budget') return { kind: 'context-budget', selected: activity.expectedSelected };
   return { kind: 'dependency-map', dependencies: activity.expectedDependencies };
 }
 
@@ -40,6 +42,18 @@ function expectValidReasoningReferences(item: ReasoningExerciseItem) {
       expect(currentCase.options, `${item.id}/${currentCase.id} no ofrece la respuesta esperada`)
         .toContain(activity.expectedOutcomes[currentCase.id]);
     }
+    return;
+  }
+  if (activity.kind === 'vector-ranking') {
+    expect(new Set(activity.expectedOrder), `${item.id} ordena candidatos invisibles`)
+      .toEqual(new Set(activity.candidates.map((candidate) => candidate.id)));
+    return;
+  }
+  if (activity.kind === 'context-budget') {
+    const ids = new Set(activity.blocks.map((block) => block.id));
+    activity.expectedSelected.forEach((id) => expect(ids, `${item.id} selecciona un bloque invisible`).toContain(id));
+    const used = activity.blocks.filter((block) => activity.expectedSelected.includes(block.id)).reduce((sum, block) => sum + block.tokens, 0);
+    expect(used, `${item.id} tiene una respuesta que supera el presupuesto`).toBeLessThanOrEqual(activity.budget);
     return;
   }
 

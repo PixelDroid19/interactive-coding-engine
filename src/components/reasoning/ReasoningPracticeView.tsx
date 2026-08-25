@@ -8,6 +8,8 @@ import { SequenceDiagram } from './diagrams/SequenceDiagram';
 import { TraceTable } from './diagrams/TraceTable';
 import { FlowchartDiagram } from './diagrams/FlowchartDiagram';
 import { ModuleDependencyDiagram } from './diagrams/ModuleDependencyDiagram';
+import { VectorRankingDiagram } from './diagrams/VectorRankingDiagram';
+import { ContextBudgetDiagram } from './diagrams/ContextBudgetDiagram';
 
 interface Props {
   item: ReasoningExerciseItem;
@@ -25,6 +27,8 @@ function initialAttempt(item: ReasoningExerciseItem): ReasoningAttempt {
   if (activity.kind === 'trace-table') return { kind: 'trace-table', cells: {} };
   if (activity.kind === 'decision-table') return { kind: 'decision-table', outcomes: {} };
   if (activity.kind === 'flowchart') return { kind: 'flowchart', connections: [] };
+  if (activity.kind === 'vector-ranking') return { kind: 'vector-ranking', order: activity.candidates.map((item) => item.id) };
+  if (activity.kind === 'context-budget') return { kind: 'context-budget', selected: activity.blocks.filter((block) => block.required).map((block) => block.id) };
   return { kind: 'dependency-map', dependencies: [] };
 }
 
@@ -44,13 +48,13 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
   useEffect(() => { saveReasoningDraft(item.id, { attempt, revealedHints, activityVersion: version }); }, [attempt, item.id, revealedHints, version]);
 
   const moveStep = (id: string, delta: number) => {
-    if (attempt.kind !== 'sequence') return;
+    if (attempt.kind !== 'sequence' && attempt.kind !== 'vector-ranking') return;
     const index = attempt.order.indexOf(id);
     const target = index + delta;
     if (target < 0 || target >= attempt.order.length) return;
     const order = [...attempt.order];
     [order[index], order[target]] = [order[target], order[index]];
-    setAttempt({ kind: 'sequence', order });
+    setAttempt(attempt.kind === 'sequence' ? { kind: 'sequence', order } : { kind: 'vector-ranking', order });
     setResult(null);
   };
 
@@ -105,6 +109,8 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
             {activity.kind === 'decision-table' && attempt.kind === 'decision-table' && <div className="reasoning-decisions">{activity.cases.map((currentCase) => <label key={currentCase.id}><span>{currentCase.label}</span><select aria-label={currentCase.label} value={attempt.outcomes[currentCase.id] ?? ''} onChange={(event) => { setAttempt({ kind: 'decision-table', outcomes: { ...attempt.outcomes, [currentCase.id]: event.target.value } }); setResult(null); }}><option value="">Elige un resultado</option>{currentCase.options.map((option) => <option key={option}>{option}</option>)}</select></label>)}</div>}
             {activity.kind === 'flowchart' && <><FlowchartDiagram nodes={activity.nodes} connections={selectedConnections} /><ConnectionChoices choices={activity.connectionOptions} selected={selectedConnections} labels={Object.fromEntries(activity.nodes.map((node) => [node.id, node.label]))} onToggle={toggleConnection} /></>}
             {activity.kind === 'dependency-map' && <><ModuleDependencyDiagram modules={activity.modules} dependencies={selectedConnections} /><ConnectionChoices choices={activity.dependencyOptions} selected={selectedConnections} labels={Object.fromEntries(activity.modules.map((module) => [module.id, module.label]))} onToggle={toggleConnection} /></>}
+            {activity.kind === 'vector-ranking' && attempt.kind === 'vector-ranking' && <VectorRankingDiagram candidates={activity.candidates} order={attempt.order} onMove={moveStep} />}
+            {activity.kind === 'context-budget' && attempt.kind === 'context-budget' && <ContextBudgetDiagram budget={activity.budget} blocks={activity.blocks} selected={attempt.selected} onToggle={(id) => { const selected = attempt.selected.includes(id) ? attempt.selected.filter((item) => item !== id) : [...attempt.selected, id]; setAttempt({ kind: 'context-budget', selected }); setResult(null); }} />}
           </div>
           <div className="reasoning-actions">
             <button type="button" className="reasoning-check" onClick={check}><CheckCircle2 size={18} /> Comprobar mi razonamiento</button>

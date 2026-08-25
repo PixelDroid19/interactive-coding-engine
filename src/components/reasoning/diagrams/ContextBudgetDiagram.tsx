@@ -1,0 +1,7 @@
+import React from 'react';
+import type { ReasoningNode } from '../../../types/curriculum';
+
+export function ContextBudgetDiagram({ budget, blocks, selected, onToggle }: { budget: number; blocks: Array<ReasoningNode & { tokens: number; required?: boolean }>; selected: string[]; onToggle: (id: string) => void }) {
+  const used = blocks.filter((block) => selected.includes(block.id)).reduce((sum, block) => sum + block.tokens, 0);
+  return <section aria-label="Presupuesto de contexto"><div className="mb-3 flex justify-between"><h2 className="font-bold">Selecciona los bloques</h2><strong className={used > budget ? 'text-rose-400' : 'text-emerald-400'}>{used} / {budget} tokens</strong></div><div className="h-3 overflow-hidden rounded bg-zinc-800" role="progressbar" aria-valuemin={0} aria-valuemax={budget} aria-valuenow={used}><span className={`block h-full ${used > budget ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, used / budget * 100)}%` }} /></div><fieldset className="mt-4 space-y-2"><legend className="sr-only">Bloques disponibles</legend>{blocks.map((block) => <label key={block.id} className="flex items-center gap-3 rounded border border-zinc-600 bg-zinc-900 p-3"><input type="checkbox" checked={selected.includes(block.id)} disabled={block.required} onChange={() => onToggle(block.id)} /><span className="flex-1">{block.label}{block.required ? ' (obligatorio)' : ''}</span><code>{block.tokens}</code></label>)}</fieldset></section>;
+}

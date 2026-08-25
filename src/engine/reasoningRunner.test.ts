@@ -127,4 +127,18 @@ describe('reasoningRunner', () => {
     expect(result.allPassed).toBe(false);
     expect(result.isEvaluationError).toBe(true);
   });
+
+  it('valida rankings vectoriales por ids, no por posiciones visuales', () => {
+    const activity: ReasoningActivity = { kind: 'vector-ranking', prompt: 'Ordena', candidates: [{ id: 'a', label: 'A', score: 0.2 }, { id: 'b', label: 'B', score: 0.9 }], expectedOrder: ['b', 'a'] };
+    expect(validateReasoningAttempt(activity, { kind: 'vector-ranking', order: ['b', 'a'] }).allPassed).toBe(true);
+    expect(validateReasoningAttempt(activity, { kind: 'vector-ranking', order: ['a', 'b'] }).allPassed).toBe(false);
+  });
+
+  it('valida presupuesto, bloques obligatorios y selección esperada', () => {
+    const activity: ReasoningActivity = { kind: 'context-budget', prompt: 'Elige', budget: 7, blocks: [{ id: 'p', label: 'Política', tokens: 3, required: true }, { id: 'd', label: 'Dato', tokens: 4 }, { id: 'r', label: 'Ruido', tokens: 6 }], expectedSelected: ['p', 'd'] };
+    expect(validateReasoningAttempt(activity, { kind: 'context-budget', selected: ['p', 'd'] }).allPassed).toBe(true);
+    const failed = validateReasoningAttempt(activity, { kind: 'context-budget', selected: ['p', 'r'] });
+    expect(failed.allPassed).toBe(false);
+    expect(failed.checks.find((check) => check.id === 'budget')?.passed).toBe(false);
+  });
 });

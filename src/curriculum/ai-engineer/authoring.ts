@@ -120,3 +120,30 @@ export function flowActivity(
     expectedConnections: connections.map(([from, to, label]) => ({ from, to, ...(label ? { label } : {}) })),
   };
 }
+
+export function vectorRankingActivity(
+  prompt: string,
+  candidates: Array<[id: string, label: string, score: number]>,
+): ReasoningActivity {
+  return {
+    kind: 'vector-ranking',
+    prompt,
+    candidates: candidates.map(([id, label, score]) => ({ id, label, score })),
+    expectedOrder: [...candidates].sort((left, right) => right[2] - left[2]).map(([id]) => id),
+  };
+}
+
+export function contextBudgetActivity(
+  prompt: string,
+  budget: number,
+  blocks: Array<[id: string, label: string, tokens: number, required?: boolean]>,
+  expectedSelected: string[],
+): ReasoningActivity {
+  return {
+    kind: 'context-budget',
+    prompt,
+    budget,
+    blocks: blocks.map(([id, label, tokens, required]) => ({ id, label, tokens, ...(required ? { required } : {}) })),
+    expectedSelected,
+  };
+}

@@ -331,10 +331,14 @@ describe('progresión integrada del curso de Fundamentos', () => {
         const optionKeys = new Set(activity.connectionOptions.map((connection) => JSON.stringify(connection)));
         activity.expectedConnections.forEach((connection) => expect(optionKeys).toContain(JSON.stringify(connection)));
         attempt = { kind: 'flowchart', connections: activity.expectedConnections };
-      } else {
+      } else if (activity.kind === 'dependency-map') {
         const optionKeys = new Set(activity.dependencyOptions.map((connection) => JSON.stringify(connection)));
         activity.expectedDependencies.forEach((connection) => expect(optionKeys).toContain(JSON.stringify(connection)));
         attempt = { kind: 'dependency-map', dependencies: activity.expectedDependencies };
+      } else if (activity.kind === 'vector-ranking') {
+        attempt = { kind: 'vector-ranking', order: activity.expectedOrder };
+      } else {
+        attempt = { kind: 'context-budget', selected: activity.expectedSelected };
       }
 
       expect(validateReasoningAttempt(activity, attempt).allPassed, `${item.id} no puede resolverse desde su propia interfaz`).toBe(true);

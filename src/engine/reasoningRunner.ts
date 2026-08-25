@@ -125,6 +125,31 @@ export function validateReasoningAttempt(
         Object.fromEntries(activity.modules.map((module) => [module.id, module.label])),
       )];
       break;
+    case 'vector-ranking': {
+      const received = (attempt as Extract<ReasoningAttempt, { kind: 'vector-ranking' }>).order;
+      checks = activity.expectedOrder.map((expectedId, index) => ({
+        id: `rank-${index}`,
+        label: `Posición ${index + 1}`,
+        passed: received[index] === expectedId,
+        message: received[index] === expectedId
+          ? `${activity.candidates.find((item) => item.id === expectedId)?.label ?? expectedId} está bien ubicado.`
+          : `Revisa la posición ${index + 1}: ordena de mayor a menor puntuación.`,
+      }));
+      break;
+    }
+    case 'context-budget': {
+      const selected = (attempt as Extract<ReasoningAttempt, { kind: 'context-budget' }>).selected;
+      const uniqueSelected = [...new Set(selected)].sort();
+      const expected = [...new Set(activity.expectedSelected)].sort();
+      const used = activity.blocks.filter((block) => uniqueSelected.includes(block.id)).reduce((sum, block) => sum + block.tokens, 0);
+      const required = activity.blocks.filter((block) => block.required).every((block) => uniqueSelected.includes(block.id));
+      checks = [
+        { id: 'budget', label: 'Presupuesto', passed: used <= activity.budget, message: used <= activity.budget ? `Usas ${used} de ${activity.budget} tokens.` : `Usas ${used}; supera el presupuesto de ${activity.budget}.` },
+        { id: 'required', label: 'Bloques obligatorios', passed: required, message: required ? 'Conservaste los bloques obligatorios.' : 'Falta un bloque obligatorio.' },
+        { id: 'selection', label: 'Selección útil', passed: JSON.stringify(uniqueSelected) === JSON.stringify(expected), message: JSON.stringify(uniqueSelected) === JSON.stringify(expected) ? 'La selección coincide con el contrato.' : 'Revisa qué bloque opcional aporta más valor dentro del espacio restante.' },
+      ];
+      break;
+    }
   }
 
   const allPassed = checks.length > 0 && checks.every((check) => check.passed);

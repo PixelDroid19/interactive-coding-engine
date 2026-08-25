@@ -111,6 +111,19 @@ export type ReasoningActivity =
       modules: ReasoningNode[];
       dependencyOptions: ReasoningConnection[];
       expectedDependencies: ReasoningConnection[];
+    }
+  | {
+      kind: 'vector-ranking';
+      prompt: string;
+      candidates: Array<ReasoningNode & { score: number }>;
+      expectedOrder: string[];
+    }
+  | {
+      kind: 'context-budget';
+      prompt: string;
+      budget: number;
+      blocks: Array<ReasoningNode & { tokens: number; required?: boolean }>;
+      expectedSelected: string[];
     };
 
 export type ReasoningAttempt =
@@ -118,7 +131,9 @@ export type ReasoningAttempt =
   | { kind: 'trace-table'; cells: Record<string, string> }
   | { kind: 'flowchart'; connections: ReasoningConnection[] }
   | { kind: 'decision-table'; outcomes: Record<string, string> }
-  | { kind: 'dependency-map'; dependencies: ReasoningConnection[] };
+  | { kind: 'dependency-map'; dependencies: ReasoningConnection[] }
+  | { kind: 'vector-ranking'; order: string[] }
+  | { kind: 'context-budget'; selected: string[] };
 
 export interface ReasoningExerciseItem extends BaseCurriculumItem {
   type: 'reasoning';
