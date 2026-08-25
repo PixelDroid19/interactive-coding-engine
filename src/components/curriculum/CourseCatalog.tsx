@@ -39,7 +39,7 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress,
                 <span>{levelLabel}</span>
                 <span>{lessons} clases</span>
               </div>
-              <div className="course-card__icon"><BookOpen size={25} /></div>
+              <div className="course-card__icon" data-augmented-ui="hud-icon tr-clip bl-clip border inlay"><BookOpen size={25} /></div>
               <h2>{course.title}</h2>
               <p>{course.tagline}</p>
               <div className="course-card__tags">{course.tags.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}</div>

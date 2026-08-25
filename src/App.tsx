@@ -191,6 +191,7 @@ export default function App() {
         ['.modal-dialog button.btn-brand, [role="dialog"] button.btn-brand', 'hud-primary tl-clip br-clip border inlay', true],
         ['.modal-dialog button.neu-pill-btn:not(.btn-brand), [role="dialog"] button.neu-pill-btn:not(.btn-brand)', 'hud-action tl-clip br-clip border inlay', true],
         ['.course-card', 'hud-card tl-clip br-clip border inlay'],
+        ['.course-card__icon', 'hud-icon tr-clip bl-clip border inlay', true],
         ['.course-card > button', 'hud-primary tl-clip br-clip border inlay', true],
         ['.rm-hero', 'hud-hero tl-clip tr-clip br-clip bl-clip border inlay'],
       ];
