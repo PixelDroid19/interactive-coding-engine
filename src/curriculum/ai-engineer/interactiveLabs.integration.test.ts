@@ -9,6 +9,11 @@ function reading(number: number) {
 }
 
 describe('laboratorios interactivos de AI Engineer', () => {
+  it('ubica los embeddings WebGPU después de enseñarlos y no en la portada del curso', () => {
+    expect(reading(28)?.handsOnLab).toBeUndefined();
+    expect(reading(29)?.handsOnLab).toBe('embeddings-webgpu');
+  });
+
   it('inserta práctica local en la progresión de prompts y modelos', () => {
     const expected = new Map([
       [12, 'prompt'],

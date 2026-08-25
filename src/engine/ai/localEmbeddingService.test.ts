@@ -69,32 +69,35 @@ describe('LocalEmbeddingService', () => {
   it('conserva el orden del lote, normaliza vectores e informa progreso', async () => {
     const worker = new FakeEmbeddingWorker();
     const onProgress = vi.fn();
-    const service = new LocalEmbeddingService(() => worker);
+    const service = new LocalEmbeddingService(() => worker, () => true);
 
     const result = await service.embed(['primero', 'segundo'], { onProgress });
 
-    expect(result.mode).toBe('local-model');
+    expect(result.device).toBe('webgpu');
     expect(result.vectors).toEqual([[0.6, 0.8], [0, 1]]);
     expect(worker.messages[0]).toMatchObject({ texts: ['primero', 'segundo'] });
     expect(onProgress).toHaveBeenCalledWith(expect.objectContaining({ progress: 0.5 }));
     expect(service.modelInfo().loaded).toBe(true);
   });
 
-  it('usa un vector didáctico etiquetado cuando el modelo local falla', async () => {
-    const service = new LocalEmbeddingService(() => new FailedEmbeddingWorker());
+  it('propaga el fallo del modelo sin fabricar vectores sustitutos', async () => {
+    const service = new LocalEmbeddingService(() => new FailedEmbeddingWorker(), () => true);
 
-    const result = await service.embed(['hola mundo', 'hola mundo']);
+    await expect(service.embed(['hola mundo', 'hola mundo'])).rejects.toThrow(/WebGPU no está disponible/i);
+  });
 
-    expect(result.mode).toBe('teaching-fallback');
-    expect(result.warning).toContain('WebGPU no está disponible');
-    expect(result.vectors[0]).toEqual(result.vectors[1]);
-    expect(Math.hypot(...result.vectors[0])).toBeCloseTo(1, 8);
+  it('rechaza antes de crear el Worker si WebGPU no está disponible', async () => {
+    const factory = vi.fn(() => new FakeEmbeddingWorker());
+    const service = new LocalEmbeddingService(factory, () => false);
+
+    await expect(service.embed(['hola'])).rejects.toThrow(/no usa vectores simulados/i);
+    expect(factory).not.toHaveBeenCalled();
   });
 
   it('cancela una petición pendiente sin convertirla en fallback', async () => {
     const controller = new AbortController();
     const worker = new SilentEmbeddingWorker();
-    const service = new LocalEmbeddingService(() => worker);
+    const service = new LocalEmbeddingService(() => worker, () => true);
     const request = service.embed(['cancelar'], { signal: controller.signal });
 
     controller.abort();

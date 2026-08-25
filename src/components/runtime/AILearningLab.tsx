@@ -24,7 +24,15 @@ function cosine(a: number[], b: number[]) {
   return aa && bb ? dot / Math.sqrt(aa * bb) : 0;
 }
 
-export function AILearningLab() {
+interface AILearningLabProps {
+  createEmbeddingService?: () => LocalEmbeddingService;
+  webGpuAvailable?: boolean;
+}
+
+export function AILearningLab({
+  createEmbeddingService = () => new LocalEmbeddingService(),
+  webGpuAvailable = typeof navigator !== 'undefined' && 'gpu' in navigator,
+}: AILearningLabProps = {}) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('No recuerdo mi clave para entrar');
   const [embeddingState, setEmbeddingState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
@@ -49,14 +57,14 @@ export function AILearningLab() {
   const runEmbeddings = async () => {
     setEmbeddingState('loading');
     setEmbeddingMessage('Preparando el modelo local…');
-    service.current ??= new LocalEmbeddingService();
+    service.current ??= createEmbeddingService();
     try {
       const result = await service.current.embed([query, ...DOCUMENTS], {
         onProgress: (progress) => setEmbeddingMessage(progress.label),
       });
       setEmbeddingResult(result);
       setEmbeddingState('ready');
-      setEmbeddingMessage(result.warning ?? `Modelo local listo: ${result.model}`);
+      setEmbeddingMessage(`Embeddings WebGPU listos: ${result.model}`);
     } catch (error) {
       setEmbeddingState('error');
       setEmbeddingMessage(error instanceof Error ? error.message : String(error));
@@ -93,10 +101,11 @@ export function AILearningLab() {
       {open && (
         <div className="grid gap-4 border-t border-zinc-700 p-4 lg:grid-cols-2">
           <article className="rounded-lg border border-zinc-700 bg-zinc-900 p-4">
-            <div className="mb-3 flex items-start gap-2"><ShieldCheck size={18} className="mt-0.5 text-emerald-400" /><div><h3 className="font-bold">Embeddings locales</h3><p className="text-sm text-zinc-400">El texto se procesa en este dispositivo. La primera carga descarga el modelo.</p></div></div>
+            <div className="mb-3 flex items-start gap-2"><ShieldCheck size={18} className="mt-0.5 text-emerald-400" /><div><h3 className="font-bold">Embeddings locales con WebGPU</h3><p className="text-sm text-zinc-400">El texto se procesa con un modelo multilingüe real en la GPU. La primera carga descarga sus artefactos.</p></div></div>
             <label className="block text-sm font-semibold">Consulta<input className="mt-1 w-full rounded border border-zinc-600 bg-zinc-950 p-2 text-zinc-100" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
-            <button type="button" className="mt-3 flex items-center gap-2 rounded bg-yellow-300 px-3 py-2 font-bold text-zinc-950 disabled:opacity-60" disabled={!query.trim() || embeddingState === 'loading'} onClick={runEmbeddings}>{embeddingState === 'loading' ? <LoaderCircle className="animate-spin" size={16} /> : <Play size={16} />} Probar embeddings</button>
-            <p className={`mt-2 text-xs ${embeddingState === 'error' ? 'text-rose-300' : embeddingResult?.mode === 'teaching-fallback' ? 'text-amber-300' : 'text-zinc-400'}`} role="status">{embeddingMessage}</p>
+            {!webGpuAvailable && <p className="mt-3 rounded border border-amber-700 bg-amber-950/40 p-2 text-xs text-amber-200" role="alert">WebGPU no está disponible. No se mostrará un ranking simulado.</p>}
+            <button type="button" className="mt-3 flex items-center gap-2 rounded bg-yellow-300 px-3 py-2 font-bold text-zinc-950 disabled:opacity-60" disabled={!webGpuAvailable || !query.trim() || embeddingState === 'loading'} onClick={runEmbeddings}>{embeddingState === 'loading' ? <LoaderCircle className="animate-spin" size={16} /> : <Play size={16} />} Probar embeddings con WebGPU</button>
+            <p className={`mt-2 text-xs ${embeddingState === 'error' ? 'text-rose-300' : 'text-zinc-400'}`} role={embeddingState === 'error' ? 'alert' : 'status'}>{embeddingMessage}</p>
             {ranking.length > 0 && <ol className="mt-3 space-y-2">{ranking.map((item) => <li key={item.text} className="flex justify-between gap-3 rounded bg-zinc-950 p-2 text-sm"><span>{item.text}</span><code>{item.score.toFixed(3)}</code></li>)}</ol>}
           </article>
           <article className="rounded-lg border border-zinc-700 bg-zinc-900 p-4">

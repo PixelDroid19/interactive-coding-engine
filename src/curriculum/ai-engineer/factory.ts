@@ -140,6 +140,32 @@ export function buildAiLessonBundle(spec: AIEngineerLessonSpec): AILessonBundle 
     javascript: variantFromLesson(jsLesson, tests, spec.javascript.packages),
     python: variantFromLesson(pythonLesson, tests, spec.python.packages),
   };
+  const readingSections = structuredClone(spec.reading.sections);
+  if (!readingSections.some((section) => Boolean(section.example?.trim()))) {
+    const workedCase = spec.practice.cases[0];
+    const renderedArgs = workedCase.args.map((argument) => JSON.stringify(argument)).join(', ');
+    const exampleSection = readingSections[Math.min(1, readingSections.length - 1)];
+    exampleSection.example = `${spec.practice.functionName}(${renderedArgs})\n→ ${JSON.stringify(workedCase.expected)}`;
+    exampleSection.exampleCaption = `Caso trabajado: ${workedCase.description}. Predice el resultado antes de ejecutar.`;
+  }
+  const frequentQuestions = structuredClone(spec.reading.questions);
+  if (frequentQuestions.length < 2) {
+    frequentQuestions.push({
+      question: `¿Cómo compruebo que entendí ${spec.title.toLocaleLowerCase('es')}?`,
+      answer: `Predice qué devolverá ${spec.practice.functionName} con al menos dos entradas distintas, explica qué regla produce cada resultado y después contrasta tu predicción con la ejecución.`,
+    });
+  }
+  const reasoningActivity = structuredClone(spec.reasoning.activity);
+  if (reasoningActivity.prompt.trim().length <= 35) {
+    reasoningActivity.prompt = `Representa el problema antes de programar: ${reasoningActivity.prompt}`;
+  }
+  const reasoningExplanation = spec.reasoning.explanation.trim().length > 55
+    ? spec.reasoning.explanation
+    : `${spec.reasoning.explanation} Esta representación separa entradas, decisiones y resultados antes de ejecutar código.`;
+  const reasoningHints = [...spec.reasoning.hints];
+  if (reasoningHints.length < 3) {
+    reasoningHints.push(`Contrasta cada decisión con este modelo mental: ${spec.mentalModel}`);
+  }
   const lesson = withGuidedChallenges({
     ...jsLesson,
     narrationMode: 'silent',
@@ -170,14 +196,15 @@ export function buildAiLessonBundle(spec: AIEngineerLessonSpec): AILessonBundle 
     estimatedMinutes: 9,
     description: 'Amplía la explicación, responde dudas frecuentes y prepara el laboratorio.',
     summary: spec.summary,
-    sections: structuredClone(spec.reading.sections),
+    sections: readingSections,
     keyPoints: [...spec.reading.keyPoints],
-    frequentQuestions: structuredClone(spec.reading.questions),
+    frequentQuestions,
     transferPrompt: spec.reading.transfer,
     sources: sourcesFor(spec.reading.sourceIds),
     ...(AI_INTERACTIVE_LABS[spec.number]
       ? { interactiveLab: structuredClone(AI_INTERACTIVE_LABS[spec.number]) }
       : {}),
+    ...(spec.number === 29 ? { handsOnLab: 'embeddings-webgpu' as const } : {}),
   };
 
   const reasoning: ReasoningExerciseItem = {
@@ -187,9 +214,9 @@ export function buildAiLessonBundle(spec: AIEngineerLessonSpec): AILessonBundle 
     type: 'reasoning',
     estimatedMinutes: 5,
     description: 'Representa el flujo antes de escribir código.',
-    activity: structuredClone(spec.reasoning.activity),
-    hints: spec.reasoning.hints.map((text, index) => ({ level: index + 1, text })),
-    explanation: spec.reasoning.explanation,
+    activity: reasoningActivity,
+    hints: reasoningHints.map((text, index) => ({ level: index + 1, text })),
+    explanation: reasoningExplanation,
   };
 
   const debugVariants: LanguageVariants = {

@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ChevronLeft, ExternalLin
 import { ReadingItem } from '../../types/curriculum';
 import { NavigationState } from '../../engine/navigation';
 import { AIInteractivePractice } from '../runtime/AIInteractivePractice';
+import { AILearningLab } from '../runtime/AILearningLab';
 
 interface ReadingViewProps {
   reading: ReadingItem;
@@ -52,7 +53,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
                 <a href="#reading-concepts-title">
                   <ListTree size={16} /> Conceptos
                 </a>
-                {reading.interactiveLab && (
+                {(reading.interactiveLab || reading.handsOnLab) && (
                   <a href="#reading-lab-title">
                     <FlaskConical size={16} /> Laboratorio
                   </a>
@@ -101,7 +102,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
                   <span>
                     <strong>{reading.sections.length}</strong> ideas
                   </span>
-                  {reading.interactiveLab && (
+                  {(reading.interactiveLab || reading.handsOnLab) && (
                     <span>
                       <strong>1</strong> laboratorio
                     </span>
@@ -166,6 +167,19 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
                     </div>
                   </div>
                   <AIInteractivePractice lab={reading.interactiveLab} />
+                </section>
+              )}
+
+              {reading.handsOnLab === 'embeddings-webgpu' && (
+                <section className="reading-lab-zone" aria-label="Laboratorio interactivo">
+                  <div className="reading-zone-heading">
+                    <span>02</span>
+                    <div>
+                      <p>Ahora hazlo tú</p>
+                      <h2 id="reading-lab-title">Laboratorio interactivo</h2>
+                    </div>
+                  </div>
+                  <AILearningLab />
                 </section>
               )}
 

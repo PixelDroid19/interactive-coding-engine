@@ -26,8 +26,8 @@ function getPipeline(model: string, requestId: number) {
   if (!current) {
     send({ type: 'embedding/progress', requestId, status: 'init', label: 'Preparando el modelo local…' });
     current = pipeline('feature-extraction', model, {
-      dtype: 'q8',
-      device: 'wasm',
+      dtype: 'q4f16',
+      device: 'webgpu',
       progress_callback: (event: unknown) => {
         const detail = event && typeof event === 'object' ? event as Record<string, unknown> : {};
         send({
@@ -58,9 +58,12 @@ function toVectors(value: unknown): number[][] {
 
 async function embed(message: Extract<EmbeddingWorkerInbound, { type: 'embedding/run' }>) {
   try {
+    if (!('gpu' in navigator)) {
+      throw new Error('WebGPU no está disponible. Este laboratorio no usa vectores simulados ni una ruta CPU.');
+    }
     const extractor = await getPipeline(message.model, message.requestId);
     if (cancelled.delete(message.requestId)) return;
-    send({ type: 'embedding/progress', requestId: message.requestId, status: 'inference', label: 'Calculando vectores…' });
+    send({ type: 'embedding/progress', requestId: message.requestId, status: 'inference', label: 'Calculando embeddings reales con WebGPU…' });
     const tensor = await extractor(message.texts, { pooling: 'mean', normalize: true });
     if (cancelled.delete(message.requestId)) return;
     const vectors = toVectors(tensor.tolist());

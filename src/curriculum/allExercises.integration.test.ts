@@ -5,6 +5,7 @@ import { runChallengeValidation } from '../engine/testRunner';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './fundamentos/course';
 import { JAVASCRIPT_COURSE, JAVASCRIPT_SCRIMS } from './javascript/course';
 import { COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS } from './web-components-lit/course';
+import { AI_ENGINEER_COURSE, AI_ENGINEER_SCRIMS } from './ai-engineer/course';
 
 interface AuditedExercise {
   id: string;
@@ -23,6 +24,7 @@ const catalogs: Array<[Course, ScrimCatalog]> = [
   [FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS],
   [JAVASCRIPT_COURSE, JAVASCRIPT_SCRIMS],
   [COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS],
+  [AI_ENGINEER_COURSE, AI_ENGINEER_SCRIMS],
 ];
 
 function fromChallenge(courseId: string, challenge: ScrimChallenge): AuditedExercise {
@@ -72,11 +74,12 @@ function invocationCases(test: ChallengeTest): Array<{ expected: unknown }> {
 describe('auditoría integrada de todos los ejercicios', () => {
   const exercises = collectExercises();
 
-  it('recorre los 186 retos y laboratorios de los tres cursos', () => {
-    expect(exercises).toHaveLength(186);
+  it('recorre los 344 retos y laboratorios de los cuatro cursos', () => {
+    expect(exercises).toHaveLength(344);
     expect(exercises.filter((exercise) => exercise.courseId === FUNDAMENTOS_COURSE.id)).toHaveLength(48);
     expect(exercises.filter((exercise) => exercise.courseId === JAVASCRIPT_COURSE.id)).toHaveLength(48);
     expect(exercises.filter((exercise) => exercise.courseId === COMPONENT_COURSE.id)).toHaveLength(90);
+    expect(exercises.filter((exercise) => exercise.courseId === AI_ENGINEER_COURSE.id)).toHaveLength(158);
   });
 
   it('mantiene contratos identificables, explicados y sin soluciones adjuntas', () => {

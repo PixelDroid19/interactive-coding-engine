@@ -1,4 +1,4 @@
-import { deterministicEmbeddingBatch, normalizeVector } from './deterministicEmbedding';
+import { normalizeVector } from './deterministicEmbedding';
 import {
   DEFAULT_EMBEDDING_MODEL,
   type EmbeddingProgress,
@@ -16,8 +16,7 @@ export interface EmbeddingWorkerLike {
 export interface EmbeddingResult {
   vectors: number[][];
   model: string;
-  mode: 'local-model' | 'teaching-fallback';
-  warning?: string;
+  device: 'webgpu';
 }
 
 export interface EmbeddingOptions {
@@ -47,11 +46,17 @@ export class LocalEmbeddingService {
   private loaded = false;
   private activeModel = DEFAULT_EMBEDDING_MODEL;
 
-  constructor(private readonly workerFactory: () => EmbeddingWorkerLike = createEmbeddingWorker) {}
+  constructor(
+    private readonly workerFactory: () => EmbeddingWorkerLike = createEmbeddingWorker,
+    private readonly hasWebGpu: () => boolean = () => typeof navigator !== 'undefined' && 'gpu' in navigator,
+  ) {}
 
   embed(texts: string[], options: EmbeddingOptions = {}): Promise<EmbeddingResult> {
     if (texts.length === 0) {
-      return Promise.resolve({ vectors: [], model: options.model ?? this.activeModel, mode: 'local-model' });
+      return Promise.resolve({ vectors: [], model: options.model ?? this.activeModel, device: 'webgpu' });
+    }
+    if (!this.hasWebGpu()) {
+      return Promise.reject(new Error('WebGPU no está disponible. Este laboratorio no usa vectores simulados ni una ruta CPU.'));
     }
     const requestId = this.nextRequestId++;
     const model = options.model ?? DEFAULT_EMBEDDING_MODEL;
@@ -70,7 +75,7 @@ export class LocalEmbeddingService {
         const pending = this.pending.get(requestId);
         if (!pending) return;
         this.pending.delete(requestId);
-        pending.resolve(this.fallback(pending, 'El modelo local tardó demasiado en responder.'));
+        pending.reject(new Error('El modelo WebGPU tardó demasiado en responder. Reduce el lote o prueba un equipo compatible.'));
         this.restartWorker();
       }, options.timeoutMs ?? 120_000);
 
@@ -130,12 +135,12 @@ export class LocalEmbeddingService {
     clearTimeout(pending.timeoutId);
     this.pending.delete(message.requestId);
     if (message.type === 'embedding/error') {
-      pending.resolve(this.fallback(pending, message.message));
+      pending.reject(new Error(message.message));
       return;
     }
 
     if (message.vectors.length !== pending.texts.length) {
-      pending.resolve(this.fallback(pending, 'El modelo devolvió una cantidad inesperada de vectores.'));
+      pending.reject(new Error('El modelo devolvió una cantidad inesperada de vectores. No se calculará un ranking con datos incompletos.'));
       return;
     }
 
@@ -144,18 +149,9 @@ export class LocalEmbeddingService {
     pending.resolve({
       vectors: message.vectors.map(normalizeVector),
       model: message.model,
-      mode: 'local-model',
+      device: 'webgpu',
     });
   };
-
-  private fallback(pending: Pick<PendingEmbedding, 'texts' | 'model'>, reason: string): EmbeddingResult {
-    return {
-      vectors: deterministicEmbeddingBatch(pending.texts),
-      model: 'vector-didáctico-hash-v1',
-      mode: 'teaching-fallback',
-      warning: `${reason} Se usó un vector didáctico determinista; sirve para practicar el flujo, no representa similitud semántica real.`,
-    };
-  }
 
   private restartWorker() {
     this.worker?.removeEventListener('message', this.handleMessage);

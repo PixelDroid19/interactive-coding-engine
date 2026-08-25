@@ -49,7 +49,7 @@ Fecha: 2026-08-25
 
 - Pyodide sin red en primera carga: explicar que no se pudo preparar Python y permitir reintentar.
 - Bucle Python: detener a los 12 segundos y reiniciar el Worker.
-- Modelo local no disponible: activar vector didáctico etiquetado como no semántico.
+- Modelo local no disponible: mostrar el error real y no producir un ranking con vectores simulados.
 - Generación WebGPU corrupta o truncada: rechazar el resultado, explicar la incompatibilidad del dispositivo y no marcar el experimento como revisado.
 - API con clave o modelo inválido: mostrar un error sin incluir la clave.
 - Respuesta API vacía o inválida: no tratarla como resultado correcto.

@@ -81,6 +81,7 @@ export interface ReadingItem extends BaseCurriculumItem {
   practiceItemId?: string;
   sources?: ReadingSource[];
   interactiveLab?: InteractiveAILab;
+  handsOnLab?: 'embeddings-webgpu';
 }
 
 export interface ReasoningNode {
