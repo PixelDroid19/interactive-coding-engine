@@ -60,7 +60,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
 
   const clampPosition = useCallback((nextX: number, nextY: number, nextSize = size) => ({
     x: Math.max(8, Math.min(Math.max(8, window.innerWidth - nextSize.width - 8), nextX)),
-    y: Math.max(44, Math.min(Math.max(44, window.innerHeight - nextSize.height - 8), nextY)),
+    y: Math.max(52, Math.min(Math.max(52, window.innerHeight - nextSize.height - 64), nextY)),
   }), [size]);
 
   useEffect(() => {
@@ -70,19 +70,19 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
       const isNarrowViewport = window.innerWidth <= 768;
       const width = isNarrowViewport
         ? availableWidth
-        : Math.min(availableWidth, 420, Math.max(minimumWidth, Math.round(window.innerWidth * 0.3)));
-      const availableHeight = Math.max(180, window.innerHeight - 52);
+        : Math.min(availableWidth, 520, Math.max(minimumWidth, Math.round(window.innerWidth * 0.3)));
+      const availableHeight = Math.max(180, window.innerHeight - 116);
       const minimumHeight = Math.min(380, availableHeight);
       const narrowTop = 96;
       const height = isNarrowViewport
         ? Math.min(320, Math.max(180, window.innerHeight - narrowTop - 120))
-        : Math.min(availableHeight, 540, Math.max(minimumHeight, window.innerHeight - 148));
+        : Math.min(availableHeight, 620, Math.max(minimumHeight, Math.round(window.innerHeight * 0.68)));
       setSize({ width, height });
       setPos({
         x: Math.max(8, window.innerWidth - width - 18),
         y: isNarrowViewport
           ? narrowTop
-          : Math.max(44, Math.min(76, window.innerHeight - height - 8)),
+          : 52,
       });
     };
     place();
@@ -165,7 +165,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
       const dy = moveEvent.clientY - resizeStartRef.current.mouseY;
 
       const maxWidth = Math.max(160, window.innerWidth - pos.x - 8);
-      const maxHeight = Math.max(180, window.innerHeight - pos.y - 8);
+      const maxHeight = Math.max(180, window.innerHeight - pos.y - 64);
       setSize({
         width: Math.max(Math.min(340, maxWidth), Math.min(maxWidth, resizeStartRef.current.startW + dx)),
         height: Math.max(Math.min(260, maxHeight), Math.min(maxHeight, resizeStartRef.current.startH + dy)),

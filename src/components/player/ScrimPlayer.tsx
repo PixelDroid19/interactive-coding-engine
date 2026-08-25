@@ -1068,7 +1068,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         )}
 
         <section className={`lesson-stage ${isLogicMode ? 'logic-stage' : ''}`}>
-          <div className="editor-window-wrapper">
+          <div className={`editor-window-wrapper ${!isLogicMode && isFloatingBrowser ? 'has-floating-preview' : ''}`}>
             <div className="editor-tabs-bar">
               <div className="editor-tabs-group">
                 <button
@@ -1110,7 +1110,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
               />
 
               {activeSubtitle && showCaptions && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[90%] pointer-events-none">
+                <div className="caption-overlay absolute bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[90%] pointer-events-none">
                   <div className="caption-chip">
                     <Volume2 className="h-3.5 w-3.5 shrink-0" />
                     <p>{activeSubtitle}</p>
@@ -1120,19 +1120,20 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
               <ConceptSlideInset lessonTitle={lessonData.title} concepts={lessonData.concepts} />
 
-              {!isLogicMode && isFloatingBrowser && (
-                <FloatingBrowser
-                  key={`${lessonData.id}-float`}
-                  ref={previewRef}
-                  workspace={workspace}
-                  autoReload={false}
-                  isFloating={true}
-                  onToggleFloating={() => setIsFloatingBrowser(false)}
-                  onRunClick={handleManualRun}
-                />
-              )}
             </div>
           </div>
+
+          {!isLogicMode && isFloatingBrowser && (
+            <FloatingBrowser
+              key={`${lessonData.id}-float`}
+              ref={previewRef}
+              workspace={workspace}
+              autoReload={false}
+              isFloating={true}
+              onToggleFloating={() => setIsFloatingBrowser(false)}
+              onRunClick={handleManualRun}
+            />
+          )}
 
           {!isLogicMode && !isFloatingBrowser && (
             <div className="h-full overflow-hidden min-h-0" style={{ width: '40%', minWidth: 280, flexShrink: 0 }}>

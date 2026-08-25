@@ -149,18 +149,37 @@ export default function App() {
     const hudStored = (() => { try { return localStorage.getItem('theme') === 'hud' || localStorage.getItem('hud') === '1'; } catch { return false; } })();
     const applyHudAugs = () => {
       const isHud = document.documentElement.classList.contains('hud');
-      const map: Array<[string, string]> = [
+      const map: Array<[string, string, boolean?]> = [
         ['.editor-window-wrapper', 'hud-editor tl-clip br-clip border'],
         ['.browser-window', 'hud-browser tl-clip br-clip border'],
         ['.files-sidebar', 'hud-sidebar tl-clip br-clip border'],
         ['.window-topbar', 'hud-topbar tl-clip br-clip border'],
         ['.player-bar', 'hud-player tl-clip tr-clip border inlay'],
-        ['.caption-chip', 'hud-narration tl-clip br-clip border inlay'],
+        ['.caption-chip', 'hud-narration tl-clip br-clip border inlay', true],
+        ['.window-topbar .neu-pill-btn', 'hud-action tl-clip br-clip border inlay', true],
+        ['.file-item-btn', 'hud-file tl-clip br-clip border inlay', true],
+        ['.tab-btn', 'hud-tab tl-clip br-clip border inlay', true],
+        ['.browser-btn', 'hud-control tl-clip br-clip border inlay', true],
+        ['.browser-url-box', 'hud-url tl-clip br-clip border inlay', true],
+        ['button[aria-label="Abrir conceptos"]', 'hud-concepts tl-clip br-clip border inlay', true],
+        ['.editor-action-btn, .round-icon-btn', 'hud-control tl-clip br-clip border inlay', true],
+        ['.play-main-btn', 'hud-play tl-clip br-clip border inlay', true],
+        ['.category-tag', 'hud-category tl-clip br-clip border inlay', true],
+        ['.logic-runner-panel, .modal-dialog', 'hud-panel tl-clip br-clip border inlay'],
+        ['.course-card', 'hud-card tl-clip br-clip border inlay'],
+        ['.course-card > button', 'hud-primary tl-clip br-clip border inlay', true],
+        ['.rm-hero, .rm-concept-pop, .rm-empty', 'hud-panel tl-clip br-clip border inlay'],
+        ['.rm-node-main, .rm-node-cp, .rm-node-tag', 'hud-node tl-clip br-clip border inlay', true],
       ];
-      map.forEach(([sel, aug]) => {
+      map.forEach(([sel, aug, reset]) => {
         document.querySelectorAll(sel).forEach((el) => {
-          if (isHud) el.setAttribute('data-augmented-ui', aug);
-          else el.removeAttribute('data-augmented-ui');
+          if (isHud) {
+            el.setAttribute('data-augmented-ui', aug);
+            if (reset) el.setAttribute('data-augmented-ui-reset', '');
+          } else {
+            el.removeAttribute('data-augmented-ui');
+            el.removeAttribute('data-augmented-ui-reset');
+          }
         });
       });
     };

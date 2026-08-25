@@ -1,235 +1,249 @@
-/* ==========================================================================
-   HUD THEME — Cyber HUD (Ref: ROADMAP / 01 UN COMPONENTE ES UN CONTRATO HTML)
-   Activación: <html class="hud"> o <body class="hud"> — NO toca :root / .dark
-   Replica pixel-perfect la captura: negro #050508, amarillo #ffe600, morado #a855f7,
-   cian #06b6d4, rojo #ef4444, verdes #22c55e, bordes 1px neón, chaflanes 12px,
-   tramas diagonales y grid punteado.
-   ========================================================================== */
+/* Cyberpunk theme inspired by the supplied player reference.
+   It is opt-in through <html class="hud"> and never changes the default theme. */
 
 .hud {
-  --hud-bg: #050508;
-  --hud-surface: #0a0a0f;
-  --hud-surface-2: #111114;
-  --hud-surface-3: #1a1a1f;
-  --hud-yellow: #ffe600;
-  --hud-yellow-hover: #fff04d;
-  --hud-purple: #a855f7;
-  --hud-purple-strong: #7c3aed;
-  --hud-purple-dim: #6d28d9;
-  --hud-cyan: #06b6d4;
-  --hud-cyan-bright: #22d3ee;
-  --hud-red: #ef4444;
-  --hud-green: #22c55e;
-  --hud-text: #f8fafc;
-  --hud-muted: #94a3b8;
-  --hud-line: #27272a;
-  --hud-border: #ffe600;
-  --hud-radius: 0px;
+  --hud-bg: #030305;
+  --hud-panel: #07070b;
+  --hud-panel-raised: #0d0d12;
+  --hud-panel-soft: #12121a;
+  --hud-yellow: #efff00;
+  --hud-yellow-soft: rgb(239 255 0 / 42%);
+  --hud-magenta: #ff2aa1;
+  --hud-purple: #a73cff;
+  --hud-cyan: #00e5ff;
+  --hud-green: #16f38b;
+  --hud-danger: #ff315e;
+  --hud-text: #f7f7f4;
+  --hud-muted: #9a9aa8;
+  --hud-line: #272731;
   color-scheme: dark;
 }
 
-/* Global */
 .hud body,
+.hud #root,
 .hud .app-screen,
 .hud .studio-card,
-.hud .home-shell {
+.hud .lesson-body,
+.hud .course-catalog,
+.hud .roadmap-home,
+.hud .reasoning-screen,
+.hud .debug-screen,
+.hud .reading-screen {
   background: var(--hud-bg) !important;
   color: var(--hud-text) !important;
-  font-family: 'Space Grotesk', 'JetBrains Mono', system-ui, sans-serif !important;
 }
 
-.hud .lesson-body {
-  background: var(--hud-bg);
+.hud body,
+.hud button,
+.hud input,
+.hud select,
+.hud textarea {
+  font-family: "Chakra Petch", "Space Grotesk", sans-serif;
 }
 
-/* Scrollbar HUD */
+.hud code,
+.hud pre,
+.hud .font-mono,
+.hud .cm-editor,
+.hud .timestamp-text,
+.hud .browser-url-text,
+.hud .tree-title,
+.hud .tab-btn {
+  font-family: "Fira Code", "JetBrains Mono", monospace !important;
+}
+
+.hud ::selection {
+  background: rgb(167 60 255 / 42%);
+  color: #fff;
+}
+
+.hud ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.hud ::-webkit-scrollbar-track {
+  background: #060609;
+}
+
 .hud ::-webkit-scrollbar-thumb {
-  background: var(--hud-yellow) !important;
-  border: 1px solid var(--hud-bg) !important;
-}
-
-/* ==========================================================================
-   TOPBAR — dark negro, borde amarillo neón, botones angulares con corte 12px
-   ========================================================================== */
-.hud .window-topbar {
-  background: #08080a !important;
-  border: 1px solid var(--hud-yellow) !important;
-  border-left: 4px solid var(--hud-yellow) !important;
-  border-bottom: 2px solid var(--hud-yellow) !important;
-  box-shadow: 0 0 12px rgba(255, 230, 0, 0.15), inset 0 1px 0 rgba(255,230,0,0.1) !important;
-  padding: 6px 10px !important;
-  height: 48px !important;
-  min-height: 48px !important;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 12px 100%, 0 calc(100% - 12px));
-  gap: 8px !important;
-}
-
-.hud .window-topbar .window-titlebar-left {
-  gap: 0 !important;
-}
-
-/* ROADMAP — amarillo sólido con rayo */
-.hud .window-topbar button:first-child {
-  background: var(--hud-yellow) !important;
-  color: #000 !important;
-  border: 1px solid var(--hud-yellow) !important;
-  font-family: 'Space Grotesk', sans-serif !important;
-  font-weight: 900 !important;
-  font-size: 12px !important;
-  letter-spacing: 0.06em !important;
-  padding: 6px 14px 6px 10px !important;
-  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%) !important;
-  box-shadow: none !important;
+  border: 0 !important;
   border-radius: 0 !important;
-  transform: none !important;
-}
-.hud .window-topbar button:first-child svg {
-  color: #000 !important;
+  background: #30303a !important;
 }
 
-/* ANTERIOR — dark con borde fino */
-.hud .window-topbar button:nth-child(2) {
-  background: #1a1a1f !important;
-  color: var(--hud-text) !important;
-  border: 1px solid #3f3f46 !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  padding: 5px 10px !important;
-  margin-left: -1px !important;
-  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%) !important;
-  border-radius: 0 !important;
-}
-
-/* Título central 01. UN COMPONENTE... */
-.hud .topbar-lesson-title,
-.hud .window-topbar .topbar-lesson-title {
-  color: var(--hud-text) !important;
-  font-family: 'Space Grotesk', sans-serif !important;
-  font-weight: 900 !important;
-  font-size: 14px !important;
-  letter-spacing: 0.04em !important;
-  text-transform: uppercase !important;
-  margin-left: 12px !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 6px !important;
-}
-
-/* Botones derecha: FLOTANTE, EXPLICAR, SIGUIENTE */
-.hud .window-topbar .flex.items-center.gap-2.shrink-0 {
-  gap: 0 !important;
-}
-.hud .window-topbar button:has(svg.lucide-star),
-.hud .window-topbar button[aria-label="Explicar lección"],
-.hud .window-topbar .btn-explain {
-  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%) !important;
-  border-radius: 0 !important;
-  font-size: 11px !important;
-  font-weight: 800 !important;
-  padding: 5px 12px !important;
-  margin-left: -1px !important;
-  border: 1px solid var(--hud-yellow) !important;
-}
-.hud .window-topbar button[aria-label="Explicar lección"],
-.hud .window-topbar .btn-explain {
+.hud ::-webkit-scrollbar-thumb:hover {
   background: var(--hud-yellow) !important;
-  color: #000 !important;
-  box-shadow: 0 0 8px rgba(255,230,0,0.3) !important;
-}
-.hud .window-topbar button:has(svg.lucide-star) {
-  background: #1a1a1f !important;
-  color: var(--hud-purple) !important;
-  border-color: #3f3f46 !important;
-}
-.hud .window-topbar button:last-child {
-  background: #1a1a1f !important;
-  color: var(--hud-text) !important;
-  border: 1px solid #3f3f46 !important;
-  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%) !important;
-  border-radius: 0 !important;
 }
 
-/* Separadores topbar */
-.hud .topbar-divider {
-  background: var(--hud-yellow) !important;
-  opacity: 1 !important;
-  width: 1px !important;
-  height: 20px !important;
-  transform: none !important;
-}
-
-/* ==========================================================================
-   WORKSPACE — negro, contenedores con borde amarillo neón y chaflán 14px
-   ========================================================================== */
+/* Shared cyber surfaces */
 .hud .workspace-container,
 .hud .studio-center-area {
-  background: var(--hud-bg) !important;
-  padding: 8px !important;
   gap: 8px !important;
+  padding: 7px 8px 8px !important;
+  background:
+    linear-gradient(90deg, rgb(167 60 255 / 4%) 1px, transparent 1px),
+    linear-gradient(rgb(167 60 255 / 3%) 1px, transparent 1px),
+    var(--hud-bg) !important;
+  background-size: 28px 28px !important;
 }
 
-.hud .files-sidebar {
-  background: #08080a !important;
-  border: 1px solid var(--hud-yellow) !important;
-  border-left: 2px solid var(--hud-yellow) !important;
-  box-shadow: 0 0 10px rgba(255,230,0,0.08) !important;
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%) !important;
-  position: relative;
-}
-
-/* Hatch vertical amarillo en borde derecho sidebar */
-.hud .files-sidebar::after {
-  content: "";
-  position: absolute;
-  top: 0; right: -1px; bottom: 0;
-  width: 3px;
-  background: repeating-linear-gradient(180deg, var(--hud-yellow) 0 6px, transparent 6px 10px);
-  opacity: 0.9;
-}
-
-/* Cabecera // ARCHIVOS */
-.hud .tree-header {
-  border-bottom: 1px solid var(--hud-yellow) !important;
-  padding: 8px 10px 8px 12px !important;
-  margin-bottom: 8px !important;
-}
-.hud .tree-title {
-  color: var(--hud-yellow) !important;
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 12px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.1em !important;
-}
-.hud .tree-title::before {
-  content: "// ";
-  color: var(--hud-yellow);
-}
-
-/* File items */
-.hud .file-item-btn {
-  background: #0f0f12 !important;
-  border: 1px solid #27272a !important;
-  color: var(--hud-muted) !important;
-  border-radius: 0 !important;
-  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%, 0 6px) !important;
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 12px !important;
-  padding: 7px 10px !important;
+.hud .window-topbar {
+  min-height: 44px !important;
+  height: 44px !important;
+  padding: 4px 7px !important;
+  gap: 8px !important;
+  border: 0 !important;
+  background: #050507 !important;
   box-shadow: none !important;
 }
-.hud .file-item-btn:hover {
-  border-color: var(--hud-yellow) !important;
-  color: var(--hud-text) !important;
-  background: #1a1a1f !important;
+
+.hud .window-titlebar-left {
+  min-width: 0;
+  gap: 5px !important;
+}
+
+.hud .topbar-divider {
+  width: 18px !important;
+  height: 1px !important;
+  background: var(--hud-magenta) !important;
+  opacity: .75 !important;
   transform: none !important;
 }
-.hud .file-item-btn-active {
-  background: #1a1a12 !important;
-  border: 1px solid var(--hud-yellow) !important;
+
+.hud .topbar-lesson-title {
+  position: relative;
+  max-width: min(42vw, 580px);
   color: var(--hud-text) !important;
-  box-shadow: 0 0 8px rgba(255,230,0,0.2), inset 0 0 0 1px rgba(255,230,0,0.1) !important;
-  font-weight: 700 !important;
+  font-size: clamp(12px, 1.35vw, 17px) !important;
+  font-style: normal;
+  font-weight: 800 !important;
+  letter-spacing: .055em !important;
+  line-height: 1;
+  text-transform: uppercase;
 }
+
+.hud .topbar-lesson-title::first-letter {
+  color: var(--hud-magenta);
+}
+
+.hud .window-topbar .neu-pill-btn,
+.hud .window-topbar button {
+  min-height: 30px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #0b0b10 !important;
+  box-shadow: none !important;
+  color: #d9d9df !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: .055em !important;
+  text-transform: uppercase;
+  transform: none !important;
+}
+
+.hud .window-topbar .window-titlebar-left > button:first-child {
+  padding-inline: 14px !important;
+  background: var(--hud-yellow) !important;
+  color: #050505 !important;
+}
+
+.hud .window-topbar .window-titlebar-left > button:first-child svg {
+  color: #050505 !important;
+}
+
+.hud .window-topbar .btn-explain {
+  background: var(--hud-yellow) !important;
+  color: #050505 !important;
+  box-shadow: 0 0 12px rgb(239 255 0 / 18%) !important;
+}
+
+.hud .window-topbar button[aria-label*="flotante" i],
+.hud .window-topbar button[aria-label*="lado" i] {
+  border-color: rgb(255 42 161 / 70%) !important;
+  color: #ff76c2 !important;
+}
+
+.hud .window-topbar button[aria-label="Siguiente"] {
+  border-color: rgb(0 229 255 / 54%) !important;
+  color: var(--hud-cyan) !important;
+}
+
+.hud .window-topbar button:focus-visible,
+.hud .player-bar button:focus-visible,
+.hud .browser-btn:focus-visible,
+.hud .file-item-btn:focus-within,
+.hud .tab-btn:focus-visible {
+  outline: 2px solid var(--hud-cyan) !important;
+  outline-offset: 2px;
+}
+
+/* File explorer */
+.hud .files-sidebar {
+  width: 178px !important;
+  flex: 0 0 178px !important;
+  border: 0 !important;
+  background: var(--hud-panel) !important;
+  box-shadow: none !important;
+}
+
+.hud .files-tree-panel {
+  display: flex;
+  flex-direction: column;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 8px, rgb(255 255 255 / 2%) 8px 10px),
+    var(--hud-panel) !important;
+}
+
+.hud .tree-header {
+  min-height: 42px;
+  margin: 0 !important;
+  padding: 10px 11px !important;
+  border-bottom: 1px solid rgb(239 255 0 / 42%) !important;
+  background: #07070a !important;
+}
+
+.hud .tree-title {
+  color: var(--hud-yellow) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: .09em !important;
+  text-transform: uppercase;
+}
+
+.hud .tree-title::before {
+  content: "// ";
+}
+
+.hud .files-list {
+  padding: 8px 7px 58px;
+}
+
+.hud .file-item-btn {
+  min-height: 42px;
+  margin-bottom: 7px;
+  padding: 7px 9px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #09090d !important;
+  box-shadow: none !important;
+  color: #c4c4cc !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 12px !important;
+}
+
+.hud .file-item-btn:hover {
+  background: #0f0f12 !important;
+  color: #fff !important;
+  transform: none !important;
+}
+
+.hud .file-item-btn-active {
+  background: #111109 !important;
+  color: #fff !important;
+  box-shadow: inset 0 0 0 1px rgb(239 255 0 / 10%) !important;
+}
+
 .hud .file-item-btn-active::after {
   content: "▶";
   margin-left: auto;
@@ -237,545 +251,655 @@
   font-size: 8px;
 }
 
-/* Badges */
-.hud .badge-html {
-  background: var(--hud-red) !important;
-  border: 1px solid var(--hud-yellow) !important;
-  color: #fff !important;
-  border-radius: 2px !important;
-  width: 18px !important; height: 18px !important;
-  font-size: 8px !important;
-}
-.hud .badge-css {
-  background: var(--hud-cyan) !important;
-  color: #000 !important;
-  border: 1px solid var(--hud-yellow) !important;
-  border-radius: 2px !important;
-}
+.hud .badge-html,
+.hud .badge-css,
 .hud .badge-js {
-  background: var(--hud-yellow) !important;
-  color: #000 !important;
-  border: 1px solid var(--hud-yellow) !important;
+  width: 20px !important;
+  height: 20px !important;
+  border: 1px solid currentColor !important;
   border-radius: 2px !important;
-  transform: rotate(0) !important;
+  transform: none !important;
+  font-size: 9px !important;
 }
 
-/* CONCEPTOS footer sidebar */
-.hud .files-tree-panel > button:last-child,
-.hud .sidebar-container + div {
-  border-top: 1px solid var(--hud-purple) !important;
-}
-.hud .reset-code-btn {
-  background: #0f0f12 !important;
-  border: 1px solid var(--hud-purple) !important;
-  color: var(--hud-purple) !important;
+.hud .badge-html { background: #ff4f1f !important; color: #fff !important; }
+.hud .badge-css { background: #08bddd !important; color: #041116 !important; }
+.hud .badge-js { background: var(--hud-yellow) !important; color: #070707 !important; }
+
+.hud button[aria-label="Abrir conceptos"] {
+  bottom: 12px !important;
+  left: 12px !important;
+  border: 0 !important;
   border-radius: 0 !important;
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%) !important;
-  font-family: 'JetBrains Mono', monospace !important;
+  background: #0e0715 !important;
+  color: #c57aff !important;
+  box-shadow: 0 0 10px rgb(167 60 255 / 12%) !important;
+  font-family: "Fira Code", monospace !important;
   font-size: 11px !important;
+  letter-spacing: .05em;
+  text-transform: uppercase;
 }
 
-/* Icon rail */
-.hud .icon-rail {
-  background: #08080a !important;
-  border-right: 1px solid var(--hud-yellow) !important;
+/* Editor */
+.hud .lesson-stage {
+  gap: 8px !important;
 }
-.hud .rail-btn {
-  background: #0f0f12 !important;
-  border: 1px solid #27272a !important;
-  color: var(--hud-muted) !important;
-  border-radius: 2px !important;
+
+.hud .editor-window-wrapper,
+.hud .editor-wrapper {
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #050507 !important;
   box-shadow: none !important;
 }
-.hud .rail-btn-active {
-  background: var(--hud-yellow) !important;
-  color: #000 !important;
-  border-color: var(--hud-yellow) !important;
-}
 
-/* ==========================================================================
-   EDITOR — negro con borde amarillo neón, tabs angulares, gutter oscuro
-   ========================================================================== */
-.hud .editor-wrapper,
-.hud .editor-window-wrapper {
-  background: #050508 !important;
-  border: 1px solid var(--hud-yellow) !important;
-  box-shadow: 0 0 14px rgba(255,230,0,0.12), inset 0 0 0 1px rgba(255,230,0,0.04) !important;
-  border-radius: 0 !important;
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px)) !important;
-  overflow: hidden !important;
+.hud .editor-window-wrapper.has-floating-preview {
+  margin-right: 0;
 }
 
 .hud .editor-tabs-bar {
-  background: #0a0a0f !important;
-  border-bottom: 1px solid var(--hud-yellow) !important;
+  min-height: 36px !important;
   height: 36px !important;
-  padding: 0 6px !important;
-  gap: 4px !important;
+  padding: 0 7px !important;
+  border-bottom: 1px solid rgb(239 255 0 / 50%) !important;
+  background: #060609 !important;
+}
+
+.hud .editor-tabs-group {
+  gap: 2px !important;
+}
+
+.hud .editor-action-btn,
+.hud .round-icon-btn {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #0b0b10 !important;
+  color: #a3a3ad !important;
 }
 
 .hud .tab-btn {
-  background: #1a1a1f !important;
-  border: 1px solid #2a2a30 !important;
-  color: var(--hud-muted) !important;
+  min-height: 28px;
+  margin: 0 !important;
+  padding: 5px 12px !important;
+  border: 0 !important;
   border-radius: 0 !important;
-  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%) !important;
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 11px !important;
-  padding: 5px 10px !important;
-  margin-right: -4px !important;
+  background: #0b0b10 !important;
+  box-shadow: none !important;
+  color: #888894 !important;
+  font-size: 12px !important;
 }
+
 .hud .tab-btn:hover {
-  background: #25252b !important;
-  color: var(--hud-text) !important;
-  border-color: var(--hud-yellow) !important;
+  color: #fff !important;
 }
+
 .hud .tab-btn-active {
   background: var(--hud-yellow) !important;
-  color: #000 !important;
-  border-color: var(--hud-yellow) !important;
-  font-weight: 800 !important;
-  box-shadow: 0 0 8px rgba(255,230,0,0.25) !important;
+  color: #050505 !important;
+  box-shadow: 0 0 10px rgb(239 255 0 / 15%) !important;
+  font-weight: 700 !important;
 }
 
-/* Gutter + line numbers */
-.hud .editor-gutter {
-  background: #08080a !important;
-  border-right: 1px solid var(--hud-yellow) !important;
-  color: #3f3f46 !important;
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 11px !important;
-}
-.hud .gutter-line-active {
-  color: var(--hud-yellow) !important;
-  background: rgba(255,230,0,0.08) !important;
-  border-left: 2px solid var(--hud-yellow) !important;
-}
-.hud .editor-body {
-  background: #050508 !important;
-}
+.hud .editor-body,
+.hud .cm-editor,
 .hud .cm-scroller,
-.hud .cm-content {
-  font-family: 'JetBrains Mono', monospace !important;
-}
-
-/* CodeMirror theme overrides */
-.hud .cm-editor {
-  background: #050508 !important;
-}
 .hud .cm-gutters {
-  background: #08080a !important;
-  border-right: 1px solid var(--hud-yellow) !important;
+  background: #050507 !important;
 }
 
-/* Code comments in editor */
+.hud .cm-gutters {
+  border-right: 1px solid #18181e !important;
+  color: #4b4b55 !important;
+}
+
+.hud .cm-content,
 .hud .cm-line {
-  color: #a1a1aa !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 14px !important;
+  line-height: 1.65 !important;
 }
 
-/* ==========================================================================
-   NARRATION BOX — morado neón, esquinas cortadas, hatch inferior (caption-chip)
-   ========================================================================== */
+.hud .cm-activeLine,
+.hud .cm-activeLineGutter {
+  background: rgb(167 60 255 / 6%) !important;
+}
+
+.hud .cm-cursor {
+  border-left-color: var(--hud-yellow) !important;
+}
+
 .hud .caption-chip {
-  background: #0f0f12 !important;
-  border: 1px solid var(--hud-purple) !important;
-  color: var(--hud-text) !important;
+  position: relative;
+  width: min(650px, 64vw) !important;
+  max-width: 100% !important;
+  min-height: 72px;
+  padding: 13px 18px 13px 44px !important;
+  gap: 10px !important;
+  border: 0 !important;
   border-radius: 0 !important;
-  clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%, 0 10px) !important;
-  box-shadow: 0 0 12px rgba(168,85,247,0.15), inset 0 0 0 1px rgba(168,85,247,0.1) !important;
-  font-family: 'Space Grotesk', sans-serif !important;
+  background: #0c0711 !important;
+  box-shadow: 0 0 16px rgb(167 60 255 / 13%) !important;
+  color: #ececf0 !important;
+  font-family: "Chakra Petch", sans-serif !important;
   font-size: 12px !important;
-  line-height: 1.5 !important;
-  padding: 12px 14px 12px 36px !important;
-  max-width: 560px !important;
+  line-height: 1.48 !important;
 }
-.hud .caption-chip::before {
-  content: "▶";
+
+.hud .editor-window-wrapper.has-floating-preview .caption-overlay {
+  left: 28% !important;
+  width: min(560px, 58%) !important;
+}
+
+.hud .caption-chip > svg {
   position: absolute;
-  left: 10px;
-  top: 14px;
-  color: var(--hud-purple);
-  font-size: 10px;
+  left: 16px;
+  color: #d19aff;
 }
+
 .hud .caption-chip::after {
   content: "";
   position: absolute;
-  right: 8px; bottom: 6px;
-  width: 40px; height: 6px;
-  background: repeating-linear-gradient(45deg, var(--hud-purple) 0 3px, transparent 3px 6px);
-  opacity: 0.9;
+  right: 10px;
+  bottom: 7px;
+  width: 58px;
+  height: 5px;
+  background: repeating-linear-gradient(135deg, var(--hud-purple) 0 3px, transparent 3px 6px);
 }
+
 .hud .instructor-pointer-tag {
-  background: var(--hud-purple) !important;
-  color: #fff !important;
   border: 1px solid var(--hud-purple) !important;
-  border-radius: 2px !important;
-  font-family: 'JetBrains Mono', monospace !important;
+  border-radius: 0 !important;
+  background: #100817 !important;
+  box-shadow: 0 0 8px rgb(167 60 255 / 18%) !important;
+  color: #e1b9ff !important;
+  font-family: "Fira Code", monospace !important;
   font-size: 10px !important;
 }
 
-/* Custom narration purple box — targets the purple inset in the image */
-.hud .editor-body::after {
-  /* fallback hatch if needed */
-  content: none;
-}
-
-/* The purple narration card is rendered inside ScrimPlayer as a backdrop; we style any absolute bottom card */
-.hud .editor-window-wrapper > div > div[class*="backdrop"] ,
-.hud div[class*="caption"] {
-  border-color: var(--hud-purple) !important;
-}
-
-/* Style the narration text box that appears at bottom of editor (ConceptSlideInset fallback) */
-.hud .editor-window-wrapper .absolute.bottom-4 {
-  bottom: 18px !important;
-  left: 50% !important;
-  right: auto !important;
-  transform: translateX(-50%) !important;
-  width: 90% !important;
-  max-width: 560px !important;
-  z-index: 30 !important;
-}
-
-/* Purple narration container — match image: dark with purple border, cut corners */
-.hud div:has(> .caption-chip) {
-  border: 1px solid var(--hud-purple) !important;
-}
-
-/* Fallback for any purple box */
-.hud [style*="background: var(--bg-surface-light)"][style*="border"] {
-  border-color: var(--hud-purple) !important;
-}
-
-/* ==========================================================================
-   BROWSER PREVIEW — VISTA PREVIA, negro + amarillo, grid punteado
-   ========================================================================== */
+/* Floating preview / browser */
 .hud .browser-window {
-  background: #050508 !important;
-  border: 1px solid var(--hud-yellow) !important;
-  box-shadow: 0 0 14px rgba(255,230,0,0.1), inset 0 0 0 1px rgba(255,230,0,0.05) !important;
+  overflow: hidden !important;
+  border: 0 !important;
   border-radius: 0 !important;
-  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 12px 100%, 0 calc(100% - 12px)) !important;
+  background: #050507 !important;
+  box-shadow: 0 0 24px rgb(0 0 0 / 75%) !important;
+}
+
+.hud .browser-window.fixed:not(.floating-browser-expanded) {
+  min-width: 0 !important;
+  max-width: calc(100vw - 16px) !important;
+  max-height: calc(100vh - 116px) !important;
 }
 
 .hud .browser-header-clean {
-  background: #0a0a0f !important;
-  border-bottom: 1px solid var(--hud-yellow) !important;
-  padding: 6px 10px !important;
+  min-height: 38px !important;
+  padding: 7px 9px !important;
+  border-bottom: 1px solid #202028 !important;
+  background: #07070a !important;
 }
+
 .hud .browser-header-title {
-  color: var(--hud-text) !important;
-  font-family: 'Space Grotesk', sans-serif !important;
+  color: #fff !important;
+  font-size: 11px !important;
   font-weight: 800 !important;
-  font-size: 12px !important;
-  letter-spacing: 0.06em !important;
+  letter-spacing: .05em;
+  text-transform: uppercase;
 }
-.hud .browser-header-title::before {
-  content: "VISTA PREVIA";
-  color: var(--hud-text);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  font-weight: 800;
-}
-.hud .browser-header-title span {
-  display: none !important;
-}
+
 .hud .browser-preview-badge {
-  background: var(--hud-green) !important;
-  color: #000 !important;
-  border: 1px solid var(--hud-green) !important;
-  font-size: 8px !important;
-  padding: 1px 6px !important;
-  border-radius: 2px !important;
-  font-weight: 900 !important;
+  border: 1px solid rgb(22 243 139 / 60%) !important;
+  border-radius: 0 !important;
+  background: rgb(22 243 139 / 10%) !important;
+  color: var(--hud-green) !important;
+  font-size: 10px !important;
+  letter-spacing: .05em;
 }
-.hud .browser-preview-badge::after {
-  content: "EJECUTADO";
+
+.hud .browser-window-actions {
+  gap: 4px !important;
+}
+
+.hud .browser-btn {
+  width: 25px !important;
+  height: 25px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #09090d !important;
+  color: var(--hud-yellow) !important;
+}
+
+.hud .browser-btn:hover {
+  background: #15150f !important;
 }
 
 .hud .browser-navbar {
-  background: #0a0a0f !important;
-  border-bottom: 1px solid var(--hud-yellow) !important;
-  padding: 6px 8px !important;
+  min-height: 30px !important;
+  padding: 3px 6px !important;
+  border-bottom: 1px solid rgb(167 60 255 / 40%) !important;
+  background: #050507 !important;
 }
-.hud .browser-btn {
-  background: #1a1a1f !important;
-  border: 1px solid #27272a !important;
-  color: var(--hud-yellow) !important;
-  border-radius: 2px !important;
-  width: 22px !important; height: 22px !important;
-  box-shadow: none !important;
-}
-.hud .browser-btn:hover {
-  border-color: var(--hud-yellow) !important;
-  color: var(--hud-yellow) !important;
-  background: #25252b !important;
-}
+
 .hud .browser-url-box {
-  background: #000 !important;
-  border: 1px solid var(--hud-purple) !important;
+  min-height: 24px;
+  border: 0 !important;
   border-radius: 0 !important;
-  clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%) !important;
+  background: #07040b !important;
+  color: #c58cff !important;
 }
-.hud .browser-url-input {
-  color: var(--hud-cyan-bright) !important;
-  font-family: 'JetBrains Mono', monospace !important;
+
+.hud .browser-url-text {
   font-size: 11px !important;
 }
+
 .hud .browser-viewport {
-  background: #050508 !important;
-  background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) !important;
-  background-size: 14px 14px !important;
-  position: relative;
-}
-/* Dotted grid + plus markers like image */
-.hud .browser-viewport::before {
-  content: "+ + + +";
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  color: rgba(255,255,255,0.03);
-  font-family: monospace;
-  font-size: 10px;
-  letter-spacing: 4px;
-  pointer-events: none;
-}
-
-/* Preview content — TALLER DE COMPONENTES / ESTADO DEL SERVICIO */
-.hud .browser-viewport .flex,
-.hud .browser-viewport h1,
-.hud .browser-viewport h2 {
-  font-family: 'Space Grotesk', sans-serif !important;
-}
-.hud .browser-viewport::after {
-  content: "";
-  position: absolute;
-  inset: 0;
   background:
-    radial-gradient(circle at 80% 20%, rgba(168,85,247,0.04), transparent 40%),
-    linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.6));
-  pointer-events: none;
+    radial-gradient(rgb(167 60 255 / 14%) 1px, transparent 1px),
+    #020203 !important;
+  background-size: 18px 18px !important;
 }
 
-/* ==========================================================================
-   CONSOLE — >_ CONSOLA, purple
-   ========================================================================== */
-.hud .console-trigger-btn,
-.hud .browser-window-actions + div,
-.hud [class*="CONSOLA"] {
-  background: #0a0a0f !important;
-  border: 1px solid var(--hud-yellow) !important;
-  color: var(--hud-text) !important;
-  font-family: 'JetBrains Mono', monospace !important;
+.hud .console-trigger-btn {
+  min-height: 34px !important;
+  border-top: 1px solid #282832 !important;
   border-radius: 0 !important;
-  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%) !important;
+  background: #060609 !important;
+  color: var(--hud-yellow) !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 10px !important;
+  letter-spacing: .05em;
+  text-transform: uppercase;
 }
 
-/* ==========================================================================
-   PLAYER BAR — HUD, amarillo neón + morado, slider azul/púrpura
-   ========================================================================== */
-.hud .player-bar {
-  background: #08080a !important;
-  border-top: 2px solid var(--hud-yellow) !important;
-  box-shadow: 0 -2px 0 var(--hud-yellow), 0 0 12px rgba(255,230,0,0.12) !important;
-  height: 52px !important;
-  min-height: 52px !important;
-  padding: 0 10px !important;
-  gap: 10px !important;
-  overflow: visible !important;
-}
-.hud .play-main-btn {
-  background: var(--hud-yellow) !important;
-  color: #000 !important;
-  border: 2px solid var(--hud-yellow) !important;
+/* Pure JavaScript output */
+.hud .logic-runner-panel {
+  width: min(35%, 430px) !important;
+  min-width: 290px !important;
+  border: 0 !important;
   border-radius: 0 !important;
-  width: 36px !important; height: 36px !important;
-  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%) !important;
-  box-shadow: 0 0 8px rgba(255,230,0,0.25) !important;
-}
-.hud .timestamp-text {
-  color: var(--hud-text) !important;
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
-}
-.hud .timestamp-text span:first-child {
-  color: var(--hud-text) !important;
-}
-.hud .category-tag {
-  background: #7f1d1d !important;
-  color: var(--hud-red) !important;
-  border: 1px solid var(--hud-red) !important;
-  border-radius: 0 !important;
-  clip-path: polygon(4px 0, 100% 0, calc(100% - 4px) 100%, 0 100%) !important;
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 9px !important;
-  font-weight: 800 !important;
-  letter-spacing: 0.06em !important;
-  padding: 2px 8px !important;
+  background: #050507 !important;
   box-shadow: none !important;
+}
+
+.hud .logic-runner-header {
+  min-height: 48px !important;
+  border-bottom: 1px solid #25252d !important;
+  background: #08080c !important;
+}
+
+.hud .logic-runner-header h2,
+.hud .logic-runner-kicker {
+  font-family: "Chakra Petch", sans-serif !important;
+  text-transform: uppercase;
+}
+
+.hud .logic-runner-kicker { color: var(--hud-cyan) !important; }
+
+/* Timeline */
+.hud .player-bar {
+  min-height: 54px !important;
+  height: 54px !important;
+  max-height: 54px !important;
+  padding: 0 9px !important;
+  gap: 9px !important;
+  border: 0 !important;
+  background: #050507 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.hud .play-main-btn {
+  width: 38px !important;
+  height: 38px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--hud-yellow) !important;
+  box-shadow: 0 0 10px rgb(239 255 0 / 18%) !important;
+  color: #050505 !important;
+}
+
+.hud .timestamp-text {
+  color: #e4e4e8 !important;
+  font-size: 10px !important;
+}
+
+.hud .category-tag {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: repeating-linear-gradient(135deg, rgb(255 49 94 / 20%) 0 4px, transparent 4px 8px) !important;
+  box-shadow: none !important;
+  color: #ff6685 !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 9px !important;
+  letter-spacing: .055em;
+  text-transform: uppercase;
   transform: none !important;
 }
-.hud .category-tag::after {
-  content: "";
-  display: inline-block;
-  width: 12px; height: 8px;
-  margin-left: 6px;
-  background: repeating-linear-gradient(45deg, var(--hud-red) 0 2px, transparent 2px 4px);
-  opacity: 0.9;
+
+.hud .player-center [role="slider"] > div:first-child {
+  background: #16161d !important;
 }
 
-/* Slider */
-.hud .player-center > div {
-  height: 14px !important;
-}
-.hud .player-center > div > div:first-child {
-  height: 6px !important;
-  background: #1a1a1f !important;
-  border: 1px solid #3f3f46 !important;
-  border-radius: 0 !important;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.5) !important;
-}
-.hud .player-center > div > div:first-child > div:first-child {
-  background: #38bdf8 !important; /* blue progress like image */
-  border-radius: 0 !important;
-  box-shadow: 0 0 6px rgba(56,189,248,0.4) !important;
-}
-.hud .player-center > div > div:first-child > button {
-  background: var(--hud-yellow) !important;
-  width: 2px !important;
-  opacity: 1 !important;
-}
-
-/* Thumb */
-.hud .player-center > div > div:nth-child(2) {
-  background: #38bdf8 !important;
-  border: 1px solid #0a0a0f !important;
-  box-shadow: 0 0 6px rgba(56,189,248,0.5) !important;
-  width: 14px !important; height: 14px !important;
-  border-radius: 2px !important;
-}
-
-/* Challenge diamond */
-.hud .player-center button[aria-label^="Ir al reto"] {
-  background: var(--hud-yellow) !important;
-  border: 1px solid #000 !important;
-  box-shadow: 0 0 6px rgba(255,230,0,0.4) !important;
-  width: 12px !important; height: 12px !important;
-}
-
-/* Right controls */
 .hud .player-right {
-  gap: 6px !important;
+  color: #a8a8b2 !important;
 }
+
 .hud .player-right button {
   border-radius: 0 !important;
-  clip-path: none !important;
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 11px !important;
+  color: #a8a8b2 !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 10px !important;
 }
+
 .hud .player-right button[aria-label*="subtítulos"] {
-  background: var(--hud-yellow) !important;
-  color: #000 !important;
   border: 1px solid var(--hud-yellow) !important;
-  font-weight: 800 !important;
-  width: 30px !important; height: 24px !important;
-  box-shadow: 0 0 6px rgba(255,230,0,0.25) !important;
+  background: var(--hud-yellow) !important;
+  color: #050505 !important;
 }
-.hud .player-right button[aria-label*="Retroceder"],
-.hud .player-right button[aria-label*="Avanzar"] {
-  color: var(--hud-muted) !important;
-  border: 1px solid #27272a !important;
-  background: #0f0f12 !important;
-  width: 38px !important;
-}
-.hud .player-right > div > button {
-  background: #0f0f12 !important;
-  border: 1px solid #27272a !important;
-  color: var(--hud-cyan-bright) !important;
-  border-radius: 2px !important;
-}
-.hud .player-right > div > button:hover {
-  border-color: var(--hud-cyan-bright) !important;
-}
+
 .hud input[type="range"] {
   accent-color: var(--hud-purple) !important;
-  background: #1a1a1f !important;
-  height: 4px !important;
-  border: 1px solid #3f3f46 !important;
-  border-radius: 0 !important;
 }
 
-/* Volume icon */
-.hud .player-right button svg.lucide-volume2,
-.hud .player-right button svg.lucide-volume-x {
+/* Challenge and explanation overlays */
+.hud [role="dialog"].modal-dialog,
+.hud .modal-dialog {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #08080c !important;
+  box-shadow: 0 0 28px rgb(0 0 0 / 74%) !important;
   color: var(--hud-text) !important;
 }
 
-/* Tooltip */
-.hud .player-center > div > div.pointer-events-none {
-  background: #0f0f12 !important;
-  border: 1px solid var(--hud-yellow) !important;
-  color: var(--hud-text) !important;
+.hud .modal-header {
+  border-bottom: 1px solid #2b2b35 !important;
+  background: #0b0b10 !important;
+}
+
+.hud .neu-pill-btn,
+.hud .rm-play-btn,
+.hud .rm-enter-btn {
   border-radius: 0 !important;
-  box-shadow: 0 0 8px rgba(255,230,0,0.15) !important;
-  font-family: 'JetBrains Mono', monospace !important;
-  top: -36px !important;
+  box-shadow: none !important;
+  clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
 }
 
-/* Speed menu */
-.hud .player-right .relative > div {
-  background: #0f0f12 !important;
-  border: 1px solid var(--hud-yellow) !important;
-  border-radius: 0 !important;
-  box-shadow: 0 0 12px rgba(0,0,0,0.6), 0 0 6px rgba(255,230,0,0.1) !important;
-}
-
-/* ==========================================================================
-   FLOATING BROWSER WRAPPER — keep yellow border when floating
-   ========================================================================== */
-.hud .floating-browser-wrapper {
-  filter: drop-shadow(0 0 8px rgba(255,230,0,0.08));
-}
-
-/* ==========================================================================
-   OVERLAYS — branch recovery, etc. HUD dark
-   ========================================================================== */
-.hud div[class*="bg-[#171b24]"] {
-  background: #0f0f12 !important;
-  border-color: var(--hud-yellow) !important;
-  color: var(--hud-text) !important;
-  border-radius: 0 !important;
-  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%) !important;
-  box-shadow: 0 0 16px rgba(255,230,0,0.12) !important;
-}
-.hud div[class*="bg-[#171b24]"] button {
-  border-radius: 0 !important;
-}
-
-/* ==========================================================================
-   TYPOGRAPHY — keep Space Grotesk for HUD titles
-   ========================================================================== */
-.hud h1, .hud h2, .hud h3 {
-  font-family: 'Space Grotesk', sans-serif !important;
-  letter-spacing: -0.02em !important;
-}
-
-/* Dotted grid for preview like image */
-.hud .browser-viewport {
-  background-color: #050508 !important;
-  background-image:
-    radial-gradient(rgba(255,255,255,0.045) 1px, transparent 1.5px),
-    linear-gradient(rgba(255,230,0,0.02) 1px, transparent 1px) !important;
-  background-size: 14px 14px, 14px 14px !important;
-}
-
-/* Hide default shadows that clash */
-.hud [class*="shadow-"] {
+/* Catalog */
+.hud .course-catalog__nav,
+.hud .rm-nav {
+  border-bottom: 1px solid rgb(239 255 0 / 42%) !important;
+  background: rgb(3 3 5 / 96%) !important;
   box-shadow: none !important;
 }
-.hud .player-bar,
-.hud .browser-window,
-.hud .editor-window-wrapper {
-  box-shadow: 0 0 0 1px var(--hud-yellow), 0 0 12px rgba(255,230,0,0.08) !important;
+
+.hud .course-catalog__brand,
+.hud .rm-wordmark {
+  color: #fff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.hud .course-catalog__brand span,
+.hud .rm-wordmark span {
+  color: var(--hud-yellow) !important;
+}
+
+.hud .course-catalog__main {
+  width: min(1180px, calc(100% - 28px));
+  padding-top: 48px;
+}
+
+.hud .course-catalog__intro h1,
+.hud .rm-hero h1 {
+  color: #fff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-style: italic;
+  letter-spacing: -.035em !important;
+  text-transform: uppercase;
+}
+
+.hud .course-catalog__intro > p:last-child,
+.hud .rm-hero p {
+  color: #b4b4bd !important;
+}
+
+.hud .course-catalog__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.hud .course-card {
+  min-height: 390px;
+  padding: 20px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background:
+    radial-gradient(rgb(167 60 255 / 8%) 1px, transparent 1px),
+    #08080c !important;
+  background-size: 16px 16px !important;
+  box-shadow: none !important;
+  color: #fff !important;
+}
+
+.hud .course-card--green { --aug-border-bg: rgb(22 243 139 / 72%) !important; }
+.hud .course-card--yellow { --aug-border-bg: rgb(239 255 0 / 76%) !important; }
+.hud .course-card--red { --aug-border-bg: rgb(255 49 94 / 76%) !important; }
+
+.hud .course-card__icon {
+  border: 1px solid currentColor !important;
+  border-radius: 0 !important;
+  background: #0e0e14 !important;
+  box-shadow: none !important;
+  color: var(--hud-yellow);
+}
+
+.hud .course-card h2 {
+  color: #fff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  text-transform: uppercase;
+}
+
+.hud .course-card > p,
+.hud .course-card__progress small {
+  color: #a7a7b1 !important;
+}
+
+.hud .course-card__tags span {
+  border: 1px solid #34343e !important;
+  border-radius: 0 !important;
+  background: #0d0d12 !important;
+  color: #c8c8d0 !important;
+}
+
+.hud .course-card__progress > div {
+  border: 1px solid #32323c !important;
+  border-radius: 0 !important;
+  background: #111117 !important;
+}
+
+.hud .course-card__progress > div span {
+  background: var(--hud-cyan) !important;
+  box-shadow: 0 0 8px rgb(0 229 255 / 35%);
+}
+
+.hud .course-card > button {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--hud-yellow) !important;
+  box-shadow: none !important;
+  color: #050505 !important;
+  text-transform: uppercase;
+}
+
+/* Roadmap */
+.hud .rm-main {
+  background:
+    radial-gradient(rgb(167 60 255 / 9%) 1px, transparent 1px),
+    var(--hud-bg) !important;
+  background-size: 18px 18px !important;
+}
+
+.hud .rm-hero,
+.hud .rm-concept-pop,
+.hud .rm-empty {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #08080c !important;
+  box-shadow: none !important;
+  color: #fff !important;
+}
+
+.hud .rm-pill,
+.hud .rm-phase-badge {
+  border: 1px solid rgb(167 60 255 / 65%) !important;
+  border-radius: 0 !important;
+  background: #100817 !important;
+  color: #d29cff !important;
+  box-shadow: none !important;
+  text-transform: uppercase;
+}
+
+.hud .rm-line,
+.hud .rm-line-dot {
+  stroke: var(--hud-purple) !important;
+}
+
+.hud .rm-node-main,
+.hud .rm-node-cp,
+.hud .rm-node-tag {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: 0 !important;
+}
+
+.hud .rm-node-main {
+  border-color: var(--hud-yellow) !important;
+  background: #151509 !important;
+  color: #fff !important;
+}
+
+.hud .rm-node-cp {
+  border-color: #383842 !important;
+  background: #0a0a0e !important;
+  color: #dddde3 !important;
+}
+
+.hud .rm-node-cp.is-reading,
+.hud .rm-node-tag {
+  border-color: rgb(0 229 255 / 42%) !important;
+  background: #061014 !important;
+  color: #9ceef7 !important;
+}
+
+.hud .rm-node-main.is-current,
+.hud .rm-node-cp.is-current {
+  outline-color: var(--hud-magenta) !important;
+}
+
+.hud .rm-node-main.is-done,
+.hud .rm-node-cp.is-done {
+  border-color: var(--hud-green) !important;
+  background: #07140e !important;
+}
+
+/* Reading, reasoning, debugging and playground surfaces */
+.hud .reading-shell,
+.hud .reading-card,
+.hud .reasoning-card,
+.hud .debug-panel,
+.hud .debug-context-panel,
+.hud .playground-shell,
+.hud .playground-panel {
+  border-color: #34343e !important;
+  border-radius: 0 !important;
+  background: #08080c !important;
+  box-shadow: none !important;
+  color: #f0f0f2 !important;
+}
+
+.hud .reasoning-card > header,
+.hud .reasoning-workspace {
+  border-color: #34343e !important;
+  background: #09090d !important;
+}
+
+.hud .debug-test,
+.hud .concept-card {
+  border-radius: 0 !important;
+}
+
+/* Responsive behavior: keep functionality usable, then approximate the desktop reference. */
+@media (max-width: 980px) {
+  .hud .course-catalog__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hud .files-sidebar {
+    width: 152px !important;
+    flex-basis: 152px !important;
+  }
+
+}
+
+@media (max-width: 767px) {
+  .hud .window-topbar {
+    height: auto !important;
+    min-height: 48px !important;
+    padding: 5px 6px !important;
+  }
+
+  .hud .topbar-lesson-title {
+    max-width: 42vw;
+    font-size: 10px !important;
+  }
+
+  .hud .workspace-container {
+    gap: 6px !important;
+    padding: 6px !important;
+  }
+
+  .hud .files-sidebar {
+    width: 100% !important;
+    flex-basis: auto !important;
+    max-height: 132px !important;
+  }
+
+  .hud .editor-window-wrapper.has-floating-preview {
+    margin-right: 0;
+  }
+
+  .hud .logic-runner-panel {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .hud .caption-chip {
+    width: min(94vw, 620px) !important;
+    min-height: 58px;
+    padding: 10px 14px 10px 38px !important;
+    font-size: 10px !important;
+  }
+
+  .hud .editor-window-wrapper.has-floating-preview .caption-overlay {
+    left: 50% !important;
+    width: min(94vw, 620px) !important;
+  }
+
+  .hud .player-bar {
+    min-height: 52px !important;
+    height: 52px !important;
+    max-height: 52px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud *,
+  .hud *::before,
+  .hud *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

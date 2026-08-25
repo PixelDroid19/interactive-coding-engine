@@ -93,6 +93,8 @@ describe('ScrimPlayer overlay coordination', () => {
 
     expect(screen.getByRole('toolbar', { name: 'Barra de vista previa, usa flechas para mover' })).toBeTruthy();
     expect(screen.queryByRole('region', { name: 'Salida de JavaScript' })).toBeNull();
+    expect(document.querySelector('.editor-window-wrapper .browser-window.fixed')).toBeNull();
+    expect(document.querySelector('.lesson-stage > .browser-window.fixed')).toBeTruthy();
   });
 
   it('guarda el reto activo para recuperarlo después de recargar', async () => {

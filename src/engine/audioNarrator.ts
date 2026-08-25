@@ -1,5 +1,37 @@
 import { AudioTrackInfo } from '../types/scrim';
 
+const CAPTION_MAX_CHARACTERS = 150;
+
+export function splitCaptionText(text: string, maxCharacters = CAPTION_MAX_CHARACTERS): string[] {
+  const normalized = text.trim().replace(/\s+/g, ' ');
+  if (!normalized) return [];
+
+  const sentences = normalized.split(/(?<=[.!?…])\s+/u);
+  const chunks: string[] = [];
+
+  for (const sentence of sentences) {
+    if (sentence.length <= maxCharacters) {
+      chunks.push(sentence);
+      continue;
+    }
+
+    const words = sentence.split(' ');
+    let current = '';
+    for (const word of words) {
+      const candidate = current ? `${current} ${word}` : word;
+      if (candidate.length <= maxCharacters || !current) {
+        current = candidate;
+      } else {
+        chunks.push(current);
+        current = word;
+      }
+    }
+    if (current) chunks.push(current);
+  }
+
+  return chunks;
+}
+
 export interface PreciseAudioClockState {
   timeMs: number;
   isPlaying: boolean;
@@ -20,6 +52,7 @@ export class AudioNarrator {
   private currentBlobUrl?: string;
   private activeUtterance: SpeechSynthesisUtterance | null = null;
   private subtitleClearTimeout: any = null;
+  private displayedSubtitle: string | null = null;
 
   // High-precision clock tracking
   private audioBaseTimeMs = 0;
@@ -185,6 +218,7 @@ export class AudioNarrator {
       this.audioBaseWallTime = performance.now();
 
       this.audioElement.play().catch((err) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         console.warn('Audio playback waiting for user activation or permission:', err);
       });
     } else {
@@ -231,7 +265,7 @@ export class AudioNarrator {
         const item = this.narrationScript[idx];
         const nextTime = idx + 1 < this.narrationScript.length ? this.narrationScript[idx + 1].timestamp : item.timestamp + 4000;
         if (toMs >= item.timestamp && toMs < nextTime) {
-          this.onSubtitleChangeCallback?.(item.text);
+          this.emitSubtitle(this.captionAt(idx, toMs));
         } else {
           this.clearSubtitle();
         }
@@ -308,7 +342,7 @@ export class AudioNarrator {
         const item = this.narrationScript[i];
         if (currentMs >= item.timestamp) {
           this.lastSpokenIndex = i;
-          this.speakText(item.text, item.voiceRate);
+          this.speakText(item.text, item.voiceRate, this.captionAt(i, currentMs));
         } else {
           break;
         }
@@ -321,6 +355,8 @@ export class AudioNarrator {
         const nextTime = activeIdx + 1 < this.narrationScript.length ? this.narrationScript[activeIdx + 1].timestamp : item.timestamp + 5000;
         if (currentMs >= nextTime) {
           this.clearSubtitle();
+        } else {
+          this.emitSubtitle(this.captionAt(activeIdx, currentMs));
         }
       }
     }
@@ -344,9 +380,32 @@ export class AudioNarrator {
       const item = this.narrationScript[idx];
       const nextTime = idx + 1 < this.narrationScript.length ? this.narrationScript[idx + 1].timestamp : item.timestamp + 4000;
       if (timeMs >= item.timestamp && timeMs < nextTime) {
-        this.speakText(item.text, item.voiceRate);
+        this.speakText(item.text, item.voiceRate, this.captionAt(idx, timeMs));
       }
     }
+  }
+
+  private captionAt(index: number, timeMs: number): string | null {
+    const cue = this.narrationScript[index];
+    if (!cue) return null;
+    const chunks = splitCaptionText(cue.text);
+    if (chunks.length === 0) return null;
+    if (chunks.length === 1) return chunks[0];
+
+    const nextCue = this.narrationScript[index + 1];
+    const estimatedDuration = Math.max(5000, cue.text.split(/\s+/).length * 330);
+    const end = nextCue?.timestamp ?? cue.timestamp + estimatedDuration;
+    const duration = Math.max(1, end - cue.timestamp);
+    const elapsed = Math.max(0, Math.min(duration - 1, timeMs - cue.timestamp));
+    const totalWeight = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    const target = (elapsed / duration) * totalWeight;
+    let accumulated = 0;
+
+    for (const chunk of chunks) {
+      accumulated += chunk.length;
+      if (target < accumulated) return chunk;
+    }
+    return chunks[chunks.length - 1];
   }
 
   private cancelSpeech(): void {
@@ -365,11 +424,17 @@ export class AudioNarrator {
       clearTimeout(this.subtitleClearTimeout);
       this.subtitleClearTimeout = null;
     }
-    this.onSubtitleChangeCallback?.(null);
+    this.emitSubtitle(null);
   }
 
-  private speakText(text: string, voiceRate = 1.0): void {
+  private emitSubtitle(text: string | null): void {
+    if (this.displayedSubtitle === text) return;
+    this.displayedSubtitle = text;
     this.onSubtitleChangeCallback?.(text);
+  }
+
+  private speakText(text: string, voiceRate = 1.0, subtitleText = text): void {
+    this.emitSubtitle(subtitleText);
 
     // Hardware audio is the master voice. Do not double-speak over it.
     if (this.hasHardwareAudio()) return;

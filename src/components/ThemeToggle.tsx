@@ -29,8 +29,8 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
       <button
         type="button"
         onClick={toggle}
-        aria-label={isHud ? 'Cambiar a tema por defecto' : 'Cambiar a tema HUD'}
-        title={isHud ? 'Tema HUD activo — clic para volver a Default' : 'Tema Default — clic para probar HUD'}
+        aria-label={isHud ? 'Cambiar a tema por defecto' : 'Cambiar a tema cyberpunk'}
+        title={isHud ? 'Tema cyberpunk activo — volver al tema por defecto' : 'Activar tema cyberpunk'}
         className="grid place-items-center"
         style={{
           width: 32, height: 32,
@@ -50,8 +50,8 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
     <button
       type="button"
       onClick={toggle}
-      aria-label={isHud ? 'Cambiar a tema por defecto' : 'Cambiar a tema HUD cyber'}
-      title={isHud ? 'HUD activo — clic para volver a Default' : 'Probar tema HUD (igual a la captura)'}
+      aria-label={isHud ? 'Cambiar a tema por defecto' : 'Cambiar a tema cyberpunk'}
+      title={isHud ? 'Tema cyberpunk activo — volver al tema por defecto' : 'Activar tema cyberpunk'}
       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold"
       style={{
         borderRadius: 6,
@@ -63,7 +63,7 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
       }}
     >
       <Palette size={12} />
-      {isHud ? 'HUD ✓' : 'Probar HUD'}
+      {isHud ? 'Cyber ✓' : 'Cyber'}
     </button>
   );
 };
