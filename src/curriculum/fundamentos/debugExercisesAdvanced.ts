@@ -26,7 +26,14 @@ function debug(draft: Draft): DebuggingExerciseItem {
     expectedBehavior: draft.expected,
     observedBehavior: draft.observed,
     initialWorkspace: workspaceOf('app.js', {
-      'index.html': file('index.html', '<!doctype html><html lang="es"><body style="background:#12151e;color:#fff;font-family:system-ui;padding:28px"><h1>Laboratorio de depuración</h1><p>Usa la consola y las comprobaciones como evidencia.</p><script src="app.js"></script></body></html>'),
+      'index.html': file('index.html', `<!doctype html>
+<html lang="es">
+  <body style="background: #12151e; color: #fff; font-family: system-ui; padding: 28px;">
+    <h1>Laboratorio de depuración</h1>
+    <p>Usa la consola y las comprobaciones como evidencia.</p>
+    <script src="app.js"></script>
+  </body>
+</html>`),
       'app.js': file('app.js', draft.starter),
     }),
     tests: draft.tests,

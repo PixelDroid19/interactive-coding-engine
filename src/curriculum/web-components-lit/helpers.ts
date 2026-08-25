@@ -112,8 +112,60 @@ export function lesson(input: LessonInput): ComponentCourseLessonSpec {
 
 export const appHtml = (title: string, elementMarkup: string) => `<!doctype html>
 <html lang="es">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><link rel="stylesheet" href="style.css"></head>
-<body><main><p class="eyebrow">Taller de componentes</p><h1>${title}</h1>${elementMarkup}</main><script type="module" src="app.js"></script></body>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>${title}</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Taller de componentes</p>
+      <h1>${title}</h1>
+      ${elementMarkup}
+    </main>
+    <script type="module" src="app.js"></script>
+  </body>
 </html>`;
 
-export const BASE_CSS = `html,body{margin:0;min-height:100%;background:#0d1118;color:#f8fafc;font-family:system-ui,sans-serif}body{padding:32px}main{max-width:760px;margin:auto}.eyebrow{color:#ffe600;font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.1em}h1{font-size:30px;border-bottom:1px solid #334155;padding-bottom:14px}button,input,select{font:inherit}button{cursor:pointer}`;
+export const BASE_CSS = `html,
+body {
+  min-height: 100%;
+  margin: 0;
+  background: #0d1118;
+  color: #f8fafc;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  padding: 32px;
+}
+
+main {
+  max-width: 760px;
+  margin: auto;
+}
+
+.eyebrow {
+  color: #ffe600;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+h1 {
+  padding-bottom: 14px;
+  border-bottom: 1px solid #334155;
+  font-size: 30px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}`;

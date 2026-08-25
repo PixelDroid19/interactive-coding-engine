@@ -6,11 +6,68 @@ import { JAVASCRIPT_AUDIO_BY_LESSON } from './audioManifest';
 
 const BASE_HTML = (title: string, moduleScript = false) => `<!doctype html>
 <html lang="es">
-<head><meta charset="UTF-8"><link rel="stylesheet" href="style.css"><title>${title}</title></head>
-<body><main><p class="eyebrow">Curso de JavaScript</p><h1>${title}</h1><p id="salida">Abre la consola o ejecuta el programa para observar el resultado.</p><ul id="lista"></ul><button id="accion" type="button">Probar</button></main><script${moduleScript ? ' type="module"' : ''} src="app.js"></script></body>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <title>${title}</title>
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Curso de JavaScript</p>
+      <h1>${title}</h1>
+      <p id="salida">Abre la consola o ejecuta el programa para observar el resultado.</p>
+      <ul id="lista"></ul>
+      <button id="accion" type="button">Probar</button>
+    </main>
+    <script${moduleScript ? ' type="module"' : ''} src="app.js"></script>
+  </body>
 </html>`;
 
-const BASE_CSS = `html,body{margin:0;min-height:100%;background:#11151d;color:#f4f4f5;font-family:system-ui,sans-serif}body{padding:30px}main{max-width:680px;margin:auto}h1{font-size:30px;border-bottom:1px solid #394150;padding-bottom:15px}.eyebrow{color:#ffe600;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.09em}p,li{color:#cbd5e1;line-height:1.6}button{border:1px solid #111;border-radius:8px;background:#ffe600;padding:9px 14px;font-weight:800}`;
+const BASE_CSS = `html,
+body {
+  min-height: 100%;
+  margin: 0;
+  background: #11151d;
+  color: #f4f4f5;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  padding: 30px;
+}
+
+main {
+  max-width: 680px;
+  margin: auto;
+}
+
+h1 {
+  padding-bottom: 15px;
+  border-bottom: 1px solid #394150;
+  font-size: 30px;
+}
+
+.eyebrow {
+  color: #ffe600;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+p,
+li {
+  color: #cbd5e1;
+  line-height: 1.6;
+}
+
+button {
+  padding: 9px 14px;
+  border: 1px solid #111;
+  border-radius: 8px;
+  background: #ffe600;
+  font-weight: 800;
+}`;
 
 function workspace(spec: JavaScriptLessonSpec, content: string): WorkspaceSnapshot {
   return workspaceOf('app.js', {

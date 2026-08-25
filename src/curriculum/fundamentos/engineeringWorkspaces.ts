@@ -2,25 +2,90 @@ import { file, workspaceOf } from '../../engine/lessonCompiler';
 
 const CAPSTONE_HTML = `<!doctype html>
 <html lang="es">
-<head><meta charset="UTF-8"><title>Planificador personal</title><link rel="stylesheet" href="style.css"></head>
-<body>
-  <main>
-    <p class="eyebrow">Proyecto final</p>
-    <h1>Mi plan</h1>
-    <label>Tarea <input id="texto" placeholder="Ej. Estudiar 20 minutos"></label>
-    <label>Prioridad <select id="prioridad"><option value="1">1 · Alta</option><option value="2">2 · Media</option><option value="3">3 · Baja</option></select></label>
-    <button id="agregar">Agregar</button>
-    <p id="error" role="status"></p>
-    <ul id="lista"></ul>
-  </main>
-  <script src="state.js"></script>
-  <script src="rules.js"></script>
-  <script src="render.js"></script>
-  <script src="app.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8">
+    <title>Planificador personal</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <main>
+      <p class="eyebrow">Proyecto final</p>
+      <h1>Mi plan</h1>
+      <label>Tarea <input id="texto" placeholder="Ej. Estudiar 20 minutos"></label>
+      <label>
+        Prioridad
+        <select id="prioridad">
+          <option value="1">1 · Alta</option>
+          <option value="2">2 · Media</option>
+          <option value="3">3 · Baja</option>
+        </select>
+      </label>
+      <button id="agregar">Agregar</button>
+      <p id="error" role="status"></p>
+      <ul id="lista"></ul>
+    </main>
+    <script src="state.js"></script>
+    <script src="rules.js"></script>
+    <script src="render.js"></script>
+    <script src="app.js"></script>
+  </body>
 </html>`;
 
-const CAPSTONE_CSS = `html,body{margin:0;min-height:100%;background:#12151e;color:#f8fafc;font-family:system-ui,sans-serif}body{padding:28px}main{max-width:520px}h1{border-bottom:1px solid #334155;padding-bottom:12px}.eyebrow{color:#7dd3fc;text-transform:uppercase;font-size:11px;letter-spacing:.08em}label{display:grid;gap:5px;margin:12px 0;color:#cbd5e1}input,select,button{padding:10px;border:1px solid #64748b;background:#0f172a;color:#fff}button{background:#ffe600;color:#111;font-weight:800;cursor:pointer}li{margin:8px 0;padding:10px;background:#1e293b;border-left:4px solid #38bdf8}#error{color:#fda4af}`;
+const CAPSTONE_CSS = `html,
+body {
+  min-height: 100%;
+  margin: 0;
+  background: #12151e;
+  color: #f8fafc;
+  font-family: system-ui, sans-serif;
+}
+
+body { padding: 28px; }
+main { max-width: 520px; }
+
+h1 {
+  padding-bottom: 12px;
+  border-bottom: 1px solid #334155;
+}
+
+.eyebrow {
+  color: #7dd3fc;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+label {
+  display: grid;
+  gap: 5px;
+  margin: 12px 0;
+  color: #cbd5e1;
+}
+
+input,
+select,
+button {
+  padding: 10px;
+  border: 1px solid #64748b;
+  background: #0f172a;
+  color: #fff;
+}
+
+button {
+  background: #ffe600;
+  color: #111;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+li {
+  margin: 8px 0;
+  padding: 10px;
+  border-left: 4px solid #38bdf8;
+  background: #1e293b;
+}
+
+#error { color: #fda4af; }`;
 
 const STATE = `// Responsabilidad: conservar la fuente de verdad.
 const planes = [];
