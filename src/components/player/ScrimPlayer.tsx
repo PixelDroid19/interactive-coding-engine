@@ -105,6 +105,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const [showClosure, setShowClosure] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<'previous' | 'next' | 'roadmap' | null>(null);
   const isLogicMode = lessonData.executionMode === 'logic';
+  const isSilentLesson = lessonData.narrationMode === 'silent';
   const branchScopeId = lessonData.languageVariants ? `${lessonData.id}:${language}` : lessonData.id;
 
   const engineRef = useRef<PlaybackEngine | null>(null);
@@ -949,10 +950,14 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           className="lesson-start-gate"
           onClick={startPlayback}
         >
-          <span className="lesson-start-kicker">Clase con explicación</span>
+          <span className="lesson-start-kicker">
+            {isSilentLesson ? 'Clase visual guiada' : 'Clase con explicación'}
+          </span>
           <h2 className="lesson-start-title">{lessonData.title}</h2>
           <p className="lesson-start-hint">
-            El instructor escribe, señala y explica. Para oírlo y ver el código moverse, pulsa aquí.
+            {isSilentLesson
+              ? 'Lee los subtítulos mientras el editor cambia, señala ideas y construye el ejemplo paso a paso.'
+              : 'El instructor escribe, señala y explica. Para oírlo y ver el código moverse, pulsa aquí.'}
           </p>
           <section className="lesson-start-objectives" aria-labelledby="lesson-objectives-title">
             <h3 id="lesson-objectives-title">Al terminar podrás</h3>
@@ -1238,8 +1243,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         isMuted={isMuted}
         volume={volume}
         showCaptions={showCaptions}
-        onToggleMute={toggleMute}
-        onVolumeChange={handleVolumeChange}
+        onToggleMute={isSilentLesson ? undefined : toggleMute}
+        onVolumeChange={isSilentLesson ? undefined : handleVolumeChange}
         onToggleCaptions={toggleCaptions}
         onPlay={startPlayback}
         onPause={() => {

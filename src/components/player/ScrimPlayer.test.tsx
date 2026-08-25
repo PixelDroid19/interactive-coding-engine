@@ -77,6 +77,21 @@ describe('ScrimPlayer overlay coordination', () => {
     });
   });
 
+  it('presenta una clase silenciosa sin controles ni promesas de audio', () => {
+    render(
+      <ScrimPlayer
+        lessonData={{ ...lesson, id: 'ai-silent-01', narrationMode: 'silent' }}
+        onBack={() => undefined}
+      />,
+    );
+
+    expect(screen.getByText('Clase visual guiada')).toBeTruthy();
+    expect(screen.getByText(/Lee los subtítulos mientras el editor cambia/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Silenciar explicación' })).toBeNull();
+    expect(screen.queryByRole('slider', { name: 'Volumen de la explicación' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Activar o desactivar subtítulos' })).toBeTruthy();
+  });
+
   it('usa una salida lógica sin mini-browser en una lección de JavaScript puro', () => {
     render(<ScrimPlayer lessonData={{ ...lesson, executionMode: 'logic' } as typeof lesson} onBack={() => undefined} />);
 

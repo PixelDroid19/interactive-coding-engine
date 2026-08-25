@@ -55,7 +55,7 @@ export class PlaybackEngine {
     this.lessonData = lesson;
 
     // Load audio track into narrator
-    this.audioNarrator.loadTrack(lesson.audioTrack);
+    this.audioNarrator.loadTrack(lesson.audioTrack, lesson.narrationMode);
     this.audioNarrator.setPlaybackRate(this.playbackRate);
     this.audioNarrator.setMuted(this.isMuted);
     this.audioNarrator.setVolume(this.volume);

@@ -1,4 +1,4 @@
-import { AudioTrackInfo } from '../types/scrim';
+import { AudioTrackInfo, type NarrationMode } from '../types/scrim';
 
 const CAPTION_MAX_CHARACTERS = 150;
 
@@ -53,6 +53,7 @@ export class AudioNarrator {
   private activeUtterance: SpeechSynthesisUtterance | null = null;
   private subtitleClearTimeout: any = null;
   private displayedSubtitle: string | null = null;
+  private narrationMode: NarrationMode = 'audio';
 
   // High-precision clock tracking
   private audioBaseTimeMs = 0;
@@ -72,8 +73,9 @@ export class AudioNarrator {
 
   private trackLanguage = 'es';
 
-  public loadTrack(trackInfo?: AudioTrackInfo): void {
+  public loadTrack(trackInfo?: AudioTrackInfo, narrationMode: NarrationMode = 'audio'): void {
     this.stop();
+    this.narrationMode = narrationMode;
     this.lastSpokenIndex = -1;
     this.audioBaseTimeMs = 0;
     this.audioBaseWallTime = performance.now();
@@ -85,10 +87,10 @@ export class AudioNarrator {
       this.currentBlobUrl = undefined;
     }
 
-    if (trackInfo?.audioBlob) {
+    if (narrationMode === 'audio' && trackInfo?.audioBlob) {
       this.currentBlobUrl = URL.createObjectURL(trackInfo.audioBlob);
       this.initAudioElement(this.currentBlobUrl);
-    } else if (trackInfo?.url) {
+    } else if (narrationMode === 'audio' && trackInfo?.url) {
       this.initAudioElement(trackInfo.url);
     } else {
       this.destroyAudioElement();
@@ -315,7 +317,9 @@ export class AudioNarrator {
         timeMs: computedMs,
         isPlaying: this.isPlaying,
         isStalled: false,
-        source: this.narrationScript.length > 0 ? 'speech-synthesis' : 'synthetic-timeline',
+          source: this.narrationMode === 'silent' || this.narrationScript.length === 0
+            ? 'synthetic-timeline'
+            : 'speech-synthesis',
       };
     }
 
@@ -323,7 +327,9 @@ export class AudioNarrator {
       timeMs: this.fallbackClockMs,
       isPlaying: false,
       isStalled: false,
-      source: this.narrationScript.length > 0 ? 'speech-synthesis' : 'synthetic-timeline',
+      source: this.narrationMode === 'silent' || this.narrationScript.length === 0
+        ? 'synthetic-timeline'
+        : 'speech-synthesis',
     };
   }
 
@@ -438,6 +444,7 @@ export class AudioNarrator {
 
     // Hardware audio is the master voice. Do not double-speak over it.
     if (this.hasHardwareAudio()) return;
+    if (this.narrationMode === 'silent') return;
     if (this.isMuted || this.volume <= 0) return;
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 

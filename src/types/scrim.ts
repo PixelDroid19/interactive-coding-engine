@@ -214,6 +214,8 @@ export interface AudioTrackInfo {
   }[];
 }
 
+export type NarrationMode = 'audio' | 'speech' | 'silent';
+
 export interface ScrimLessonData {
   id: string;
   title: string;
@@ -228,6 +230,8 @@ export interface ScrimLessonData {
   events: ScrimEvent[];
   snapshots: SnapshotPoint[];
   audioTrack?: AudioTrackInfo;
+  /** `silent` conserva la cinta animada y los subtítulos sin producir sonido. */
+  narrationMode?: NarrationMode;
   challenges: ScrimChallenge[];
   chapters?: { timestamp: number; title: string }[];
   concepts?: string[];
