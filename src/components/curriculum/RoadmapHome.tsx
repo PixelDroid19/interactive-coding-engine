@@ -86,26 +86,34 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
           y1 = ra.bottom - box.top;
           x2 = rb.left + rb.width / 2 - box.left;
           y2 = rb.top - box.top;
-          const cy = (y1 + y2) / 2;
-          d = `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${cy}, ${x2} ${y2}`;
+          if (Math.abs(x1 - x2) < 2) {
+            d = `M ${x1} ${y1} L ${x2} ${y2}`;
+          } else {
+            const cy = (y1 + y2) / 2;
+            d = `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${cy}, ${x2} ${y2}`;
+          }
         } else {
-          // Horizontal branch connections
+          // Horizontal fan-out branch connections (roadmap.sh style)
           if (rb.left < ra.left) {
             // Target is on the left (checkpoints)
             x1 = ra.left - box.left;
             y1 = ra.top + ra.height / 2 - box.top;
             x2 = rb.right - box.left;
             y2 = rb.top + rb.height / 2 - box.top;
-            const cx = (x1 + x2) / 2;
-            d = `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`;
+            const dx = x1 - x2;
+            const cp1x = x1 - dx * 0.45;
+            const cp2x = x2 + dx * 0.45;
+            d = `M ${x1} ${y1} C ${cp1x} ${y1}, ${cp2x} ${y2}, ${x2} ${y2}`;
           } else {
             // Target is on the right (concepts)
             x1 = ra.right - box.left;
             y1 = ra.top + ra.height / 2 - box.top;
             x2 = rb.left - box.left;
             y2 = rb.top + rb.height / 2 - box.top;
-            const cx = (x1 + x2) / 2;
-            d = `M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`;
+            const dx = x2 - x1;
+            const cp1x = x1 + dx * 0.45;
+            const cp2x = x2 - dx * 0.45;
+            d = `M ${x1} ${y1} C ${cp1x} ${y1}, ${cp2x} ${y2}, ${x2} ${y2}`;
           }
         }
 
