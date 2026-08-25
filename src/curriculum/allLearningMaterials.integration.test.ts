@@ -83,22 +83,22 @@ describe('auditoría integrada del material de aprendizaje', () => {
     expect(new Set(readings.map((reading) => reading.id)).size).toBe(readings.length);
 
     for (const reading of readings) {
-      expect(reading.summary.trim().length, `${reading.id} no presenta el propósito`).toBeGreaterThan(50);
-      expect(reading.sections.length, `${reading.id} desarrolla muy poco el concepto`).toBeGreaterThanOrEqual(3);
-      expect(reading.sections.some((section) => Boolean(section.example?.trim())), `${reading.id} no contiene un ejemplo trabajado`).toBe(true);
-      expect(
+      expect.soft(reading.summary.trim().length, `${reading.id} no presenta el propósito`).toBeGreaterThan(50);
+      expect.soft(reading.sections.length, `${reading.id} desarrolla muy poco el concepto`).toBeGreaterThanOrEqual(3);
+      expect.soft(reading.sections.some((section) => Boolean(section.example?.trim())), `${reading.id} no contiene un ejemplo trabajado`).toBe(true);
+      expect.soft(
         reading.sections.some((section) => /error|equivoc|fall|confusi|cuidado|problema/i.test(`${section.title} ${section.content}`)),
         `${reading.id} no prepara para errores frecuentes`,
       ).toBe(true);
-      expect(reading.keyPoints.length, `${reading.id} no resume lo esencial`).toBeGreaterThanOrEqual(3);
-      expect(reading.frequentQuestions?.length, `${reading.id} no responde dudas frecuentes`).toBeGreaterThanOrEqual(2);
-      expect(reading.transferPrompt?.trim().length, `${reading.id} no invita a transferir lo aprendido`).toBeGreaterThan(25);
-      expect(reading.practiceItemId, `${reading.id} no enlaza con una práctica`).toBeTruthy();
+      expect.soft(reading.keyPoints.length, `${reading.id} no resume lo esencial`).toBeGreaterThanOrEqual(3);
+      expect.soft(reading.frequentQuestions?.length, `${reading.id} no responde dudas frecuentes`).toBeGreaterThanOrEqual(2);
+      expect.soft(reading.transferPrompt?.trim().length, `${reading.id} no invita a transferir lo aprendido`).toBeGreaterThan(25);
+      expect.soft(reading.practiceItemId, `${reading.id} no enlaza con una práctica`).toBeTruthy();
 
       const course = courses.find((candidate) => candidate.modules.some((module) => module.items.includes(reading)))!;
       const practice = course.modules.flatMap((module) => module.items)
         .find((candidate) => candidate.id === reading.practiceItemId);
-      expect(practice?.type, `${reading.id} apunta a una práctica inexistente`).toBe('debugging');
+      expect.soft(practice?.type, `${reading.id} apunta a una práctica inexistente`).toBe('debugging');
     }
   });
 
@@ -108,11 +108,11 @@ describe('auditoría integrada del material de aprendizaje', () => {
     expect(new Set(activities.map((item) => item.id)).size).toBe(activities.length);
 
     for (const item of activities) {
-      expect(item.activity.prompt.trim().length, `${item.id} no plantea la tarea con suficiente contexto`).toBeGreaterThan(35);
-      expect(item.explanation.trim().length, `${item.id} no explica el modelo después de responder`).toBeGreaterThan(55);
-      expect(item.hints.length, `${item.id} no ofrece ayuda gradual`).toBeGreaterThanOrEqual(3);
-      expect(item.hints.map((hint) => hint.level), `${item.id} tiene niveles de pista incoherentes`).toEqual([1, 2, 3]);
-      expect(new Set(item.hints.map((hint) => hint.text.trim())).size, `${item.id} repite pistas`).toBe(item.hints.length);
+      expect.soft(item.activity.prompt.trim().length, `${item.id} no plantea la tarea con suficiente contexto`).toBeGreaterThan(35);
+      expect.soft(item.explanation.trim().length, `${item.id} no explica el modelo después de responder`).toBeGreaterThan(55);
+      expect.soft(item.hints.length, `${item.id} no ofrece ayuda gradual`).toBeGreaterThanOrEqual(3);
+      expect.soft(item.hints.map((hint) => hint.level), `${item.id} tiene niveles de pista incoherentes`).toEqual([1, 2, 3]);
+      expect.soft(new Set(item.hints.map((hint) => hint.text.trim())).size, `${item.id} repite pistas`).toBe(item.hints.length);
       expectValidReasoningReferences(item);
       expect(validateReasoningAttempt(item.activity, attemptFor(item)).allPassed, `${item.id} es imposible de completar desde su interfaz`).toBe(true);
     }
