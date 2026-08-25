@@ -167,9 +167,9 @@ export default function App() {
       const isHud = document.documentElement.classList.contains('hud');
       const map: Array<[string, string, boolean?]> = [
         ['.window-topbar', 'hud-topbar tl-clip br-clip border inlay'],
-        ['.editor-window-wrapper', 'hud-editor tl-clip br-clip border inlay'],
-        ['.browser-window', 'hud-browser tl-clip br-clip border inlay'],
-        ['.files-sidebar', 'hud-sidebar tl-clip br-clip border inlay'],
+        ['.editor-window-wrapper', 'hud-editor tl-clip tr-clip br-clip bl-clip border inlay'],
+        ['.browser-window', 'hud-browser tl-clip tr-clip br-clip bl-clip border inlay'],
+        ['.files-sidebar', 'hud-sidebar tl-clip br-clip bl-clip border inlay'],
         ['.player-bar', 'hud-player tl-clip tr-clip border inlay'],
         ['.caption-chip', 'hud-narration tl-clip tr-clip br-clip bl-clip border inlay', true],
         ['.window-topbar .window-titlebar-left > button:first-child', 'hud-roadmap tr-clip bl-clip border inlay', true],
@@ -180,7 +180,6 @@ export default function App() {
         ['.window-topbar .neu-pill-btn:not(:first-child):not(.btn-explain):not(.btn-next-lesson)', 'hud-action tl-clip br-clip border inlay', true],
         ['.file-item-btn', 'hud-file tl-clip br-clip border inlay', true],
         ['.tab-btn', 'hud-tab tl-clip tr-clip border inlay', true],
-        ['.browser-btn', 'hud-control tl-clip br-clip border inlay', true],
         ['.browser-url-box', 'hud-url tl-clip br-clip border inlay', true],
         ['button[aria-label="Abrir conceptos"]', 'hud-concepts tl-clip tr-clip border inlay', true],
         ['.console-trigger-btn', 'hud-console br-clip border inlay', true],

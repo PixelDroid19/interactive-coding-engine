@@ -1187,15 +1187,15 @@ body.dark {
 }
 
 .floating-browser-expanded {
-  top: 6px !important;
-  left: 6px !important;
-  right: 6px !important;
-  bottom: 6px !important;
+  top: 48px !important;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 56px !important;
   width: auto !important;
   height: auto !important;
   max-height: none !important;
   transform: none !important;
-  z-index: 45 !important;
+  z-index: 85 !important;
 }
 
 .browser-window {

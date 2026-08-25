@@ -37,8 +37,7 @@ describe('FloatingBrowser', () => {
   it('botones de icono tienen aria-label en español', () => {
     const markup = renderToStaticMarkup(<FloatingBrowser workspace={workspace} isFloating autoReload={false} onToggleFloating={() => {}} />);
     expect(markup).toContain('aria-label="Recargar vista previa"');
-    expect(markup).toContain('aria-label="Ejecutar código"');
-    expect(markup).toContain('aria-label="Minimizar vista previa"');
+    expect(markup).toContain('aria-label="Ampliar vista previa"');
   });
 
   it('título Vista previa visible', () => {

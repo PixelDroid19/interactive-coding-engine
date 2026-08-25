@@ -164,9 +164,21 @@
   box-shadow: 0 0 12px var(--hud-yellow-glow) !important;
 }
 
-.hud .window-topbar button[aria-label*="flotante" i],
-.hud .window-topbar button[aria-label*="lado" i] {
-  color: #ff76c2 !important;
+.hud .window-topbar .cyber-theme-toggle,
+.hud button.cyber-theme-toggle {
+  color: #000000 !important;
+  font-weight: 900 !important;
+  background: var(--hud-yellow) !important;
+  border: 1.5px solid var(--hud-yellow) !important;
+  box-shadow: 0 0 12px var(--hud-yellow-glow) !important;
+}
+
+.hud .window-topbar .cyber-theme-toggle svg,
+.hud button.cyber-theme-toggle svg,
+.hud .window-topbar .cyber-theme-toggle span,
+.hud button.cyber-theme-toggle span {
+  color: #000000 !important;
+  stroke: #000000 !important;
 }
 
 .hud .window-topbar .btn-next-lesson,
@@ -545,6 +557,16 @@
   min-width: 0 !important;
   max-width: calc(100vw - 16px) !important;
   max-height: calc(100vh - 116px) !important;
+}
+
+.hud .floating-browser-expanded {
+  top: 48px !important;
+  bottom: 56px !important;
+  left: 8px !important;
+  right: 8px !important;
+  width: auto !important;
+  height: auto !important;
+  z-index: 85 !important;
 }
 
 .hud .browser-header-clean {

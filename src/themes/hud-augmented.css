@@ -1,135 +1,196 @@
-/* augmented-ui v2 layer. The data attributes are applied only while .hud is active. */
+/* augmented-ui v2 layer — Enhanced Cyberpunk High-Tech HUD Styling */
 
+/* Top Navigation Bar */
 .hud [data-augmented-ui~="hud-topbar"] {
-  --aug-border-all: 1px;
-  --aug-border-bg: linear-gradient(90deg, var(--hud-yellow), rgba(255, 230, 0, 0.35) 44%, var(--hud-yellow));
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(90deg, var(--hud-yellow) 0%, rgba(255, 230, 0, 0.5) 30%, rgba(176, 38, 255, 0.35) 70%, var(--hud-yellow) 100%);
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #050507;
+  --aug-inlay-bg: #050508;
   --aug-inlay-opacity: 1;
   --aug-tl: 0px;
-  --aug-br: 10px;
+  --aug-br: 12px;
+  filter: drop-shadow(0 2px 8px rgba(255, 230, 0, 0.15));
 }
 
+/* File Explorer Sidebar */
 .hud [data-augmented-ui~="hud-sidebar"] {
   --aug-border-all: 1.5px;
-  --aug-border-bg: rgba(255, 230, 0, 0.45);
+  --aug-border-bg: linear-gradient(180deg, var(--hud-yellow) 0%, rgba(255, 230, 0, 0.5) 35%, rgba(176, 38, 255, 0.35) 75%, var(--hud-magenta) 100%);
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #0a0a0f;
+  --aug-inlay-bg: #0a0a10;
   --aug-inlay-opacity: 1;
-  --aug-tl: 12px;
-  --aug-br: 12px;
+  --aug-tl: 14px;
+  --aug-br: 14px;
+  --aug-bl: 6px;
+  filter: drop-shadow(0 0 10px rgba(255, 230, 0, 0.12));
 }
 
+/* Central Code Editor Window */
 .hud [data-augmented-ui~="hud-editor"] {
   --aug-border-all: 1.5px;
-  --aug-border-bg: rgba(255, 230, 0, 0.45);
+  --aug-border-bg: linear-gradient(135deg, var(--hud-yellow) 0%, rgba(255, 230, 0, 0.45) 22%, rgba(0, 240, 255, 0.3) 60%, rgba(176, 38, 255, 0.45) 85%, var(--hud-yellow) 100%);
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #07070b;
   --aug-inlay-opacity: 1;
-  --aug-tl: 12px;
-  --aug-br: 12px;
+  --aug-tl: 14px;
+  --aug-tr: 6px;
+  --aug-br: 14px;
+  --aug-bl: 6px;
+  filter: drop-shadow(0 0 12px rgba(255, 230, 0, 0.14));
 }
 
+/* Live Preview Browser Window */
 .hud [data-augmented-ui~="hud-browser"] {
   --aug-border-all: 1.5px;
-  --aug-border-bg: rgba(255, 230, 0, 0.45);
+  --aug-border-bg: linear-gradient(225deg, var(--hud-cyan) 0%, rgba(0, 240, 255, 0.45) 30%, rgba(255, 230, 0, 0.35) 70%, var(--hud-cyan) 100%);
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #07070b;
   --aug-inlay-opacity: 1;
-  --aug-tl: 12px;
-  --aug-br: 12px;
+  --aug-tl: 14px;
+  --aug-tr: 6px;
+  --aug-br: 14px;
+  --aug-bl: 6px;
+  filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.15));
 }
 
+/* Bottom Player Timeline Bar */
 .hud [data-augmented-ui~="hud-player"] {
   --aug-border-all: 1.5px;
-  --aug-border-bg: rgba(255, 230, 0, 0.45);
+  --aug-border-bg: linear-gradient(90deg, var(--hud-yellow) 0%, rgba(0, 240, 255, 0.45) 50%, var(--hud-yellow) 100%);
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #06060a;
   --aug-inlay-opacity: 1;
-  --aug-tl: 8px;
-  --aug-tr: 8px;
-}
-
-.hud [data-augmented-ui~="hud-narration"] {
-  --aug-border-all: 1.5px;
-  --aug-border-bg: #b026ff;
-  --aug-inlay-all: 1px;
-  --aug-inlay-bg: #0f0718;
-  --aug-inlay-opacity: 1;
   --aug-tl: 10px;
   --aug-tr: 10px;
-  --aug-br: 10px;
-  --aug-bl: 10px;
+  filter: drop-shadow(0 -2px 10px rgba(255, 230, 0, 0.14));
 }
 
+/* Floating Narration / Captions Card */
+.hud [data-augmented-ui~="hud-narration"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(135deg, var(--hud-purple) 0%, var(--hud-magenta) 65%, var(--hud-cyan) 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #0e0618;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 12px;
+  --aug-tr: 12px;
+  --aug-br: 12px;
+  --aug-bl: 12px;
+  filter: drop-shadow(0 0 16px rgba(176, 38, 255, 0.4));
+}
+
+/* Roadmap Topbar Button */
 .hud [data-augmented-ui~="hud-roadmap"] {
-  --aug-border-all: 1px;
+  --aug-border-all: 1.5px;
   --aug-border-bg: #ffe600;
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #ffe600;
   --aug-inlay-opacity: 1;
   --aug-tr: 8px;
   --aug-bl: 8px;
+  filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.45));
+}
+.hud [data-augmented-ui~="hud-roadmap"]:hover {
+  --aug-border-bg: #fff066;
+  --aug-inlay-bg: #fff066;
+  filter: drop-shadow(0 0 12px rgba(255, 230, 0, 0.75));
 }
 
+/* Previous Lesson Button */
 .hud [data-augmented-ui~="hud-prev"] {
   --aug-border-all: 1px;
-  --aug-border-bg: rgba(255, 255, 255, 0.2);
+  --aug-border-bg: rgba(255, 255, 255, 0.25);
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #0a0a0f;
   --aug-inlay-opacity: 1;
   --aug-tl: 8px;
   --aug-br: 8px;
 }
+.hud [data-augmented-ui~="hud-prev"]:hover {
+  --aug-border-bg: rgba(255, 255, 255, 0.6);
+  --aug-inlay-bg: #14141e;
+}
 
+/* Explain Button */
 .hud [data-augmented-ui~="hud-explain"] {
-  --aug-border-all: 1px;
+  --aug-border-all: 1.5px;
   --aug-border-bg: #ffe600;
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #ffe600;
   --aug-inlay-opacity: 1;
   --aug-tr: 8px;
   --aug-bl: 8px;
+  filter: drop-shadow(0 0 10px rgba(255, 230, 0, 0.6));
+}
+.hud [data-augmented-ui~="hud-explain"]:hover {
+  --aug-border-bg: #fff066;
+  --aug-inlay-bg: #fff066;
+  filter: drop-shadow(0 0 14px rgba(255, 230, 0, 0.85));
 }
 
+/* Floating Preview Toggle Button */
 .hud [data-augmented-ui~="hud-floating"] {
   --aug-border-all: 1px;
   --aug-border-bg: #ff007f;
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: rgba(255, 0, 127, 0.1);
+  --aug-inlay-bg: rgba(255, 0, 127, 0.15);
   --aug-inlay-opacity: 1;
   --aug-tl: 6px;
   --aug-br: 6px;
+  filter: drop-shadow(0 0 6px rgba(255, 0, 127, 0.35));
+}
+.hud [data-augmented-ui~="hud-floating"]:hover {
+  --aug-border-bg: #ff3399;
+  --aug-inlay-bg: rgba(255, 0, 127, 0.28);
+  filter: drop-shadow(0 0 10px rgba(255, 0, 127, 0.6));
 }
 
+/* Next Lesson Button */
 .hud [data-augmented-ui~="hud-next"] {
   --aug-border-all: 1px;
   --aug-border-bg: #00f0ff;
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: rgba(0, 240, 255, 0.08);
+  --aug-inlay-bg: rgba(0, 240, 255, 0.12);
   --aug-inlay-opacity: 1;
   --aug-tl: 6px;
   --aug-br: 6px;
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4));
+}
+.hud [data-augmented-ui~="hud-next"]:hover {
+  --aug-border-bg: #66f6ff;
+  --aug-inlay-bg: rgba(0, 240, 255, 0.25);
+  filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.7));
 }
 
+/* Action Buttons (e.g. Volver, Reto) */
 .hud [data-augmented-ui~="hud-action"] {
   --aug-border-all: 1px;
-  --aug-border-bg: #3a3a46;
+  --aug-border-bg: #4a4a58;
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #0b0b10;
+  --aug-inlay-bg: #0c0c12;
   --aug-inlay-opacity: 1;
   --aug-tl: 7px;
   --aug-br: 7px;
 }
+.hud [data-augmented-ui~="hud-action"]:hover {
+  --aug-border-bg: var(--hud-yellow);
+  --aug-inlay-bg: #14141e;
+  filter: drop-shadow(0 0 6px rgba(255, 230, 0, 0.3));
+}
 
+/* File Tree Item */
 .hud [data-augmented-ui~="hud-file"] {
   --aug-border-all: 1px;
-  --aug-border-bg: rgba(255, 255, 255, 0.12);
+  --aug-border-bg: rgba(255, 255, 255, 0.14);
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #111118;
   --aug-inlay-opacity: 1;
   --aug-tl: 6px;
   --aug-br: 6px;
+}
+.hud [data-augmented-ui~="hud-file"]:hover {
+  --aug-border-bg: rgba(255, 230, 0, 0.55);
+  --aug-inlay-bg: #161622;
 }
 
 .hud [data-augmented-ui~="hud-file"].file-item-btn-active {
@@ -140,16 +201,22 @@
   --aug-inlay-opacity: 1;
   --aug-tl: 6px;
   --aug-br: 6px;
+  filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.35));
 }
 
+/* Editor Tabs */
 .hud [data-augmented-ui~="hud-tab"] {
   --aug-border-all: 1px;
   --aug-border-bg: #30303a;
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #0b0b10;
   --aug-inlay-opacity: 1;
-  --aug-tl: 4px;
-  --aug-tr: 4px;
+  --aug-tl: 5px;
+  --aug-tr: 5px;
+}
+.hud [data-augmented-ui~="hud-tab"]:hover {
+  --aug-border-bg: rgba(255, 255, 255, 0.4);
+  --aug-inlay-bg: #14141e;
 }
 
 .hud [data-augmented-ui~="hud-tab"].tab-btn-active {
@@ -158,10 +225,12 @@
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #ffe600;
   --aug-inlay-opacity: 1;
-  --aug-tl: 4px;
-  --aug-tr: 4px;
+  --aug-tl: 5px;
+  --aug-tr: 5px;
+  filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.45));
 }
 
+/* Control Buttons (Reload, minimize, etc.) */
 .hud [data-augmented-ui~="hud-control"] {
   --aug-border-all: 1px;
   --aug-border-bg: #34343e;
@@ -171,17 +240,25 @@
   --aug-tl: 5px;
   --aug-br: 5px;
 }
+.hud [data-augmented-ui~="hud-control"]:hover {
+  --aug-border-bg: var(--hud-cyan);
+  --aug-inlay-bg: #101018;
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.4));
+}
 
+/* Browser Address URL Bar */
 .hud [data-augmented-ui~="hud-url"] {
   --aug-border-all: 1px;
-  --aug-border-bg: rgb(176 38 255 / 72%);
+  --aug-border-bg: rgb(176 38 255 / 75%);
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #07040b;
+  --aug-inlay-bg: #07040d;
   --aug-inlay-opacity: 1;
   --aug-tl: 5px;
   --aug-br: 5px;
+  filter: drop-shadow(0 0 6px rgba(176, 38, 255, 0.3));
 }
 
+/* Concepts Popover Button */
 .hud [data-augmented-ui~="hud-concepts"] {
   --aug-border-all: 1.5px;
   --aug-border-bg: #ff007f;
@@ -190,84 +267,129 @@
   --aug-inlay-opacity: 1;
   --aug-tl: 8px;
   --aug-tr: 8px;
+  filter: drop-shadow(0 0 8px rgba(255, 0, 127, 0.35));
+}
+.hud [data-augmented-ui~="hud-concepts"]:hover {
+  --aug-border-bg: #ff3399;
+  filter: drop-shadow(0 0 12px rgba(255, 0, 127, 0.6));
 }
 
+/* Play/Pause Button */
 .hud [data-augmented-ui~="hud-play"] {
-  --aug-border-all: 1px;
+  --aug-border-all: 1.5px;
   --aug-border-bg: #ffe600;
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #ffe600;
   --aug-inlay-opacity: 1;
-  --aug-tl: 4px;
-  --aug-br: 4px;
+  --aug-tl: 5px;
+  --aug-br: 5px;
+  filter: drop-shadow(0 0 10px rgba(255, 230, 0, 0.65));
+}
+.hud [data-augmented-ui~="hud-play"]:hover {
+  --aug-border-bg: #fff066;
+  --aug-inlay-bg: #fff066;
+  filter: drop-shadow(0 0 14px rgba(255, 230, 0, 0.85));
 }
 
+/* Category/Chapter Tag */
 .hud [data-augmented-ui~="hud-category"] {
-  --aug-border-all: 1px;
+  --aug-border-all: 1.5px;
   --aug-border-bg: #ff0055;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: rgba(255, 0, 85, 0.15);
+  --aug-inlay-opacity: 1;
   --aug-tr: 6px;
   --aug-bl: 6px;
+  filter: drop-shadow(0 0 6px rgba(255, 0, 85, 0.35));
 }
 
+/* Browser Console Trigger Button */
 .hud [data-augmented-ui~="hud-console"] {
   --aug-border-all: 1px;
-  --aug-border-bg: rgba(255, 255, 255, 0.1);
+  --aug-border-bg: rgba(255, 255, 255, 0.15);
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #060609;
+  --aug-inlay-bg: #06060a;
   --aug-inlay-opacity: 1;
   --aug-br: 8px;
 }
+.hud [data-augmented-ui~="hud-console"]:hover {
+  --aug-border-bg: var(--hud-yellow);
+  filter: drop-shadow(0 0 6px rgba(255, 230, 0, 0.3));
+}
 
+/* Panels, Modals, Dialogs */
 .hud [data-augmented-ui~="hud-panel"] {
   --aug-border-all: 1.5px;
   --aug-border-bg: linear-gradient(135deg, var(--hud-yellow), var(--hud-purple));
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #08080c;
+  --aug-inlay-bg: #08080d;
   --aug-inlay-opacity: 1;
-  --aug-tl: 11px;
-  --aug-br: 11px;
+  --aug-tl: 14px;
+  --aug-tr: 8px;
+  --aug-br: 14px;
+  --aug-bl: 8px;
+  filter: drop-shadow(0 0 16px rgba(255, 230, 0, 0.18));
 }
 
+/* Course Cards */
 .hud [data-augmented-ui~="hud-card"] {
-  --aug-border-all: 1px;
-  --aug-border-bg: #3a3a46;
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(135deg, rgba(255, 230, 0, 0.45), rgba(0, 240, 255, 0.35));
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #08080c;
+  --aug-inlay-bg: #08080e;
   --aug-inlay-opacity: 1;
-  --aug-tl: 13px;
-  --aug-br: 13px;
+  --aug-tl: 14px;
+  --aug-br: 14px;
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.12));
 }
 
+/* Primary Button in Cards */
 .hud [data-augmented-ui~="hud-primary"] {
-  --aug-border-all: 1px;
+  --aug-border-all: 1.5px;
   --aug-border-bg: var(--hud-yellow);
   --aug-inlay-all: 1px;
   --aug-inlay-bg: var(--hud-yellow);
   --aug-inlay-opacity: 1;
   --aug-tl: 7px;
   --aug-br: 7px;
+  filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.5));
 }
 
+/* Roadmap Nodes */
 .hud [data-augmented-ui~="hud-node"] {
-  --aug-border-all: 1px;
-  --aug-border-bg: #3a3a46;
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #3a3a48;
   --aug-inlay-all: 1px;
   --aug-inlay-bg: #0a0a0e;
   --aug-inlay-opacity: 1;
-  --aug-tl: 7px;
-  --aug-br: 7px;
+  --aug-tl: 8px;
+  --aug-br: 8px;
+}
+.hud [data-augmented-ui~="hud-node"]:hover {
+  --aug-border-bg: rgba(255, 255, 255, 0.5);
+  --aug-inlay-bg: #12121a;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.2));
 }
 
 .hud [data-augmented-ui~="hud-node"].rm-node-main {
+  --aug-border-all: 2px;
   --aug-border-bg: var(--hud-yellow);
   --aug-inlay-bg: #151509;
+  filter: drop-shadow(0 0 10px rgba(255, 230, 0, 0.35));
+}
+.hud [data-augmented-ui~="hud-node"].rm-node-main:hover {
+  --aug-border-bg: #fff066;
+  filter: drop-shadow(0 0 14px rgba(255, 230, 0, 0.65));
 }
 
 .hud [data-augmented-ui~="hud-node"].is-done {
+  --aug-border-all: 2px;
   --aug-border-bg: var(--hud-green);
-  --aug-inlay-bg: #07140e;
+  --aug-inlay-bg: #07170e;
+  filter: drop-shadow(0 0 10px rgba(0, 255, 102, 0.35));
 }
 
+/* Fallback for environments lacking full clip-path */
 @supports not ((clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%))) {
   .hud [data-augmented-ui] {
     border: 1px solid var(--hud-yellow) !important;

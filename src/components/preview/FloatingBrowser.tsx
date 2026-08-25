@@ -250,6 +250,17 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
     return () => clearTimeout(timeout);
   }, [workspace.files, autoReload]);
 
+  useEffect(() => {
+    if (!isMaximized) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMaximized(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isMaximized]);
+
   const handleManualRun = () => {
     if (onRunClick) {
       onRunClick();
@@ -320,24 +331,13 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
           <span className="browser-preview-badge">{autoReload ? 'En vivo' : 'Ejecutado'}</span>
         </div>
         <div className="browser-window-actions">
-          <button onClick={compileAndRun} className="browser-btn" aria-label="Recargar vista previa" title="Recargar">
+          <button onClick={compileAndRun} className="browser-btn" aria-label="Recargar vista previa" title="Recargar vista previa">
             <RotateCw size={13} className={isExecuting ? 'animate-spin' : ''} />
           </button>
-          <button onClick={handleManualRun} className="browser-btn" aria-label="Ejecutar código" title="Ejecutar">
-            <Play size={13} />
-          </button>
-          <button onClick={onToggleFloating} className="browser-btn" aria-label={isFloating ? 'Fijar al lado' : 'Soltar flotante'} title={isFloating ? 'Fijar al lado' : 'Soltar flotante'}>
-            {isFloating ? <Pin size={13} /> : <PinOff size={13} />}
-          </button>
           {isFloating && (
-            <>
-              <button onClick={() => setIsMinimized(true)} className="browser-btn" aria-label="Minimizar vista previa" title="Minimizar">
-                <Minimize2 size={13} />
-              </button>
-              <button onClick={() => setIsMaximized(!isMaximized)} className="browser-btn" aria-label={isMaximized ? 'Restaurar tamaño' : 'Ampliar vista previa'} title={isMaximized ? 'Restaurar' : 'Ampliar'}>
-                <Maximize2 size={13} />
-              </button>
-            </>
+            <button onClick={() => setIsMaximized(!isMaximized)} className="browser-btn" aria-label={isMaximized ? 'Restaurar tamaño' : 'Ampliar vista previa'} title={isMaximized ? 'Restaurar tamaño' : 'Ampliar vista previa'}>
+              {isMaximized ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+            </button>
           )}
         </div>
       </div>

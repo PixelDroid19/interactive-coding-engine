@@ -19,7 +19,7 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
       try { localStorage.setItem('theme', 'hud'); } catch {}
     } else {
       document.documentElement.classList.remove('hud');
-      try { localStorage.setItem('theme', 'dark'); } catch {}
+      try { localStorage.setItem('theme', 'default'); } catch {}
     }
     setIsHud(next);
   };
@@ -31,17 +31,18 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
         onClick={toggle}
         aria-label={isHud ? 'Cambiar a tema por defecto' : 'Cambiar a tema cyberpunk'}
         title={isHud ? 'Tema cyberpunk activo — volver al tema por defecto' : 'Activar tema cyberpunk'}
-        className="grid place-items-center"
+        className="cyber-theme-toggle grid place-items-center"
         style={{
-          width: 32, height: 32,
-          borderRadius: 8,
-          border: isHud ? '2px solid #ffe600' : '1.5px solid #374151',
+          width: 32,
+          height: 32,
+          borderRadius: 6,
+          border: isHud ? '1.5px solid #ffe600' : '1.5px solid #374151',
           background: isHud ? '#ffe600' : '#1a1a1f',
-          color: isHud ? '#000' : '#94a3b8',
-          boxShadow: isHud ? '0 0 8px rgba(255,230,0,0.3)' : 'none',
+          color: isHud ? '#000000' : '#cbd5e1',
+          boxShadow: isHud ? '0 0 10px rgba(255,230,0,0.4)' : 'none',
         }}
       >
-        {isHud ? <Sparkles size={14} /> : <Palette size={14} />}
+        {isHud ? <Sparkles size={14} style={{ color: '#000000' }} /> : <Palette size={14} />}
       </button>
     );
   }
@@ -52,18 +53,18 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
       onClick={toggle}
       aria-label={isHud ? 'Cambiar a tema por defecto' : 'Cambiar a tema cyberpunk'}
       title={isHud ? 'Tema cyberpunk activo — volver al tema por defecto' : 'Activar tema cyberpunk'}
-      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold"
+      className="cyber-theme-toggle flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase tracking-wider"
       style={{
         borderRadius: 6,
-        border: isHud ? '2px solid #ffe600' : '1.5px solid #374151',
+        border: isHud ? '1.5px solid #ffe600' : '1.5px solid #374151',
         background: isHud ? '#ffe600' : '#1a1a1f',
-        color: isHud ? '#000' : '#cbd5e1',
-        boxShadow: isHud ? '0 0 12px rgba(255,230,0,0.35)' : '1px 1px 0 #000',
-        fontFamily: 'Space Grotesk', letterSpacing: '0.04em',
+        color: isHud ? '#000000' : '#cbd5e1',
+        boxShadow: isHud ? '0 0 12px rgba(255,230,0,0.45)' : '1px 1px 0 #000',
+        fontFamily: isHud ? 'Chakra Petch, Space Grotesk, sans-serif' : 'Space Grotesk, sans-serif',
       }}
     >
-      <Palette size={12} />
-      {isHud ? 'Cyber ✓' : 'Cyber'}
+      <Palette size={13} style={{ color: isHud ? '#000000' : 'inherit' }} />
+      <span style={{ color: isHud ? '#000000' : 'inherit', fontWeight: 900 }}>{isHud ? 'CYBER ✓' : 'CYBER'}</span>
     </button>
   );
 };
