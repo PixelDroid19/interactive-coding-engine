@@ -4,6 +4,7 @@ import { type CourseLanguage, ScrimLessonData } from './types/scrim';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './curriculum/fundamentos/course';
 import { JAVASCRIPT_COURSE, JAVASCRIPT_SCRIMS } from './curriculum/javascript/course';
 import { COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS } from './curriculum/web-components-lit/course';
+import { AI_ENGINEER_COURSE, AI_ENGINEER_SCRIMS } from './curriculum/ai-engineer/course';
 import { AppNavigationState, loadAppNavigationState, loadUserProgress, loadCustomCourses, loadCustomScrims, loadCourseLanguage, markItemCompleted, saveAppNavigationState, saveCourseLanguage, saveCustomCourse, updateRecentPosition } from './engine/persistence';
 import { resolveDebuggingLanguage, resolveLessonLanguage, resolveProjectLanguage, resolveStandaloneChallengeLanguage } from './engine/runtime/languageVariants';
 import { getNavigationState } from './engine/navigation';
@@ -34,7 +35,7 @@ function viewForItem(item: CurriculumItem): AppView {
 
 function getInitialCourses(): Course[] {
   const savedCourses = loadCustomCourses();
-  return [FUNDAMENTOS_COURSE, JAVASCRIPT_COURSE, COMPONENT_COURSE].map((baseCourse) => {
+  return [FUNDAMENTOS_COURSE, JAVASCRIPT_COURSE, COMPONENT_COURSE, AI_ENGINEER_COURSE].map((baseCourse) => {
     const savedCourse = savedCourses.find((candidate) => candidate.id === baseCourse.id);
     return savedCourse ? mergeSavedCourseItems(baseCourse, savedCourse) : baseCourse;
   });
@@ -135,7 +136,7 @@ export default function App() {
   const [courseLanguage, setCourseLanguage] = useState<CourseLanguage>(() => loadCourseLanguage(initialCourse.id));
   const [activeItem, setActiveItem] = useState<CurriculumItem | null>(initialAppState.item);
   const [activeModuleId, setActiveModuleId] = useState<string>(initialAppState.moduleId);
-  const [scrimsMap, setScrimsMap] = useState<Record<string, ScrimLessonData>>({ ...FUNDAMENTOS_SCRIMS, ...JAVASCRIPT_SCRIMS, ...COMPONENT_COURSE_SCRIMS });
+  const [scrimsMap, setScrimsMap] = useState<Record<string, ScrimLessonData>>({ ...FUNDAMENTOS_SCRIMS, ...JAVASCRIPT_SCRIMS, ...COMPONENT_COURSE_SCRIMS, ...AI_ENGINEER_SCRIMS });
   const [customScrimsStatus, setCustomScrimsStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [customScrimsError, setCustomScrimsError] = useState('');
   const [progress, setProgress] = useState<UserProgressRecord>(() => loadUserProgress());

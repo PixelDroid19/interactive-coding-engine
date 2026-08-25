@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import App from './App';
 import { loadAppNavigationState, loadUserProgress } from './engine/persistence';
 import { FUNDAMENTOS_COURSE } from './curriculum/fundamentos/course';
+import { AI_ENGINEER_COURSE } from './curriculum/ai-engineer/course';
 
 describe('App navigation persistence', () => {
   beforeEach(() => {
@@ -20,6 +21,22 @@ describe('App navigation persistence', () => {
 
     expect(document.documentElement.classList.contains('dark')).toBe(true);
     expect(document.documentElement.style.colorScheme).toBe('dark');
+  });
+
+  it('registra el curso completo de AI Engineer y abre su primera clase', () => {
+    render(<App />);
+
+    expect(screen.getByRole('button', { name: `Ver recorrido: ${AI_ENGINEER_COURSE.title}` })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: `Ver recorrido: ${AI_ENGINEER_COURSE.title}` }));
+    expect(screen.getByRole('heading', { name: AI_ENGINEER_COURSE.title })).toBeTruthy();
+    expect(screen.getByText(/67 lecciones/)).toBeTruthy();
+
+    const first = AI_ENGINEER_COURSE.modules[0].items.find((item) => item.type === 'scrim')!;
+    fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${first.title}`) }));
+    expect(screen.getByRole('heading', { name: first.title })).toBeTruthy();
+    expect(screen.getByRole('group', { name: 'Lenguaje del ejercicio' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Python' })).toBeTruthy();
+    expect(screen.getByText('Clase visual guiada')).toBeTruthy();
   });
 
   it('restaura el Playground después de recargar la aplicación', () => {
