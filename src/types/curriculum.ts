@@ -1,4 +1,4 @@
-import { ChallengeTest, ScrimChallenge, ScrimLessonData, WorkspaceSnapshot } from './scrim';
+import { ChallengeTest, LanguageVariants, ScrimChallenge, ScrimLessonData, WorkspaceSnapshot } from './scrim';
 
 export type ItemType = 'scrim' | 'challenge' | 'debugging' | 'solo-project' | 'reading' | 'reasoning';
 
@@ -22,6 +22,7 @@ export interface StandaloneChallengeItem extends BaseCurriculumItem {
   templateId: 'vanilla-js' | 'js-only' | 'react';
   initialWorkspace: WorkspaceSnapshot;
   challenge: ScrimChallenge;
+  languageVariants?: LanguageVariants;
 }
 
 export interface ReadingSection {
@@ -50,6 +51,7 @@ export interface DebuggingExerciseItem extends BaseCurriculumItem {
   hints: { level: number; text: string }[];
   tests: ChallengeTest[];
   troubleshootingTips?: string[];
+  languageVariants?: LanguageVariants;
 }
 
 export interface ReadingItem extends BaseCurriculumItem {
@@ -140,6 +142,7 @@ export interface SoloProjectItem extends BaseCurriculumItem {
   suggestedSteps?: string[];
   referenceDesignUrl?: string;
   starterNotes?: string;
+  languageVariants?: LanguageVariants;
 }
 
 export type CurriculumItem =

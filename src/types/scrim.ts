@@ -2,8 +2,10 @@ export interface WorkspaceFile {
   name: string;
   path: string;
   content: string;
-  language: 'javascript' | 'html' | 'css' | 'typescript' | 'json';
+  language: 'javascript' | 'html' | 'css' | 'typescript' | 'json' | 'python' | 'markdown';
 }
+
+export type CourseLanguage = 'javascript' | 'python';
 
 export interface WorkspaceSnapshot {
   files: Record<string, WorkspaceFile>;
@@ -166,6 +168,14 @@ export interface ChallengeTest {
   triggerSelector?: string;
 }
 
+export interface PracticeVariant {
+  workspace: WorkspaceSnapshot;
+  tests: ChallengeTest[];
+  packages?: string[];
+}
+
+export type LanguageVariants = Record<CourseLanguage, PracticeVariant>;
+
 export interface Hint {
   level: number;
   title: string;
@@ -185,6 +195,7 @@ export interface ScrimChallenge {
   solutionFiles?: Record<string, string>;
   allowSkip?: boolean;
   autoPause?: boolean;
+  languageVariants?: LanguageVariants;
 }
 
 export interface AudioTrackInfo {
@@ -211,6 +222,7 @@ export interface ScrimLessonData {
   executionMode?: 'logic' | 'browser';
   durationMs: number;
   initialWorkspace: WorkspaceSnapshot;
+  languageVariants?: LanguageVariants;
   events: ScrimEvent[];
   snapshots: SnapshotPoint[];
   audioTrack?: AudioTrackInfo;
