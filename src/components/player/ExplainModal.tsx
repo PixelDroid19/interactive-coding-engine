@@ -98,67 +98,40 @@ export const ExplainModal: React.FC<ExplainModalProps> = ({
   return (
     <div className="drawer-backdrop" onClick={onClose}>
       <div
-        className="drawer-panel"
+        className="drawer-panel explain-modal-panel"
         role="dialog"
         aria-modal="true"
         aria-label="Explicar lección"
         onClick={(event) => event.stopPropagation()}
         onKeyDown={handlePanelKeyDown}
-        style={{ width: 420 }}
+        style={{ width: 440 }}
       >
-        <div className="drawer-header">
+        <div className="drawer-header explain-modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <div className="lesson-num-badge lesson-num-badge-active" style={{ width: 34, height: 34 }}>
               <Lightbulb size={16} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <h2
-                style={{
-                  margin: 0,
-                  fontFamily: 'Patrick Hand, cursive',
-                  fontSize: 18,
-                  fontWeight: 700,
-                  color: 'var(--color-text-main)',
-                  lineHeight: 1.1,
-                }}
-              >
+              <h2 className="explain-modal-title">
                 Explicar
               </h2>
-              <p
-                style={{
-                  margin: '2px 0 0',
-                  fontSize: 12,
-                  color: 'var(--color-text-muted)',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
+              <p className="explain-modal-subtitle">
                 {lessonTitle}
               </p>
             </div>
           </div>
-          <button ref={closeButtonRef} onClick={onClose} className="round-icon-btn" aria-label="Cerrar">
+          <button ref={closeButtonRef} onClick={onClose} className="explain-close-btn" aria-label="Cerrar">
             <X size={16} />
           </button>
         </div>
 
-        <div className="drawer-body">
+        <div className="drawer-body explain-modal-body">
           {concepts.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {concepts.map((concept, index) => (
                 <span
                   key={concept}
-                  className="category-tag"
-                  style={{
-                    transform: index % 2 === 0 ? 'rotate(-1deg)' : 'rotate(1deg)',
-                    background:
-                      index % 3 === 0
-                        ? 'var(--color-highlighter-yellow)'
-                        : index % 3 === 1
-                          ? 'var(--color-highlighter-cyan)'
-                          : 'var(--color-highlighter-mint)',
-                  }}
+                  className={`explain-concept-tag explain-concept-tag--${index % 3}`}
                 >
                   {concept}
                 </span>
@@ -169,102 +142,41 @@ export const ExplainModal: React.FC<ExplainModalProps> = ({
           {guideNotes.map((note, index) => (
             <div
               key={note.title}
-              className="concept-card"
-              style={{
-                flexDirection: 'column',
-                alignItems: 'stretch',
-                cursor: 'default',
-                gap: 6,
-                background: index === 0 ? 'var(--color-highlighter-yellow)' : 'var(--bg-surface)',
-              }}
+              className={`explain-card ${index === 0 ? 'explain-card--highlight' : ''}`}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  fontFamily: 'Patrick Hand, cursive',
-                  fontSize: 15,
-                  fontWeight: 700,
-                  color: 'var(--color-text-main)',
-                }}
-              >
+              <div className="explain-card-title">
                 <Lightbulb size={15} />
                 {note.title}
               </div>
-              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--color-text-main)' }}>
+              <p className="explain-card-body">
                 {note.body}
               </p>
             </div>
           ))}
 
-          <div
-            className="concept-card"
-            style={{ flexDirection: 'column', alignItems: 'stretch', cursor: 'default', gap: 6 }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontFamily: 'Patrick Hand, cursive',
-                fontSize: 15,
-                fontWeight: 700,
-              }}
-            >
+          <div className="explain-card">
+            <div className="explain-card-title">
               <FileCode size={15} />
               Archivo activo
             </div>
-            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--color-text-muted)' }}>
-              Estás en{' '}
-              <code
-                style={{
-                  fontFamily: 'JetBrains Mono, monospace',
-                  fontSize: 12,
-                  background: 'var(--color-highlighter-cyan)',
-                  color: '#0f172a',
-                  padding: '1px 6px',
-                  border: '1.5px solid #232733',
-                  borderRadius: 6,
-                }}
-              >
-                {activeFile?.name || 'app.js'}
-              </code>
-              . Haz clic en el código para pausar y editar.
+            <p className="explain-card-body">
+              Estás en <code className="explain-code-badge">{activeFile?.name || 'app.js'}</code>. Haz clic en el código para pausar y editar.
             </p>
           </div>
 
-          <div
-            className="concept-card"
-            style={{ flexDirection: 'column', alignItems: 'stretch', cursor: 'default', gap: 6 }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                fontFamily: 'Patrick Hand, cursive',
-                fontSize: 15,
-                fontWeight: 700,
-              }}
-            >
+          <div className="explain-card">
+            <div className="explain-card-title">
               <Monitor size={15} />
               Vista previa
             </div>
-            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5, color: 'var(--color-text-muted)' }}>
+            <p className="explain-card-body">
               El navegador ejecuta tu HTML, CSS y JavaScript de verdad. Durante la clase se recarga cuando el instructor pulsa Run. Si editas, se recarga solo.
             </p>
           </div>
         </div>
 
-        <div
-          style={{
-            padding: '12px 16px 16px',
-            borderTop: 'var(--border-pencil)',
-            background: 'var(--bg-surface)',
-          }}
-        >
-          <button onClick={onClose} className="btn-next-lesson neu-pill-btn" style={{ width: '100%' }}>
+        <div className="explain-modal-footer">
+          <button onClick={onClose} className="explain-footer-btn">
             Entendido
           </button>
         </div>

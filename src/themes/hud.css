@@ -91,11 +91,15 @@
 .hud .window-topbar {
   min-height: 42px !important;
   height: 42px !important;
-  padding: 4px 10px !important;
+  padding: 4px 12px !important;
   gap: 8px !important;
-  border: 0 !important;
-  background: #050507 !important;
-  box-shadow: none !important;
+  border-top: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 2px solid var(--hud-yellow) !important;
+  background: #050508 !important;
+  box-shadow: 0 2px 10px rgba(255, 230, 0, 0.15) !important;
+  z-index: 100 !important;
 }
 
 .hud .window-titlebar-left {
@@ -1473,6 +1477,134 @@
 .hud .debug-test,
 .hud .concept-card {
   border-radius: 0 !important;
+}
+
+/* Explain Modal in HUD / Cyber mode */
+.hud .explain-modal-panel {
+  background: #090a10 !important;
+  border-left: 2px solid var(--hud-yellow) !important;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.85) !important;
+}
+
+.hud .explain-modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: #050508 !important;
+}
+
+.hud .explain-modal-title {
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  color: #ffffff !important;
+}
+
+.hud .explain-modal-subtitle {
+  font-family: 'Space Grotesk', sans-serif !important;
+  color: #94a3b8 !important;
+}
+
+.hud .explain-close-btn {
+  width: 28px !important;
+  height: 28px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 4px !important;
+  color: #94a3b8 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.hud .explain-close-btn:hover {
+  background: rgba(255, 0, 85, 0.25) !important;
+  border-color: #ff0055 !important;
+  color: #ffffff !important;
+}
+
+.hud .explain-concept-tag {
+  font-family: 'Chakra Petch', monospace !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  border-radius: 3px !important;
+}
+.hud .explain-concept-tag--0 {
+  background: rgba(255, 230, 0, 0.15) !important;
+  color: #ffe600 !important;
+  border: 1px solid rgba(255, 230, 0, 0.4) !important;
+}
+.hud .explain-concept-tag--1 {
+  background: rgba(0, 240, 255, 0.15) !important;
+  color: #00f0ff !important;
+  border: 1px solid rgba(0, 240, 255, 0.4) !important;
+}
+.hud .explain-concept-tag--2 {
+  background: rgba(0, 255, 102, 0.15) !important;
+  color: #00ff66 !important;
+  border: 1px solid rgba(0, 255, 102, 0.4) !important;
+}
+
+.hud .explain-card {
+  background: #0d0f17 !important;
+  border: 1px solid #242938 !important;
+  border-radius: 6px !important;
+}
+
+.hud .explain-card--highlight {
+  background: #121008 !important;
+  border: 1px solid rgba(255, 230, 0, 0.4) !important;
+}
+
+.hud .explain-card-title {
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 13.5px !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: #f1f5f9 !important;
+}
+.hud .explain-card--highlight .explain-card-title {
+  color: #ffe600 !important;
+}
+
+.hud .explain-card-body {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  color: #cbd5e1 !important;
+}
+
+.hud .explain-code-badge {
+  font-family: 'Fira Code', monospace !important;
+  font-size: 11px !important;
+  background: #061622 !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(0, 240, 255, 0.3) !important;
+  border-radius: 3px !important;
+}
+
+.hud .explain-modal-footer {
+  background: #050508 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.hud .explain-footer-btn {
+  background: #ffe600 !important;
+  color: #000000 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 13px !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  box-shadow: 0 0 12px rgba(255, 230, 0, 0.25) !important;
+}
+.hud .explain-footer-btn:hover {
+  background: #fff477 !important;
+  box-shadow: 0 0 18px rgba(255, 230, 0, 0.4) !important;
 }
 
 /* Responsive behavior: keep functionality usable, then approximate the desktop reference. */

@@ -166,7 +166,6 @@ export default function App() {
     const applyHudAugs = () => {
       const isHud = document.documentElement.classList.contains('hud');
       const map: Array<[string, string, boolean?]> = [
-        ['.window-topbar', 'hud-topbar tl-clip br-clip border inlay'],
         ['.editor-window-wrapper', 'hud-editor tl-clip tr-clip br-clip bl-clip border inlay'],
         ['.browser-window', 'hud-browser tl-clip tr-clip br-clip bl-clip border inlay'],
         ['.files-sidebar', 'hud-sidebar tl-clip br-clip bl-clip border inlay'],
