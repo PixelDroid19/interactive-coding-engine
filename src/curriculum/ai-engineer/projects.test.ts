@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { runChallengeValidation } from '../../engine/testRunner';
 import { AI_ENGINEER_PROJECTS } from './projects';
 
 describe('proyectos de AI Engineer', () => {
@@ -26,6 +27,28 @@ describe('proyectos de AI Engineer', () => {
       expect(javascript).toContain('TODO');
       expect(python).toContain('TODO');
       expect(project.requirements.some((requirement) => requirement.id === 'variacion')).toBe(true);
+    }
+  });
+
+  it('cada lenguaje incluye comprobaciones ejecutables y la plantilla inicial no las supera', async () => {
+    for (const project of AI_ENGINEER_PROJECTS) {
+      for (const language of ['javascript', 'python'] as const) {
+        const variant = project.languageVariants?.[language];
+        expect(variant?.tests.length, `${project.id} (${language})`).toBeGreaterThanOrEqual(3);
+
+        if (language === 'javascript') {
+          const result = await runChallengeValidation({
+            id: `${project.id}-${language}`,
+            title: project.title,
+            timestamp: 0,
+            instructions: project.brief,
+            tests: variant?.tests ?? [],
+            hints: [],
+          }, variant!.workspace);
+
+          expect(result.allPassed, `${project.id} (${language}) debe comenzar sin resolver`).toBe(false);
+        }
+      }
     }
   });
 });

@@ -45,6 +45,8 @@ describe('variantes de prácticas', () => {
     const project = { initialWorkspace: variants.javascript.workspace, languageVariants: variants } as SoloProjectItem;
 
     expect(resolveDebuggingLanguage(debugging, 'python').tests[0].id).toBe('py');
-    expect(resolveProjectLanguage(project, 'python').initialWorkspace.activeFilePath).toBe('main.py');
+    const resolvedProject = resolveProjectLanguage(project, 'python');
+    expect(resolvedProject.initialWorkspace.activeFilePath).toBe('main.py');
+    expect(resolvedProject.tests?.[0].id).toBe('py');
   });
 });

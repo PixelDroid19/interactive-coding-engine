@@ -172,6 +172,7 @@ export interface SoloProjectItem extends BaseCurriculumItem {
   suggestedSteps?: string[];
   referenceDesignUrl?: string;
   starterNotes?: string;
+  tests?: ChallengeTest[];
   languageVariants?: LanguageVariants;
 }
 

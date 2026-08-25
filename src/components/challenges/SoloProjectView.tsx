@@ -19,10 +19,14 @@ import {
   CheckSquare,
   Square,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  LoaderCircle,
+  XCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { NavigationState } from '../../engine/navigation';
+import { runChallengeValidation } from '../../engine/testRunner';
+import type { ChallengeValidationResult } from '../../types/runtime';
 
 interface SoloProjectViewProps {
   project: SoloProjectItem;
@@ -52,6 +56,8 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
   );
   const [checkedRequirements, setCheckedRequirements] = useState<Record<string, boolean>>({});
   const [isCompleted, setIsCompleted] = useState(false);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [validationResult, setValidationResult] = useState<ChallengeValidationResult | null>(null);
   const [showFileTree, setShowFileTree] = useState(true);
   const [compactPane, setCompactPane] = useState<'brief' | 'code' | 'output'>('code');
   const previewRef = useRef<PreviewPaneRef | null>(null);
@@ -80,10 +86,35 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
     });
   };
 
+  const handleValidateProject = async () => {
+    if (!project.tests?.length || isEvaluating) return;
+    setIsEvaluating(true);
+    try {
+      const result = await runChallengeValidation({
+        id: project.id,
+        title: project.title,
+        timestamp: 0,
+        instructions: project.brief,
+        tests: project.tests,
+        hints: [],
+      }, workspace, previewRef.current?.getIframeElement());
+      setValidationResult(result);
+      if (result.allPassed) {
+        setIsCompleted(true);
+        markItemCompleted(project.id);
+        const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        if (!prefersReduced) confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+      }
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
+
   const handleReset = () => {
     setWorkspace(cloneWorkspace(project.initialWorkspace));
     setCheckedRequirements({});
     setIsCompleted(false);
+    setValidationResult(null);
   };
 
   const activeFile = workspace.files[workspace.activeFilePath] || Object.values(workspace.files)[0] || null;
@@ -254,13 +285,39 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
 
           {/* Action Buttons */}
           <div className="pt-3 border-t border-zinc-800 space-y-2 mt-auto">
-            <button
-              onClick={handleSubmitProject}
-              className="w-full flex items-center justify-center gap-2 rounded bg-zinc-100 hover:bg-white py-2 text-zinc-900 font-bold text-xs shadow-sm transition-colors"
-            >
-              <Rocket className="h-3.5 w-3.5 fill-zinc-900" />
-              <span>Marcar proyecto como completado</span>
-            </button>
+            {validationResult && (
+              <div className={`rounded-lg border p-3 ${validationResult.allPassed ? 'border-emerald-700 bg-emerald-950/30' : 'border-rose-800 bg-rose-950/20'}`} aria-live="polite">
+                <p className="font-bold text-zinc-100">{validationResult.passedCount} de {validationResult.totalCount} comprobaciones superadas</p>
+                <ul className="mt-2 space-y-1.5">
+                  {validationResult.tests.map((result) => (
+                    <li key={result.id} className={`flex items-start gap-1.5 text-[11px] ${result.passed ? 'text-emerald-300' : 'text-rose-300'}`}>
+                      {result.passed ? <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0" /> : <XCircle className="mt-0.5 h-3 w-3 shrink-0" />}
+                      <span>{result.description}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {project.tests?.length ? (
+              <button
+                onClick={handleValidateProject}
+                disabled={isEvaluating}
+                className="w-full flex items-center justify-center gap-2 rounded bg-yellow-300 hover:bg-yellow-200 py-2 text-zinc-950 font-bold text-xs shadow-sm transition-colors disabled:opacity-50"
+                aria-label="Comprobar proyecto"
+              >
+                {isEvaluating ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
+                <span>{isEvaluating ? 'Comprobando…' : 'Comprobar proyecto'}</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmitProject}
+                className="w-full flex items-center justify-center gap-2 rounded bg-zinc-100 hover:bg-white py-2 text-zinc-900 font-bold text-xs shadow-sm transition-colors"
+              >
+                <Rocket className="h-3.5 w-3.5 fill-zinc-900" />
+                <span>Marcar proyecto como completado</span>
+              </button>
+            )}
 
             <button
               onClick={handleReset}
@@ -331,6 +388,8 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
                 workspaceFiles={workspace.files}
                 readOnly={false}
                 onCodeChange={(newContent) => {
+                  setValidationResult(null);
+                  setIsCompleted(false);
                   setWorkspace((prev) => ({
                     ...prev,
                     files: {

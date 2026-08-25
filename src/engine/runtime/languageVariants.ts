@@ -49,7 +49,10 @@ export function resolveProjectLanguage(
 ): SoloProjectItem {
   const resolved = structuredClone(project);
   const variant = project.languageVariants?.[language];
-  if (variant) resolved.initialWorkspace = structuredClone(variant.workspace);
+  if (variant) {
+    resolved.initialWorkspace = structuredClone(variant.workspace);
+    resolved.tests = structuredClone(variant.tests);
+  }
   return resolved;
 }
 
