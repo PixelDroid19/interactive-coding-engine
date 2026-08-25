@@ -265,11 +265,13 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
                         type="button"
                         className={`rm-node-main ${isCurrent(row.main.lessonId) ? 'is-current' : ''} ${
                           isDone(row.main.lessonId) ? 'is-done' : ''
-                        }`}
+                        } ${row.main.itemType === 'solo-project' ? 'is-project' : ''}`}
                         onClick={() => enterLesson(row.main.lessonId)}
                       >
                         <span>{row.main.label}</span>
-                        {row.hasChallenge && <em className="rm-reto-flag">Reto</em>}
+                        {row.main.itemType === 'solo-project'
+                          ? <em className="rm-reto-flag">Proyecto</em>
+                          : row.hasChallenge && <em className="rm-reto-flag">Reto</em>}
                         <ChevronRight size={14} />
                       </button>
                     </div>

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import App from './App';
 import { loadAppNavigationState, loadUserProgress } from './engine/persistence';
@@ -37,6 +37,15 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('group', { name: 'Lenguaje del ejercicio' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Python' })).toBeTruthy();
     expect(screen.getByText('Clase visual guiada')).toBeTruthy();
+  });
+
+  it('abre un curso desde el inicio del roadmap aunque el catálogo estuviera desplazado', () => {
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: `Ver recorrido: ${AI_ENGINEER_COURSE.title}` }));
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'auto' });
   });
 
   it('restaura el Playground después de recargar la aplicación', () => {

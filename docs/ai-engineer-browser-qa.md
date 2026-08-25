@@ -13,19 +13,21 @@ Fecha: 2026-08-25
 - El build contiene Workers separados para Pyodide y embeddings locales.
 - Las claves de API opcionales permanecen en memoria; la interfaz advierte que producción necesita backend seguro.
 
-## Recorridos que deben repetirse en Chrome
+## Recorridos verificados en Chrome
 
-La conexión de Chrome no estaba disponible durante este pase. No se sustituyó por capturas ni por un navegador diferente.
+- El catálogo abre AI Engineer desde la parte superior del roadmap, incluso si el catálogo estaba desplazado.
+- La clase 1 respeta la compuerta de inicio; la cinta visual avanza, mueve el puntero, escribe código, muestra subtítulos y se detiene en el reto.
+- Los starters JavaScript y Python fallan, las correcciones pasan 2/2 y Pyodide se prepara dentro de un Worker.
+- Lectura, razonamiento y depuración conservan la secuencia Anterior/Siguiente y restauran la posición al recargar.
+- El modelo local `Xenova/paraphrase-multilingual-MiniLM-L12-v2` se descargó y produjo un ranking semántico en el navegador.
+- Una API temporal quedó activa solo en la pestaña. Un endpoint local inaccesible mostró un diagnóstico en español, sin revelar la clave, y la configuración desapareció al recargar.
+- Los nueve proyectos aparecen en el roadmap. El primero abre en JavaScript y Python, ejecuta Python con Pyodide y permite avanzar a la siguiente clase y regresar.
+- A 900 × 700, el proyecto ofrece paneles separados de Requisitos, Código y Salida; los tres son utilizables y no existe desbordamiento horizontal. El viewport se restauró al terminar.
 
-1. Abrir el catálogo y entrar a `AI Engineer: de fundamentos a sistemas confiables`.
-2. Abrir la clase 1, iniciar la cinta visual y comprobar subtítulos, escritura y pausa en el reto.
-3. Cambiar a Python, ejecutar el ejemplo y comprobar una solución correcta e incorrecta en Pyodide.
-4. Abrir las actividades de presupuesto de contexto y ranking vectorial; resolverlas solo con teclado.
-5. Abrir `Laboratorio de IA en el navegador`, cargar embeddings y verificar progreso, ranking y modo fallback sin red.
-6. Configurar una API de prueba con una clave temporal y confirmar que desaparece al recargar.
-7. Abrir proyectos en JavaScript y Python, editar, ejecutar, cambiar de lenguaje y confirmar borradores separados.
-8. Volver al roadmap, usar Anterior y Siguiente, recargar y verificar la restauración del elemento actual.
-9. Repetir en escritorio y ancho estrecho; comprobar que editor, paneles, textos y controles no se superponen.
+## Riesgos observados, no bloqueantes
+
+- La primera carga de Pyodide y del modelo de embeddings depende de descargar sus artefactos; las cargas posteriores aprovechan la caché del navegador.
+- El build avisa de chunks grandes por TypeScript, Pyodide y ONNX. Los runtimes pesados ya se ejecutan en Workers, pero todavía hay margen para dividir más la carga inicial.
 
 ## Fallos esperados y mensajes
 

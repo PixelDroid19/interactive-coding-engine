@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { runChallengeValidation } from '../../engine/testRunner';
+import { buildRoadmap } from '../fundamentos/roadmap';
 import { AI_ENGINEER_COURSE, AI_ENGINEER_SCRIMS } from './course';
 import { buildAiLessonBundle } from './factory';
 import { AI_SPECS } from './modules';
@@ -19,6 +20,25 @@ describe('auditoría integral de AI Engineer', () => {
     expect(items.filter((item) => item.type === 'solo-project')).toHaveLength(9);
     expect(new Set(items.map((item) => item.id)).size).toBe(items.length);
     expect(AI_ENGINEER_PROJECTS).toHaveLength(9);
+  });
+
+  it('publica los nueve proyectos como destinos accesibles en el roadmap', () => {
+    const projectRows = buildRoadmap(AI_ENGINEER_COURSE, AI_ENGINEER_SCRIMS)
+      .flatMap((phase) => phase.rows)
+      .filter((row) => row.main.itemType === 'solo-project');
+
+    expect(projectRows).toHaveLength(9);
+    expect(projectRows.map((row) => row.main.label)).toEqual([
+      'Proyecto: simulador visual de sampling',
+      'Proyecto: extractor de incidencias',
+      'Proyecto: constructor de contexto',
+      'Proyecto: enrutador de proveedores',
+      'Proyecto: buscador semántico local',
+      'Proyecto: asistente RAG de manuales',
+      'Proyecto: agente de soporte limitado',
+      'Proyecto: laboratorio de ataques',
+      'Proyecto: tablero local de evaluaciones',
+    ]);
   });
 
   it('mantiene todas las clases visuales, silenciosas y sin audio heredado', () => {

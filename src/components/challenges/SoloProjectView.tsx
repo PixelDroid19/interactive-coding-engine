@@ -53,6 +53,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
   const [checkedRequirements, setCheckedRequirements] = useState<Record<string, boolean>>({});
   const [isCompleted, setIsCompleted] = useState(false);
   const [showFileTree, setShowFileTree] = useState(true);
+  const [compactPane, setCompactPane] = useState<'brief' | 'code' | 'output'>('code');
   const previewRef = useRef<PreviewPaneRef | null>(null);
 
   useEffect(() => {
@@ -119,7 +120,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
               <Rocket className="h-3.5 w-3.5" />
               <span>Proyecto</span>
             </span>
-            <h2 className="text-xs font-semibold text-zinc-100 truncate">{project.title}</h2>
+            <h2 className="hidden max-w-72 truncate text-xs font-semibold text-zinc-100 xl:block">{project.title}</h2>
           </div>
         </div>
 
@@ -162,10 +163,30 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
         </div>
       </header>
 
+      <nav className="grid h-10 shrink-0 grid-cols-3 border-b border-zinc-800 bg-[#111113] p-1 lg:hidden" aria-label="Paneles del proyecto">
+        {([
+          ['brief', 'Requisitos'],
+          ['code', 'Código'],
+          ['output', 'Salida'],
+        ] as const).map(([pane, label]) => (
+          <button
+            key={pane}
+            type="button"
+            className={`rounded px-2 text-xs font-semibold transition-colors ${
+              compactPane === pane ? 'bg-yellow-300 text-zinc-950' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100'
+            }`}
+            aria-pressed={compactPane === pane}
+            onClick={() => setCompactPane(pane)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
       {/* Main 3-Column Split */}
       <div className="flex flex-1 w-full overflow-hidden">
         {/* Left Drawer: Project Brief & Requirements Checklist */}
-        <div className="w-80 shrink-0 h-full bg-[#141416] border-r border-zinc-800/80 flex flex-col overflow-y-auto p-4 space-y-4 text-xs">
+        <div className={`${compactPane === 'brief' ? 'flex' : 'hidden'} h-full w-full shrink-0 flex-col space-y-4 overflow-y-auto border-r border-zinc-800/80 bg-[#141416] p-4 text-xs lg:flex lg:w-80`}>
           {/* Brief */}
           <div className="space-y-1.5">
             <h4 className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">Objetivo del proyecto</h4>
@@ -252,7 +273,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
         </div>
 
         {/* Center: File Tree & Code Editor */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className={`${compactPane === 'code' ? 'flex' : 'hidden'} flex-1 overflow-hidden lg:flex`}>
           {showFileTree && (
             <div className="w-48 shrink-0 h-full border-r border-zinc-800/80 bg-[#121214]">
               <FileTree
@@ -327,7 +348,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
         </div>
 
         {/* Right: Live Preview & Runtime Console */}
-        <div className="w-[45%] shrink-0 h-full flex flex-col">
+        <div className={`${compactPane === 'output' ? 'flex' : 'hidden'} h-full w-full shrink-0 flex-col lg:flex lg:w-[45%]`}>
           {language === 'python' ? (
             <LogicRunnerPanel
               workspace={workspace}

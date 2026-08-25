@@ -145,7 +145,10 @@ export class BrowserApiProvider implements LearningModelProvider {
       };
     } catch (error) {
       if (error instanceof DOMException && error.name === 'AbortError') throw error;
-      const message = error instanceof Error ? error.message : String(error);
+      const rawMessage = error instanceof Error ? error.message : String(error);
+      const message = error instanceof TypeError && /failed to fetch|networkerror|load failed/i.test(rawMessage)
+        ? 'No se pudo conectar con la API. Revisa el endpoint, la red y la configuración CORS.'
+        : rawMessage;
       throw new Error(scrubSecret(message, this.config.apiKey));
     }
   }

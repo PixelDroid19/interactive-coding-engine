@@ -272,6 +272,7 @@ export function buildRoadmap(course: Course, scrims: Record<string, ScrimLessonD
           main: {
             id: `m-${item.id}`,
             kind: 'main',
+            itemType: item.type,
             label: item.title,
             lessonId: item.id,
             moduleId: mod.id,
@@ -322,6 +323,18 @@ export function buildRoadmap(course: Course, scrims: Record<string, ScrimLessonD
             moduleId: mod.id,
           };
         }
+      } else if (item.type === 'solo-project') {
+        rows.push({
+          main: {
+            id: `m-${item.id}`,
+            kind: 'main',
+            itemType: item.type,
+            label: item.title,
+            lessonId: item.id,
+            moduleId: mod.id,
+          },
+          concepts: [],
+        });
       }
     }
 

@@ -2933,6 +2933,7 @@ body.dark {
 .rm-node-main:hover { transform: translateY(-2px); box-shadow: 5px 5px 0 var(--color-black); background: var(--color-brand-hover); }
 .rm-node-main.is-current { outline: 3px solid #2563eb; }
 .rm-node-main.is-done { background: var(--color-highlighter-mint); }
+.rm-node-main.is-project { background: var(--color-highlighter-cyan); }
 
 .rm-node-cp {
   background: var(--color-brand-contrast);

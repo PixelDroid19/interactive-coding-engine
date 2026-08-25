@@ -1332,6 +1332,16 @@
   outline: none !important;
 }
 
+.hud .rm-node-main.is-project {
+  border-color: rgba(56, 189, 248, 0.58) !important;
+  background: #08111a !important;
+}
+
+.hud .rm-node-main.is-project:hover {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 2px 12px rgba(56, 189, 248, 0.14) !important;
+}
+
 .hud .rm-node-main .rm-reto-flag {
   background: #ffe600 !important;
   color: #000000 !important;

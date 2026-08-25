@@ -73,4 +73,14 @@ describe('BrowserApiProvider', () => {
     await expect(provider.generate({ messages: [{ role: 'user', content: 'hola' }] }))
       .rejects.not.toThrow(secret);
   });
+
+  it('explica en español cómo revisar un fallo de conexión desde el navegador', async () => {
+    const provider = new BrowserApiProvider(
+      { kind: 'openai-compatible', apiKey: secret, model: 'modelo' },
+      vi.fn(async () => { throw new TypeError('Failed to fetch'); }),
+    );
+
+    await expect(provider.generate({ messages: [{ role: 'user', content: 'hola' }] }))
+      .rejects.toThrow('No se pudo conectar con la API. Revisa el endpoint, la red y la configuración CORS.');
+  });
 });

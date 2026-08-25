@@ -289,6 +289,7 @@ export default function App() {
   const handleOpenCourse = (courseId: string) => {
     const selected = courses.find((candidate) => candidate.id === courseId);
     if (!selected) return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     setCourse(selected);
     setCourseLanguage(loadCourseLanguage(selected.id));
     setActiveItem(null);
