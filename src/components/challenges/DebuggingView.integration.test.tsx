@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import React from 'react';
 import { DebuggingView } from './DebuggingView';
 import { DEBUG_EXERCISES } from '../../curriculum/fundamentos/debugExercises';
+import { createDebuggingDraftVersion, saveDebuggingDraft } from '../../engine/persistence';
 
 vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
@@ -84,8 +85,29 @@ describe('DebuggingView integración', () => {
 
     render(<DebuggingView exercise={exercise} onBack={() => {}} />);
 
+    expect(screen.getByRole('dialog', { name: '¿Continuar donde lo dejaste?' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar donde lo dejé' }));
     expect(screen.getByRole('tab', { name: 'app.js' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByText(`Pistas 1/${exercise.hints.length}`)).toBeTruthy();
+  });
+
+  it('permite comenzar desde cero cuando existe un intento con código guardado', () => {
+    const savedWorkspace = structuredClone(exercise.initialWorkspace);
+    savedWorkspace.files['app.js'].content = 'console.log("Respuesta ya escrita");';
+    saveDebuggingDraft(exercise.id, {
+      workspace: savedWorkspace,
+      revealedHints: 2,
+      exerciseVersion: createDebuggingDraftVersion(exercise.initialWorkspace, exercise.tests),
+    });
+
+    const { container } = render(<DebuggingView exercise={exercise} onBack={() => {}} />);
+    expect(screen.getByText('Puedes continuar desde tu último intento o comenzar esta práctica desde cero.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Comenzar desde cero' }));
+
+    expect(screen.queryByRole('dialog', { name: '¿Continuar donde lo dejaste?' })).toBeNull();
+    expect(container.querySelector('.cm-content')?.textContent).toContain('console.log;');
+    expect(container.querySelector('.cm-content')?.textContent).not.toContain('Respuesta ya escrita');
+    expect(screen.getByText(`Pistas 0/${exercise.hints.length}`)).toBeTruthy();
   });
 
   it('muestra el texto de cada pista revelada', () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Course, DebuggingExerciseItem } from '../types/curriculum';
-import { ChallengeTest, ScrimChallenge, ScrimLessonData } from '../types/scrim';
+import { ChallengeTest, ScrimChallenge, ScrimLessonData, WorkspaceSnapshot } from '../types/scrim';
+import { runChallengeValidation } from '../engine/testRunner';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './fundamentos/course';
 import { JAVASCRIPT_COURSE, JAVASCRIPT_SCRIMS } from './javascript/course';
 import { COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS } from './web-components-lit/course';
@@ -13,6 +14,7 @@ interface AuditedExercise {
   hints: string[];
   tests: ChallengeTest[];
   solutionFiles?: Record<string, string>;
+  initialWorkspace?: WorkspaceSnapshot;
 }
 
 type ScrimCatalog = Record<string, ScrimLessonData>;
@@ -43,6 +45,7 @@ function fromDebug(courseId: string, exercise: DebuggingExerciseItem): AuditedEx
     copy: [exercise.title, exercise.description, exercise.expectedBehavior, exercise.observedBehavior].join('\n'),
     hints: exercise.hints.map((hint) => hint.text),
     tests: exercise.tests,
+    initialWorkspace: exercise.initialWorkspace,
   };
 }
 
@@ -136,5 +139,24 @@ describe('auditoría integrada de todos los ejercicios', () => {
       if (!callsFunctions || !/console\.log/i.test(exercise.copy)) continue;
       expect(exercise.copy, `${exercise.id} exige console.log aunque las pruebas llaman la función`).toMatch(/opcional|no es obligatorio/i);
     }
+  });
+
+  it('ningún laboratorio con pruebas locales se entrega ya resuelto', async () => {
+    let validatedLabs = 0;
+    for (const exercise of exercises.filter((candidate) => candidate.kind === 'debug')) {
+      if (exercise.tests.some((test) => test.validatorType === 'browser-script') || !exercise.initialWorkspace) continue;
+      validatedLabs += 1;
+      const result = await runChallengeValidation({
+        id: exercise.id,
+        title: exercise.id,
+        timestamp: 0,
+        instructions: exercise.copy,
+        tests: exercise.tests,
+        hints: [],
+      }, exercise.initialWorkspace);
+      expect(result.allPassed, `${exercise.id} aprueba sin que el estudiante cambie el starter`).toBe(false);
+    }
+
+    expect(validatedLabs, 'la auditoría no alcanzó suficientes laboratorios ejecutables fuera del iframe').toBeGreaterThanOrEqual(45);
   });
 });

@@ -152,12 +152,12 @@ console.log;
 `,
     [
       { id: 'primera-cerrada', description: 'La primera instrucción cierra texto y paréntesis', validatorType: 'source-regex', regexPattern: 'console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Me llamo Ana["\\\']\\s*\\)\\s*;?', errorMessage: 'La primera llamada todavía no cierra correctamente.', hintTip: 'Después de la segunda comilla debe cerrarse el paréntesis.' },
-      { id: 'segunda-intacta', description: 'La segunda instrucción sigue completa', validatorType: 'source-regex', regexPattern: 'console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Estoy aprendiendo JavaScript["\\\']\\s*\\)\\s*;?', errorMessage: 'La segunda instrucción ya estaba completa; no la borres.', hintTip: 'Compárala con la primera para encontrar la pieza que falta.' },
+      { id: 'segunda-completa', description: 'La segunda línea también llama a console.log con su texto', validatorType: 'source-regex', regexPattern: 'console\\s*\\.\\s*log\\s*\\(\\s*["\\\']Estoy aprendiendo JavaScript["\\\']\\s*\\)\\s*;?', errorMessage: 'La segunda línea todavía nombra log sin entregarle el mensaje.', hintTip: 'Aplica a la segunda línea la misma lista de cierre: llamada, texto y paréntesis.' },
     ],
     [
       { level: 1, text: 'Nombrar log no es lo mismo que llamarlo. ¿Dónde van los datos que quieres mostrar?' },
       { level: 2, text: 'Una llamada usa paréntesis después de log.' },
-      { level: 3, text: 'En cada línea agrega paréntesis y coloca el texto completo entre comillas dentro.' },
+      { level: 3, text: 'Vuelve al ejemplo de console.log de la lectura y usa su lista de signos para revisar cada línea, sin copiar el programa completo.' },
     ],
     ['No necesitas DOM, variables ni funciones propias.', 'Corrige una sola pieza y vuelve a ejecutar.']
   ),

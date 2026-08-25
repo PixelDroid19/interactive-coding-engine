@@ -60,6 +60,15 @@ function normalizeWorkspace(exercise: DebuggingExerciseItem, source: WorkspaceSn
   return next;
 }
 
+function hasMeaningfulDraft(exercise: DebuggingExerciseItem, draft: ReturnType<typeof loadDebuggingDraft>): boolean {
+  if (!draft || draft.revealedHints > 0) return Boolean(draft?.revealedHints);
+  const starter = exercise.initialWorkspace;
+  const draftPaths = Object.keys(draft.workspace.files).sort();
+  const starterPaths = Object.keys(starter.files).sort();
+  if (draftPaths.join('\n') !== starterPaths.join('\n')) return true;
+  return draftPaths.some((path) => draft.workspace.files[path].content !== starter.files[path].content);
+}
+
 export const DebuggingView: React.FC<DebuggingViewProps> = ({
   exercise,
   onBack,
@@ -70,6 +79,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
 }) => {
   const exerciseVersion = createDebuggingDraftVersion(exercise.initialWorkspace, exercise.tests);
   const [initialDraft] = useState(() => loadDebuggingDraft(exercise.id, exerciseVersion));
+  const [showDraftChoice, setShowDraftChoice] = useState(() => hasMeaningfulDraft(exercise, initialDraft));
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() =>
     normalizeWorkspace(exercise, initialDraft?.workspace ?? exercise.initialWorkspace),
   );
@@ -187,6 +197,15 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
     setActiveTab('reto');
   };
 
+  const handleStartFromScratch = () => {
+    setWorkspace(normalizeWorkspace(exercise, exercise.initialWorkspace));
+    setRevealedHints(0);
+    setValidationResult(null);
+    setShowResolution(false);
+    setActiveTab('reto');
+    setShowDraftChoice(false);
+  };
+
   const handleSkipForNow = () => {
     markChallengeSkipped(exercise.id);
     if (onNext) onNext();
@@ -264,7 +283,30 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
 
   return (
     <div className="app-screen">
-      <div className="studio-card">
+      {showDraftChoice && (
+        <div className="fixed inset-0 z-[140] grid place-items-center bg-black/70 p-4" role="presentation">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="debug-draft-title"
+            className="w-full max-w-md border-2 border-zinc-600 bg-zinc-950 p-6 text-zinc-100 shadow-[8px_8px_0_#000]"
+          >
+            <h2 id="debug-draft-title" className="text-xl font-bold">¿Continuar donde lo dejaste?</h2>
+            <p className="mt-3 text-sm leading-relaxed text-zinc-300">
+              Puedes continuar desde tu último intento o comenzar esta práctica desde cero.
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <button type="button" autoFocus onClick={() => setShowDraftChoice(false)} className="neu-pill-btn justify-center">
+                Continuar donde lo dejé
+              </button>
+              <button type="button" onClick={handleStartFromScratch} className="neu-pill-btn justify-center">
+                Comenzar desde cero
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="studio-card" inert={showDraftChoice ? true : undefined} aria-hidden={showDraftChoice || undefined}>
         <header className="window-topbar">
           <div className="window-titlebar-left min-w-0">
             <button type="button" onClick={handleRoadmap} className="neu-pill-btn shrink-0" aria-label="Volver al roadmap">
