@@ -109,7 +109,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
     setIsEvaluating(true);
     const currentGen = ++generationRef.current;
     try {
-      if (exercise.executionMode === 'logic') {
+      if (exercise.executionMode === 'logic' && language !== 'python') {
         await logicRunnerRef.current?.run();
       } else if (previewRef.current) {
         // Las prácticas DOM necesitan una vista recién ejecutada antes de evaluar.
@@ -517,7 +517,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
 
                     {testsFunctionDirectly && (
                       <p className="debug-hint mt-3">
-                        Puedes probar la función con valores propios antes de pulsar Comprobar. Añade temporalmente una llamada con <code>console.log</code>; las comprobaciones usarán otros datos para revisar que la regla sea general.
+                        Puedes probar la función con valores propios antes de pulsar Comprobar. Añade temporalmente una llamada con <code>{language === 'python' ? 'print(...)' : 'console.log(...)'}</code>; las comprobaciones usarán otros datos para revisar que la regla sea general.
                       </p>
                     )}
 

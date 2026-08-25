@@ -70,6 +70,14 @@ describe('DebuggingView integración', () => {
     expect(screen.getAllByText(/console\.log/i).length).toBeGreaterThan(0);
   });
 
+  it('una práctica Python recomienda print en lugar de console.log', () => {
+    const functionExercise = DEBUG_EXERCISES.find(e => e.id === 'fundamentos-15-debug')!;
+    render(<DebuggingView exercise={functionExercise} language="python" onBack={() => {}} />);
+
+    expect(screen.getByText('print(...)')).toBeTruthy();
+    expect(screen.queryByText('console.log(...)')).toBeNull();
+  });
+
   it('pestañas funcionan con teclado', async () => {
     const { container } = render(<DebuggingView exercise={exercise} onBack={() => {}} />);
     const tablist = container.querySelector('[role="tablist"]');
