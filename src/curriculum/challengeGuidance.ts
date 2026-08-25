@@ -45,7 +45,7 @@ export function guidedChallengeInstructions(
     ...criteria,
     verificationTool(lesson, challenge),
     '',
-    'Si te atascas, abre las pistas de una en una. Cada pista reduce el problema sin sustituir tu código ni revelar una solución completa.',
+    'Si te atascas, abre las pistas una cada vez. Cada pista reduce el problema sin sustituir tu código ni revelar una solución completa.',
   ].join('\n');
 }
 

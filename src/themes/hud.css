@@ -195,6 +195,7 @@
   box-sizing: border-box !important;
   width: 100% !important;
   max-width: 100% !important;
+  min-width: 0 !important;
   height: 100% !important;
   min-height: 0 !important;
   padding: 0 !important;
@@ -245,7 +246,7 @@
   box-sizing: border-box !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 10px 10px 10px !important;
+  padding: 10px 8px 10px !important;
   align-self: stretch !important;
 }
 
@@ -267,10 +268,6 @@
 
 .hud .tree-title::before {
   content: "// ";
-}
-
-.hud .files-list {
-  padding: 8px 7px 58px;
 }
 
 .hud .file-item-btn {
