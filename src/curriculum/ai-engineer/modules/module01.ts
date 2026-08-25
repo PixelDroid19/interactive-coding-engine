@@ -9,13 +9,13 @@ export const AI_MODULE_01 = [
     mentalModel: 'El modelo no recibe palabras: recibe identificadores de fragmentos y predice otro identificador.',
     script: ['El navegador muestra letras, pero el modelo trabaja con una secuencia de tokens. Un token puede ser una palabra, una parte o un signo.', 'Cada familia de modelos usa un tokenizador. Por eso dos modelos pueden contar distinto el mismo texto y el número de palabras solo sirve como estimación.', 'El ejemplo estima tokens a partir de palabras para practicar presupuestos. Lo etiqueta como aproximación, no como contador exacto.', 'Completa la estimación y maneja espacios repetidos. En producción consultarías el tokenizador del modelo elegido.'],
     javascript: { example: `function estimar_tokens(texto) {
-  const palabras = texto.trim().split(/\s+/).filter(Boolean).length;
+  const palabras = texto.trim().split(/\\s+/).filter(Boolean).length;
   return Math.ceil(palabras * 1.4);
 }
 console.log(estimar_tokens('hola mundo'));`, starter: `function estimar_tokens(texto) {
   // Aproxima 1.4 tokens por palabra y redondea hacia arriba.
 }`, solution: `function estimar_tokens(texto) {
-  const palabras = texto.trim() ? texto.trim().split(/\s+/).length : 0;
+  const palabras = texto.trim() ? texto.trim().split(/\\s+/).length : 0;
   return Math.ceil(palabras * 1.4);
 }`, debugStarter: `function estimar_tokens(texto) {
   return texto.length;

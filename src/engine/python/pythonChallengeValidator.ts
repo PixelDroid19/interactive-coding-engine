@@ -2,6 +2,7 @@ import type { ChallengeValidationResult, RuntimeExecutionResult, TestResultItem 
 import type { ScrimChallenge, WorkspaceSnapshot } from '../../types/scrim';
 import type { CourseRuntime } from '../runtime/courseRuntime';
 import { PythonRuntimeClient } from './pythonRuntimeClient';
+import { evaluationValuesEqual } from '../evaluationEquality';
 
 const RESULT_PREFIX = '__AULA_PYTHON_TESTS__:';
 let sharedRuntime: CourseRuntime | null = null;
@@ -122,7 +123,7 @@ export async function runPythonChallengeValidation(
         hint: test.hintTip,
       };
     }
-    const passed = JSON.stringify(received.value) === JSON.stringify(test.expectedReturn);
+    const passed = evaluationValuesEqual(received.value, test.expectedReturn);
     if (passed) passedCount++;
     return {
       id: test.id,

@@ -1,5 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { runChallengeValidation } from './testRunner';
+import { evaluationValuesEqual } from './evaluationEquality';
+
+describe('comparación de resultados numéricos', () => {
+  it('acepta el ruido normal de coma flotante sin ocultar diferencias reales', () => {
+    expect(evaluationValuesEqual(0.9 - 0.7, 0.2)).toBe(true);
+    expect(evaluationValuesEqual([0.6000000000000001, 0.8], [0.6, 0.8])).toBe(true);
+    expect(evaluationValuesEqual(0.21, 0.2)).toBe(false);
+  });
+});
 import { ScrimChallenge, WorkspaceSnapshot } from '../types/scrim';
 import { file, workspaceOf } from './lessonCompiler';
 import { Window } from 'happy-dom';

@@ -2,6 +2,7 @@ import { ChallengeTest, ScrimChallenge, WorkspaceSnapshot } from '../types/scrim
 import { ChallengeValidationResult, TestResultItem } from '../types/runtime';
 import { buildPreviewDocument } from './previewDocument';
 import { runPythonChallengeValidation } from './python/pythonChallengeValidator';
+import { evaluationValuesEqual } from './evaluationEquality';
 
 function normalizeForMatch(str: string, opts: { caseInsensitive?: boolean; normalizeSpaces?: boolean; ignorePunctuation?: boolean }): string {
   let s = str;
@@ -455,7 +456,7 @@ async function evaluateSingleTest(
             received.push(value);
             expected.push(step.expectedReturn);
           }
-          const passed = JSON.stringify(received) === JSON.stringify(expected);
+          const passed = evaluationValuesEqual(received, expected);
           return {
             id: test.id,
             description: test.description,
@@ -507,7 +508,7 @@ async function evaluateSingleTest(
             sequences.push(values);
           }
 
-          const isMatch = JSON.stringify(sequences) === JSON.stringify(test.expectedReturn);
+          const isMatch = evaluationValuesEqual(sequences, test.expectedReturn);
           return {
             id: test.id,
             description: test.description,
@@ -621,7 +622,7 @@ async function evaluateSingleTest(
 
         if (test.expectedReturn !== undefined) {
           // For strings, if no explicit matcher, use exact/deep-equal for numbers/booleans/arrays, but for strings be a bit lenient? Keep exact for now unless matcher specified
-          const isMatch = JSON.stringify(result) === JSON.stringify(test.expectedReturn) || result === test.expectedReturn;
+          const isMatch = evaluationValuesEqual(result, test.expectedReturn);
           return {
             id: test.id,
             description: test.description,
