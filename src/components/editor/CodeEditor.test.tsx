@@ -19,6 +19,13 @@ const cssFile: WorkspaceFile = {
   content: 'body { color: red; }',
 };
 
+const pythonFile: WorkspaceFile = {
+  name: 'main.py',
+  path: 'main.py',
+  language: 'python',
+  content: 'def saludar(nombre):\n  return f"Hola, {nombre}"',
+};
+
 function languageClient(): EditorLanguageClient {
   return {
     replaceWorkspace: () => {},
@@ -85,5 +92,15 @@ describe('CodeEditor', () => {
     );
 
     await waitFor(() => expect(screen.getByRole('status').textContent).toContain('1 error'));
+  });
+
+  it('activa la sintaxis y el autocompletado propio de Python', () => {
+    const { container } = render(
+      <CodeEditor file={pythonFile} workspaceFiles={{ 'main.py': pythonFile }} />,
+    );
+
+    expect(container.querySelector('.cm-line span')?.textContent).toBe('def');
+    expect(screen.getByRole('status').textContent).toContain('Python · sintaxis y sugerencias activas');
+    expect(screen.getByRole('status').textContent).not.toContain('Emmet');
   });
 });

@@ -4,6 +4,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { css } from '@codemirror/lang-css';
 import { html } from '@codemirror/lang-html';
 import { javascript } from '@codemirror/lang-javascript';
+import { python } from '@codemirror/lang-python';
 import { bracketMatching, foldGutter, indentOnInput, indentUnit } from '@codemirror/language';
 import { Compartment, EditorState, Transaction, type Extension } from '@codemirror/state';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -90,6 +91,7 @@ function isJavaScriptLike(file: WorkspaceFile): boolean {
 function languageExtension(file: WorkspaceFile): Extension {
   if (file.name.endsWith('.html')) return html();
   if (file.name.endsWith('.css')) return css();
+  if (file.language === 'python' || file.name.endsWith('.py')) return python();
   if (/\.(?:tsx|jsx)$/i.test(file.name)) {
     return javascript({ jsx: true, typescript: file.name.endsWith('.tsx') });
   }
@@ -416,9 +418,12 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   }
 
   const semantic = isJavaScriptLike(file);
+  const isPython = file.language === 'python' || file.name.endsWith('.py');
   const statusText = readOnly
     ? 'Solo lectura durante la reproducción'
-    : !semantic
+    : isPython
+      ? 'Python · sintaxis y sugerencias activas'
+      : !semantic
       ? `${file.language.toUpperCase()} · Emmet disponible con Tab`
       : diagnostics.state === 'loading'
         ? 'Preparando inteligencia de código…'

@@ -49,6 +49,6 @@ export interface TemplateDefinition {
     name: string;
     path: string;
     content: string;
-    language: 'javascript' | 'html' | 'css' | 'typescript' | 'json';
+    language: 'javascript' | 'html' | 'css' | 'typescript' | 'json' | 'python' | 'markdown';
   }>;
 }
