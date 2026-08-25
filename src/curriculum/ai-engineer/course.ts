@@ -1,7 +1,9 @@
 import type { Course, CourseModule } from '../../types/curriculum';
 import type { ScrimLessonData } from '../../types/scrim';
+import { buildAiLessonBundle } from './factory';
+import { AI_SPECS_01_TO_27 } from './modules';
 
-export const AI_ENGINEER_MODULES: CourseModule[] = [
+const MODULE_DEFINITIONS: CourseModule[] = [
   { id: 'ai-mod-00-trabajo', title: 'Módulo 0: Preparar el trabajo', description: 'Del problema de producto al entorno y los contratos básicos.', items: [] },
   { id: 'ai-mod-01-llm', title: 'Módulo 1: Cómo funciona un LLM', description: 'Tokens, contexto, inferencia, sampling, entrenamiento y límites.', items: [] },
   { id: 'ai-mod-02-prompts', title: 'Módulo 2: Prompt engineering', description: 'Instrucciones, ejemplos, esquemas, tools, streaming y caché.', items: [] },
@@ -17,7 +19,18 @@ export const AI_ENGINEER_MODULES: CourseModule[] = [
   { id: 'ai-mod-12-proyecto-final', title: 'Módulo 12: Proyecto final', description: 'Diseño, construcción, ataque, medición y presentación.', items: [] },
 ];
 
-export const AI_ENGINEER_SCRIMS: Record<string, ScrimLessonData> = {};
+const built = AI_SPECS_01_TO_27.map((spec) => ({ spec, ...buildAiLessonBundle(spec) }));
+
+export const AI_ENGINEER_MODULES: CourseModule[] = MODULE_DEFINITIONS.map((module, index) => ({
+  ...module,
+  items: built
+    .filter(({ spec }) => spec.module === index)
+    .flatMap(({ item, reading, reasoning, debug }) => [item, reading, reasoning, debug]),
+}));
+
+export const AI_ENGINEER_SCRIMS: Record<string, ScrimLessonData> = Object.fromEntries(
+  built.map(({ lesson }) => [lesson.id, lesson]),
+);
 
 export const AI_ENGINEER_COURSE: Course = {
   id: 'course-ai-engineer',
@@ -33,6 +46,8 @@ export const AI_ENGINEER_COURSE: Course = {
     bio: 'Enseña a tratar modelos y herramientas como partes comprobables de un sistema de producto.',
   },
   thumbnailGradient: 'from-fuchsia-600 via-violet-900 to-slate-950',
-  conceptGlossary: {},
+  conceptGlossary: Object.fromEntries(
+    built.map(({ lesson, spec }) => [lesson.id, spec.concepts]),
+  ),
   modules: AI_ENGINEER_MODULES,
 };
