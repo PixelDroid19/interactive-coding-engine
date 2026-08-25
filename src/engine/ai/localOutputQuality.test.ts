@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { validateSpanishGeneration } from './localOutputQuality';
+import { assessSpanishGeneration, validateSpanishGeneration } from './localOutputQuality';
 
 describe('validateSpanishGeneration', () => {
   it('acepta explicaciones breves y listas comprensibles en español', () => {
@@ -23,5 +23,13 @@ describe('validateSpanishGeneration', () => {
     const error = validateSpanishGeneration('This response ignored the requested language and returned a long explanation without the required format.');
     expect(error).toMatch(/idioma|formato/i);
     expect(error).not.toMatch(/numéricamente inestable/i);
+  });
+
+  it('clasifica como advertencia los incumplimientos revisables y bloquea solo la corrupción', () => {
+    expect(assessSpanishGeneration('This response ignored the requested language and returned a long explanation without the required format.')).toMatchObject({
+      severity: 'warning',
+    });
+    expect(assessSpanishGeneration('Una')).toMatchObject({ severity: 'warning' });
+    expect(assessSpanishGeneration('respuesta � rota')).toMatchObject({ severity: 'unsafe' });
   });
 });

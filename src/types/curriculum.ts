@@ -52,6 +52,7 @@ export interface InteractiveAILab {
   promptB: string;
   input: string;
   observationPrompt: string;
+  expectedJsonKeys?: string[];
 }
 
 export interface DebuggingExerciseItem extends BaseCurriculumItem {

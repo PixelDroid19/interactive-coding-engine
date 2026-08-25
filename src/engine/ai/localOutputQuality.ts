@@ -25,7 +25,12 @@ function isValidStructuredJson(text: string) {
   }
 }
 
-export function validateSpanishGeneration(text: string): string | null {
+export interface LocalGenerationQualityIssue {
+  severity: 'warning' | 'unsafe';
+  message: string;
+}
+
+export function assessSpanishGeneration(text: string): LocalGenerationQualityIssue | null {
   const normalized = text.trim();
   const hasReplacementCharacter = normalized.includes('�');
   const hasPunctuationRun = /([!?$#*])\1{7,}/.test(normalized);
@@ -36,13 +41,26 @@ export function validateSpanishGeneration(text: string): string | null {
   const wrongLanguageForSpanishLab = normalized.length > 40 && spanishSignals < 2 && !isValidStructuredJson(normalized);
 
   if (hasReplacementCharacter || hasPunctuationRun || hasRepeatedChunk || hasUnexpectedScripts) {
-    return 'WebGPU produjo una salida numéricamente inestable en este equipo. No se mostrará como una respuesta válida. Actualiza Chrome y el controlador gráfico, o prueba otro dispositivo.';
+    return {
+      severity: 'unsafe',
+      message: 'La inferencia local produjo una salida numéricamente inestable en este equipo. No se mostrará como una respuesta válida. Revisa el controlador gráfico o prueba otro dispositivo compatible con WebGPU.',
+    };
   }
   if (wrongLanguageForSpanishLab) {
-    return 'El modelo no respetó el idioma o el formato solicitado. No se mostrará esa salida como una respuesta válida. Haz el contrato más explícito, reduce la tarea o prueba otra configuración.';
+    return {
+      severity: 'warning',
+      message: 'El modelo no respetó el idioma o el formato solicitado. Compara la salida con el contrato, haz la instrucción más explícita o reduce la tarea.',
+    };
   }
   if (normalized.length < 12 || words(normalized).length < 3) {
-    return 'El modelo devolvió una respuesta incompleta. Vuelve a intentarlo o reduce la tarea.';
+    return {
+      severity: 'warning',
+      message: 'El modelo devolvió una respuesta incompleta. Úsala como evidencia del límite y vuelve a intentarlo con una tarea más pequeña o una instrucción más precisa.',
+    };
   }
   return null;
+}
+
+export function validateSpanishGeneration(text: string): string | null {
+  return assessSpanishGeneration(text)?.message ?? null;
 }

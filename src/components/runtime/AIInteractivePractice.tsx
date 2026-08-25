@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BrainCircuit, CheckCircle2, Download, Gauge, LoaderCircle, Play, Square } from 'lucide-react';
 import type { InteractiveAILab, InteractiveAILabMode } from '../../types/curriculum';
-import { DEFAULT_LOCAL_GENERATION_MODEL, DEFAULT_LOCAL_GENERATION_DTYPE, isLocalGenerationDtype, type GenerationProgress, type LocalGenerationDtype, type LocalGenerationRequest, type LocalGenerationResult, type LocalModelInfo } from '../../engine/ai/localGenerationProtocol';
+import { DEFAULT_LOCAL_GENERATION_MODEL, type GenerationProgress, type LocalGenerationRequest, type LocalGenerationResult, type LocalModelInfo } from '../../engine/ai/localGenerationProtocol';
 import { LocalGenerationService } from '../../engine/ai/localGenerationService';
 
 export interface LocalGenerationClient {
-  inspectModel(model?: string, options?: { signal?: AbortSignal; dtype?: LocalGenerationDtype }): Promise<LocalModelInfo>;
+  inspectModel(model?: string, options?: { signal?: AbortSignal }): Promise<LocalModelInfo>;
   generate(
     request: LocalGenerationRequest,
     options?: {
@@ -13,7 +13,6 @@ export interface LocalGenerationClient {
       onProgress?: (progress: GenerationProgress) => void;
       onChunk?: (text: string) => void;
       model?: string;
-      dtype?: LocalGenerationDtype;
     },
   ): Promise<LocalGenerationResult>;
   dispose(): void;
@@ -28,10 +27,6 @@ interface AIInteractivePracticeProps {
 interface VisibleResult extends Partial<LocalGenerationResult> {
   label: string;
   error?: string;
-}
-
-function formatMegabytes(bytes: number) {
-  return `${Math.max(1, Math.round(bytes / 1_000_000))} MB`;
 }
 
 function summaryInstruction(type: string, length: string) {
@@ -58,6 +53,11 @@ function writeInstruction(tone: string, length: string) {
   return `Redacta el contenido solicitado con tono ${toneCopy[tone] ?? 'neutral'} y longitud ${length}. No agregues hechos que no estén en el contexto.`;
 }
 
+function jsonKeysFromInstruction(instruction: string) {
+  const schema = instruction.split(/Ejemplo/i)[0] ?? instruction;
+  return [...schema.matchAll(/"([^"]+)"\s*:/g)].map((match) => match[1]);
+}
+
 export function AIInteractivePractice({ lab, createLocalClient = () => new LocalGenerationService(), webGpuAvailable = typeof navigator !== 'undefined' && 'gpu' in navigator }: AIInteractivePracticeProps) {
   const [mode, setMode] = useState<InteractiveAILabMode>(lab.defaultMode);
   const [systemPrompt, setSystemPrompt] = useState(lab.systemPrompt);
@@ -72,8 +72,6 @@ export function AIInteractivePractice({ lab, createLocalClient = () => new Local
   const [writerTone, setWriterTone] = useState('neutral');
   const [writerLength, setWriterLength] = useState('medium');
   const [context, setContext] = useState('La persona está aprendiendo y necesita un texto claro.');
-  const [selectedDtype, setSelectedDtype] = useState<LocalGenerationDtype>(DEFAULT_LOCAL_GENERATION_DTYPE);
-  const [availableDtypes, setAvailableDtypes] = useState<LocalGenerationDtype[]>([DEFAULT_LOCAL_GENERATION_DTYPE]);
   const [modelInfo, setModelInfo] = useState<LocalModelInfo | null>(null);
   const [status, setStatus] = useState<'idle' | 'inspecting' | 'ready' | 'running' | 'error'>('idle');
   const [statusText, setStatusText] = useState('El modelo no se carga hasta que tú lo decidas.');
@@ -100,16 +98,12 @@ export function AIInteractivePractice({ lab, createLocalClient = () => new Local
 
   const inspect = async () => {
     setStatus('inspecting');
-    setStatusText('Consultando tamaño, caché y precisiones…');
+    setStatusText('Consultando el modelo WebLLM y su caché…');
     try {
-      const info = await client().inspectModel(undefined, {
-        dtype: selectedDtype,
-      });
+      const info = await client().inspectModel();
       setModelInfo(info);
-      const supportedDtypes = info.dtypes.filter(isLocalGenerationDtype);
-      setAvailableDtypes(supportedDtypes.length > 0 ? supportedDtypes : [selectedDtype]);
       setStatus('ready');
-      setStatusText(info.cached ? 'El modelo ya está en caché y puede ejecutarse sin volver a descargarlo.' : 'Revisa el tamaño antes de iniciar la descarga.');
+      setStatusText(info.cached ? 'El modelo ya está en caché y puede ejecutarse sin volver a descargarlo.' : 'La descarga empezará únicamente cuando pulses ejecutar.');
     } catch (error) {
       setStatus('error');
       setStatusText(error instanceof Error ? error.message : String(error));
@@ -117,6 +111,7 @@ export function AIInteractivePractice({ lab, createLocalClient = () => new Local
   };
 
   const runOne = async (label: string, instruction: string, temperature: number) => {
+    const expectsJson = /\bjson\b/i.test(instruction);
     const request: LocalGenerationRequest = {
       messages: [
         { role: 'system', content: systemPrompt },
@@ -128,6 +123,8 @@ export function AIInteractivePractice({ lab, createLocalClient = () => new Local
       temperature,
       topP,
       maxNewTokens: mode === 'prompt' ? 128 : 160,
+      expectedFormat: expectsJson ? 'json_object' : 'text',
+      expectedJsonKeys: expectsJson ? (lab.expectedJsonKeys ?? jsonKeysFromInstruction(instruction)) : undefined,
     };
     setStreamedText('');
     const result = await client().generate(request, {
@@ -137,7 +134,6 @@ export function AIInteractivePractice({ lab, createLocalClient = () => new Local
         setProgress(event.progress ?? null);
       },
       onChunk: (chunk) => setStreamedText((current) => current + chunk),
-      dtype: selectedDtype,
     });
     return { ...result, label };
   };
@@ -341,31 +337,7 @@ export function AIInteractivePractice({ lab, createLocalClient = () => new Local
               </div>
             </div>
             <code className="mt-4 block w-fit max-w-full break-all rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-cyan-200">{DEFAULT_LOCAL_GENERATION_MODEL}</code>
-            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-400">LFM2.5 tiene 350M parámetros y declara español. Compara precisiones compatibles: una variante más pequeña puede ahorrar memoria, pero otra puede ser más estable en tu GPU.</p>
-            <label className="mt-4 block max-w-xs text-xs font-bold text-zinc-300">
-              Precisión WebGPU
-              <select
-                aria-label="Precisión WebGPU"
-                className="mt-1 w-full rounded border border-zinc-700 bg-zinc-950 p-2 text-sm"
-                value={selectedDtype}
-                disabled={status === 'running' || status === 'inspecting'}
-                onChange={(event) => {
-                  if (!isLocalGenerationDtype(event.target.value)) return;
-                  setSelectedDtype(event.target.value);
-                  setModelInfo(null);
-                  setResults([]);
-                  setProgress(null);
-                  setStatus('idle');
-                  setStatusText('Revisa tamaño y caché de esta precisión antes de ejecutarla.');
-                }}
-              >
-                {availableDtypes.map((dtype) => (
-                  <option key={dtype} value={dtype}>
-                    {dtype}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <p className="mt-3 max-w-3xl text-sm leading-relaxed text-zinc-400">WebLLM ejecuta Qwen2.5 de 0.5B parámetros en un Worker y usa exclusivamente WebGPU. El modelo entiende español, sigue instrucciones y puede producir JSON validable. No hay una respuesta simulada ni una ruta CPU escondida.</p>
             {!webGpuAvailable && (
               <p className="mt-3 rounded-lg border border-amber-700 bg-amber-950/40 p-3 text-xs text-amber-200" role="alert">
                 WebGPU no está disponible. Prueba Chrome de escritorio actualizado y revisa la aceleración gráfica.
@@ -374,10 +346,11 @@ export function AIInteractivePractice({ lab, createLocalClient = () => new Local
             {modelInfo && (
               <div className="mt-4 flex flex-wrap gap-2 text-xs">
                 <span className="rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1.5">
-                  <strong>{formatMegabytes(modelInfo.downloadBytes)}</strong> para {modelInfo.dtype}
+                  <strong>{Math.round(modelInfo.estimatedVramMB)} MB</strong> de memoria GPU estimada
                 </span>
                 <span className="rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-zinc-400">{modelInfo.cached ? 'Ya está en caché.' : 'Todavía no está en caché.'}</span>
-                <span className="rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-zinc-500">Disponibles: {modelInfo.dtypes.join(', ') || 'sin datos'}</span>
+                <span className="rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-zinc-400">{modelInfo.engine} · {modelInfo.device.toUpperCase()}</span>
+                {modelInfo.contextWindowSize > 0 && <span className="rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1.5 text-zinc-500">Contexto: {modelInfo.contextWindowSize.toLocaleString('es')} tokens</span>}
               </div>
             )}
           </div>
@@ -420,6 +393,12 @@ export function AIInteractivePractice({ lab, createLocalClient = () => new Local
                   <span className="text-[10px] font-bold uppercase tracking-wide text-zinc-500">WebGPU · {result.elapsedMs} ms</span>
                 </div>
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-200">{result.text}</p>
+                {result.warning && (
+                  <p className="mt-4 border-l-2 border-amber-400 bg-amber-950/30 px-3 py-2 text-xs leading-relaxed text-amber-100">
+                    <strong className="block text-amber-300">Advertencia del modelo</strong>
+                    {result.warning}
+                  </p>
+                )}
               </article>
             ),
           )}
