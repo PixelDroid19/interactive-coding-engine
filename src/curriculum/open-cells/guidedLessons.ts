@@ -1,8 +1,9 @@
-import { compileLesson, file } from '../../engine/lessonCompiler';
+import { compileLesson, type LessonBeat } from '../../engine/lessonCompiler';
 import { createCellsAppWorkspace } from '../../engine/cells/cellsAppRecipes';
 import { createCellsComponentWorkspace } from '../../engine/cells/cellsRecipes';
 import type { ReadingItem } from '../../types/curriculum';
 import type { ChallengeTest, ScrimLessonData, WorkspaceSnapshot } from '../../types/scrim';
+import { createOpenCellsProjectJourney, type OpenCellsProjectJourney } from './projectJourneys';
 
 interface ContractPractice {
   path: string;
@@ -322,39 +323,86 @@ function focusFile(number: number): string {
   if (number <= 5) return 'package.json';
   if (number <= 14) return 'src/academy-learning-card.js';
   if (number <= 22) return 'src/academy-learning-card.js';
-  if (number <= 25) return 'src/locales/es.js';
+  if (number <= 25) return 'locales/locales.json';
   if (number <= 30) return 'src/academy-learning-card.js';
-  if (number <= 38) return number >= 36 ? 'custom-elements.json' : 'test/unit/academy-learning-card.test.js';
+  if (number === 31) return 'demo/demo.js';
+  if (number === 35) return 'locales/locales.json';
+  if (number === 36) return 'custom-elements.json';
+  if (number === 37) return 'demo/demo-build.js';
+  if (number === 38) return 'package.json';
+  if (number <= 38) return 'test/unit/academy-learning-card.test.js';
   if (number <= 42) return 'app/scripts/app.js';
   if (number <= 46) return 'app/pages/academy-home-page/academy-home-page.js';
   if (number <= 54) return number <= 50 ? 'app/scripts/app-routes.js' : 'app/pages/academy-home-page/academy-home-page.js';
   if (number <= 57) return 'app/pages/academy-home-page/academy-home-page.js';
   if (number <= 62) return 'app/data/academy-product-data-manager.js';
-  if (number <= 65) return 'test/app.test.js';
+  if (number <= 65) return 'test/unit/app.test.js';
   if (number <= 67) return 'package.json';
   return 'README.md';
 }
 
-function workspaceFor(number: number, practice: ContractPractice): WorkspaceSnapshot {
+function incompleteProjectFile(path: string): string {
+  if (path.endsWith('.json')) return '{\n  \n}\n';
+  if (path.endsWith('.html')) return '<!doctype html>\n<html lang="es">\n  <body>\n    <!-- Construiremos esta superficie durante la clase. -->\n  </body>\n</html>\n';
+  if (path.endsWith('.md')) return '# Proyecto Cells\n\nDurante la clase documentaremos cómo continuar este proyecto.\n';
+  if (path.endsWith('.css') || path.endsWith('.scss')) return '/* Construiremos estos estilos desde su responsabilidad pública. */\n';
+  return `// ${path}\n// Construiremos este archivo y seguiremos después quién lo consume.\n`;
+}
+
+interface PreparedJourney {
+  workspace: WorkspaceSnapshot;
+  journey: OpenCellsProjectJourney;
+  completeFiles: Record<string, string>;
+}
+
+function prepareJourney(number: number): PreparedJourney {
   const base = number <= 38
     ? createCellsComponentWorkspace({ name: 'academy-learning-card' }).snapshot
     : createCellsAppWorkspace({ name: 'academy-store-app' }).snapshot;
+  const focus = focusFile(number);
+  const journey = createOpenCellsProjectJourney(number, focus, base);
+  const completeFiles = Object.fromEntries(journey.stops
+    .filter((stop) => stop.write)
+    .map((stop) => [stop.path, base.files[stop.path].content]));
+  const files = Object.fromEntries(Object.entries(base.files).map(([path, source]) => [path, { ...source }]));
+  for (const stop of journey.stops) {
+    if (stop.write) files[stop.path] = { ...files[stop.path], content: incompleteProjectFile(stop.path) };
+  }
   return {
-    ...base,
-    files: {
-      ...base.files,
-      [practice.path]: file(practice.path, practice.starter),
+    journey,
+    completeFiles,
+    workspace: {
+      ...base,
+      files,
+      activeFilePath: journey.stops[0]?.path ?? focus,
     },
-    activeFilePath: focusFile(number),
   };
 }
 
-function teachingFiles(number: number, practice: ContractPractice): string[] {
-  const focus = focusFile(number);
-  const support = number <= 38
-    ? ['package.json', 'src/academy-learning-card.js', 'src/locales/es.js', 'demo/index.html']
-    : ['package.json', 'app/scripts/app.js', 'app/scripts/app-routes.js', 'app/pages/academy-home-page/academy-home-page.js'];
-  return [...new Set([focus, practice.path, ...support])].slice(0, 6);
+function projectBeats(
+  reading: ReadingItem,
+  journey: OpenCellsProjectJourney,
+  completeFiles: Record<string, string>,
+): LessonBeat[] {
+  const beats: LessonBeat[] = [
+    { at: 0, type: 'chapter', title: 'Construye el proyecto y sigue sus conexiones' },
+    { at: 500, type: 'speak', text: `${reading.title}. ${reading.summary}` },
+  ];
+  journey.stops.forEach((stop, index) => {
+    const at = 8_000 + index * 9_000;
+    beats.push(
+      { at, type: 'switch', filePath: stop.path },
+      { at: at + 350, type: 'gesture', durationMs: 1_500, points: [{ x: 22, y: 18, targetArea: 'editor' }, { x: 58, y: 42, targetArea: 'editor' }] },
+      { at: at + 500, type: 'speak', text: `Abrimos ${stop.path}. Este archivo ${stop.role}. Observa su entrada y busca qué otro archivo lo consume.` },
+    );
+    if (stop.write) {
+      beats.push(
+        { at: at + 3_300, type: 'speak', text: `Ahora construimos ${stop.path}: ${stop.buildExplanation}` },
+        { at: at + 4_100, type: 'write', filePath: stop.path, mode: 'replace', content: completeFiles[stop.path] },
+      );
+    }
+  });
+  return beats;
 }
 
 function skillGroup(number: number): { required: string[]; introduced: string[]; representation: string } {
@@ -372,10 +420,9 @@ function skillGroup(number: number): { required: string[]; introduced: string[];
 export function createOpenCellsGuidedLesson(reading: ReadingItem): ScrimLessonData {
   const number = readNumber(reading);
   const practice = practiceFor(number);
-  const workspace = workspaceFor(number, practice);
-  const focus = focusFile(number);
+  const prepared = prepareJourney(number);
+  const { workspace, journey, completeFiles } = prepared;
   const skills = skillGroup(number);
-  const explanation = reading.sections[0]?.content ?? reading.summary;
   const observable = reading.sections[1]?.content ?? reading.keyPoints[0];
   const mistake = reading.sections.at(-1)?.content ?? reading.keyPoints.at(-1) ?? '';
 
@@ -385,60 +432,34 @@ export function createOpenCellsGuidedLesson(reading: ReadingItem): ScrimLessonDa
     description: reading.summary,
     templateId: number <= 38 ? 'cells-component' : 'cells-application',
     narrationMode: 'silent',
-    durationMs: 92_000,
     initialWorkspace: workspace,
-    teachingFilePaths: teachingFiles(number, practice),
+    teachingFilePaths: journey.stops.map((stop) => stop.path),
     concepts: reading.keyPoints.slice(0, 3),
     skillsRequired: skills.required,
     skillsIntroduced: skills.introduced,
     learningObjectives: [
-      `Explicar con palabras propias el contrato de “${reading.title}”.`,
-      'Predecir una salida observable antes de modificar el workspace.',
-      `Comprobar el contrato con varias entradas mediante ${practice.functionName}.`,
+      `Recorrer los archivos reales que colaboran en “${reading.title}” y explicar quién consume a quién.`,
+      `Construir ${journey.stops.filter((stop) => stop.write).map((stop) => stop.path).join(', ')} sin aislarlo del resto del proyecto.`,
+      'Ejecutar el proyecto y continuar en el laboratorio asociado para corregir el mismo contrato dentro del workspace completo.',
     ],
     commonMistakes: [mistake, 'Cambiar varias fronteras a la vez y perder la causa del resultado.'],
     mentalModel: reading.summary,
-    representations: [skills.representation, `entrada variable → ${practice.functionName} → evidencia observable`],
+    representations: [skills.representation, 'archivo propietario → consumidor real → preview y contratos del proyecto'],
     transferPrompt: reading.transferPrompt,
     masteryChecks: [
       observable,
-      'La comprobación acepta al menos dos entradas diferentes y conserva el caso ausente o inválido.',
+      'La comprobación se ejecuta sobre el proyecto completo y distingue estructura, comportamiento visible y eventos.',
       'Puedes justificar qué archivo cambiarías y cuál dejarías intacto.',
     ],
     frequentQuestions: reading.frequentQuestions,
     teachNotes: reading.sections.slice(0, 3).map((section) => ({ title: section.title, body: section.content })),
+    durationMs: 72_000,
     beats: [
-      { at: 0, type: 'chapter', title: 'Primero construye el modelo' },
-      { at: 500, type: 'speak', text: `${reading.title}. ${explanation}` },
-      { at: 12_000, type: 'switch', filePath: focus },
-      { at: 12_400, type: 'gesture', durationMs: 2_400, points: [{ x: 24, y: 22, targetArea: 'editor' }, { x: 61, y: 39, targetArea: 'editor' }, { x: 72, y: 64, targetArea: 'editor' }] },
-      { at: 14_000, type: 'speak', text: `En ${reading.title}, este archivo es la frontera que vamos a observar. No trabaja solo: ${observable}` },
-      { at: 28_000, type: 'switch', filePath: practice.path },
-      { at: 28_500, type: 'speak', text: `${practice.instructions} Primero aislamos esa decisión en ${practice.functionName}; después cambiaremos varias entradas para comprobar que no depende de un ejemplo fijo.` },
-      { at: 39_000, type: 'write', filePath: practice.path, mode: 'replace', content: practice.complete },
-      { at: 39_500, type: 'speak', text: `La demostración hace visible este modelo: ${skills.representation}. Sigue la entrada que cambia y localiza el caso que debe permanecer ausente, bloqueado o rechazado.` },
-      { at: 54_000, type: 'run' },
-      { at: 55_500, type: 'speak', text: `Ahora contrasta el resultado con el error frecuente. ${mistake}` },
-      { at: 68_000, type: 'chapter', title: 'Tu práctica' },
-      { at: 68_300, type: 'write', filePath: practice.path, mode: 'replace', content: practice.starter },
-      { at: 69_000, type: 'speak', text: `Te devuelvo el punto de partida de ${reading.title}. Predice las tres comprobaciones de ${practice.functionName} antes de escribir y corrige una sola causa cada vez.` },
-      {
-        at: 76_000,
-        type: 'challenge',
-        challenge: {
-          id: `open-cells-${suffix(number)}-reto`,
-          title: `Comprueba el contrato: ${reading.title}`,
-          instructions: `Antes de empezar: recuerda esta relación ya explicada: ${skills.representation}.
-
-Punto de partida: ${practice.instructions} Trabaja en ${practice.path} y escribe primero tu predicción.
-
-Cómo comprobarlo: ejecuta las tres comprobaciones. Usan valores distintos para confirmar comportamiento, no una línea exacta. Si te atascas, abre las pistas una a la vez; ninguna contiene la función terminada.`,
-          tests: practice.tests,
-          hints: practice.hints.map((text, index) => ({ level: index + 1, title: ['Ubica la frontera', 'Sigue la entrada', 'Comprueba el contrato'][index], text })),
-          solutionExplanation: `La solución válida conserva esta relación: ${skills.representation}. La sintaxis puede variar mientras el comportamiento público sea el mismo.`,
-        },
-      },
-      { at: 90_000, type: 'speak', text: `Después del reto de ${reading.title}, la lectura ampliará el porqué, el razonamiento reconstruirá el flujo y la depuración te pedirá transferirlo a otro programa.` },
+      ...projectBeats(reading, journey, completeFiles),
+      { at: 58_000, type: 'run' },
+      { at: 59_000, type: 'speak', text: `Ejecutamos el proyecto después de conectar sus archivos. La evidencia que buscamos es esta: ${observable}` },
+      { at: 65_000, type: 'speak', text: `Antes de practicar, contrasta el resultado con este error frecuente: ${mistake}` },
+      { at: 69_000, type: 'speak', text: `La lectura siguiente abre un laboratorio de proyecto para ${reading.title}. Allí corregirás archivos reales, construirás la vista previa y ejecutarás contratos sin recibir una solución copiada.` },
     ],
   });
 }

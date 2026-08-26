@@ -6,6 +6,7 @@ import { AIInteractivePractice } from '../runtime/AIInteractivePractice';
 import { AILearningLab } from '../runtime/AILearningLab';
 import { CellsLearningLab } from '../runtime/CellsLearningLab';
 import type { CellsAppPracticeStage, CellsAppProject } from '../../engine/cells/cellsAppRecipes';
+import type { CellsComponentPracticeStage } from '../../engine/cells/cellsRecipes';
 import { ThemeToggle } from '../ThemeToggle';
 
 interface ReadingViewProps {
@@ -24,6 +25,16 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
     'open-cells-channels-playground': { stage: 'channels', project: 'relay', title: 'Proyecto Relé Cells' },
     'open-cells-data-playground': { stage: 'data', project: 'climate', title: 'Proyecto Clima Cells' },
     'open-cells-delivery-playground': { stage: 'delivery', project: 'capstone', title: 'Capstone Cells completo' },
+  } as const)[reading.handsOnLab as string] ?? null;
+  const cellsComponentLab: { stage: CellsComponentPracticeStage; title: string } | null = ({
+    'open-cells-component-scaffold-playground': { stage: 'scaffold', title: 'Proyecto · manifiesto y entradas' },
+    'open-cells-component-api-playground': { stage: 'api', title: 'Proyecto · API pública' },
+    'open-cells-component-styles-playground': { stage: 'styles', title: 'Proyecto · SCSS y css.js generado' },
+    'open-cells-playground': { stage: 'composition', title: 'Proyecto · composición scoped' },
+    'open-cells-component-i18n-playground': { stage: 'i18n', title: 'Proyecto · traducciones' },
+    'open-cells-component-demo-playground': { stage: 'demo', title: 'Proyecto · demo consumidora' },
+    'open-cells-component-tests-playground': { stage: 'tests', title: 'Proyecto · pruebas públicas' },
+    'open-cells-component-delivery-playground': { stage: 'delivery', title: 'Proyecto · entrega del paquete' },
   } as const)[reading.handsOnLab as string] ?? null;
 
   useEffect(() => {
@@ -105,16 +116,26 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
                   </h1>
                   <p className="mt-4 max-w-4xl text-base leading-relaxed text-zinc-300 sm:text-[17px]">{reading.summary}</p>
                 </div>
-                <div className="reading-hero-meta" aria-label="Duración y recorrido">
+                <div className="reading-hero-meta" aria-label="Contenido y recorrido">
                   <span>
-                    <strong>{reading.estimatedMinutes}</strong> min
+                    <strong>{reading.sections.length}</strong> {reading.sections.length === 1 ? 'idea' : 'ideas'}
                   </span>
-                  <span>
-                    <strong>{reading.sections.length}</strong> ideas
-                  </span>
-                  {(reading.interactiveLab || reading.handsOnLab) && (
+                  {(reading.interactiveLab || reading.handsOnLab || cellsAppLab) && (
                     <span>
                       <strong>1</strong> laboratorio
+                    </span>
+                  )}
+                  {reading.frequentQuestions && reading.frequentQuestions.length > 0 ? (
+                    <span>
+                      <strong>{reading.frequentQuestions.length}</strong> {reading.frequentQuestions.length === 1 ? 'duda' : 'dudas'}
+                    </span>
+                  ) : reading.sources && reading.sources.length > 0 ? (
+                    <span>
+                      <strong>{reading.sources.length}</strong> {reading.sources.length === 1 ? 'fuente' : 'fuentes'}
+                    </span>
+                  ) : (
+                    <span>
+                      <strong>1</strong> práctica
                     </span>
                   )}
                 </div>
@@ -136,30 +157,40 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
                     {reading.sections.map((section, index) =>
                       section.kind === 'curiosity' ? (
                         <details key={section.title} className="reading-curiosity group open:border-cyan-500">
-                          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-zinc-100 marker:content-none">
-                            <span className="text-lg font-bold leading-snug" style={{ fontFamily: 'Patrick Hand, cursive' }}>
+                          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4 text-zinc-100 marker:content-none">
+                            <span className="text-base font-bold leading-snug" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
                               {section.title}
                             </span>
-                            <span className="shrink-0 rounded-full border border-cyan-700 bg-zinc-950 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-cyan-200">Opcional</span>
+                            <span className="shrink-0 rounded border border-cyan-700 bg-zinc-950 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-cyan-200">Opcional</span>
                           </summary>
-                          <div className="border-t border-cyan-900 px-5 pb-5 pt-4">
+                          <div className="border-t border-cyan-900 px-6 pb-6 pt-4">
                             <p className="text-[15px] leading-relaxed text-zinc-300">{section.content}</p>
-                            {section.example && <pre className="mt-4 overflow-x-auto whitespace-pre-wrap rounded-lg bg-[#12151e] p-4 font-mono text-xs leading-relaxed text-slate-200">{section.example}</pre>}
-                            {section.exampleCaption && <p className="mt-3 text-xs italic text-zinc-400">{section.exampleCaption}</p>}
-                            <p className="mt-4 text-xs font-medium text-cyan-200">Contenido opcional: no necesitas memorizarlo para continuar</p>
+                            {section.example && (
+                              <div className="mt-3 overflow-hidden rounded border border-zinc-700 bg-[#0c0e14]">
+                                <pre className="whitespace-pre-wrap break-words p-3.5 font-mono text-xs leading-relaxed text-slate-200">{section.example}</pre>
+                              </div>
+                            )}
+                            {section.exampleCaption && <p className="mt-2 text-xs italic text-zinc-400">{section.exampleCaption}</p>}
+                            <p className="mt-3 text-xs font-medium text-cyan-300">Contenido opcional: no necesitas memorizarlo para continuar</p>
                           </div>
                         </details>
                       ) : (
                         <article key={section.title} className="reading-concept-block">
-                          <span className="reading-concept-number" aria-hidden="true">
-                            {String(index + 1).padStart(2, '0')}
-                          </span>
-                          <h2 className="relative max-w-[90%] text-xl font-bold leading-snug text-zinc-100" style={{ fontFamily: 'Patrick Hand, cursive' }}>
-                            {section.title}
-                          </h2>
-                          <p className="relative mt-3 max-w-[70ch] text-base leading-relaxed text-zinc-300">{section.content}</p>
-                          {section.example && <pre className="relative mt-4 overflow-x-auto whitespace-pre-wrap rounded-lg bg-[#0c0e13] p-4 font-mono text-xs leading-relaxed text-slate-200">{section.example}</pre>}
-                          {section.exampleCaption && <p className="relative mt-3 text-xs italic text-zinc-400">{section.exampleCaption}</p>}
+                          <div className="flex items-center justify-between gap-3 mb-2">
+                            <h2 className="text-base sm:text-lg font-bold leading-snug text-zinc-100" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+                              {section.title}
+                            </h2>
+                            <span className="reading-concept-number font-mono text-xs font-bold text-zinc-500 shrink-0" aria-hidden="true">
+                              {String(index + 1).padStart(2, '0')}
+                            </span>
+                          </div>
+                          <p className="text-sm sm:text-[15px] leading-relaxed text-zinc-300">{section.content}</p>
+                          {section.example && (
+                            <div className="mt-3 overflow-hidden rounded border border-zinc-700 bg-[#0c0e14]">
+                              <pre className="whitespace-pre-wrap break-words p-3.5 font-mono text-xs leading-relaxed text-slate-200">{section.example}</pre>
+                            </div>
+                          )}
+                          {section.exampleCaption && <p className="mt-2 text-xs italic text-zinc-400">{section.exampleCaption}</p>}
                         </article>
                       ),
                     )}
@@ -193,16 +224,16 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
                 </section>
               )}
 
-              {reading.handsOnLab === 'open-cells-playground' && (
+              {cellsComponentLab && (
                 <section className="reading-lab-zone reading-lab-zone--wide" aria-label="Laboratorio Open Cells">
                   <div className="reading-zone-heading">
                     <span>02</span>
                     <div>
                       <p>Ahora construye tú</p>
-                      <h2 id="reading-lab-title">Playground Open Cells</h2>
+                      <h2 id="reading-lab-title">{cellsComponentLab.title}</h2>
                     </div>
                   </div>
-                  <CellsLearningLab />
+                  <CellsLearningLab componentStage={cellsComponentLab.stage} />
                 </section>
               )}
 

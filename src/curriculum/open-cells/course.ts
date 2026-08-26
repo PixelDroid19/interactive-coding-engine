@@ -3,7 +3,6 @@ import type { ScrimLessonData } from '../../types/scrim';
 import { OPEN_CELLS_UNITS_07_TO_68 } from './units07to68';
 import { addOpenCellsReasoning } from './reasoning';
 import { OPEN_CELLS_LESSON_06 } from './lesson06';
-import { createOpenCellsDebugExercises } from './debugExercises';
 import { createOpenCellsGuidedLessons } from './guidedLessons';
 import { OPEN_CELLS_CORE_SOURCES } from './sources';
 
@@ -100,24 +99,44 @@ function scrimItem(lesson: ScrimLessonData): ScrimCurriculumItem {
   };
 }
 
-const ALL_OPEN_CELLS_READINGS = [...FIRST_COMPONENT_UNITS, ...OPEN_CELLS_UNITS_07_TO_68];
-const OPEN_CELLS_DEBUG_BY_READING = createOpenCellsDebugExercises(ALL_OPEN_CELLS_READINGS);
+function projectLabFor(number: number): ReadingItem['handsOnLab'] {
+  if (number <= 5) return 'open-cells-component-scaffold-playground';
+  if (number === 6 || (number >= 8 && number <= 9)) return 'open-cells-playground';
+  if (number === 7) return 'open-cells-component-scaffold-playground';
+  if (number <= 12) return 'open-cells-component-api-playground';
+  if (number <= 14) return 'open-cells-component-styles-playground';
+  if (number <= 22) return 'open-cells-playground';
+  if (number <= 27) return 'open-cells-component-i18n-playground';
+  if (number <= 30) return 'open-cells-component-api-playground';
+  if (number === 31) return 'open-cells-component-demo-playground';
+  if (number <= 34) return 'open-cells-component-tests-playground';
+  if (number <= 38) return 'open-cells-component-delivery-playground';
+  if (number <= 46) return 'open-cells-app-playground';
+  if (number <= 56) return 'open-cells-channels-playground';
+  if (number <= 64) return 'open-cells-data-playground';
+  return 'open-cells-delivery-playground';
+}
+
+const ALL_OPEN_CELLS_READINGS = [...FIRST_COMPONENT_UNITS, ...OPEN_CELLS_UNITS_07_TO_68].map((source) => {
+  const number = Number(source.id.match(/open-cells-(\d+)-lectura/)?.[1]);
+  return { ...source, handsOnLab: projectLabFor(number), estimatedMinutes: 35 };
+});
+const OPEN_CELLS_READING_BY_ID = new Map(ALL_OPEN_CELLS_READINGS.map((source) => [source.id, source]));
 const OPEN_CELLS_GUIDED_BY_ID = createOpenCellsGuidedLessons(ALL_OPEN_CELLS_READINGS, OPEN_CELLS_LESSON_06);
 
 function withReadingPractice(readings: ReadingItem[]) {
   return readings.flatMap((source) => {
-    const debug = OPEN_CELLS_DEBUG_BY_READING[source.id];
     const reading = {
       ...source,
       relatedLessonId: source.id.replace(/-lectura$/, ''),
-      practiceItemId: debug.id,
     };
-    return [...addOpenCellsReasoning([reading]), debug];
+    return addOpenCellsReasoning([reading]);
   });
 }
 
 function learningBlock(readings: ReadingItem[]) {
-  return readings.flatMap((source) => {
+  return readings.flatMap((original) => {
+    const source = OPEN_CELLS_READING_BY_ID.get(original.id) ?? original;
     const number = source.id.match(/open-cells-(\d+)-lectura/)?.[1];
     const lesson = number ? OPEN_CELLS_GUIDED_BY_ID[`open-cells-${number}`] : undefined;
     if (!lesson) throw new Error(`No existe clase guiada para ${source.id}.`);

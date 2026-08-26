@@ -85,9 +85,12 @@ describe('auditoría integrada del material de aprendizaje', () => {
           const practice = learningBlock.find((candidate) => candidate.type === 'debugging');
 
           expect(reading, `${course.id}/${item.id} no tiene lectura complementaria`).toBeDefined();
-          expect(practice, `${course.id}/${item.id} no tiene práctica de depuración`).toBeDefined();
-          expect(learningBlock.indexOf(reading!), `${course.id}/${item.id} muestra la práctica antes de preparar al estudiante`)
-            .toBeLessThan(learningBlock.indexOf(practice!));
+          const integratedLab = reading?.type === 'reading' ? reading.handsOnLab : undefined;
+          expect(practice || integratedLab, `${course.id}/${item.id} no tiene una práctica ejecutable`).toBeTruthy();
+          if (practice) {
+            expect(learningBlock.indexOf(reading!), `${course.id}/${item.id} muestra la práctica antes de preparar al estudiante`)
+              .toBeLessThan(learningBlock.indexOf(practice));
+          }
         }
       }
     }
@@ -109,12 +112,16 @@ describe('auditoría integrada del material de aprendizaje', () => {
       expect.soft(reading.keyPoints.length, `${reading.id} no resume lo esencial`).toBeGreaterThanOrEqual(3);
       expect.soft(reading.frequentQuestions?.length, `${reading.id} no responde dudas frecuentes`).toBeGreaterThanOrEqual(2);
       expect.soft(reading.transferPrompt?.trim().length, `${reading.id} no invita a transferir lo aprendido`).toBeGreaterThan(25);
-      expect.soft(reading.practiceItemId, `${reading.id} no enlaza con una práctica`).toBeTruthy();
+      expect.soft(reading.practiceItemId || reading.handsOnLab, `${reading.id} no enlaza con una práctica`).toBeTruthy();
 
       const course = courses.find((candidate) => candidate.modules.some((module) => module.items.includes(reading)))!;
-      const practice = course.modules.flatMap((module) => module.items)
-        .find((candidate) => candidate.id === reading.practiceItemId);
-      expect.soft(practice?.type, `${reading.id} apunta a una práctica inexistente`).toBe('debugging');
+      if (reading.practiceItemId) {
+        const practice = course.modules.flatMap((module) => module.items)
+          .find((candidate) => candidate.id === reading.practiceItemId);
+        expect.soft(practice?.type, `${reading.id} apunta a una práctica inexistente`).toBe('debugging');
+      } else {
+        expect.soft(reading.handsOnLab, `${reading.id} no abre su laboratorio integrado`).toBeTruthy();
+      }
     }
   });
 

@@ -77,12 +77,14 @@ describe('auditoría integrada de todos los ejercicios', () => {
   const exercises = collectExercises();
 
   it('recorre los retos y laboratorios de los cinco cursos', () => {
-    expect(exercises).toHaveLength(400);
+    expect(exercises).toHaveLength(265);
     expect(exercises.filter((exercise) => exercise.courseId === FUNDAMENTOS_COURSE.id)).toHaveLength(48);
     expect(exercises.filter((exercise) => exercise.courseId === JAVASCRIPT_COURSE.id)).toHaveLength(48);
     expect(exercises.filter((exercise) => exercise.courseId === COMPONENT_COURSE.id)).toHaveLength(90);
     expect(exercises.filter((exercise) => exercise.courseId === AI_ENGINEER_COURSE.id)).toHaveLength(78);
-    expect(exercises.filter((exercise) => exercise.courseId === OPEN_CELLS_COURSE.id)).toHaveLength(136);
+    expect(exercises.filter((exercise) => exercise.courseId === OPEN_CELLS_COURSE.id)).toHaveLength(1);
+    expect(OPEN_CELLS_COURSE.modules.flatMap((module) => module.items)
+      .filter((item) => item.type === 'reading' && item.handsOnLab)).toHaveLength(68);
   });
 
   it('mantiene contratos identificables, explicados y sin soluciones adjuntas', () => {

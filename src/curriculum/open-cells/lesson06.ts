@@ -7,6 +7,25 @@ const complete = createCellsComponentWorkspace({ name: 'academy-learning-card' }
 const starter = createCellsPracticeWorkspace().snapshot;
 const completeSource = complete.files[SOURCE_PATH].content;
 const starterSource = starter.files[SOURCE_PATH].content;
+const PUBLIC_ENTRY_PATH = 'academy-learning-card.js';
+const LOCALES_PATH = 'locales/locales.json';
+const DEMO_HTML_PATH = 'demo/index.html';
+const DEMO_CONTROLLER_PATH = 'demo/demo.js';
+const guidedStarter = {
+  ...complete,
+  files: Object.fromEntries(Object.entries(complete.files).map(([path, source]) => [path, { ...source }])),
+  activeFilePath: 'package.json',
+};
+for (const path of ['package.json', 'index.js', PUBLIC_ENTRY_PATH, SOURCE_PATH, LOCALES_PATH, DEMO_HTML_PATH, DEMO_CONTROLLER_PATH]) {
+  guidedStarter.files[path] = {
+    ...guidedStarter.files[path],
+    content: path.endsWith('.json')
+      ? '{\n  \n}\n'
+      : path.endsWith('.html')
+        ? '<!doctype html>\n<html lang="es"><body><!-- Aquí montaremos la demo. --></body></html>\n'
+        : `// ${path}\n// Lo construiremos y después veremos quién lo consume.\n`,
+  };
+}
 
 export const OPEN_CELLS_LESSON_06 = compileLesson({
   id: 'open-cells-06',
@@ -14,16 +33,18 @@ export const OPEN_CELLS_LESSON_06 = compileLesson({
   description: 'Conecta una dependencia scoped, textos traducibles y un evento público dentro de un componente exportable.',
   templateId: 'cells-component',
   narrationMode: 'silent',
-  initialWorkspace: starter,
+  initialWorkspace: guidedStarter,
   teachingFilePaths: [
     'package.json',
+    'index.js',
+    PUBLIC_ENTRY_PATH,
     SOURCE_PATH,
-    'src/locales/es.js',
-    'src/locales/en.js',
-    'demo/index.html',
+    LOCALES_PATH,
+    DEMO_HTML_PATH,
+    DEMO_CONTROLLER_PATH,
     'test/unit/academy-learning-card.test.js',
   ],
-  durationMs: 92_000,
+  durationMs: 122_000,
   concepts: ['WidgetMixin', 'ScopedElementsMixin', 'this.t', 'this.emitEvent'],
   skillsRequired: ['lit-component', 'reactive-properties', 'events'],
   skillsIntroduced: ['cells-scoped-elements', 'cells-i18n', 'cells-public-events', 'cells-project-workflow'],
@@ -55,26 +76,36 @@ export const OPEN_CELLS_LESSON_06 = compileLesson({
     { title: 'Un evento comunica una intención', body: 'El consumidor escucha una decisión de negocio y no necesita llamar métodos internos.' },
   ],
   beats: [
-    { at: 0, type: 'chapter', title: 'Lee el contrato antes del código' },
-    { at: 400, type: 'speak', text: 'Este proyecto no es un fragmento aislado. Tiene una entrada pública, una demo, catálogos, pruebas y archivos de configuración que podrás exportar.' },
+    { at: 0, type: 'chapter', title: 'Crea un componente Cells desde sus entradas' },
+    { at: 400, type: 'speak', text: 'Vamos a crear el componente archivo por archivo. Empezamos por el paquete, seguimos sus entradas hasta la clase, añadimos locales y terminamos consumiéndolo desde una demo real.' },
     { at: 8_000, type: 'switch', filePath: 'package.json' },
-    { at: 8_300, type: 'speak', text: 'package.json declara el paquete y los comandos Cells reales. El playground interpreta una lista segura de esos comandos, pero conserva los archivos que utilizará la CLI fuera del navegador.' },
-    { at: 18_000, type: 'switch', filePath: SOURCE_PATH },
-    { at: 18_300, type: 'gesture', durationMs: 2_000, points: [{ x: 34, y: 20, targetArea: 'editor' }, { x: 61, y: 31, targetArea: 'editor' }] },
-    { at: 19_000, type: 'speak', text: 'La clase compone tres capacidades. LitElement conserva el renderizado. ScopedElementsMixin aporta un registro local. WidgetMixin aporta traducción y emisión de eventos.' },
-    { at: 31_000, type: 'write', filePath: SOURCE_PATH, mode: 'replace', content: completeSource },
-    { at: 31_500, type: 'speak', text: 'Observa la tabla scopedElements. Cada nombre usado en el template apunta a una clase importada. Esto evita registrar las dependencias globalmente y permite que otro host use una versión distinta.' },
-    { at: 44_000, type: 'switch', filePath: 'src/locales/es.js' },
-    { at: 44_400, type: 'speak', text: 'El componente no guarda frases de producto dentro del template. Solicita claves con this.t y los catálogos mantienen la misma forma en español e inglés.' },
-    { at: 54_000, type: 'switch', filePath: SOURCE_PATH },
-    { at: 54_300, type: 'speak', text: 'Cuando la persona continúa, emitEvent publica una intención con el nombre necesario. El consumidor no recibe la instancia completa ni necesita conocer un método privado.' },
-    { at: 63_000, type: 'run' },
-    { at: 65_000, type: 'speak', text: 'La vista previa compila estos módulos dentro del runtime Cells aislado. Después, las pruebas del laboratorio cambiarán nombre e idioma, pulsarán el botón y observarán el evento.' },
-    { at: 74_000, type: 'chapter', title: 'Tu turno' },
-    { at: 74_200, type: 'write', filePath: SOURCE_PATH, mode: 'replace', content: starterSource },
-    { at: 75_000, type: 'speak', text: 'Ahora conecta los dos contratos que faltan. No copies una línea: sigue las relaciones tag con clase y acción con evento, y comprueba después el comportamiento en el laboratorio.' },
+    { at: 8_300, type: 'speak', text: 'package.json da identidad al paquete. type module habilita import y export; exports declara las entradas públicas; los scripts conservan desarrollo, pruebas, locales, documentación y build.' },
+    { at: 10_000, type: 'write', filePath: 'package.json', mode: 'replace', content: complete.files['package.json'].content },
+    { at: 19_000, type: 'switch', filePath: 'index.js' },
+    { at: 19_300, type: 'speak', text: 'index.js exporta la clase desde src sin registrar todavía el tag. Esto permite importar la clase en pruebas o en composición avanzada sin ejecutar un efecto global.' },
+    { at: 21_000, type: 'write', filePath: 'index.js', mode: 'replace', content: complete.files['index.js'].content },
+    { at: 29_000, type: 'switch', filePath: PUBLIC_ENTRY_PATH },
+    { at: 29_300, type: 'speak', text: 'La segunda entrada importa la clase y registra academy-learning-card si el tag aún no existe. Esta es la superficie sencilla que normalmente consume una aplicación.' },
+    { at: 31_000, type: 'write', filePath: PUBLIC_ENTRY_PATH, mode: 'replace', content: complete.files[PUBLIC_ENTRY_PATH].content },
+    { at: 39_000, type: 'switch', filePath: SOURCE_PATH },
+    { at: 39_300, type: 'speak', text: 'Ahora construimos la clase. LitElement renderiza, ScopedElementsMixin resuelve dependencias locales y WidgetMixin aporta traducción y eventos. properties define learnerName como entrada pública.' },
+    { at: 42_000, type: 'write', filePath: SOURCE_PATH, mode: 'replace', content: completeSource },
+    { at: 51_000, type: 'switch', filePath: LOCALES_PATH },
+    { at: 51_300, type: 'speak', text: 'locales.json es la fuente de idioma del componente. Inglés y español repiten claves y placeholders; el template solicita esas claves con this.t en lugar de guardar frases sueltas.' },
+    { at: 53_000, type: 'write', filePath: LOCALES_PATH, mode: 'replace', content: complete.files[LOCALES_PATH].content },
+    { at: 61_000, type: 'switch', filePath: DEMO_HTML_PATH },
+    { at: 61_300, type: 'speak', text: 'La demo crea controles, instancia el tag público y reserva un output para observar eventos. No copia la implementación del componente.' },
+    { at: 63_000, type: 'write', filePath: DEMO_HTML_PATH, mode: 'replace', content: complete.files[DEMO_HTML_PATH].content },
+    { at: 70_000, type: 'switch', filePath: DEMO_CONTROLLER_PATH },
+    { at: 70_300, type: 'speak', text: 'demo.js importa la entrada pública, asigna learnerName cuando cambia el input, actualiza el idioma y escucha academy-learning-card-continue como lo haría una aplicación.' },
+    { at: 72_000, type: 'write', filePath: DEMO_CONTROLLER_PATH, mode: 'replace', content: complete.files[DEMO_CONTROLLER_PATH].content },
+    { at: 80_000, type: 'run' },
+    { at: 81_000, type: 'speak', text: 'Ejecutamos después de conectar el grafo completo. La vista debe mostrar el nombre, cambiar idioma y devolver el evento sin que la demo conozca métodos privados.' },
+    { at: 89_000, type: 'chapter', title: 'Tu turno sobre el componente real' },
+    { at: 89_200, type: 'write', filePath: SOURCE_PATH, mode: 'replace', content: starterSource },
+    { at: 90_000, type: 'speak', text: 'Retiro únicamente el registro del botón y la emisión pública. El resto del proyecto permanece para que puedas seguir imports, template, locales y consumidor antes de corregir.' },
     {
-      at: 80_000,
+      at: 98_000,
       type: 'challenge',
       challenge: {
         id: 'open-cells-06-reto',
@@ -91,7 +122,7 @@ Cómo comprobarlo: ejecuta las comprobaciones con dos nombres, cambia el idioma 
             id: 'cells06-scoped-button',
             description: 'La tabla scoped asocia el botón con la clase importada',
             validatorType: 'source-regex',
-            regexPattern: "static\\s+get\\s+scopedElements[\\s\\S]*['\"]open-cells-button-default['\"]\\s*:\\s*OpenCellsButtonDefault",
+            regexPattern: "static\\s+get\\s+scopedElements[\\s\\S]*['\"]bbva-button-default['\"]\\s*:\\s*BbvaButtonDefault",
             errorMessage: 'El tag del botón todavía no se puede resolver dentro de este host.',
             hintTip: 'Compara el tag usado por render con la clase que ya aparece en los imports.',
           },
@@ -107,7 +138,7 @@ Cómo comprobarlo: ejecuta las comprobaciones con dos nombres, cambia el idioma 
             id: 'cells06-no-global-dependency',
             description: 'La dependencia permanece local al host',
             validatorType: 'source-regex',
-            regexPattern: "^(?![\\s\\S]*customElements\\.define\\(\\s*['\"]open-cells-button-default)",
+            regexPattern: "^(?![\\s\\S]*customElements\\.define\\(\\s*['\"]bbva-button-default)",
             errorMessage: 'Encontramos un registro global para una dependencia que debe ser scoped.',
             hintTip: 'El host ya dispone de una tabla local; no necesita definir globalmente el botón.',
           },
@@ -120,7 +151,7 @@ Cómo comprobarlo: ejecuta las comprobaciones con dos nombres, cambia el idioma 
         solutionExplanation: 'El registro local une una etiqueta con una clase dentro del host. La acción pública transporta únicamente el dato que el consumidor necesita.',
       },
     },
-    { at: 90_000, type: 'speak', text: 'La lectura siguiente repasa el modelo y abre el proyecto completo para probar idioma, evento, cobertura y exportación.' },
+    { at: 118_000, type: 'speak', text: 'La lectura siguiente repasa el recorrido completo y abre el mismo proyecto para probar idioma, evento, cobertura y exportación.' },
   ],
 });
 
