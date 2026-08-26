@@ -20,13 +20,15 @@ describe('buildCellsPreviewDocument', () => {
     expect(result.html).toContain('__OPEN_CELLS_LOCALES__');
     expect(result.html).toContain('globalThis.IntlMsg');
     expect(result.html).toContain('Bienvenido');
-    expect(result.html).toContain('data-cells-demo-shell');
-    expect(result.html).toContain('Visual');
-    expect(result.html).toContain('Código');
-    expect(result.html).toContain('Documentación');
-    expect(result.html).toContain('Móvil');
-    expect(result.html).toContain('Eventos');
-    expect(result.html).toContain('Ocultar interfaz');
+    expect(result.html).not.toContain('data-cells-demo-shell');
+    expect(result.html).not.toContain('cells-demo-topbar');
+    expect(result.html).toContain("event.data.type === 'demo:set-case'");
+    expect(result.html).toContain("type: 'component:event'");
+    expect(result.componentDemo).toMatchObject({
+      tagName: 'academy-learning-card',
+      packageName: '@open-cells-learning/academy-learning-card',
+    });
+    expect(result.componentDemo?.cases).toHaveLength(3);
   });
 
   it('mantiene las aplicaciones como render completo sin el marco de demo de componentes', () => {
@@ -35,6 +37,15 @@ describe('buildCellsPreviewDocument', () => {
 
     expect(result.html).not.toContain('data-cells-demo-shell');
     expect(result.html).toContain('<main id="app"');
+  });
+
+  it('deja la interfaz de demostración fuera del documento ejecutable', () => {
+    const workspace = createCellsComponentWorkspace({ name: 'academy-learning-card' });
+    const result = buildCellsPreviewDocument(workspace.snapshot);
+
+    expect(result.html).toContain('<academy-learning-card data-cells-demo-subject');
+    expect(result.html).not.toContain('Caso de demostración');
+    expect(result.html).not.toContain('Ocultar interfaz');
   });
 
   it('rechaza paquetes que no están en la allowlist', () => {
@@ -59,7 +70,7 @@ describe('buildCellsPreviewDocument', () => {
 
     expect(result.html).toContain("source: 'open-cells-tests'");
     expect(result.html).toContain('await element.updateComplete');
-    expect(result.html).toContain("querySelector('bbva-type-text')");
+    expect(result.html).toContain("querySelector('academy-type-text')");
     expect(result.html).toContain('titleHost?.shadowRoot?.textContent');
     expect(result.html).toContain('constructor.scopedElements');
     expect(result.html).toContain("__OPEN_CELLS_LOCALE__ = 'es'");

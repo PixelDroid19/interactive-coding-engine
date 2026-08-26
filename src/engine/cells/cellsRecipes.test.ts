@@ -31,11 +31,11 @@ describe('createCellsComponentWorkspace', () => {
     expect(source).toContain("from 'lit'");
     expect(source).toContain("from '@open-wc/scoped-elements/lit-element.js'");
     expect(source).toContain("WidgetMixin");
-    expect(source).toContain("BbvaTypeText");
-    expect(source).toContain("BbvaButtonDefault");
+    expect(source).toContain("AcademyTypeText");
+    expect(source).toContain("AcademyActionButton");
     expect(source).toContain('WidgetMixin(ScopedElementsMixin(LitElement))');
-    expect(source).toContain("'bbva-type-text': BbvaTypeText");
-    expect(source).toContain("'bbva-button-default': BbvaButtonDefault");
+    expect(source).toContain("'academy-type-text': AcademyTypeText");
+    expect(source).toContain("'academy-action-button': AcademyActionButton");
   });
 
   it('consume el css.js generado desde el SCSS en lugar de duplicar estilos dentro del componente', () => {
@@ -91,8 +91,6 @@ describe('createCellsComponentWorkspace', () => {
     expect(manifest.name).toBe('@open-cells-learning/academy-learning-card');
     expect(manifest.types).toBe('./types/open-cells.d.ts');
     expect(manifest.dependencies).toEqual({
-      '@bbva-spherica-components/bbva-button-default': '^1.0.0',
-      '@bbva-spherica-components/bbva-type-text': '^2.0.0',
       '@open-wc/scoped-elements': '3.0.10',
       '@webcomponents/scoped-custom-element-registry': '0.0.10',
       lit: '3.3.3',

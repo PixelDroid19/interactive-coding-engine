@@ -67,11 +67,11 @@ export function createCellsComponentWorkspace(scaffold: CellsComponentScaffold):
   transform: rotate(-5deg);
 }
 
-bbva-type-text {
+academy-type-text {
   display: block;
 }
 
-bbva-button-default {
+academy-action-button {
   align-self: end;
   justify-self: start;
   margin-top: 1rem;
@@ -108,8 +108,6 @@ bbva-button-default {
         build: 'cells component:build:demo',
       },
       dependencies: {
-        '@bbva-spherica-components/bbva-button-default': '^1.0.0',
-        '@bbva-spherica-components/bbva-type-text': '^2.0.0',
         '@open-wc/scoped-elements': '3.0.10',
         '@webcomponents/scoped-custom-element-registry': '0.0.10',
         lit: '3.3.3',
@@ -144,14 +142,14 @@ import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { WidgetMixin } from './mixins/WidgetMixin.js';
 import styles from './${tagName}.css.js';
-import { BbvaTypeText } from '@bbva-spherica-components/bbva-type-text';
-import { BbvaButtonDefault } from '@bbva-spherica-components/bbva-button-default';
+import { AcademyTypeText } from './components/academy-type-text.js';
+import { AcademyActionButton } from './components/academy-action-button.js';
 
 export class ${className} extends WidgetMixin(ScopedElementsMixin(LitElement)) {
   static get scopedElements() {
     return {
-      'bbva-type-text': BbvaTypeText,
-      'bbva-button-default': BbvaButtonDefault,
+      'academy-type-text': AcademyTypeText,
+      'academy-action-button': AcademyActionButton,
     };
   }
 
@@ -171,27 +169,73 @@ export class ${className} extends WidgetMixin(ScopedElementsMixin(LitElement)) {
     return html\`
       <article class="learning-card">
         <p class="learning-card__eyebrow">${'${'}this.t('learningCard.eyebrow')}</p>
-        <bbva-type-text
-          tag="h2"
-          font-type="title-secondary"
-          size="2XL"
-          text="${'${'}this.t('learningCard.title', { name: this.learnerName })}"
-        ></bbva-type-text>
-        <bbva-type-text
-          tag="p"
-          font-type="body"
-          size="M"
-          text="${'${'}this.t('learningCard.description')}"
-        ></bbva-type-text>
-        <bbva-button-default
-          .text=${'${'}this.t('learningCard.continue')}
+        <academy-type-text
+          as="h2"
+        >${'${'}this.t('learningCard.title', { name: this.learnerName })}</academy-type-text>
+        <academy-type-text
+          as="p"
+        >${'${'}this.t('learningCard.description')}</academy-type-text>
+        <academy-action-button
           @click=${'${'}this.handleContinue}
-        ></bbva-button-default>
+        >${'${'}this.t('learningCard.continue')}</academy-action-button>
       </article>
     \`;
   }
 }
 
+`, 'javascript'),
+    'src/components/academy-type-text.js': file('src/components/academy-type-text.js', `
+import { LitElement, html } from 'lit';
+
+export class AcademyTypeText extends LitElement {
+  static properties = {
+    as: { type: String },
+  };
+
+  as = 'p';
+
+  render() {
+    const tag = ['h2', 'h3', 'p', 'span'].includes(this.as) ? this.as : 'p';
+    return tag === 'h2'
+      ? html\`<h2><slot></slot></h2>\`
+      : tag === 'h3'
+        ? html\`<h3><slot></slot></h3>\`
+        : tag === 'span'
+          ? html\`<span><slot></slot></span>\`
+          : html\`<p><slot></slot></p>\`;
+  }
+}
+`, 'javascript'),
+    'src/components/academy-action-button.js': file('src/components/academy-action-button.js', `
+import { LitElement, css, html } from 'lit';
+
+export class AcademyActionButton extends LitElement {
+  static properties = {
+    disabled: { type: Boolean, reflect: true },
+  };
+
+  static styles = css\`
+    button {
+      padding: 0.9rem 1.35rem;
+      border: 0;
+      border-radius: 999px;
+      background: #2d7462;
+      color: white;
+      box-shadow: 0 0.45rem 0 #0b382f;
+      font: 700 0.78rem/1 system-ui, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    button:active { transform: translateY(0.2rem); box-shadow: 0 0.25rem 0 #0b382f; }
+    button:disabled { opacity: 0.55; cursor: not-allowed; }
+  \`;
+
+  disabled = false;
+  render() {
+    return html\`<button type="button" ?disabled=\${this.disabled}><slot></slot></button>\`;
+  }
+}
 `, 'javascript'),
     'src/mixins/WidgetMixin.js': file('src/mixins/WidgetMixin.js', `
 /**
@@ -272,8 +316,8 @@ card?.addEventListener('${tagName}-continue', (event) => {
 import './demo.js';
 `, 'javascript'),
     [`test/unit/${tagName}.test.js`]: file(`test/unit/${tagName}.test.js`, `
-import { BbvaButtonDefault } from '@bbva-spherica-components/bbva-button-default';
-import { BbvaTypeText } from '@bbva-spherica-components/bbva-type-text';
+import { AcademyActionButton } from '../../src/components/academy-action-button.js';
+import { AcademyTypeText } from '../../src/components/academy-type-text.js';
 import { ${className} } from '../../${tagName}.js';
 
 const catalogs = ${JSON.stringify({
@@ -303,10 +347,10 @@ describe('${tagName}', () => {
   afterEach(() => document.body.replaceChildren());
 
   it('declara dependencias scoped sin registro global', () => {
-    expect(${className}.scopedElements['bbva-type-text']).toBe(BbvaTypeText);
-    expect(${className}.scopedElements['bbva-button-default']).toBe(BbvaButtonDefault);
-    expect(customElements.get('bbva-type-text')).toBeUndefined();
-    expect(customElements.get('bbva-button-default')).toBeUndefined();
+    expect(${className}.scopedElements['academy-type-text']).toBe(AcademyTypeText);
+    expect(${className}.scopedElements['academy-action-button']).toBe(AcademyActionButton);
+    expect(customElements.get('academy-type-text')).toBeUndefined();
+    expect(customElements.get('academy-action-button')).toBeUndefined();
   });
 
   it('renderiza ambos idiomas con valores diferentes', async () => {
@@ -388,14 +432,6 @@ declare module '@open-wc/scoped-elements/lit-element.js' {
   export function ScopedElementsMixin<T extends Constructor>(base: T): T;
 }
 
-declare module '@bbva-spherica-components/bbva-type-text' {
-  export class BbvaTypeText extends HTMLElement { text: string; }
-}
-
-declare module '@bbva-spherica-components/bbva-button-default' {
-  export class BbvaButtonDefault extends HTMLElement { disabled: boolean; text: string; }
-}
-
 interface CellsTestExpectation {
   toBe(expected: unknown): void;
   toBeUndefined(): void;
@@ -437,7 +473,7 @@ export function createCellsPracticeWorkspace(stage: CellsComponentPracticeStage 
   }
   if (stage === 'composition') {
     const starter = complete.snapshot.files[path].content
-      .replace("      'bbva-button-default': BbvaButtonDefault,", '      // TODO: registra aquí el botón del catálogo que ya está importado.')
+      .replace("      'academy-action-button': AcademyActionButton,", '      // TODO: registra aquí el botón local que ya está importado.')
       .replace("    this.emitEvent('continue', { learnerName: this.learnerName });", '    // TODO: comunica la acción pública con el nombre de quien aprende.');
     return createVersionedCellsWorkspace(writeCellsFile(complete, path, starter).snapshot, 0);
   }

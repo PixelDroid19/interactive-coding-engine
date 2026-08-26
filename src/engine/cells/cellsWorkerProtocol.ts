@@ -1,4 +1,5 @@
 import type { WorkspaceSnapshot } from '../../types/scrim';
+import type { CellsPreviewBuild } from './cellsPreviewCompiler';
 
 export interface CellsRuntimeError {
   code: 'INVALID_REQUEST' | 'INVALID_WORKSPACE' | 'COMMAND_FAILED' | 'CANCELLED' | 'INTERNAL_ERROR';
@@ -77,7 +78,7 @@ export type CellsWorkerResponse =
   | ResponseEnvelope<'runtime:ready', { capabilities: string[] }>
   | ResponseEnvelope<'workspace:updated', { workspace: WorkspaceSnapshot }>
   | ResponseEnvelope<'command:completed', { command: string; output: string; workspace?: WorkspaceSnapshot }>
-  | ResponseEnvelope<'preview:built', { html: string; warnings: string[] }>
+  | ResponseEnvelope<'preview:built', CellsPreviewBuild>
   | ResponseEnvelope<'tests:completed', { results: CellsTestResult[]; coverage?: CellsCoverageResult }>
   | ResponseEnvelope<'locales:generated', { workspace: WorkspaceSnapshot; keys: string[] }>
   | ResponseEnvelope<'documentation:generated', { workspace: WorkspaceSnapshot }>

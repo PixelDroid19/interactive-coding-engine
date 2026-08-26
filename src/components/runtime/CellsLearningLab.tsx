@@ -15,6 +15,8 @@ import { waitForCellsBrowserTests } from '../../engine/cells/cellsBrowserRunner'
 import { createCellsCoverageReport, createIstanbulCoverageReport, mergeCellsCoverageReports } from '../../engine/cells/cellsCoverage';
 import { CodeEditor } from '../editor/CodeEditor';
 import { WorkspaceTree } from '../editor/WorkspaceTree';
+import { CellsPreviewWorkbench } from './CellsPreviewWorkbench';
+import type { CellsPreviewBuild } from '../../engine/cells/cellsPreviewCompiler';
 
 function messageFor(error: unknown): string {
   if (error instanceof CellsRuntimeClientError) {
@@ -81,6 +83,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
   const [syncedWorkspace, setSyncedWorkspace] = useState<WorkspaceSnapshot>(starter.snapshot);
   const [generation, setGeneration] = useState(0);
   const [previewHtml, setPreviewHtml] = useState('');
+  const [previewDemo, setPreviewDemo] = useState<CellsPreviewBuild['componentDemo']>();
   const [tests, setTests] = useState<CellsTestResult[]>([]);
   const [coverage, setCoverage] = useState<CellsCoverageResult | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'running' | 'error'>('loading');
@@ -88,6 +91,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
   const [command, setCommand] = useState(defaultCellsCommand(variant));
   const [terminalOutput, setTerminalOutput] = useState('Runtime detenido. El Worker se iniciará al abrir el proyecto.');
   const [activeInspectorTab, setActiveInspectorTab] = useState<'preview' | 'tests' | 'terminal'>('preview');
+  const [activeMobilePanel, setActiveMobilePanel] = useState<'files' | 'editor' | 'results'>('editor');
   const [fileQuery, setFileQuery] = useState('');
   const [expandedFolders, setExpandedFolders] = useState<string[]>([]);
   const [previewLocale, setPreviewLocale] = useState<'es' | 'en'>('es');
@@ -141,7 +145,9 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
       if (result.type !== 'workspace:updated') throw new Error('El Worker no devolvió el proyecto inicial.');
       applyWorkspace(result.payload.workspace, 0);
       setPreviewHtml('');
+      setPreviewDemo(undefined);
       setActiveInspectorTab('preview');
+      setActiveMobilePanel('editor');
       setCommand(defaultCellsCommand(variant));
       setPreviewLocale('es');
       setTerminalOutput('Proyecto abierto en memoria. No se inició ningún servidor ni proceso Node.');
@@ -243,7 +249,9 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
       const result = await ensureRuntime().buildPreview(currentGeneration);
       if (result.type !== 'preview:built') throw new Error('La vista previa no produjo un documento.');
       setPreviewHtml(result.payload.html);
+      setPreviewDemo(result.payload.componentDemo);
       setActiveInspectorTab('preview');
+      setActiveMobilePanel('results');
       setTerminalOutput('Vista previa construida dentro del Worker. El iframe ejecuta solo el resultado aislado.');
       setStatus('ready');
     } catch (caught) { setError(messageFor(caught)); setStatus('error'); }
@@ -265,7 +273,9 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
       const previewResult = await ensureRuntime().buildPreview(currentGeneration, true, testRunId);
       if (previewResult.type !== 'preview:built') throw new Error('No se pudo preparar el iframe de pruebas.');
       setPreviewHtml(previewResult.payload.html);
+      setPreviewDemo(previewResult.payload.componentDemo);
       setActiveInspectorTab('tests');
+      setActiveMobilePanel('results');
       const browserResult = await browserResultPromise;
       const combined = [...structuralResult.payload.results, ...browserResult.results];
       setTests(combined);
@@ -308,10 +318,13 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
         setTests(result.payload.results);
         setCoverage(result.payload.coverage ?? null);
         setActiveInspectorTab('tests');
+        setActiveMobilePanel('results');
         setTerminalOutput('Comprobaciones estructurales ejecutadas en el Worker. Usa “Comprobar” para ejecutar también el flujo conductual dentro del iframe.');
       } else if (result.type === 'preview:built') {
         setPreviewHtml(result.payload.html);
+        setPreviewDemo(result.payload.componentDemo);
         setActiveInspectorTab('preview');
+        setActiveMobilePanel('results');
         setTerminalOutput('Vista previa actualizada.');
       } else if (result.type === 'command:completed') {
         if (result.payload.workspace) {
@@ -379,7 +392,27 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
           : COMPONENT_MISSIONS[componentStage]}</p>
       </div>
 
-      <div className="cells-lab__workbench">
+      <nav className="cells-lab__mobile-nav" role="tablist" aria-label="Área de trabajo en móvil">
+        {([
+          ['files', FileCode2, 'Archivos'],
+          ['editor', Code2, 'Editor'],
+          ['results', Eye, 'Resultados'],
+        ] as const).map(([panel, Icon, label]) => (
+          <button
+            key={panel}
+            type="button"
+            role="tab"
+            aria-selected={activeMobilePanel === panel}
+            className={activeMobilePanel === panel ? 'is-active' : ''}
+            onClick={() => setActiveMobilePanel(panel)}
+          >
+            <Icon size={15} />
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      <div className="cells-lab__workbench" data-testid="cells-workbench" data-mobile-panel={activeMobilePanel}>
         {/* PANEL IZQUIERDO: ESTUDIO DE CÓDIGO (Archivos + Editor) */}
         <div className="cells-lab__studio">
           <nav className="cells-lab__files" aria-label="Archivos del proyecto">
@@ -400,6 +433,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
                 expandedPaths={expandedFolders}
                 onExpandedPathsChange={setExpandedFolders}
                 onFileSelect={(path) => setWorkspace((current) => {
+                  setActiveMobilePanel('editor');
                   const next = { ...current, activeFilePath: path };
                   void ensureRepository().save(draftKey, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
                   return next;
@@ -519,13 +553,22 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
             {/* VISTA PREVIA */}
             <div className={`cells-lab__pane cells-lab__pane--preview ${activeInspectorTab === 'preview' ? 'is-visible' : 'is-hidden'}`}>
               {previewHtml ? (
-                <iframe
-                  ref={iframeRef}
-                  title={`Vista previa ${variant === 'application' ? 'de la aplicación' : 'del componente'} Cells`}
-                  sandbox="allow-scripts"
-                  srcDoc={previewHtml}
-                  onLoad={() => iframeRef.current?.contentWindow?.postMessage({ source: 'open-cells-shell', type: 'locale:set', locale: previewLocale }, '*')}
-                />
+                variant === 'component' && previewDemo ? (
+                  <CellsPreviewWorkbench
+                    html={previewHtml}
+                    demo={previewDemo}
+                    iframeRef={iframeRef}
+                    title="Vista previa del componente Cells"
+                  />
+                ) : (
+                  <iframe
+                    ref={iframeRef}
+                    title="Vista previa de la aplicación Cells"
+                    sandbox="allow-scripts"
+                    srcDoc={previewHtml}
+                    onLoad={() => iframeRef.current?.contentWindow?.postMessage({ source: 'open-cells-shell', type: 'locale:set', locale: previewLocale }, '*')}
+                  />
+                )
               ) : (
                 <div className="cells-lab__empty">
                   <Play size={28} />

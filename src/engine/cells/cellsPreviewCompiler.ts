@@ -80,23 +80,6 @@ export function startApp({ mainNode, routes, initialTemplate, debug = false }) {
   return globalThis.__OPEN_CELLS_APP_READY__;
 }`;
 
-const BBVA_TYPE_TEXT_RUNTIME = `
-import { LitElement, html } from 'lit';
-export class BbvaTypeText extends LitElement {
-  static properties = { text: { type: String } };
-  constructor() { super(); this.text = ''; }
-  render() { return html\`<span part="text">\${this.text}</span>\`; }
-}`;
-
-const BBVA_BUTTON_DEFAULT_RUNTIME = `
-import { LitElement, css, html } from 'lit';
-export class BbvaButtonDefault extends LitElement {
-  static properties = { disabled: { type: Boolean, reflect: true }, text: { type: String } };
-  static styles = css\`button{font:700 .78rem/1 system-ui,sans-serif;letter-spacing:.08em;text-transform:uppercase;padding:.9rem 1.35rem;border:0;border-radius:999px;background:#2d7462;color:white;box-shadow:0 .45rem 0 #0b382f;cursor:pointer}button:active{transform:translateY(.2rem);box-shadow:0 .25rem 0 #0b382f}button:disabled{opacity:.55;cursor:not-allowed}\`;
-  constructor() { super(); this.disabled = false; this.text = ''; }
-  render() { return html\`<button type="button" ?disabled=\${this.disabled}>\${this.text}<slot></slot></button>\`; }
-}`;
-
 const IMPORT_MAP: Record<string, string> = {
   lit: 'https://esm.sh/lit@3.3.3',
   'lit/': 'https://esm.sh/lit@3.3.3/',
@@ -104,135 +87,12 @@ const IMPORT_MAP: Record<string, string> = {
   '@open-wc/scoped-elements/lit-element.js': moduleUrl(SCOPED_ELEMENTS_RUNTIME),
   '@open-cells/page-mixin': moduleUrl(PAGE_MIXIN_RUNTIME),
   '@open-cells/core': moduleUrl(CORE_RUNTIME),
-  '@bbva-spherica-components/bbva-type-text': moduleUrl(BBVA_TYPE_TEXT_RUNTIME),
-  '@bbva-spherica-components/bbva-button-default': moduleUrl(BBVA_BUTTON_DEFAULT_RUNTIME),
 };
 
 const IMPORT_PATTERN = /(?:^|\n)\s*import\s+(?:[^'";]+?\s+from\s+)?['"]([^'"]+)['"]/g;
 
 function scriptEscape(value: string): string {
   return value.replaceAll('</script', '<\\/script');
-}
-
-function htmlEscape(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;');
-}
-
-const COMPONENT_DEMO_STYLES = `
-  :root{color-scheme:light;font-family:Inter,ui-sans-serif,system-ui,sans-serif;color:#17212b;background:#f7f9fb}
-  *{box-sizing:border-box}
-  body{margin:0;min-width:320px;background:#f7f9fb}
-  button,select,input{font:inherit}
-  [data-cells-demo-shell]{min-height:100vh;display:flex;flex-direction:column}
-  .cells-demo-topbar{display:grid;grid-template-columns:minmax(14rem,1fr) auto auto;align-items:center;gap:1rem;min-height:5.25rem;padding:1rem 1.5rem;border-bottom:1px solid #d7e0e8;background:white}
-  .cells-demo-identity{min-width:0;padding-right:1.5rem;border-right:1px solid #d7e0e8}
-  .cells-demo-identity strong,.cells-demo-identity span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .cells-demo-identity strong{font-size:1rem}.cells-demo-identity span{margin-top:.2rem;color:#607080;font-size:.75rem}
-  .cells-demo-case{display:flex;align-items:center;gap:.55rem;color:#607080;font-size:.72rem;font-weight:700}
-  .cells-demo-case select{min-width:8.5rem;padding:.65rem 2rem .65rem .75rem;border:1px solid #ccd8e1;border-radius:.7rem;background:#f0f5f8;color:#17212b;font-weight:700}
-  .cells-demo-tabs,.cells-demo-languages{display:flex;padding:.25rem;border:1px solid #ccd8e1;border-radius:.8rem;background:#eef3f7}
-  .cells-demo-tabs button,.cells-demo-languages button{min-height:2.35rem;padding:.5rem .95rem;border:0;border-radius:.6rem;background:transparent;color:#536477;font-size:.75rem;font-weight:800;cursor:pointer}
-  .cells-demo-tabs button[aria-selected="true"],.cells-demo-languages button[aria-pressed="true"]{background:white;color:#17212b;box-shadow:0 .2rem .65rem rgb(29 51 70 / 12%)}
-  .cells-demo-languages button[aria-pressed="true"]{background:#075a75;color:white}
-  .cells-demo-topbar__end{display:flex;align-items:center;justify-content:flex-end;gap:1rem}
-  .cells-demo-hide{display:flex;align-items:center;gap:.5rem;color:#607080;font-size:.75rem;font-weight:700;white-space:nowrap}
-  .cells-demo-viewportbar{display:flex;align-items:center;justify-content:center;gap:.7rem;min-height:4rem;padding:.65rem 1rem;border-bottom:1px solid #d7e0e8;background:#fff}
-  .cells-demo-presets{display:flex;padding:.2rem;border:1px solid #ccd8e1;border-radius:.7rem;background:#eef3f7}
-  .cells-demo-presets button{padding:.55rem .75rem;border:0;border-radius:.5rem;background:transparent;color:#536477;font-size:.7rem;font-weight:800;cursor:pointer}
-  .cells-demo-presets button[aria-pressed="true"]{background:white;color:#17212b;box-shadow:0 .15rem .5rem rgb(29 51 70 / 12%)}
-  .cells-demo-size{padding-left:.8rem;border-left:1px solid #ccd8e1;color:#536477;font:700 .72rem/1 ui-monospace,monospace}
-  .cells-demo-size input{width:4.8rem;padding:.55rem .65rem;border:1px solid #ccd8e1;border-radius:.55rem;background:#fff;color:#17212b}
-  .cells-demo-apply,.cells-demo-expand{padding:.62rem .85rem;border:0;border-radius:.55rem;background:#075a75;color:white;font-size:.72rem;font-weight:800;cursor:pointer}
-  .cells-demo-panel[hidden]{display:none}
-  .cells-demo-visual{display:grid;grid-template-columns:minmax(0,1fr) 20rem;gap:1rem;flex:1;padding:1rem;background:#edf4f8}
-  .cells-demo-canvas{display:grid;place-items:center;min-width:0;min-height:37rem;padding:1.5rem;overflow:auto;border:1px solid #d2dee6;border-radius:1rem;background-color:#edf4f8;background-image:radial-gradient(#bdd0dd 1px,transparent 1px);background-size:20px 20px}
-  .cells-demo-device{width:min(100%,37.5rem);min-height:34rem;display:flex;flex-direction:column;border:1px solid #c9d6df;border-radius:1rem;background:#fff;box-shadow:0 .8rem 2.2rem rgb(35 64 85 / 12%);transition:width .2s ease}
-  .cells-demo-device__bar{display:flex;align-items:center;justify-content:space-between;min-height:3.25rem;padding:.75rem 1rem;border-bottom:1px solid #d7e0e8;color:#33495d;font-size:.72rem;font-weight:800}
-  .cells-demo-device__bar span::before{display:inline-block;width:.55rem;height:.55rem;margin-right:.45rem;border-radius:50%;background:#2c9b7f;box-shadow:0 0 0 3px #d9f1e9;content:''}
-  .cells-demo-stage{display:grid;place-items:center;flex:1;padding:clamp(1rem,5vw,3rem);overflow:auto;background:linear-gradient(180deg,#fff 0%,#faf8ec 100%)}
-  [data-cells-demo-subject]{width:min(100%,34rem)}
-  .cells-demo-events{display:flex;flex-direction:column;min-height:0;border:1px solid #d2dee6;border-radius:1rem;background:#fff;overflow:hidden}
-  .cells-demo-events__head{display:flex;align-items:center;justify-content:space-between;padding:1rem;border-bottom:1px solid #d7e0e8}.cells-demo-events__head strong{font-size:.95rem}.cells-demo-events__head span{color:#06708d;font:800 .72rem/1 ui-monospace,monospace}
-  .cells-demo-events__intro{margin:0;padding:1rem;color:#607080;font-size:.75rem;line-height:1.55}
-  .cells-demo-event-card{margin:0 1rem 1rem;padding:1rem;border:1px solid #d4dfe6;border-radius:.8rem;background:#f5f8fa}
-  .cells-demo-event-card small{display:block;margin-bottom:.55rem;color:#2c7967;font:800 .65rem/1 ui-monospace,monospace;letter-spacing:.08em;text-transform:uppercase}
-  .cells-demo-event-card code{display:block;color:#075a75;font:800 .7rem/1.45 ui-monospace,monospace;overflow-wrap:anywhere}.cells-demo-event-card output{display:block;margin-top:.55rem;color:#536477;font:500 .7rem/1.45 ui-monospace,monospace;overflow-wrap:anywhere}
-  .cells-demo-reference{padding:2rem;min-height:34rem;background:#f7f9fb}.cells-demo-reference article{max-width:64rem;margin:auto;padding:1.5rem;border:1px solid #d2dee6;border-radius:1rem;background:#fff}.cells-demo-reference h2{margin-top:0}.cells-demo-reference pre{padding:1rem;overflow:auto;border-radius:.75rem;background:#111821;color:#dcecff;font:500 .76rem/1.6 ui-monospace,monospace}
-  .cells-demo-reference dl{display:grid;grid-template-columns:max-content 1fr;gap:.7rem 1.2rem}.cells-demo-reference dt{font-weight:800}.cells-demo-reference dd{margin:0;color:#607080}
-  .cells-demo-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-  [data-cells-demo-shell].is-interface-hidden .cells-demo-topbar,[data-cells-demo-shell].is-interface-hidden .cells-demo-viewportbar,[data-cells-demo-shell].is-interface-hidden .cells-demo-events{display:none}
-  [data-cells-demo-shell].is-interface-hidden .cells-demo-visual{grid-template-columns:1fr;padding:0}[data-cells-demo-shell].is-interface-hidden .cells-demo-canvas{min-height:100vh;border:0;border-radius:0}
-  @media(max-width:900px){.cells-demo-topbar{grid-template-columns:1fr}.cells-demo-identity{padding-right:0;border-right:0}.cells-demo-topbar__end{justify-content:flex-start;flex-wrap:wrap}.cells-demo-visual{grid-template-columns:1fr}.cells-demo-events{min-height:16rem}.cells-demo-viewportbar{justify-content:flex-start;overflow:auto}.cells-demo-canvas{min-height:32rem}}
-`;
-
-function buildComponentDemoShell(body: string, tagName: string, packageName: string, source: string): string {
-  return `
-<div data-cells-demo-shell>
-  <header class="cells-demo-topbar">
-    <div class="cells-demo-identity"><strong>Demostración de ${htmlEscape(tagName)}</strong><span>${htmlEscape(packageName)}</span></div>
-    <label class="cells-demo-case">Caso
-      <select id="learner-name" aria-label="Caso de demostración">
-        <option value="Ada">Básico</option>
-        <option value="Lina">Nombre alternativo</option>
-        <option value="Equipo Cells">Texto largo</option>
-      </select>
-    </label>
-    <div class="cells-demo-topbar__end">
-      <div class="cells-demo-tabs" role="tablist" aria-label="Vista de la demostración">
-        <button type="button" role="tab" data-demo-tab="visual" aria-selected="true">Visual</button>
-        <button type="button" role="tab" data-demo-tab="code" aria-selected="false">Código</button>
-        <button type="button" role="tab" data-demo-tab="docs" aria-selected="false">Documentación</button>
-      </div>
-      <div class="cells-demo-languages" aria-label="Idioma de la demostración">
-        <button type="button" data-demo-locale="en" aria-pressed="false">Inglés</button>
-        <button type="button" data-demo-locale="es" aria-pressed="true">Español</button>
-      </div>
-      <label class="cells-demo-hide"><input type="checkbox" data-demo-hide> Ocultar interfaz</label>
-      <select id="locale" class="cells-demo-sr-only" aria-label="Idioma"><option value="es">Español</option><option value="en">English</option></select>
-    </div>
-  </header>
-  <div class="cells-demo-viewportbar">
-    <div class="cells-demo-presets" aria-label="Tamaño de la demostración">
-      <button type="button" data-demo-width="375" aria-pressed="false">Móvil</button>
-      <button type="button" data-demo-width="768" aria-pressed="false">Tablet</button>
-      <button type="button" data-demo-width="1024" aria-pressed="false">Escritorio</button>
-      <button type="button" data-demo-width="1280" aria-pressed="false">Escritorio grande</button>
-      <button type="button" data-demo-width="fluid" aria-pressed="true">Fluido</button>
-    </div>
-    <label class="cells-demo-size">ANCHO <input data-demo-custom-width inputmode="numeric" placeholder="auto"></label>
-    <span>×</span>
-    <label class="cells-demo-size">ALTO <input data-demo-custom-height inputmode="numeric" placeholder="auto"></label>
-    <button type="button" class="cells-demo-apply" data-demo-apply>Aplicar</button>
-    <button type="button" class="cells-demo-expand" data-demo-expand aria-label="Alternar vista ampliada">↗</button>
-  </div>
-  <section class="cells-demo-panel cells-demo-visual" data-demo-panel="visual">
-    <div class="cells-demo-canvas">
-      <div class="cells-demo-device" data-demo-device>
-        <div class="cells-demo-device__bar"><span>Básico</span><code>#01</code></div>
-        <div class="cells-demo-stage">${body}</div>
-      </div>
-    </div>
-    <aside class="cells-demo-events" aria-label="Eventos">
-      <div class="cells-demo-events__head"><strong>Eventos</strong><span data-demo-event-count>00</span></div>
-      <p class="cells-demo-events__intro">Los eventos emitidos por el componente aparecen aquí como un flujo inspeccionable.</p>
-      <div class="cells-demo-event-card">
-        <small>● Eventos</small>
-        <code data-demo-event-name>Sin eventos todavía</code>
-        <output id="event-log" aria-live="polite">Interactúa con el componente para ver el nombre y el detail.</output>
-      </div>
-    </aside>
-  </section>
-  <section class="cells-demo-panel cells-demo-reference" data-demo-panel="code" hidden>
-    <article><h2>Entrada pública del componente</h2><p>La demo consume el mismo módulo que usaría una aplicación.</p><pre>${htmlEscape(source)}</pre></article>
-  </section>
-  <section class="cells-demo-panel cells-demo-reference" data-demo-panel="docs" hidden>
-    <article><h2>Contrato público</h2><dl><dt>Elemento</dt><dd>&lt;${htmlEscape(tagName)}&gt;</dd><dt>Propiedad</dt><dd>learnerName / learner-name</dd><dt>Evento</dt><dd>${htmlEscape(tagName)}-continue</dd><dt>Estilos</dt><dd>SCSS fuente → css.js generado → static styles</dd></dl></article>
-  </section>
-</div>`;
 }
 
 type LocaleCatalog = Record<'en' | 'es', Record<string, string>>;
@@ -344,6 +204,13 @@ function buildWorkspaceModules(
 export interface CellsPreviewBuild {
   html: string;
   warnings: string[];
+  componentDemo?: {
+    tagName: string;
+    packageName: string;
+    source: string;
+    cases: Array<{ id: string; label: string; properties: Record<string, string> }>;
+    contract: Array<{ term: string; description: string }>;
+  };
 }
 
 export interface CellsPreviewOptions {
@@ -403,9 +270,9 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
   const componentSource = Object.values(workspace.files).find((file) => (
     /^src\/[^/]+\.js$/.test(file.path) && /WidgetMixin\s*\(/.test(file.content)
   ))?.content ?? source;
-  const renderedBody = isApplication
-    ? body
-    : buildComponentDemoShell(body, definedTag, packageData.name ?? definedTag, componentSource);
+  const componentMarkup = body.match(new RegExp(`<${definedTag}\\b[\\s\\S]*?<\\/${definedTag}>`, 'i'))?.[0]
+    ?? `<${definedTag} data-cells-demo-subject learner-name="Ada"></${definedTag}>`;
+  const renderedBody = isApplication ? body : componentMarkup;
   const componentContractHarness = `
   const results = [];
   const check = (id, title, passed, message) => results.push({ id, title, passed: Boolean(passed), message });
@@ -430,28 +297,28 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
     element.learnerName = 'Lina';
     element.requestUpdate?.();
     await element.updateComplete;
-    let titleHost = element.shadowRoot?.querySelector('bbva-type-text');
+    let titleHost = element.shadowRoot?.querySelector('academy-type-text');
     await titleHost?.updateComplete;
-    const spanishText = (element.shadowRoot?.textContent || '') + ' ' + (titleHost?.shadowRoot?.textContent || '');
+    const spanishText = (element.shadowRoot?.textContent || '') + ' ' + (titleHost?.textContent || '') + ' ' + (titleHost?.shadowRoot?.textContent || '');
     check('browser-render-es', 'Renderiza propiedades y español', spanishText.includes('Lina') && spanishText.includes('Estás aprendiendo'), 'El DOM público debe reflejar learnerName y el catálogo español.');
 
     const scoped = element.constructor.scopedElements || {};
     invokedMethods.push('scopedElements');
-    check('browser-scoped', 'Resuelve ambas dependencias scoped', Boolean(scoped['bbva-type-text'] && scoped['bbva-button-default']), 'El registro local debe exponer texto y botón del catálogo como clases.');
+    check('browser-scoped', 'Resuelve ambas dependencias scoped', Boolean(scoped['academy-type-text'] && scoped['academy-action-button']), 'El registro local debe exponer los dos componentes didácticos como clases.');
 
     globalThis.__OPEN_CELLS_LOCALE__ = 'en';
     element.requestUpdate?.();
     await element.updateComplete;
-    titleHost = element.shadowRoot?.querySelector('bbva-type-text');
+    titleHost = element.shadowRoot?.querySelector('academy-type-text');
     await titleHost?.updateComplete;
-    const englishText = (element.shadowRoot?.textContent || '') + ' ' + (titleHost?.shadowRoot?.textContent || '');
+    const englishText = (element.shadowRoot?.textContent || '') + ' ' + (titleHost?.textContent || '') + ' ' + (titleHost?.shadowRoot?.textContent || '');
     check('browser-render-en', 'Cambia el idioma sin recrear el host', englishText.includes('Lina') && englishText.includes('You are learning'), 'El mismo host debe actualizarse con el catálogo inglés.');
 
     let event = null;
     element.addEventListener('${definedTag}-continue', (received) => { event = received; }, { once: true });
     element.requestUpdate?.();
     await element.updateComplete;
-    const buttonHost = element.shadowRoot?.querySelector('bbva-button-default');
+    const buttonHost = element.shadowRoot?.querySelector('academy-action-button');
     await buttonHost?.updateComplete;
     buttonHost?.shadowRoot?.querySelector('button')?.click();
     check('browser-event', 'El botón emite el evento público', event?.detail?.learnerName === 'Lina' && event.bubbles && event.composed, 'El click debe producir detail, bubbles y composed observables.');
@@ -525,53 +392,6 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
   const contractHarness = !options.runContractTests
     ? ''
     : isApplication ? applicationContractHarness : componentContractHarness;
-  const componentDemoController = isApplication ? '' : `
-  const demoShell = document.querySelector('[data-cells-demo-shell]');
-  const demoDevice = document.querySelector('[data-demo-device]');
-  const localeSelect = document.querySelector('#locale');
-  const syncLocaleButtons = () => {
-    for (const button of document.querySelectorAll('[data-demo-locale]')) {
-      button.setAttribute('aria-pressed', String(button.dataset.demoLocale === globalThis.__OPEN_CELLS_LOCALE__));
-    }
-    if (localeSelect) localeSelect.value = globalThis.__OPEN_CELLS_LOCALE__;
-  };
-  for (const button of document.querySelectorAll('[data-demo-tab]')) {
-    button.addEventListener('click', () => {
-      for (const candidate of document.querySelectorAll('[data-demo-tab]')) candidate.setAttribute('aria-selected', String(candidate === button));
-      for (const panel of document.querySelectorAll('[data-demo-panel]')) panel.hidden = panel.dataset.demoPanel !== button.dataset.demoTab;
-    });
-  }
-  for (const button of document.querySelectorAll('[data-demo-locale]')) {
-    button.addEventListener('click', () => {
-      localeSelect.value = button.dataset.demoLocale;
-      localeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      globalThis.IntlMsg.lang = button.dataset.demoLocale;
-      for (const element of document.querySelectorAll('*')) element.requestUpdate?.();
-      syncLocaleButtons();
-    });
-  }
-  for (const button of document.querySelectorAll('[data-demo-width]')) {
-    button.addEventListener('click', () => {
-      const width = button.dataset.demoWidth;
-      demoDevice.style.width = width === 'fluid' ? 'min(100%, 60rem)' : 'min(100%, ' + width + 'px)';
-      for (const candidate of document.querySelectorAll('[data-demo-width]')) candidate.setAttribute('aria-pressed', String(candidate === button));
-    });
-  }
-  document.querySelector('[data-demo-apply]')?.addEventListener('click', () => {
-    const width = Number(document.querySelector('[data-demo-custom-width]')?.value);
-    const height = Number(document.querySelector('[data-demo-custom-height]')?.value);
-    if (width > 0) demoDevice.style.width = 'min(100%, ' + width + 'px)';
-    demoDevice.style.minHeight = height > 0 ? height + 'px' : '';
-  });
-  document.querySelector('[data-demo-expand]')?.addEventListener('click', () => demoShell.classList.toggle('is-interface-hidden'));
-  document.querySelector('[data-demo-hide]')?.addEventListener('change', (event) => demoShell.classList.toggle('is-interface-hidden', event.target.checked));
-  document.querySelector('#learner-name')?.addEventListener('change', (event) => {
-    const label = event.target.selectedOptions?.[0]?.textContent || 'Básico';
-    const deviceLabel = document.querySelector('.cells-demo-device__bar span');
-    if (deviceLabel) deviceLabel.textContent = label;
-  });
-  globalThis.addEventListener('language-update', syncLocaleButtons);
-  syncLocaleButtons();`;
   const html = `<!doctype html>
 <html lang="es">
 <head>
@@ -606,13 +426,22 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
         for (const element of document.querySelectorAll('*')) element.requestUpdate?.();
         window.parent.postMessage({ source: 'open-cells-preview', type: 'locale:changed', locale: event.data.locale }, '*');
       }
+      if (event.data.type === 'demo:set-case' && !globalThis.__OPEN_CELLS_CONTRACT_TESTS__) {
+        const subject = document.querySelector('[data-cells-demo-subject]');
+        for (const [property, value] of Object.entries(event.data.properties || {})) {
+          subject[property] = value;
+          subject.setAttribute(property.replace(/[A-Z]/g, (letter) => '-' + letter.toLowerCase()), String(value));
+        }
+        subject?.requestUpdate?.();
+        window.parent.postMessage({ source: 'open-cells-preview', type: 'case:changed', caseId: event.data.caseId }, '*');
+      }
     });
     window.addEventListener('error', (event) => reportPreviewError(event.message || 'Error al ejecutar la vista previa.'));
     window.addEventListener('unhandledrejection', (event) => reportPreviewError(event.reason?.message || event.reason || 'Promesa rechazada en la vista previa.'));
   </script>
   <style>${isApplication
     ? 'body{margin:0;background:#f5f2eb;color:#171717;font-family:system-ui,sans-serif}'
-    : COMPONENT_DEMO_STYLES}</style>
+    : 'html,body{min-height:100%;margin:0}body{display:grid;place-items:center;padding:clamp(1rem,5vw,3rem);box-sizing:border-box;background:linear-gradient(180deg,#fff 0%,#faf8ec 100%)}[data-cells-demo-subject]{width:min(100%,34rem)}'}</style>
 </head>
 <body>
 ${renderedBody}
@@ -622,16 +451,8 @@ try {
   ${isApplication
     ? `await globalThis.__OPEN_CELLS_APP_READY__;`
     : `await customElements.whenDefined('${definedTag}');`}
-  ${componentDemoController}
   ${isApplication ? '' : `document.addEventListener('${definedTag}-continue', (event) => {
-    const eventCount = document.querySelector('[data-demo-event-count]');
-    const eventName = document.querySelector('[data-demo-event-name]');
-    const eventLog = document.querySelector('#event-log');
-    const nextCount = Number(eventCount?.textContent || 0) + 1;
-    if (eventCount) eventCount.textContent = String(nextCount).padStart(2, '0');
-    if (eventName) eventName.textContent = event.type;
-    if (eventLog) eventLog.textContent = JSON.stringify(event.detail);
-    window.parent.postMessage({ source: 'open-cells-preview', type: 'business:event', name: event.type, detail: event.detail }, '*');
+    window.parent.postMessage({ source: 'open-cells-preview', type: 'component:event', name: event.type, detail: event.detail }, '*');
   });`}
   window.parent.postMessage({ source: 'open-cells-preview', type: 'ready' }, '*');
   ${contractHarness}
@@ -641,5 +462,26 @@ try {
 </script>
 </body>
 </html>`;
-  return { html, warnings: [] };
+  return {
+    html,
+    warnings: [],
+    ...(isApplication ? {} : {
+      componentDemo: {
+        tagName: definedTag,
+        packageName: packageData.name ?? definedTag,
+        source: componentSource,
+        cases: [
+          { id: 'basic', label: 'Básico', properties: { learnerName: 'Ada' } },
+          { id: 'alternate', label: 'Nombre alternativo', properties: { learnerName: 'Lina' } },
+          { id: 'long', label: 'Texto largo', properties: { learnerName: 'Equipo de aprendizaje Cells' } },
+        ],
+        contract: [
+          { term: 'Elemento', description: `<${definedTag}>` },
+          { term: 'Propiedad', description: 'learnerName / learner-name' },
+          { term: 'Evento', description: `${definedTag}-continue` },
+          { term: 'Estilos', description: 'SCSS fuente → css.js generado → static styles' },
+        ],
+      },
+    }),
+  };
 }

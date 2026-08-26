@@ -8,6 +8,24 @@ import { ReadingItem } from '../../types/curriculum';
 describe('ReadingView', () => {
   afterEach(cleanup);
 
+  it('expone un encabezado compacto específico para mantener legible el título en móvil', () => {
+    const reading: ReadingItem = {
+      id: 'open-cells-ui-reading',
+      relatedLessonId: 'open-cells-14',
+      title: 'SCSS fuente y CSS consumible',
+      type: 'reading',
+      estimatedMinutes: 5,
+      summary: 'Distingue la fuente del artefacto consumible.',
+      sections: [{ title: 'Modelo mental', content: 'SCSS es la fuente.' }],
+      keyPoints: ['El componente importa css.js'],
+    };
+
+    const { container } = render(<ReadingView reading={reading} onBack={vi.fn()} />);
+
+    expect(container.querySelector('.reading-topbar')).not.toBeNull();
+    expect(container.querySelector('.reading-topbar__context')?.textContent).toContain(reading.title);
+  });
+
   it('mantiene las ampliaciones Para curiosos cerradas y separadas del contenido obligatorio', () => {
     const reading: ReadingItem = {
       id: 'fundamentos-03-lectura',

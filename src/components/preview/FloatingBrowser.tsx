@@ -1,10 +1,12 @@
-import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { WorkspaceSnapshot } from '../../types/scrim';
 import { ConsoleMessage } from '../../types/runtime';
 import { RuntimeConsole } from './RuntimeConsole';
 import { InstructorCursor } from '../player/InstructorCursor';
 import { buildPreviewDocument } from '../../engine/previewDocument';
 import { buildCellsPreviewDocument } from '../../engine/cells/cellsPreviewCompiler';
+import { CellsPreviewWorkbench } from '../runtime/CellsPreviewWorkbench';
+import type { CellsPreviewBuild } from '../../engine/cells/cellsPreviewCompiler';
 import { 
   Play, 
   RotateCw, 
@@ -21,6 +23,14 @@ export interface FloatingBrowserRef {
   getIframeElement: () => HTMLIFrameElement | null;
   reloadPreview: () => Promise<void>;
   getGeneration: () => number;
+}
+
+function tryBuildCellsPreview(workspace: WorkspaceSnapshot): CellsPreviewBuild | undefined {
+  try {
+    return buildCellsPreviewDocument(workspace);
+  } catch {
+    return undefined;
+  }
 }
 
 interface FloatingBrowserProps {
@@ -49,6 +59,10 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
   const [isExecuting, setIsExecuting] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
+  const cellsPreview = useMemo(
+    () => previewRuntime === 'cells' ? tryBuildCellsPreview(workspace) : undefined,
+    [previewRuntime, workspace],
+  );
 
   const [pos, setPos] = useState({ x: 24, y: 52 });
   const [size, setSize] = useState({ width: 400, height: 480 });
@@ -80,14 +94,19 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
       const availableWidth = Math.max(160, window.innerWidth - 16);
       const minimumWidth = Math.min(340, availableWidth);
       const isNarrowViewport = window.innerWidth <= 768;
+      const comfortableDesktopWidth = previewRuntime === 'cells'
+        ? Math.max(480, Math.round(window.innerWidth * 0.38))
+        : Math.round(window.innerWidth * 0.3);
       const width = isNarrowViewport
         ? availableWidth
-        : Math.min(availableWidth, 520, Math.max(minimumWidth, Math.round(window.innerWidth * 0.3)));
+        : Math.min(availableWidth, previewRuntime === 'cells' ? 560 : 520, Math.max(minimumWidth, comfortableDesktopWidth));
       const availableHeight = Math.max(180, window.innerHeight - 116);
       const minimumHeight = Math.min(380, availableHeight);
       const narrowTop = 96;
       const height = isNarrowViewport
-        ? Math.min(320, Math.max(180, window.innerHeight - narrowTop - 120))
+        ? previewRuntime === 'cells' && window.innerHeight >= 720
+          ? Math.min(430, availableHeight)
+          : Math.min(320, Math.max(180, window.innerHeight - narrowTop - 120))
         : Math.min(availableHeight, 620, Math.max(minimumHeight, Math.round(window.innerHeight * 0.68)));
       setSize({ width, height });
       setPos({
@@ -100,7 +119,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
     place();
     window.addEventListener('resize', place);
     return () => window.removeEventListener('resize', place);
-  }, []);
+  }, [previewRuntime]);
 
   useImperativeHandle(ref, () => ({
     getIframeElement: () => iframeRef.current,
@@ -240,9 +259,24 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
         setTimeout(() => resolve(), 50);
       };
       iframe.addEventListener('load', onLoad);
-      iframe.srcdoc = previewRuntime === 'cells'
-        ? buildCellsPreviewDocument(workspaceRef.current).html
-        : buildPreviewDocument(workspaceRef.current);
+      try {
+        iframe.srcdoc = previewRuntime === 'cells'
+          ? buildCellsPreviewDocument(workspaceRef.current).html
+          : buildPreviewDocument(workspaceRef.current);
+      } catch (error) {
+        iframe.removeEventListener('load', onLoad);
+        if (isMountedRef.current) {
+          setIsExecuting(false);
+          setLogs([{
+            id: `preview-${Date.now()}`,
+            type: 'warn',
+            args: [error instanceof Error ? error.message : 'La vista previa todavía no está lista.'],
+            timestamp: Date.now(),
+          }]);
+        }
+        resolve();
+        return;
+      }
       // Fallback if load doesn't fire (srcdoc)
       setTimeout(() => {
         iframe.removeEventListener('load', onLoad);
@@ -370,12 +404,22 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
           <div className="absolute inset-0 z-30 bg-transparent cursor-move select-none" />
         )}
 
-        <iframe
-          ref={iframeRef}
-          title="Vista previa"
-          sandbox="allow-scripts allow-modals allow-forms allow-same-origin"
-          className="h-full w-full border-none bg-white"
-        />
+        {previewRuntime === 'cells' && cellsPreview?.componentDemo ? (
+          <CellsPreviewWorkbench
+            html={cellsPreview.html}
+            demo={cellsPreview.componentDemo}
+            iframeRef={iframeRef}
+            title="Vista previa"
+            compact
+          />
+        ) : (
+          <iframe
+            ref={iframeRef}
+            title="Vista previa"
+            sandbox="allow-scripts allow-modals allow-forms allow-same-origin"
+            className="h-full w-full border-none bg-white"
+          />
+        )}
 
         <InstructorCursor containerType="preview" mapPosition={mapPreviewPointer} />
       </div>

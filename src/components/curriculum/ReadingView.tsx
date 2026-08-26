@@ -44,7 +44,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
   return (
     <div className="app-screen">
       <div className="studio-card">
-        <header className="window-topbar">
+        <header className="window-topbar reading-topbar">
           <div className="window-titlebar-left min-w-0">
             <button type="button" onClick={onBackToRoadmap || onBack} className="neu-pill-btn shrink-0" aria-label="Volver al roadmap">
               <ArrowLeft size={15} />
@@ -57,11 +57,13 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
               </button>
             )}
             <div className="topbar-divider hidden sm:block" />
-            <span className="category-tag">
-              <BookOpen size={12} style={{ display: 'inline', marginRight: 4 }} />
-              Lectura
-            </span>
-            <span className="topbar-lesson-title truncate">{reading.title}</span>
+            <div className="reading-topbar__context">
+              <span className="category-tag">
+                <BookOpen size={12} style={{ display: 'inline', marginRight: 4 }} />
+                Lectura
+              </span>
+              <span className="topbar-lesson-title truncate">{reading.title}</span>
+            </div>
           </div>
           <ThemeToggle compact />
         </header>

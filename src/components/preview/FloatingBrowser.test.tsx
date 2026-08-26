@@ -5,10 +5,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { FloatingBrowser } from './FloatingBrowser';
 import { file, workspaceOf } from '../../engine/lessonCompiler';
+import { createCellsPracticeWorkspace } from '../../engine/cells/cellsRecipes';
 
 const workspace = workspaceOf('index.html', {
   'index.html': file('index.html', '<h1>Hola</h1>'),
 });
+const cellsWorkspace = createCellsPracticeWorkspace('styles').snapshot;
 
 describe('FloatingBrowser', () => {
   it('badge traducido refleja estado real', () => {
@@ -104,5 +106,49 @@ describe('FloatingBrowser en viewport móvil', () => {
 
     await waitFor(() => expect(browserWindow.style.height).toBe('184px'));
     expect(browserWindow.style.top).toBe('96px');
+  });
+
+  it('muestra también el componente en teléfonos con altura suficiente', async () => {
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 844 });
+
+    render(
+      <FloatingBrowser
+        workspace={cellsWorkspace}
+        isFloating
+        previewRuntime="cells"
+        onToggleFloating={() => {}}
+      />,
+    );
+
+    const toolbar = screen.getByRole('toolbar', { name: /Barra de vista previa/ });
+    const browserWindow = toolbar.parentElement as HTMLElement;
+
+    await waitFor(() => expect(browserWindow.style.height).toBe('430px'));
+  });
+});
+
+describe('FloatingBrowser para una demo Cells', () => {
+  beforeEach(() => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1280 });
+    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 800 });
+  });
+
+  afterEach(cleanup);
+
+  it('reserva un ancho cómodo para los controles de la demo sin cubrir todo el editor', async () => {
+    render(
+      <FloatingBrowser
+        workspace={cellsWorkspace}
+        isFloating
+        previewRuntime="cells"
+        onToggleFloating={() => {}}
+      />,
+    );
+
+    const toolbar = screen.getByRole('toolbar', { name: /Barra de vista previa/ });
+    const browserWindow = toolbar.parentElement as HTMLElement;
+
+    await waitFor(() => expect(Number.parseInt(browserWindow.style.width, 10)).toBeGreaterThanOrEqual(480));
+    expect(Number.parseInt(browserWindow.style.width, 10)).toBeLessThanOrEqual(560);
   });
 });
