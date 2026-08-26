@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, CheckCircle2, ChevronLeft, Lightbulb, Network, RotateCcw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, CheckCircle2, ChevronDown, ChevronLeft, HelpCircle, Lightbulb, Network, RotateCcw, Sparkles } from 'lucide-react';
 import { ReasoningAttempt, ReasoningConnection, ReasoningExerciseItem } from '../../types/curriculum';
 import { NavigationState } from '../../engine/navigation';
 import { createInitialReasoningAttempt, validateReasoningAttempt } from '../../engine/reasoningRunner';
@@ -81,7 +81,12 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
       </header>
       <main className="reasoning-main">
         <section className="reasoning-card">
-          <header><span>Práctica de razonamiento</span><h1 ref={titleRef} tabIndex={-1}>{item.title}</h1><p>{activity.prompt}</p></header>
+          <header className="reasoning-header">
+            <span className="reasoning-badge"><Sparkles size={13} /> Práctica de razonamiento</span>
+            <h1 ref={titleRef} tabIndex={-1} className="reasoning-title outline-none focus:outline-none">{item.title}</h1>
+            <p>{activity.prompt}</p>
+          </header>
+
           <div className="reasoning-workspace">
             {activity.kind === 'sequence' && attempt.kind === 'sequence' && (
               <SequenceDiagram
@@ -97,7 +102,40 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
               />
             )}
             {activity.kind === 'trace-table' && attempt.kind === 'trace-table' && <TraceTable columns={activity.columns} rows={activity.rows} cells={attempt.cells} onChange={(cellId, value) => { setAttempt({ kind: 'trace-table', cells: { ...attempt.cells, [cellId]: value } }); setResult(null); }} />}
-            {activity.kind === 'decision-table' && attempt.kind === 'decision-table' && <div className="reasoning-decisions">{activity.cases.map((currentCase) => <label key={currentCase.id}><span>{currentCase.label}</span><select aria-label={currentCase.label} value={attempt.outcomes[currentCase.id] ?? ''} onChange={(event) => { setAttempt({ kind: 'decision-table', outcomes: { ...attempt.outcomes, [currentCase.id]: event.target.value } }); setResult(null); }}><option value="">Elige un resultado</option>{currentCase.options.map((option) => <option key={option}>{option}</option>)}</select></label>)}</div>}
+            
+            {activity.kind === 'decision-table' && attempt.kind === 'decision-table' && (
+              <div className="reasoning-decisions">
+                {activity.cases.map((currentCase, idx) => {
+                  const selectedVal = attempt.outcomes[currentCase.id] ?? '';
+                  const isAnswered = Boolean(selectedVal);
+                  return (
+                    <div key={currentCase.id} className={`reasoning-decision-card ${isAnswered ? 'is-answered' : ''}`}>
+                      <div className="reasoning-decision-label">
+                        <span className="reasoning-decision-badge">0{idx + 1}</span>
+                        <span className="reasoning-decision-title">{currentCase.label}</span>
+                      </div>
+                      <div className="reasoning-decision-select-wrapper">
+                        <select
+                          aria-label={currentCase.label}
+                          value={selectedVal}
+                          onChange={(event) => {
+                            setAttempt({ kind: 'decision-table', outcomes: { ...attempt.outcomes, [currentCase.id]: event.target.value } });
+                            setResult(null);
+                          }}
+                        >
+                          <option value="">Elige un resultado...</option>
+                          {currentCase.options.map((option) => (
+                            <option key={option} value={option}>{option}</option>
+                          ))}
+                        </select>
+                        <ChevronDown size={15} className="reasoning-select-icon" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {activity.kind === 'flowchart' && <><FlowchartDiagram nodes={activity.nodes} connections={selectedConnections} /><ConnectionChoices choices={activity.connectionOptions} selected={selectedConnections} labels={Object.fromEntries(activity.nodes.map((node) => [node.id, node.label]))} onToggle={toggleConnection} /></>}
             {activity.kind === 'dependency-map' && <><ModuleDependencyDiagram modules={activity.modules} dependencies={selectedConnections} /><ConnectionChoices choices={activity.dependencyOptions} selected={selectedConnections} labels={Object.fromEntries(activity.modules.map((module) => [module.id, module.label]))} onToggle={toggleConnection} /></>}
             {activity.kind === 'vector-ranking' && attempt.kind === 'vector-ranking' && (
@@ -116,15 +154,72 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
             )}
             {activity.kind === 'context-budget' && attempt.kind === 'context-budget' && <ContextBudgetDiagram budget={activity.budget} blocks={activity.blocks} selected={attempt.selected} onToggle={(id) => { const selected = attempt.selected.includes(id) ? attempt.selected.filter((item) => item !== id) : [...attempt.selected, id]; setAttempt({ kind: 'context-budget', selected }); setResult(null); }} />}
           </div>
+
           <div className="reasoning-actions">
-            <button type="button" className="reasoning-check" onClick={check}><CheckCircle2 size={18} /> Comprobar mi razonamiento</button>
-            <button type="button" onClick={() => { setAttempt(createInitialReasoningAttempt(item.activity)); setResult(null); }}><RotateCcw size={16} /> Reiniciar</button>
+            <button type="button" className="reasoning-check" onClick={check}>
+              <CheckCircle2 size={18} /> Comprobar mi razonamiento
+            </button>
+            <button type="button" className="reasoning-reset-btn" onClick={() => { setAttempt(createInitialReasoningAttempt(item.activity)); setResult(null); }}>
+              <RotateCcw size={16} /> Reiniciar
+            </button>
           </div>
-          {result && <section className={`reasoning-feedback ${result.allPassed ? 'is-success' : 'is-error'}`} aria-live="polite"><h2>{result.allPassed ? 'Resuelto' : 'Todavía no'}</h2><p>{result.feedbackMessage}</p><ul>{result.checks.map((entry) => <li key={entry.id}>{entry.passed ? '✓' : '○'} {entry.label}: {entry.message}</li>)}</ul></section>}
-          <aside className="reasoning-hints"><h2><Lightbulb size={16} /> Pistas graduadas</h2>{item.hints.slice(0, revealedHints).map((hint) => <p key={hint.level}>{hint.level}. {hint.text}</p>)}{revealedHints < item.hints.length && <button type="button" onClick={() => setRevealedHints((value) => value + 1)}>Mostrar una pista</button>}{revealedHints === item.hints.length && <details><summary>Ver explicación completa</summary><p>{item.explanation}</p></details>}</aside>
+
+          {result && (
+            <section className={`reasoning-feedback ${result.allPassed ? 'is-success' : 'is-error'}`} aria-live="polite">
+              <div className="reasoning-feedback-header">
+                <CheckCircle2 size={20} />
+                <h2>{result.allPassed ? 'Resuelto' : 'Todavía no'}</h2>
+              </div>
+              <p>{result.feedbackMessage}</p>
+              <ul>
+                {result.checks.map((entry) => (
+                  <li key={entry.id} className={entry.passed ? 'check-pass' : 'check-fail'}>
+                    <span>{entry.passed ? '✓' : '✕'}</span>
+                    <strong>{entry.label}:</strong> {entry.message}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <aside className="reasoning-hints">
+            <header className="reasoning-hints-header">
+              <h2><Lightbulb size={18} className="reasoning-hint-icon" /> Pistas graduadas</h2>
+              <span className="reasoning-hints-count">{revealedHints} / {item.hints.length}</span>
+            </header>
+            
+            {revealedHints > 0 && (
+              <div className="reasoning-hints-list">
+                {item.hints.slice(0, revealedHints).map((hint) => (
+                  <div key={hint.level} className="reasoning-hint-card">
+                    <span className="reasoning-hint-tag">Pista {hint.level}</span>
+                    <p>{hint.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {revealedHints < item.hints.length && (
+              <button type="button" className="reasoning-hint-btn" onClick={() => setRevealedHints((value) => value + 1)}>
+                <HelpCircle size={15} /> Mostrar una pista
+              </button>
+            )}
+
+            {revealedHints === item.hints.length && (
+              <details className="reasoning-explanation-details">
+                <summary>Ver explicación completa</summary>
+                <p>{item.explanation}</p>
+              </details>
+            )}
+          </aside>
         </section>
       </main>
-      <footer className="reasoning-footer"><button type="button" onClick={onPrevious} disabled={!onPrevious}><ChevronLeft size={16} /> Anterior</button><span>{result?.allPassed ? 'Actividad completada' : 'Comprueba el modelo antes de continuar'}</span><button type="button" onClick={onNext} disabled={!onNext || !result?.allPassed}>Siguiente <ArrowRight size={16} /></button></footer>
+
+      <footer className="reasoning-footer">
+        <button type="button" onClick={onPrevious} disabled={!onPrevious}><ChevronLeft size={16} /> Anterior</button>
+        <span>{result?.allPassed ? '✓ Actividad completada' : 'Comprueba el modelo antes de continuar'}</span>
+        <button type="button" onClick={onNext} disabled={!onNext || !result?.allPassed}>Siguiente <ArrowRight size={16} /></button>
+      </footer>
     </div>
   );
 }

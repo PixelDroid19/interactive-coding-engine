@@ -194,6 +194,8 @@ export default function App() {
         ['.course-card__icon', 'hud-icon tr-clip bl-clip border inlay', true],
         ['.course-card > button', 'hud-primary tl-clip br-clip border inlay', true],
         ['.rm-hero', 'hud-hero tl-clip tr-clip br-clip bl-clip border inlay'],
+        ['.reasoning-card', 'hud-panel tl-clip tr-clip br-clip bl-clip border inlay'],
+        ['.reasoning-hints', 'hud-narration tl-clip tr-clip br-clip bl-clip border inlay'],
       ];
       map.forEach(([sel, aug, reset]) => {
         document.querySelectorAll(sel).forEach((el) => {

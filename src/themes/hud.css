@@ -1665,9 +1665,185 @@
 }
 
 .hud .reasoning-card > header,
+.hud .reasoning-header,
 .hud .reasoning-workspace {
-  border-color: #34343e !important;
-  background: #09090d !important;
+  border-color: #1e2638 !important;
+  background: #080a12 !important;
+}
+
+.hud .reasoning-badge {
+  border-color: #00f0ff !important;
+  background: rgba(0, 240, 255, 0.12) !important;
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.35) !important;
+}
+
+.hud .reasoning-card h1,
+.hud .reasoning-title {
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.hud .reasoning-decision-card {
+  background: #0c101d !important;
+  border-color: #1a2236 !important;
+  border-radius: 0 !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) !important;
+}
+
+.hud .reasoning-decision-card:hover {
+  border-color: #00f0ff !important;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.3) !important;
+}
+
+.hud .reasoning-decision-card.is-answered {
+  border-color: #ffe600 !important;
+  background: #111628 !important;
+  box-shadow: inset 3px 0 0 #ffe600, 0 0 16px rgba(255, 230, 0, 0.25) !important;
+}
+
+.hud .reasoning-decision-badge {
+  background: rgba(0, 240, 255, 0.15) !important;
+  border-color: #00f0ff !important;
+  color: #00f0ff !important;
+  border-radius: 0 !important;
+}
+
+.hud .reasoning-decision-card.is-answered .reasoning-decision-badge {
+  background: #ffe600 !important;
+  border-color: #ffe600 !important;
+  color: #000000 !important;
+}
+
+.hud .reasoning-decision-select-wrapper select {
+  background: #060810 !important;
+  border-color: #1e283d !important;
+  border-radius: 0 !important;
+  color: #ffffff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+}
+
+.hud .reasoning-decision-select-wrapper select:hover {
+  border-color: #00f0ff !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.4) !important;
+}
+
+.hud .reasoning-decision-select-wrapper select:focus {
+  border-color: #ffe600 !important;
+  box-shadow: 0 0 14px rgba(255, 230, 0, 0.5) !important;
+}
+
+.hud .reasoning-actions {
+  background: #090c14 !important;
+  border-color: #1e283d !important;
+}
+
+.hud .reasoning-actions .reasoning-check {
+  height: 42px !important;
+  min-height: 42px !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 0 20px !important;
+  background: #00f0ff !important;
+  border: 1.5px solid #00f0ff !important;
+  border-radius: 0 !important;
+  color: #000000 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.5) !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)) !important;
+  transition: all 0.2s ease !important;
+}
+
+.hud .reasoning-actions .reasoning-check:hover {
+  background: #4df4ff !important;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.8) !important;
+  transform: translateY(-1px);
+}
+
+.hud .reasoning-actions .reasoning-reset-btn {
+  height: 42px !important;
+  min-height: 42px !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 0 18px !important;
+  background: #0c101d !important;
+  border: 1.5px solid #202b44 !important;
+  border-radius: 0 !important;
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4) !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)) !important;
+  transition: all 0.2s ease !important;
+}
+
+.hud .reasoning-actions .reasoning-reset-btn:hover {
+  border-color: #00f0ff !important;
+  background: #111728 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+.hud .reasoning-hints {
+  background: #100b03 !important;
+  border-color: #f59e0b !important;
+  border-radius: 0 !important;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.25) !important;
+}
+
+.hud .reasoning-hints-header h2 {
+  font-family: "Chakra Petch", sans-serif !important;
+  text-transform: uppercase !important;
+}
+
+.hud .reasoning-hint-btn {
+  background: #f59e0b !important;
+  border: 1.5px solid #fbbf24 !important;
+  border-radius: 0 !important;
+  color: #000000 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4) !important;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)) !important;
+}
+
+.hud .reasoning-table-wrap {
+  border-color: #1e2638 !important;
+  border-radius: 0 !important;
+}
+
+.hud .reasoning-table input {
+  background: #05070e !important;
+  border-color: #1a2236 !important;
+  border-radius: 0 !important;
+}
+
+.hud .reasoning-table input:focus {
+  border-color: #00f0ff !important;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3) !important;
 }
 
 .hud .debug-test,
