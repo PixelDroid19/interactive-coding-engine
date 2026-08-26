@@ -26,7 +26,7 @@ print(__aula_json.dumps(__aula_values, ensure_ascii=False, allow_nan=False))
 }
 
 describe('referencias Python del curso AI Engineer', () => {
-  it('hace fallar cada starter y aprobar las 79 soluciones con los mismos casos', () => {
+  it('hace fallar cada starter y aprobar las 39 soluciones con los mismos casos', () => {
     for (const spec of AI_SPECS) {
       const args = spec.practice.cases.map((testCase) => testCase.args);
       const expected = spec.practice.cases.map((testCase) => testCase.expected);
@@ -45,7 +45,7 @@ describe('referencias Python del curso AI Engineer', () => {
     }
   }, 20_000);
 
-  it('hace fallar las 79 depuraciones Python y acepta la corrección de referencia', () => {
+  it('hace fallar las 39 depuraciones Python y acepta la corrección de referencia', () => {
     for (const spec of AI_SPECS) {
       const args = spec.practice.cases.map((testCase) => testCase.args);
       const expected = spec.practice.cases.map((testCase) => testCase.expected);

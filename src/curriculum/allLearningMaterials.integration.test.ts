@@ -92,9 +92,9 @@ describe('auditoría integrada del material de aprendizaje', () => {
     }
   });
 
-  it('las 172 lecturas explican, ejemplifican, anticipan errores y conectan con la práctica', () => {
+  it('las 132 lecturas explican, ejemplifican, anticipan errores y conectan con la práctica', () => {
     const readings = courses.flatMap((course) => itemsOf(course, 'reading')) as ReadingItem[];
-    expect(readings).toHaveLength(172);
+    expect(readings).toHaveLength(132);
     expect(new Set(readings.map((reading) => reading.id)).size).toBe(readings.length);
 
     for (const reading of readings) {
@@ -117,9 +117,9 @@ describe('auditoría integrada del material de aprendizaje', () => {
     }
   });
 
-  it('las 167 actividades Piensa son claras, guiadas y resolubles desde lo que muestran', () => {
+  it('las 127 actividades Piensa son claras, guiadas y resolubles desde lo que muestran', () => {
     const activities = courses.flatMap((course) => itemsOf(course, 'reasoning')) as ReasoningExerciseItem[];
-    expect(activities).toHaveLength(167);
+    expect(activities).toHaveLength(127);
     expect(new Set(activities.map((item) => item.id)).size).toBe(activities.length);
 
     for (const item of activities) {

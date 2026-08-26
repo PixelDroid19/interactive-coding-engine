@@ -11,6 +11,8 @@ const spec: AIEngineerLessonSpec = {
   concepts: [{ label: 'AI Engineer', desc: 'Construye funciones de producto que usan modelos y datos.' }],
   skillsRequired: [],
   skillsIntroduced: ['traducir-problema-producto'],
+  capacidad: { nombre: 'debe_escalar', descripcion: 'El chat decide cuándo una incidencia necesita atención humana.' },
+  integracion: 'La función debe_escalar se conecta a la bandeja del chat para marcar incidencias críticas.',
   mentalModel: 'El modelo es una pieza del sistema, no el producto completo.',
   script: [
     'Empieza por una persona con un problema, no por un modelo de moda.',
@@ -102,22 +104,15 @@ describe('fábrica del curso AI Engineer', () => {
     expect(bundle.debug.tests).toHaveLength(2);
   });
 
-  it('declara los catorce módulos en el orden pedagógico acordado', () => {
+  it('declara las siete fases en el orden pedagógico acordado', () => {
     expect(AI_ENGINEER_MODULES.map((module) => module.id)).toEqual([
-      'ai-mod-00-trabajo',
-      'ai-mod-01-llm',
-      'ai-mod-02-prompts',
-      'ai-mod-03-contexto',
-      'ai-mod-04-modelos',
-      'ai-mod-05-embeddings',
-      'ai-mod-06-vectores',
-      'ai-mod-07-rag',
-      'ai-mod-08-agentes-mcp',
-      'ai-mod-09-seguridad',
-      'ai-mod-10-evaluacion',
-      'ai-mod-11-multimodal',
-      'ai-mod-12-ecosistema',
-      'ai-mod-13-proyecto-final',
+      'ai-fase-1-fundamentos',
+      'ai-fase-2-conversacion',
+      'ai-fase-3-modelo-local',
+      'ai-fase-4-busqueda',
+      'ai-fase-5-rag',
+      'ai-fase-6-confiable',
+      'ai-fase-7-final',
     ]);
   });
 });

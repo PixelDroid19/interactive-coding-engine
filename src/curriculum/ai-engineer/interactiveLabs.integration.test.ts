@@ -9,18 +9,17 @@ function reading(number: number) {
 }
 
 describe('laboratorios interactivos de AI Engineer', () => {
-  it('ubica los embeddings WebGPU después de enseñarlos y no en la portada del curso', () => {
-    expect(reading(28)?.handsOnLab).toBeUndefined();
-    expect(reading(29)?.handsOnLab).toBe('embeddings-webgpu');
+  it('ubica la práctica de embeddings WebGPU después de enseñar los vectores', () => {
+    expect(reading(17)?.handsOnLab).toBeUndefined();
+    expect(reading(18)?.handsOnLab).toBe('embeddings-webgpu');
   });
 
-  it('inserta práctica local en la progresión de prompts y modelos', () => {
+  it('inserta práctica con modelo real en la progresión del chat', () => {
     const expected = new Map([
-      [12, 'prompt'],
-      [14, 'prompt'],
-      [24, 'prompt'],
-      [26, 'prompt'],
-      [27, 'summarize'],
+      [7, 'prompt'],
+      [8, 'prompt'],
+      [11, 'prompt'],
+      [15, 'prompt'],
     ] as const);
 
     for (const [number, mode] of expected) {
@@ -32,25 +31,19 @@ describe('laboratorios interactivos de AI Engineer', () => {
     }
   });
 
-  it('enseña WebGPU, modelo, caché y APIs de tareas con fuentes actuales', () => {
-    const modelUrls = reading(26)?.sources?.map((source) => source.url) ?? [];
+  it('enseña el motor real de la clase JSON con fuentes actuales', () => {
+    const modelUrls = reading(11)?.sources?.map((source) => source.url) ?? [];
     expect(modelUrls).toContain('https://huggingface.co/docs/transformers.js/index');
     expect(modelUrls).toContain('https://huggingface.co/blog/transformersjs-v4');
     expect(modelUrls).toContain('https://huggingface.co/onnx-community/LFM2.5-350M-ONNX');
-    expect(modelUrls).toContain('https://huggingface.co/onnx-community/Qwen2.5-0.5B-Instruct');
     expect(modelUrls).toContain('https://webllm.mlc.ai/docs/');
     expect(modelUrls).toContain('https://huggingface.co/mlc-ai/Qwen2.5-0.5B-Instruct-q4f16_1-MLC');
     expect(modelUrls).toContain('https://codepen.io/manz/pen/qEayoMQ');
-    expect(reading(26)?.sections.map((section) => section.content).join(' ')).toMatch(/modo JSON nativo|response_format/i);
-
-    const browserUrls = reading(27)?.sources?.map((source) => source.url) ?? [];
-    expect(browserUrls).toContain('https://developer.chrome.com/docs/ai/built-in/overview?hl=es-419');
-    expect(browserUrls).toContain('https://developer.chrome.com/docs/ai/summarizer-api?hl=es-419');
-    expect(browserUrls).toContain('https://developer.chrome.com/docs/ai/writer-api?hl=es-419');
+    expect(reading(11)?.sections.map((section) => section.content).join(' ')).toMatch(/modo JSON nativo|response_format/i);
   });
 
   it('usa un modelo pequeño multilingüe para una tarea estructurada', () => {
-    const lab = reading(26)?.interactiveLab;
+    const lab = reading(11)?.interactiveLab;
     expect(lab?.systemPrompt).toMatch(/extrae|json|campos/i);
     expect(`${lab?.promptA}\n${lab?.promptB}\n${lab?.input}`).toMatch(/incidencia|prioridad|equipo/i);
     expect(lab?.systemPrompt).not.toMatch(/tutor de programación/i);

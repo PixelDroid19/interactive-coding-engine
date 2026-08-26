@@ -15,9 +15,19 @@ const corpus = AI_SPECS.map((spec) => [
 ].join('\n')).join('\n').toLocaleLowerCase('es');
 
 describe('cobertura del roadmap AI Engineer', () => {
-  it('mantiene una matriz concreta para todos los nodos de las siete capturas', () => {
-    expect(AI_ENGINEER_ROADMAP_TOPICS.length).toBeGreaterThanOrEqual(50);
+  it('mantiene una matriz concreta para las siete fases del curso', () => {
+    expect(AI_ENGINEER_ROADMAP_TOPICS.length).toBeGreaterThanOrEqual(35);
     expect(new Set(AI_ENGINEER_ROADMAP_TOPICS.map((topic) => topic.id)).size).toBe(AI_ENGINEER_ROADMAP_TOPICS.length);
+    expect(new Set(AI_ENGINEER_ROADMAP_TOPICS.map((topic) => topic.area))).toEqual(new Set([
+      'producto',
+      'fase-1-fundamentos',
+      'fase-2-conversacion',
+      'fase-3-modelo-local',
+      'fase-4-busqueda',
+      'fase-5-rag',
+      'fase-6-confiable',
+      'fase-7-final',
+    ]));
   });
 
   it('cada tema aparece con todos sus conceptos necesarios en el material', () => {

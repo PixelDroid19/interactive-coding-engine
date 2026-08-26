@@ -31,34 +31,32 @@ describe('auditoría integral de AI Engineer', () => {
   const items = AI_ENGINEER_COURSE.modules.flatMap((module) => module.items);
 
   it('entrega el inventario completo sin ids duplicados', () => {
-    expect(AI_ENGINEER_COURSE.modules).toHaveLength(14);
-    expect(AI_SPECS).toHaveLength(79);
-    expect(Object.keys(AI_ENGINEER_SCRIMS)).toHaveLength(79);
-    expect(items.filter((item) => item.type === 'scrim')).toHaveLength(79);
-    expect(items.filter((item) => item.type === 'reading')).toHaveLength(79);
-    expect(items.filter((item) => item.type === 'reasoning')).toHaveLength(79);
-    expect(items.filter((item) => item.type === 'debugging')).toHaveLength(79);
-    expect(items.filter((item) => item.type === 'solo-project')).toHaveLength(9);
+    expect(AI_ENGINEER_COURSE.modules).toHaveLength(7);
+    expect(AI_SPECS).toHaveLength(39);
+    expect(Object.keys(AI_ENGINEER_SCRIMS)).toHaveLength(39);
+    expect(items.filter((item) => item.type === 'scrim')).toHaveLength(39);
+    expect(items.filter((item) => item.type === 'reading')).toHaveLength(39);
+    expect(items.filter((item) => item.type === 'reasoning')).toHaveLength(39);
+    expect(items.filter((item) => item.type === 'debugging')).toHaveLength(39);
+    expect(items.filter((item) => item.type === 'solo-project')).toHaveLength(7);
     expect(new Set(items.map((item) => item.id)).size).toBe(items.length);
-    expect(AI_ENGINEER_PROJECTS).toHaveLength(9);
+    expect(AI_ENGINEER_PROJECTS).toHaveLength(7);
   });
 
-  it('publica los nueve proyectos como destinos accesibles en el roadmap', () => {
+  it('publica los siete proyectos de fase como destinos accesibles en el roadmap', () => {
     const projectRows = buildRoadmap(AI_ENGINEER_COURSE, AI_ENGINEER_SCRIMS)
       .flatMap((phase) => phase.rows)
       .filter((row) => row.main.itemType === 'solo-project');
 
-    expect(projectRows).toHaveLength(9);
+    expect(projectRows).toHaveLength(7);
     expect(projectRows.map((row) => row.main.label)).toEqual([
-      'Proyecto: simulador visual de sampling',
-      'Proyecto: extractor de incidencias',
-      'Proyecto: constructor de contexto',
-      'Proyecto: enrutador de proveedores',
-      'Proyecto: buscador semántico local',
-      'Proyecto: asistente RAG de manuales',
-      'Proyecto: agente de soporte limitado',
-      'Proyecto: laboratorio de ataques',
-      'Proyecto: tablero local de evaluaciones',
+      'Proyecto: el Eco, primer cerebro del chat',
+      'Proyecto: panel de parámetros del chat',
+      'Proyecto: motor local visible',
+      'Proyecto: buscador semántico de notas',
+      'Proyecto: RAG con citas verificables',
+      'Proyecto: guardián de publicaciones',
+      'Proyecto: entrega del TutorLocal completo',
     ]);
   });
 
@@ -83,7 +81,7 @@ describe('auditoría integral de AI Engineer', () => {
     }
   });
 
-  it('hace fallar cada starter JavaScript y aprobar sus 79 soluciones con entradas variadas', async () => {
+  it('hace fallar cada starter JavaScript y aprobar sus 39 soluciones con entradas variadas', async () => {
     for (const spec of AI_SPECS) {
       const bundle = buildAiLessonBundle(spec);
       const challenge = bundle.lesson.languageVariants!.javascript.lessonTape!.challenges[0];
@@ -99,7 +97,7 @@ describe('auditoría integral de AI Engineer', () => {
     }
   });
 
-  it('hace fallar las 79 depuraciones JavaScript y acepta la corrección de referencia', async () => {
+  it('hace fallar las 39 depuraciones JavaScript y acepta la corrección de referencia', async () => {
     for (const spec of AI_SPECS) {
       const bundle = buildAiLessonBundle(spec);
       const debug = bundle.debug.languageVariants!.javascript;
@@ -122,7 +120,7 @@ describe('auditoría integral de AI Engineer', () => {
     }
   });
 
-  it('hace evaluables los 79 razonamientos sin entregarlos resueltos al abrir', () => {
+  it('hace evaluables los 39 razonamientos sin entregarlos resueltos al abrir', () => {
     for (const spec of AI_SPECS) {
       const activity = buildAiLessonBundle(spec).reasoning.activity;
       const { correct } = reasoningAttempts(activity);

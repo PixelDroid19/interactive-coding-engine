@@ -4,28 +4,97 @@ import { runChallengeValidation } from '../../engine/testRunner';
 import { evaluationValuesEqual } from '../../engine/evaluationEquality';
 import { AI_ENGINEER_PROJECTS } from './projects';
 
+// Soluciones de referencia de los siete proyectos de fase. Se usan solo en
+// pruebas: los starters nunca las incluyen y las pistas no las revelan.
 const REFERENCE_JAVASCRIPT: Record<string, string> = {
-  'ai-project-sampling': `function simular_sampling(entrada) { return [...entrada.probabilidades].sort((a, b) => b - a).slice(0, entrada.topK); }`,
-  'ai-project-extractor-json': `function extraer_incidencia(entrada) { return { titulo: entrada.titulo ?? 'desconocido', prioridad: entrada.prioridad ?? 'desconocido', equipo: entrada.equipo ?? 'desconocido' }; }`,
-  'ai-project-contexto': `function construir_contexto(entrada) { let usados = 0; const ids = []; for (const bloque of entrada.bloques.filter((item) => item.usuario === entrada.usuario).sort((a, b) => b.prioridad - a.prioridad)) { if (usados + bloque.tokens <= entrada.presupuesto) { usados += bloque.tokens; ids.push(bloque.id); } } return ids; }`,
-  'ai-project-router': `function elegir_proveedor(entrada) { return entrada.online && !entrada.sensible && entrada.apiDisponible ? 'api' : 'local'; }`,
-  'ai-project-busqueda-local': `function buscar_documentos(entrada) { return entrada.candidatos.filter((item) => item.categoria === entrada.categoria).sort((a, b) => b.score - a.score).slice(0, entrada.limite).map((item) => item.id); }`,
-  'ai-project-rag-manuales': `function responder_con_fuentes(entrada) { return entrada.evidencias.filter((item) => item.score >= entrada.minimo).sort((a, b) => b.score - a.score).map((item) => item.id); }`,
-  'ai-project-agente-soporte': `function siguiente_paso_soporte(entrada) { if (entrada.pasos >= entrada.maxPasos) return 'detener'; return entrada.intencion === 'modificar' ? 'confirmar' : 'leer'; }`,
-  'ai-project-ataques': `function evaluar_ataque(entrada) { return entrada.permitidas.includes(entrada.accion); }`,
-  'ai-project-tablero-evals': `function comparar_versiones(entrada) { if (entrada.fallosCriticos > 0) return 'bloquear'; if (entrada.latenciaP95 > entrada.presupuestoP95) return 'revisar'; return 'promover'; }`,
+  'ai-project-eco-reglas': `function responder_eco(entrada) {
+  const texto = entrada.texto.trim();
+  if (texto.length === 0) return 'Escribe algo para empezar.';
+  if (texto.endsWith('?')) return 'Todavía pienso con reglas: reformula tu pregunta.';
+  return 'Has dicho: ' + texto;
+}`,
+  'ai-project-parametros-chat': `function validar_parametros(entrada) {
+  const temperatura = Math.min(2, Math.max(0, entrada.temperatura ?? 0.7));
+  const top_p = Math.min(1, Math.max(0, entrada.top_p ?? 1));
+  return { temperatura, top_p };
+}`,
+  'ai-project-motor-local': `function diagnostico_local(entrada) {
+  if (!entrada.webgpu) return 'sin_webgpu';
+  return entrada.modeloEncontrado ? 'listo' : 'sin_modelo';
+}`,
+  'ai-project-buscador-notas': `function score_consulta(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b)) return 0;
+  if (a.length !== b.length || a.length === 0) return 0;
+  let total = 0;
+  for (let i = 0; i < a.length; i++) total += a[i] * b[i];
+  return total;
+}
+
+function buscar_filtrado(entrada) {
+  const validos = entrada.fragmentos.filter((item) => item.categoria === entrada.categoria);
+  const puntuados = validos.map((item) => ({ id: item.id, puntos: score_consulta(entrada.consulta, item.vector) }));
+  puntuados.sort((a, b) => b.puntos - a.puntos);
+  return puntuados.slice(0, entrada.k).map((item) => item.id);
+}`,
+  'ai-project-rag-citas': `function evaluar_recuperacion(entrada) {
+  if (entrada.relevantes.length === 0) return 0;
+  const encontrados = entrada.relevantes.filter((id) => entrada.recuperados.includes(id)).length;
+  return encontrados / entrada.relevantes.length;
+}`,
+  'ai-project-guardian': `function decision_publicacion(entrada) {
+  return entrada.valida && entrada.citada && entrada.riesgoBajo ? 'publicar' : 'revisar';
+}`,
+  'ai-project-entrega-final': `function estado_final(entrada) {
+  if (!entrada.webgpuOk) return 'sin_webgpu';
+  if (!entrada.modeloEnCache) return 'falta_modelo';
+  return entrada.hayDocumento ? 'preparado' : 'falta_documento';
+}`,
 };
 
 const REFERENCE_PYTHON: Record<string, string> = {
-  'ai-project-sampling': `def simular_sampling(entrada):\n    return sorted(entrada['probabilidades'], reverse=True)[:entrada['topK']]`,
-  'ai-project-extractor-json': `def extraer_incidencia(entrada):\n    return {'titulo': entrada.get('titulo', 'desconocido'), 'prioridad': entrada.get('prioridad', 'desconocido'), 'equipo': entrada.get('equipo', 'desconocido')}`,
-  'ai-project-contexto': `def construir_contexto(entrada):\n    usados = 0\n    ids = []\n    bloques = sorted((b for b in entrada['bloques'] if b['usuario'] == entrada['usuario']), key=lambda b: b['prioridad'], reverse=True)\n    for bloque in bloques:\n        if usados + bloque['tokens'] <= entrada['presupuesto']:\n            usados += bloque['tokens']\n            ids.append(bloque['id'])\n    return ids`,
-  'ai-project-router': `def elegir_proveedor(entrada):\n    return 'api' if entrada['online'] and not entrada['sensible'] and entrada['apiDisponible'] else 'local'`,
-  'ai-project-busqueda-local': `def buscar_documentos(entrada):\n    candidatos = [item for item in entrada['candidatos'] if item['categoria'] == entrada['categoria']]\n    candidatos.sort(key=lambda item: item['score'], reverse=True)\n    return [item['id'] for item in candidatos[:entrada['limite']]]`,
-  'ai-project-rag-manuales': `def responder_con_fuentes(entrada):\n    evidencias = [item for item in entrada['evidencias'] if item['score'] >= entrada['minimo']]\n    evidencias.sort(key=lambda item: item['score'], reverse=True)\n    return [item['id'] for item in evidencias]`,
-  'ai-project-agente-soporte': `def siguiente_paso_soporte(entrada):\n    if entrada['pasos'] >= entrada['maxPasos']:\n        return 'detener'\n    return 'confirmar' if entrada['intencion'] == 'modificar' else 'leer'`,
-  'ai-project-ataques': `def evaluar_ataque(entrada):\n    return entrada['accion'] in entrada['permitidas']`,
-  'ai-project-tablero-evals': `def comparar_versiones(entrada):\n    if entrada['fallosCriticos'] > 0:\n        return 'bloquear'\n    if entrada['latenciaP95'] > entrada['presupuestoP95']:\n        return 'revisar'\n    return 'promover'`,
+  'ai-project-eco-reglas': `def responder_eco(entrada):
+    texto = entrada['texto'].strip()
+    if len(texto) == 0:
+        return 'Escribe algo para empezar.'
+    if texto.endswith('?'):
+        return 'Todavía pienso con reglas: reformula tu pregunta.'
+    return 'Has dicho: ' + texto`,
+  'ai-project-parametros-chat': `def validar_parametros(entrada):
+    temperatura = min(2, max(0, entrada.get('temperatura', 0.7)))
+    top_p = min(1, max(0, entrada.get('top_p', 1)))
+    return {'temperatura': temperatura, 'top_p': top_p}`,
+  'ai-project-motor-local': `def diagnostico_local(entrada):
+    if not entrada['webgpu']:
+        return 'sin_webgpu'
+    return 'listo' if entrada['modeloEncontrado'] else 'sin_modelo'`,
+  'ai-project-buscador-notas': `def score_consulta(a, b):
+    if not isinstance(a, list) or not isinstance(b, list):
+        return 0
+    if len(a) != len(b) or len(a) == 0:
+        return 0
+    return sum(x * y for x, y in zip(a, b))
+
+def buscar_filtrado(entrada):
+    validos = [item for item in entrada['fragmentos'] if item['categoria'] == entrada['categoria']]
+    puntuados = [{'id': item['id'], 'puntos': score_consulta(entrada['consulta'], item['vector'])} for item in validos]
+    puntuados.sort(key=lambda item: item['puntos'], reverse=True)
+    return [item['id'] for item in puntuados[:entrada['k']]]`,
+  'ai-project-rag-citas': `def evaluar_recuperacion(entrada):
+    relevantes = entrada['relevantes']
+    if len(relevantes) == 0:
+        return 0
+    encontrados = sum(1 for identificador in relevantes if identificador in entrada['recuperados'])
+    return encontrados / len(relevantes)`,
+  'ai-project-guardian': `def decision_publicacion(entrada):
+    if entrada['valida'] and entrada['citada'] and entrada['riesgoBajo']:
+        return 'publicar'
+    return 'revisar'`,
+  'ai-project-entrega-final': `def estado_final(entrada):
+    if not entrada['webgpuOk']:
+        return 'sin_webgpu'
+    if not entrada['modeloEnCache']:
+        return 'falta_modelo'
+    return 'preparado' if entrada['hayDocumento'] else 'falta_documento'`,
 };
 
 function executePython(source: string, functionName: string, args: unknown[][]) {
@@ -37,9 +106,10 @@ function executePython(source: string, functionName: string, args: unknown[][]) 
 }
 
 describe('proyectos de AI Engineer', () => {
-  it('incluye nueve proyectos completos', () => {
-    expect(AI_ENGINEER_PROJECTS).toHaveLength(9);
-    expect(new Set(AI_ENGINEER_PROJECTS.map((item) => item.id)).size).toBe(9);
+  it('incluye un proyecto de integración por cada fase', () => {
+    expect(AI_ENGINEER_PROJECTS).toHaveLength(7);
+    expect(new Set(AI_ENGINEER_PROJECTS.map((item) => item.id)).size).toBe(7);
+    expect(new Set(AI_ENGINEER_PROJECTS.map((item) => item.module))).toEqual(new Set([0, 1, 2, 3, 4, 5, 6]));
   });
 
   it('ofrece ambos lenguajes y criterios observables', () => {
@@ -51,6 +121,7 @@ describe('proyectos de AI Engineer', () => {
       expect(project.securityChecklist.length).toBeGreaterThanOrEqual(3);
       expect(project.exportInstructions.length).toBeGreaterThanOrEqual(3);
       expect(project.suggestedSteps?.length).toBeGreaterThanOrEqual(4);
+      expect(project.brief, `${project.id} no menciona el producto del curso`).toMatch(/TutorLocal|chat/i);
     }
   });
 
@@ -60,7 +131,9 @@ describe('proyectos de AI Engineer', () => {
       const python = project.languageVariants?.python.workspace.files['main.py']?.content ?? '';
       expect(javascript).toContain('TODO');
       expect(python).toContain('TODO');
+      expect(javascript).not.toContain('return responder_eco');
       expect(project.requirements.some((requirement) => requirement.id === 'variacion')).toBe(true);
+      expect(project.requirements.some((requirement) => requirement.id === 'integracion')).toBe(true);
     }
   });
 
@@ -86,7 +159,7 @@ describe('proyectos de AI Engineer', () => {
     }
   });
 
-  it('los nueve contratos aceptan una solución general en JavaScript y Python', async () => {
+  it('los siete contratos aceptan una solución general en JavaScript y Python', async () => {
     for (const project of AI_ENGINEER_PROJECTS) {
       const javascript = project.languageVariants!.javascript;
       const jsWorkspace = structuredClone(javascript.workspace);

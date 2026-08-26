@@ -74,12 +74,12 @@ function invocationCases(test: ChallengeTest): Array<{ expected: unknown }> {
 describe('auditoría integrada de todos los ejercicios', () => {
   const exercises = collectExercises();
 
-  it('recorre los 344 retos y laboratorios de los cuatro cursos', () => {
-    expect(exercises).toHaveLength(344);
+  it('recorre los retos y laboratorios de los cuatro cursos', () => {
+    expect(exercises).toHaveLength(264);
     expect(exercises.filter((exercise) => exercise.courseId === FUNDAMENTOS_COURSE.id)).toHaveLength(48);
     expect(exercises.filter((exercise) => exercise.courseId === JAVASCRIPT_COURSE.id)).toHaveLength(48);
     expect(exercises.filter((exercise) => exercise.courseId === COMPONENT_COURSE.id)).toHaveLength(90);
-    expect(exercises.filter((exercise) => exercise.courseId === AI_ENGINEER_COURSE.id)).toHaveLength(158);
+    expect(exercises.filter((exercise) => exercise.courseId === AI_ENGINEER_COURSE.id)).toHaveLength(78);
   });
 
   it('mantiene contratos identificables, explicados y sin soluciones adjuntas', () => {

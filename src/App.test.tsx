@@ -29,7 +29,7 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('button', { name: `Ver recorrido: ${AI_ENGINEER_COURSE.title}` })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: `Ver recorrido: ${AI_ENGINEER_COURSE.title}` }));
     expect(screen.getByRole('heading', { name: AI_ENGINEER_COURSE.title })).toBeTruthy();
-    expect(screen.getByText(/79 lecciones/)).toBeTruthy();
+    expect(screen.getByText(/39 lecciones/)).toBeTruthy();
 
     const first = AI_ENGINEER_COURSE.modules[0].items.find((item) => item.type === 'scrim')!;
     fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${first.title}`) }));
