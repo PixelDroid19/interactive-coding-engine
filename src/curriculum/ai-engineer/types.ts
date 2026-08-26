@@ -74,6 +74,13 @@ export interface AIPracticeCase {
   description: string;
 }
 
+export interface AICapability {
+  /** Nombre de la función o pieza que el estudiante añade al TutorLocal. */
+  nombre: string;
+  /** Qué gana el chat con esta pieza, en una frase. */
+  descripcion: string;
+}
+
 export interface AIEngineerLessonSpec {
   number: number;
   module: number;
@@ -82,6 +89,10 @@ export interface AIEngineerLessonSpec {
   concepts: { label: string; desc: string }[];
   skillsRequired: string[];
   skillsIntroduced: string[];
+  /** Capacidad que esta clase incorpora al chat del curso. */
+  capacidad: AICapability;
+  /** Cómo la pieza de hoy se conecta con lo que ya existe en el TutorLocal. */
+  integracion: string;
   mentalModel: string;
   script: [string, string, string, string];
   javascript: AILanguageCode;

@@ -28,6 +28,10 @@ interface AuthoredLesson {
   concepts: Array<[label: string, description: string]>;
   requires?: string[];
   skill: string;
+  /** Capacidad que la clase incorpora al chat del curso (el TutorLocal). */
+  capacidad: { nombre: string; descripcion: string };
+  /** Cómo la pieza de hoy se conecta con lo ya construido en el chat. */
+  integracion: string;
   mentalModel: string;
   script: [string, string, string, string];
   javascript: AILanguageCode;
@@ -58,6 +62,8 @@ export function authoredLesson(input: AuthoredLesson): AIEngineerLessonSpec {
     concepts: input.concepts.map(([label, desc]) => ({ label, desc })),
     skillsRequired: input.requires ?? [],
     skillsIntroduced: [input.skill],
+    capacidad: input.capacidad,
+    integracion: input.integracion,
     mentalModel: input.mentalModel,
     script: input.script,
     javascript: input.javascript,
@@ -75,6 +81,7 @@ export function authoredLesson(input: AuthoredLesson): AIEngineerLessonSpec {
         },
         { title: 'Cómo tomar decisiones', content: input.reading.decisions },
         { title: 'Errores comunes', content: input.reading.errors },
+        { title: 'En el chat del curso', content: input.integracion },
       ],
       keyPoints: input.reading.keyPoints,
       questions: [{ question: input.reading.question, answer: input.reading.answer }],

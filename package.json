@@ -17,6 +17,7 @@
     "audio:align:javascript": ".venv-tts/bin/python scripts/align-javascript-audio.py",
     "audio:align:components": ".venv-tts/bin/python scripts/align-component-course-audio.py",
     "guiones:components": "tsx scripts/export-component-course-guiones.ts",
+    "guiones:ai": "tsx scripts/export-ai-engineer-guiones.ts",
     "format:component-course": "tsx scripts/format-component-course-code.ts"
   },
   "dependencies": {

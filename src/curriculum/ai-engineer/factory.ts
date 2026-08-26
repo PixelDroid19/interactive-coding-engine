@@ -73,6 +73,7 @@ function compileLanguageLesson(
       spec.summary,
       'Predecir el resultado de un caso antes de ejecutar.',
       'Explicar qué parte pertenece al modelo y qué parte controla el programa.',
+      ...(spec.capacidad ? [`Integrar ${spec.capacidad.nombre} en el chat del curso.`] : []),
     ],
     commonMistakes: [spec.reading.sections[3].content],
     mentalModel: spec.mentalModel,
@@ -204,7 +205,7 @@ export function buildAiLessonBundle(spec: AIEngineerLessonSpec): AILessonBundle 
     ...(AI_INTERACTIVE_LABS[spec.number]
       ? { interactiveLab: structuredClone(AI_INTERACTIVE_LABS[spec.number]) }
       : {}),
-    ...(spec.number === 29 ? { handsOnLab: 'embeddings-webgpu' as const } : {}),
+    ...(spec.number === 18 ? { handsOnLab: 'embeddings-webgpu' as const } : {}),
   };
 
   const reasoning: ReasoningExerciseItem = {
