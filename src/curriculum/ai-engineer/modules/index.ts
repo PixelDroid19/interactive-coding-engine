@@ -1,39 +1,22 @@
-import { AI_MODULE_00 } from './module00';
-import { AI_MODULE_01 } from './module01';
-import { AI_MODULE_02 } from './module02';
-import { AI_MODULE_03 } from './module03';
-import { AI_MODULE_04 } from './module04';
-import { AI_MODULE_05 } from './module05';
-import { AI_MODULE_06 } from './module06';
-import { AI_MODULE_07 } from './module07';
-import { AI_MODULE_08 } from './module08';
-import { AI_MODULE_09 } from './module09';
-import { AI_MODULE_10 } from './module10';
-import { AI_MODULE_11 } from './module11';
-import { AI_MODULE_12 } from './module12';
-import { AI_MODULE_13 } from './module13';
+import { AI_FASE_01 } from './fase01';
+import { AI_FASE_02 } from './fase02';
+import { AI_FASE_03 } from './fase03';
+import { AI_FASE_04 } from './fase04';
+import { AI_FASE_05 } from './fase05';
+import { AI_FASE_06 } from './fase06';
+import { AI_FASE_07 } from './fase07';
 
-export const AI_SPECS_01_TO_27 = [
-  ...AI_MODULE_00,
-  ...AI_MODULE_01,
-  ...AI_MODULE_02,
-  ...AI_MODULE_03,
-  ...AI_MODULE_04,
-];
-
-export const AI_SPECS_28_TO_51 = [
-  ...AI_MODULE_05,
-  ...AI_MODULE_06,
-  ...AI_MODULE_07,
-  ...AI_MODULE_08,
-];
-
+// Progresión completa: 39 clases en 7 fases que construyen el TutorLocal,
+// un chat educativo local que crece capacidad a capacidad.
 export const AI_SPECS = [
-  ...AI_SPECS_01_TO_27,
-  ...AI_SPECS_28_TO_51,
-  ...AI_MODULE_09,
-  ...AI_MODULE_10,
-  ...AI_MODULE_11,
-  ...AI_MODULE_12,
-  ...AI_MODULE_13,
+  ...AI_FASE_01,
+  ...AI_FASE_02,
+  ...AI_FASE_03,
+  ...AI_FASE_04,
+  ...AI_FASE_05,
+  ...AI_FASE_06,
+  ...AI_FASE_07,
 ];
+
+/** Clases de la Fase 1 a la 3 (fundamentos, conversación y motor local). */
+export const AI_SPECS_01_A_16 = [...AI_FASE_01, ...AI_FASE_02, ...AI_FASE_03];
