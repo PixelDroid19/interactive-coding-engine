@@ -198,7 +198,7 @@ export default function App() {
         ['.reasoning-card', 'hud-panel tl-clip tr-clip br-clip bl-clip border inlay'],
         ['.reasoning-hints', 'hud-narration tl-clip tr-clip br-clip bl-clip border inlay'],
         ['.cells-lab', 'tl-clip tr-clip br-clip bl-clip border inlay'],
-        ['.cells-lab__actions button, .cells-lab__mode-tabs button', 'hud-action tl-clip br-clip border inlay', true],
+        ['.cells-lab__actions button, .cells-lab__tab-btn, .cells-lab__mode-tabs button', 'hud-action tl-clip br-clip border inlay', true],
         ['.cells-lab__coverage, .cells-lab__terminal, .cells-lab__event-inspector', 'hud-panel tl-clip tr-clip br-clip bl-clip border inlay'],
       ];
       map.forEach(([sel, aug, reset]) => {

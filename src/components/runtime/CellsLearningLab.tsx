@@ -74,7 +74,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
   const [error, setError] = useState('');
   const [command, setCommand] = useState(defaultCellsCommand(variant));
   const [terminalOutput, setTerminalOutput] = useState('Runtime detenido. El Worker se iniciará al abrir el proyecto.');
-  const [activePanel, setActivePanel] = useState<'code' | 'preview' | 'tests'>('code');
+  const [activeInspectorTab, setActiveInspectorTab] = useState<'preview' | 'tests' | 'terminal'>('preview');
   const [fileQuery, setFileQuery] = useState('');
   const [previewLocale, setPreviewLocale] = useState<'es' | 'en'>('es');
   const [observedEvents, setObservedEvents] = useState<Array<{ name: string; detail: unknown }>>([]);
@@ -130,7 +130,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
       if (result.type !== 'workspace:updated') throw new Error('El Worker no devolvió el proyecto inicial.');
       applyWorkspace(result.payload.workspace, 0);
       setPreviewHtml('');
-      setActivePanel('code');
+      setActiveInspectorTab('preview');
       setCommand(defaultCellsCommand(variant));
       setPreviewLocale('es');
       setTerminalOutput('Proyecto abierto en memoria. No se inició ningún servidor ni proceso Node.');
@@ -156,7 +156,8 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
         if (cancelled || result.type !== 'workspace:updated') return;
         applyWorkspace(result.payload.workspace, initial.generation);
         if (savedSession) {
-          setActivePanel(savedSession.activePanel);
+          const tab = savedSession.activePanel === 'tests' ? 'tests' : 'preview';
+          setActiveInspectorTab(tab);
           setCommand(savedSession.command);
           setPreviewLocale(savedSession.previewLocale);
           setTests(savedSession.tests);
@@ -189,7 +190,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
     const timer = window.setTimeout(() => {
       void ensureRepository().saveSession(draftKey, {
         version: 1,
-        activePanel,
+        activePanel: activeInspectorTab === 'tests' ? 'tests' : 'preview',
         command,
         previewLocale,
         tests,
@@ -199,7 +200,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
       }).catch((caught) => setError(messageFor(caught)));
     }, 120);
     return () => window.clearTimeout(timer);
-  }, [activePanel, command, coverage, draftKey, previewLocale, sessionHydrated, terminalOutput, tests]);
+  }, [activeInspectorTab, command, coverage, draftKey, previewLocale, sessionHydrated, terminalOutput, tests]);
 
   const syncDirtyFiles = async (): Promise<number> => {
     let currentGeneration = generationRef.current;
@@ -228,7 +229,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
       if (result.type !== 'preview:built') throw new Error('La vista previa no produjo un documento.');
       setPreviewHtml(result.payload.html);
       setObservedEvents([]);
-      setActivePanel('preview');
+      setActiveInspectorTab('preview');
       setTerminalOutput('Vista previa construida dentro del Worker. El iframe ejecuta solo el resultado aislado.');
       setStatus('ready');
     } catch (caught) { setError(messageFor(caught)); setStatus('error'); }
@@ -250,13 +251,10 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
       const previewResult = await ensureRuntime().buildPreview(currentGeneration, true, testRunId);
       if (previewResult.type !== 'preview:built') throw new Error('No se pudo preparar el iframe de pruebas.');
       setPreviewHtml(previewResult.payload.html);
-      // El runner vive dentro del iframe. Montarlo antes de esperar evita que
-      // “Comprobar” dependa de que la persona haya abierto Vista previa antes.
-      setActivePanel('preview');
+      setActiveInspectorTab('tests');
       const browserResult = await browserResultPromise;
       const combined = [...structuralResult.payload.results, ...browserResult.results];
       setTests(combined);
-      setActivePanel('tests');
       const passed = combined.filter((test) => test.passed).length;
 
       if (variant === 'component') {
@@ -295,11 +293,11 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
       if (result.type === 'tests:completed') {
         setTests(result.payload.results);
         setCoverage(result.payload.coverage ?? null);
-        setActivePanel('tests');
+        setActiveInspectorTab('tests');
         setTerminalOutput('Comprobaciones estructurales ejecutadas en el Worker. Usa “Comprobar” para ejecutar también el flujo conductual dentro del iframe.');
       } else if (result.type === 'preview:built') {
         setPreviewHtml(result.payload.html);
-        setActivePanel('preview');
+        setActiveInspectorTab('preview');
         setTerminalOutput('Vista previa actualizada.');
       } else if (result.type === 'command:completed') {
         if (result.payload.workspace) {
@@ -334,150 +332,312 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
     } catch (caught) { setError(messageFor(caught)); setStatus('error'); }
   };
 
+  const passedTestsCount = tests.filter((test) => test.passed).length;
+  const allTestsPassed = tests.length > 0 && passedTestsCount === tests.length;
+
   return (
     <div className="cells-lab" aria-label="Playground real de Open Cells">
       <header className="cells-lab__header">
-        <div>
+        <div className="cells-lab__header-info">
           <p>PROYECTO · {variant === 'application' ? 'APLICACIÓN' : 'COMPONENTE'}</p>
           <h3>{variant === 'application' ? PROJECT_NAMES[project] : 'academy-learning-card'}</h3>
-          <span>{status === 'running' ? 'Worker ocupado…' : status === 'loading' ? 'Preparando Worker…' : 'Todo ocurre en este navegador'}</span>
+          <span className={`cells-lab__status-indicator is-${status}`}>
+            <span className="cells-lab__status-dot" />
+            {status === 'running' ? 'Worker ocupado…' : status === 'loading' ? 'Preparando Worker…' : 'Todo ocurre en este navegador'}
+          </span>
         </div>
         <div className="cells-lab__actions">
-          <button type="button" onClick={buildPreview} disabled={status === 'running'}><Play size={15} /> Vista previa</button>
-          <button type="button" onClick={runTests} disabled={status === 'running'}><FlaskConical size={15} /> Comprobar</button>
-          <button type="button" onClick={exportProject} disabled={status === 'running'}><Download size={15} /> Exportar ZIP</button>
-          <button type="button" onClick={() => void loadStarter(true)} disabled={status === 'running'} aria-label="Reiniciar práctica"><RotateCcw size={15} /></button>
+          <button type="button" className="cells-lab__btn-preview" onClick={buildPreview} disabled={status === 'running'}>
+            <Play size={15} /> Vista previa
+          </button>
+          <button type="button" className="cells-lab__btn-test" onClick={runTests} disabled={status === 'running'}>
+            <FlaskConical size={15} /> Comprobar {tests.length > 0 ? `(${passedTestsCount}/${tests.length})` : ''}
+          </button>
+          <button type="button" onClick={exportProject} disabled={status === 'running'}>
+            <Download size={15} /> Exportar ZIP
+          </button>
+          <button type="button" onClick={() => void loadStarter(true)} disabled={status === 'running'} aria-label="Reiniciar práctica">
+            <RotateCcw size={15} />
+          </button>
         </div>
       </header>
 
       <div className="cells-lab__brief">
-        <strong>Tu misión</strong>
+        <span className="cells-lab__brief-badge">Tu misión</span>
         <p>{variant === 'application'
           ? APP_MISSIONS[stage]
           : 'El botón está importado, pero no pertenece todavía al registro scoped. Además, la acción no comunica nada hacia fuera. Completa ambos contratos sin cambiar la API pública ni escribir un registro global.'}</p>
       </div>
 
-      <div className="cells-lab__mode-tabs" role="tablist" aria-label="Área de trabajo Cells">
-        <button type="button" role="tab" aria-selected={activePanel === 'code'} onClick={() => setActivePanel('code')}><Code2 size={15} /> Código</button>
-        <button type="button" role="tab" aria-selected={activePanel === 'preview'} onClick={() => setActivePanel('preview')}><Eye size={15} /> Vista previa</button>
-        <button type="button" role="tab" aria-selected={activePanel === 'tests'} onClick={() => setActivePanel('tests')}><FlaskConical size={15} /> Pruebas {tests.length ? `(${tests.filter((test) => test.passed).length}/${tests.length})` : ''}</button>
-      </div>
-
-      {activePanel === 'code' && <div className="cells-lab__workspace cells-lab__workspace--code">
-        <nav className="cells-lab__files" aria-label="Archivos del proyecto">
-          <span><FileCode2 size={15} /> Archivos</span>
-          <input aria-label="Buscar archivo" placeholder="Buscar archivo…" value={fileQuery} onChange={(event) => setFileQuery(event.target.value)} />
-          {filteredFiles.map((file) => (
-            <button key={file.path} type="button" aria-current={file.path === workspace.activeFilePath} onClick={() => setWorkspace((current) => {
-              const next = { ...current, activeFilePath: file.path };
-              void ensureRepository().save(draftKey, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
-              return next;
-            })}>
-              {file.path}
-            </button>
-          ))}
-        </nav>
-        <section className="cells-lab__editor" aria-label="Editor Cells">
-          <div className="cells-lab__editor-bar"><span>{activeFile?.path}</span>{dirty && <em>sin sincronizar</em>}</div>
-          <CodeEditor
-            file={activeFile}
-            workspaceFiles={workspace.files}
-            lessonId={`open-cells-${variant}-${project}-${stage}`}
-            onCodeChange={(content) => activeFile && setWorkspace((current) => {
-              const next = {
-                ...current,
-                files: { ...current.files, [activeFile.path]: { ...activeFile, content } },
-              };
-              dirtyPathsRef.current.add(activeFile.path);
-              void ensureRepository().save(draftKey, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
-              return next;
-            })}
-          />
-        </section>
-      </div>}
-
-      {activePanel === 'preview' && <section className="cells-lab__result cells-lab__result--focused" aria-label="Vista previa del proyecto">
-        <div className="cells-lab__result-tabs">
-          <span>Vista previa aislada</span>
-          <div className="cells-lab__preview-tools">
-            <span>{previewHtml ? 'Proyecto ejecutado' : 'Todavía no construida'}</span>
-            <div role="group" aria-label="Idioma de la demo">
-              {(['es', 'en'] as const).map((locale) => (
+      <div className="cells-lab__workbench">
+        {/* PANEL IZQUIERDO: ESTUDIO DE CÓDIGO (Archivos + Editor) */}
+        <div className="cells-lab__studio">
+          <nav className="cells-lab__files" aria-label="Archivos del proyecto">
+            <div className="cells-lab__files-header">
+              <span><FileCode2 size={13} /> Archivos ({Object.keys(workspace.files).length})</span>
+            </div>
+            <input
+              aria-label="Buscar archivo"
+              placeholder="Buscar archivo…"
+              value={fileQuery}
+              onChange={(event) => setFileQuery(event.target.value)}
+            />
+            <div className="cells-lab__files-list">
+              {filteredFiles.map((file) => (
                 <button
-                  key={locale}
+                  key={file.path}
                   type="button"
-                  aria-pressed={previewLocale === locale}
-                  onClick={() => {
-                    setPreviewLocale(locale);
-                    iframeRef.current?.contentWindow?.postMessage({ source: 'open-cells-shell', type: 'locale:set', locale }, '*');
-                  }}
-                >{locale.toUpperCase()}</button>
+                  aria-current={file.path === workspace.activeFilePath}
+                  onClick={() => setWorkspace((current) => {
+                    const next = { ...current, activeFilePath: file.path };
+                    void ensureRepository().save(draftKey, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
+                    return next;
+                  })}
+                >
+                  <span className="cells-lab__file-name">{file.path}</span>
+                  {file.path === activeFile?.path && dirty && <span className="cells-lab__file-dot" title="Sin guardar" />}
+                </button>
               ))}
             </div>
+          </nav>
+
+          <section className="cells-lab__editor" aria-label="Editor Cells">
+            <div className="cells-lab__editor-bar">
+              <div className="cells-lab__editor-file">
+                <Code2 size={14} />
+                <span>{activeFile?.path}</span>
+              </div>
+              {dirty ? <em className="cells-lab__dirty-tag">● sin sincronizar</em> : <span className="cells-lab__synced-tag">✓ sincronizado</span>}
+            </div>
+            <div className="cells-lab__editor-canvas">
+              <CodeEditor
+                file={activeFile}
+                workspaceFiles={workspace.files}
+                lessonId={`open-cells-${variant}-${project}-${stage}`}
+                onCodeChange={(content) => activeFile && setWorkspace((current) => {
+                  const next = {
+                    ...current,
+                    files: { ...current.files, [activeFile.path]: { ...activeFile, content } },
+                  };
+                  dirtyPathsRef.current.add(activeFile.path);
+                  void ensureRepository().save(draftKey, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
+                  return next;
+                })}
+              />
+            </div>
+          </section>
+        </div>
+
+        {/* PANEL DERECHO: INSPECTOR DE RESULTADOS (Vista previa / Pruebas / Terminal) */}
+        <div className="cells-lab__inspector">
+          <div className="cells-lab__inspector-tabs" role="tablist" aria-label="Panel de resultados Cells">
+            <div className="cells-lab__inspector-tabgroup">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeInspectorTab === 'preview'}
+                onClick={() => setActiveInspectorTab('preview')}
+                className={`cells-lab__tab-btn ${activeInspectorTab === 'preview' ? 'is-active' : ''}`}
+              >
+                <Eye size={14} />
+                <span>Vista previa</span>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeInspectorTab === 'tests'}
+                onClick={() => setActiveInspectorTab('tests')}
+                className={`cells-lab__tab-btn ${activeInspectorTab === 'tests' ? 'is-active' : ''}`}
+              >
+                <FlaskConical size={14} />
+                <span>Pruebas</span>
+                {tests.length > 0 && (
+                  <span className={`cells-lab__tab-counter ${allTestsPassed ? 'is-pass' : 'is-fail'}`}>
+                    {passedTestsCount}/{tests.length}
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeInspectorTab === 'terminal'}
+                onClick={() => setActiveInspectorTab('terminal')}
+                className={`cells-lab__tab-btn ${activeInspectorTab === 'terminal' ? 'is-active' : ''}`}
+              >
+                <TerminalSquare size={14} />
+                <span>Terminal</span>
+              </button>
+            </div>
+
+            <div className="cells-lab__inspector-tabtools">
+              {activeInspectorTab === 'preview' && (
+                <div className="cells-lab__preview-tools">
+                  <div role="group" aria-label="Idioma de la demo">
+                    {(['es', 'en'] as const).map((locale) => (
+                      <button
+                        key={locale}
+                        type="button"
+                        aria-pressed={previewLocale === locale}
+                        onClick={() => {
+                          setPreviewLocale(locale);
+                          iframeRef.current?.contentWindow?.postMessage({ source: 'open-cells-shell', type: 'locale:set', locale }, '*');
+                        }}
+                      >
+                        {locale.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {activeInspectorTab === 'tests' && tests.length > 0 && (
+                <button
+                  type="button"
+                  className="cells-lab__tab-retest"
+                  onClick={runTests}
+                  disabled={status === 'running'}
+                  title="Volver a comprobar"
+                >
+                  <FlaskConical size={13} />
+                  <span>Comprobar</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="cells-lab__inspector-body">
+            {/* VISTA PREVIA */}
+            <div className={`cells-lab__pane cells-lab__pane--preview ${activeInspectorTab === 'preview' ? 'is-visible' : 'is-hidden'}`}>
+              {previewHtml ? (
+                <iframe
+                  ref={iframeRef}
+                  title={`Vista previa ${variant === 'application' ? 'de la aplicación' : 'del componente'} Cells`}
+                  sandbox="allow-scripts"
+                  srcDoc={previewHtml}
+                  onLoad={() => iframeRef.current?.contentWindow?.postMessage({ source: 'open-cells-shell', type: 'locale:set', locale: previewLocale }, '*')}
+                />
+              ) : (
+                <div className="cells-lab__empty">
+                  <Play size={28} />
+                  <h4>Vista previa no construida</h4>
+                  <p>Usa “Vista previa” o “Comprobar” para construir el proyecto dentro del Worker.</p>
+                  <button type="button" className="cells-lab__empty-btn" onClick={buildPreview} disabled={status === 'running'}>
+                    <Play size={14} /> Construir vista previa
+                  </button>
+                </div>
+              )}
+              {variant === 'component' && previewHtml && (
+                <aside className="cells-lab__event-inspector" aria-label="Eventos públicos observados">
+                  <strong>Eventos públicos</strong>
+                  {observedEvents.length === 0
+                    ? <span>Pulsa el botón de la demo para observar nombre y detail.</span>
+                    : observedEvents.map((event, index) => <code key={`${event.name}:${index}`}>{event.name} · {JSON.stringify(event.detail)}</code>)}
+                </aside>
+              )}
+            </div>
+
+            {/* IFRAME OCULTO PARA PRUEBAS CUANDO NO ESTÁ EN TAB PREVIEW */}
+            {activeInspectorTab !== 'preview' && previewHtml && (
+              <iframe
+                ref={iframeRef}
+                title="Iframe de pruebas Cells"
+                sandbox="allow-scripts"
+                srcDoc={previewHtml}
+                className="cells-lab__hidden-iframe"
+                onLoad={() => iframeRef.current?.contentWindow?.postMessage({ source: 'open-cells-shell', type: 'locale:set', locale: previewLocale }, '*')}
+              />
+            )}
+
+            {/* PRUEBAS */}
+            {activeInspectorTab === 'tests' && (
+              <div className="cells-lab__pane cells-lab__pane--tests">
+                {tests.length > 0 ? (
+                  <>
+                    <div className="cells-lab__tests-header">
+                      <div className="cells-lab__tests-headline">
+                        <strong>Resultado de contratos</strong>
+                        <span className={`cells-lab__tests-badge ${allTestsPassed ? 'is-pass' : 'is-fail'}`}>
+                          {passedTestsCount} de {tests.length} superados
+                        </span>
+                      </div>
+                      {coverage && (
+                        <div className="cells-lab__coverage-pills">
+                          <span>S <b>{coverage.statements.percentage}%</b></span>
+                          <span>R <b>{coverage.branches?.percentage ?? 0}%</b></span>
+                          <span>F <b>{coverage.functions?.percentage ?? 0}%</b></span>
+                          <span>L <b>{coverage.lines?.percentage ?? 0}%</b></span>
+                        </div>
+                      )}
+                    </div>
+
+                    <ul className="cells-lab__tests">
+                      {tests.map((test) => (
+                        <li key={test.id} data-passed={test.passed} className="cells-lab__test-item">
+                          <div className="cells-lab__test-icon">
+                            {test.passed ? <CheckCircle2 size={16} /> : <XCircle size={16} />}
+                          </div>
+                          <div className="cells-lab__test-body">
+                            <strong>{test.title}</strong>
+                            <small>{test.message}</small>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {coverage?.files?.map((fileCoverage) => (
+                      <div className="cells-lab__coverage" key={fileCoverage.path}>
+                        <strong>Coverage real · {fileCoverage.path}</strong>
+                        {fileCoverage.available ? (
+                          <>
+                            <dl>
+                              <div><dt>Sentencias</dt><dd>{fileCoverage.statements.covered}/{fileCoverage.statements.total} · {fileCoverage.statements.percentage}%</dd></div>
+                              <div><dt>Ramas</dt><dd>{fileCoverage.branches.covered}/{fileCoverage.branches.total} · {fileCoverage.branches.percentage}%</dd></div>
+                              <div><dt>Funciones</dt><dd>{fileCoverage.functions.covered}/{fileCoverage.functions.total} · {fileCoverage.functions.percentage}%</dd></div>
+                              <div><dt>Líneas</dt><dd>{fileCoverage.lines.covered}/{fileCoverage.lines.total} · {fileCoverage.lines.percentage}%</dd></div>
+                            </dl>
+                            <small>{fileCoverage.uncoveredLines.length ? `Líneas no cubiertas: ${fileCoverage.uncoveredLines.join(', ')}` : 'No quedan líneas ejecutables sin cubrir en este archivo.'}</small>
+                          </>
+                        ) : <small>{fileCoverage.unavailableReason}</small>}
+                      </div>
+                    ))}
+                  </>
+                ) : (
+                  <div className="cells-lab__empty">
+                    <FlaskConical size={28} />
+                    <h4>Sin comprobaciones ejecutadas</h4>
+                    <p>Usa “Comprobar” para ejecutar los contratos del Worker y del navegador.</p>
+                    <button type="button" className="cells-lab__empty-btn" onClick={runTests} disabled={status === 'running'}>
+                      <FlaskConical size={14} /> Ejecutar comprobaciones
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TERMINAL */}
+            {activeInspectorTab === 'terminal' && (
+              <div className="cells-lab__pane cells-lab__pane--terminal">
+                <form onSubmit={runCommand} className="cells-lab__terminal-form">
+                  <label className="sr-only" htmlFor="cells-command">Comando Cells</label>
+                  <div className="cells-lab__terminal-prompt">
+                    <span>$</span>
+                    <input
+                      id="cells-command"
+                      value={command}
+                      onChange={(event) => setCommand(event.target.value)}
+                      spellCheck={false}
+                      placeholder="cells app:test --coverage"
+                    />
+                    <button type="submit" disabled={status === 'running'}>Ejecutar</button>
+                  </div>
+                </form>
+                <div className="cells-lab__terminal-screen">
+                  <output>{error || terminalOutput}</output>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-        {previewHtml ? (
-          <iframe
-            ref={iframeRef}
-            title={`Vista previa ${variant === 'application' ? 'de la aplicación' : 'del componente'} Cells`}
-            sandbox="allow-scripts"
-            srcDoc={previewHtml}
-            onLoad={() => iframeRef.current?.contentWindow?.postMessage({ source: 'open-cells-shell', type: 'locale:set', locale: previewLocale }, '*')}
-          />
-        ) : (
-          <div className="cells-lab__empty"><Play size={24} /><p>Usa “Vista previa” para construir el proyecto dentro del Worker.</p></div>
-        )}
-        {variant === 'component' && (
-          <aside className="cells-lab__event-inspector" aria-label="Eventos públicos observados">
-            <strong>Eventos públicos</strong>
-            {observedEvents.length === 0
-              ? <span>Pulsa el botón de la demo para observar nombre y detail.</span>
-              : observedEvents.map((event, index) => <code key={`${event.name}:${index}`}>{event.name} · {JSON.stringify(event.detail)}</code>)}
-          </aside>
-        )}
-      </section>}
-
-      {activePanel === 'tests' && <section className="cells-lab__result cells-lab__result--focused" aria-label="Pruebas y coverage del proyecto">
-          <div className="cells-lab__result-tabs">
-            <span>Resultado</span>
-            <span>
-              {coverage === null
-                ? 'Sin coverage dinámico'
-                : `S ${coverage.statements.percentage}% · R ${coverage.branches?.percentage ?? 0}% · F ${coverage.functions?.percentage ?? 0}% · L ${coverage.lines?.percentage ?? 0}%`}
-            </span>
-          </div>
-          {tests.length > 0 && (
-            <ul className="cells-lab__tests">
-              {tests.map((test) => <li key={test.id} data-passed={test.passed}>{test.passed ? <CheckCircle2 size={15} /> : <XCircle size={15} />}<span><strong>{test.title}</strong><small>{test.message}</small></span></li>)}
-            </ul>
-          )}
-          {coverage?.files?.map((fileCoverage) => (
-            <div className="cells-lab__coverage" key={fileCoverage.path}>
-              <strong>Coverage real · {fileCoverage.path}</strong>
-              {fileCoverage.available ? (
-                <>
-                  <dl>
-                    <div><dt>Sentencias</dt><dd>{fileCoverage.statements.covered}/{fileCoverage.statements.total} · {fileCoverage.statements.percentage}%</dd></div>
-                    <div><dt>Ramas</dt><dd>{fileCoverage.branches.covered}/{fileCoverage.branches.total} · {fileCoverage.branches.percentage}%</dd></div>
-                    <div><dt>Funciones</dt><dd>{fileCoverage.functions.covered}/{fileCoverage.functions.total} · {fileCoverage.functions.percentage}%</dd></div>
-                    <div><dt>Líneas</dt><dd>{fileCoverage.lines.covered}/{fileCoverage.lines.total} · {fileCoverage.lines.percentage}%</dd></div>
-                  </dl>
-                  <small>{fileCoverage.uncoveredLines.length ? `Líneas no cubiertas: ${fileCoverage.uncoveredLines.join(', ')}` : 'No quedan líneas ejecutables sin cubrir en este archivo.'}</small>
-                </>
-              ) : <small>{fileCoverage.unavailableReason}</small>}
-            </div>
-          ))}
-          {tests.length === 0 && <div className="cells-lab__empty"><FlaskConical size={24} /><p>Usa “Comprobar” para ejecutar los contratos del Worker y del iframe.</p></div>}
-      </section>}
-
-      <details className="cells-lab__terminal">
-        <summary><TerminalSquare size={15} /> Terminal Cells del navegador</summary>
-        <form onSubmit={runCommand}>
-          <label className="sr-only" htmlFor="cells-command">Comando Cells</label>
-          <div><span>$</span><input id="cells-command" value={command} onChange={(event) => setCommand(event.target.value)} spellCheck={false} /><button disabled={status === 'running'}>Ejecutar</button></div>
-          <output>{error || terminalOutput}</output>
-        </form>
-      </details>
+      </div>
     </div>
   );
 };
