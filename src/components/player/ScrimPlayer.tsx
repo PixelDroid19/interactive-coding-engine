@@ -821,7 +821,10 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   };
 
   const activeFile = workspace.files[workspace.activeFilePath] || Object.values(workspace.files)[0] || null;
-  const visibleFiles = isLogicMode
+  const teachingPaths = lessonData.teachingFilePaths ? new Set(lessonData.teachingFilePaths) : null;
+  const visibleFiles = teachingPaths
+    ? Object.fromEntries(Object.entries(workspace.files).filter(([path]) => teachingPaths.has(path)))
+    : isLogicMode
     ? Object.fromEntries(Object.entries(workspace.files).filter(([, file]) =>
         file.language === 'javascript'
         || file.language === 'typescript'
@@ -1152,6 +1155,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
               isFloating={true}
               onToggleFloating={() => setIsFloatingBrowser(false)}
               onRunClick={handleManualRun}
+              previewRuntime={lessonData.templateId.startsWith('cells-') ? 'cells' : 'standard'}
             />
           )}
 
@@ -1165,6 +1169,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
                 isFloating={false}
                 onToggleFloating={() => setIsFloatingBrowser(true)}
                 onRunClick={handleManualRun}
+                previewRuntime={lessonData.templateId.startsWith('cells-') ? 'cells' : 'standard'}
               />
             </div>
           )}

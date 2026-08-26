@@ -75,7 +75,14 @@ export function saveReasoningDraft(exerciseId: string, draft: ReasoningDraft): v
   }
 }
 
-const PLAYGROUND_TEMPLATE_IDS: TemplateDefinition['id'][] = ['vanilla-js', 'js-only', 'lit', 'react'];
+const PLAYGROUND_TEMPLATE_IDS: TemplateDefinition['id'][] = [
+  'vanilla-js',
+  'js-only',
+  'lit',
+  'react',
+  'cells-component',
+  'cells-application',
+];
 const WORKSPACE_LANGUAGES = ['javascript', 'html', 'css', 'typescript', 'json', 'python', 'markdown'];
 
 export function loadCourseLanguage(courseId: string): CourseLanguage {

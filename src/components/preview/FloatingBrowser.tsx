@@ -4,6 +4,7 @@ import { ConsoleMessage } from '../../types/runtime';
 import { RuntimeConsole } from './RuntimeConsole';
 import { InstructorCursor } from '../player/InstructorCursor';
 import { buildPreviewDocument } from '../../engine/previewDocument';
+import { buildCellsPreviewDocument } from '../../engine/cells/cellsPreviewCompiler';
 import { 
   Play, 
   RotateCw, 
@@ -28,6 +29,7 @@ interface FloatingBrowserProps {
   autoReload?: boolean;
   isFloating: boolean;
   onToggleFloating: () => void;
+  previewRuntime?: 'standard' | 'cells';
 }
 
 export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserProps>(({
@@ -36,6 +38,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
   autoReload = false,
   isFloating,
   onToggleFloating,
+  previewRuntime = 'standard',
 }, ref) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const workspaceRef = useRef(workspace);
@@ -228,7 +231,9 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
         setTimeout(() => resolve(), 50);
       };
       iframe.addEventListener('load', onLoad);
-      iframe.srcdoc = buildPreviewDocument(workspaceRef.current);
+      iframe.srcdoc = previewRuntime === 'cells'
+        ? buildCellsPreviewDocument(workspaceRef.current).html
+        : buildPreviewDocument(workspaceRef.current);
       // Fallback if load doesn't fire (srcdoc)
       setTimeout(() => {
         iframe.removeEventListener('load', onLoad);
@@ -236,7 +241,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
         resolve();
       }, 350);
     });
-  }, []);
+  }, [previewRuntime]);
 
   useEffect(() => {
     compileAndRun();

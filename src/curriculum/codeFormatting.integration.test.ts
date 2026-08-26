@@ -4,11 +4,13 @@ import { ScrimLessonData } from '../types/scrim';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './fundamentos/course';
 import { JAVASCRIPT_COURSE, JAVASCRIPT_SCRIMS } from './javascript/course';
 import { COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS } from './web-components-lit/course';
+import { OPEN_CELLS_COURSE, OPEN_CELLS_SCRIMS } from './open-cells/course';
 
 const catalogs: Array<[Course, Record<string, ScrimLessonData>]> = [
   [FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS],
   [JAVASCRIPT_COURSE, JAVASCRIPT_SCRIMS],
   [COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS],
+  [OPEN_CELLS_COURSE, OPEN_CELLS_SCRIMS],
 ];
 
 describe('formato legible del código curricular', () => {

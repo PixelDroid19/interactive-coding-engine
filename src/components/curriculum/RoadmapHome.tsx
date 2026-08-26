@@ -30,11 +30,11 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
   const [openConcept, setOpenConcept] = useState<RoadmapNode | null>(null);
   const phases = useMemo(() => buildRoadmap(course, scrims), [course, scrims]);
   const lessonCount = course.modules.reduce(
-    (sum, mod) => sum + mod.items.filter((item) => item.type === 'scrim').length,
+    (sum, mod) => sum + mod.items.filter((item) => item.type === 'scrim' || (item.type === 'reading' && !item.relatedLessonId)).length,
     0
   );
   const practiceCount = course.modules.reduce(
-    (sum, mod) => sum + mod.items.filter((item) => item.type === 'debugging' || item.type === 'reasoning').length,
+    (sum, mod) => sum + mod.items.filter((item) => item.type === 'debugging' || item.type === 'reasoning' || (item.type === 'reading' && Boolean(item.handsOnLab))).length,
     0
   );
   const hasReasoning = course.modules.some((mod) => mod.items.some((item) => item.type === 'reasoning'));
@@ -262,7 +262,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
                         type="button"
                         className={`rm-node-main ${isCurrent(row.main.lessonId) ? 'is-current' : ''} ${
                           isDone(row.main.lessonId) ? 'is-done' : ''
-                        } ${row.main.itemType === 'solo-project' ? 'is-project' : ''}`}
+                        } ${row.main.itemType === 'solo-project' ? 'is-project' : ''} ${row.main.itemType === 'reading' ? 'is-reading' : ''}`}
                         onClick={() => enterLesson(row.main.lessonId)}
                       >
                         <span>{row.main.label}</span>

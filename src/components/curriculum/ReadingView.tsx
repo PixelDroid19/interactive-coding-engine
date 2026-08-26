@@ -4,6 +4,9 @@ import { ReadingItem } from '../../types/curriculum';
 import { NavigationState } from '../../engine/navigation';
 import { AIInteractivePractice } from '../runtime/AIInteractivePractice';
 import { AILearningLab } from '../runtime/AILearningLab';
+import { CellsLearningLab } from '../runtime/CellsLearningLab';
+import type { CellsAppPracticeStage, CellsAppProject } from '../../engine/cells/cellsAppRecipes';
+import { ThemeToggle } from '../ThemeToggle';
 
 interface ReadingViewProps {
   reading: ReadingItem;
@@ -16,6 +19,12 @@ interface ReadingViewProps {
 
 export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBackToRoadmap, onPrevious, onNext, navigationState }) => {
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const cellsAppLab: { stage: CellsAppPracticeStage; project: CellsAppProject; title: string } | null = ({
+    'open-cells-app-playground': { stage: 'lifecycle', project: 'museum', title: 'Proyecto Museo Cells' },
+    'open-cells-channels-playground': { stage: 'channels', project: 'relay', title: 'Proyecto Relé Cells' },
+    'open-cells-data-playground': { stage: 'data', project: 'climate', title: 'Proyecto Clima Cells' },
+    'open-cells-delivery-playground': { stage: 'delivery', project: 'capstone', title: 'Capstone Cells completo' },
+  } as const)[reading.handsOnLab as string] ?? null;
 
   useEffect(() => {
     titleRef.current?.focus({ preventScroll: true });
@@ -43,6 +52,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
             </span>
             <span className="topbar-lesson-title truncate">{reading.title}</span>
           </div>
+          <ThemeToggle compact />
         </header>
 
         <main className="reading-canvas min-h-0 w-full flex-1 overflow-y-auto px-4 py-5 select-text sm:px-6 sm:py-7 lg:px-8" aria-label="Contenido de la lectura">
@@ -180,6 +190,32 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
                     </div>
                   </div>
                   <AILearningLab />
+                </section>
+              )}
+
+              {reading.handsOnLab === 'open-cells-playground' && (
+                <section className="reading-lab-zone reading-lab-zone--wide" aria-label="Laboratorio Open Cells">
+                  <div className="reading-zone-heading">
+                    <span>02</span>
+                    <div>
+                      <p>Ahora construye tú</p>
+                      <h2 id="reading-lab-title">Playground Open Cells</h2>
+                    </div>
+                  </div>
+                  <CellsLearningLab />
+                </section>
+              )}
+
+              {cellsAppLab && (
+                <section className="reading-lab-zone reading-lab-zone--wide" aria-label="Laboratorio de aplicación Open Cells">
+                  <div className="reading-zone-heading">
+                    <span>02</span>
+                    <div>
+                      <p>Ahora integra tú</p>
+                      <h2 id="reading-lab-title">{cellsAppLab.title}</h2>
+                    </div>
+                  </div>
+                  <CellsLearningLab variant="application" stage={cellsAppLab.stage} project={cellsAppLab.project} />
                 </section>
               )}
 

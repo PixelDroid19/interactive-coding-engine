@@ -5,12 +5,10 @@ import { cloneWorkspace } from '../../engine/eventLog';
 import { loadLanguageWorkspaceDraft, markItemCompleted, saveLanguageWorkspaceDraft } from '../../engine/persistence';
 import { CodeEditor } from '../editor/CodeEditor';
 import { FileTree } from '../editor/FileTree';
-import { PreviewPane, PreviewPaneRef } from '../preview/PreviewPane';
 import { LogicRunnerPanel } from '../preview/LogicRunnerPanel';
 import { LanguageSelector } from '../runtime/LanguageSelector';
 import {
   ArrowLeft,
-  Sparkles,
   CheckCircle2,
   ListTodo,
   Rocket,
@@ -58,9 +56,10 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
   const [isCompleted, setIsCompleted] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [validationResult, setValidationResult] = useState<ChallengeValidationResult | null>(null);
-  const [showFileTree, setShowFileTree] = useState(true);
+  const [showFileTree, setShowFileTree] = useState(
+    () => Object.keys(project.initialWorkspace.files).length > 1,
+  );
   const [compactPane, setCompactPane] = useState<'brief' | 'code' | 'output'>('code');
-  const previewRef = useRef<PreviewPaneRef | null>(null);
 
   useEffect(() => {
     saveLanguageWorkspaceDraft(project.id, language, workspace);
@@ -76,6 +75,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
 
   const completedCount = Object.values(checkedRequirements).filter(Boolean).length;
   const totalCount = project.requirements.length;
+  const progressPercent = Math.round((completedCount / (totalCount || 1)) * 100);
 
   const handleSubmitProject = () => {
     setIsCompleted(true);
@@ -98,7 +98,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
         instructions: project.brief,
         tests: project.tests,
         hints: [],
-      }, workspace, previewRef.current?.getIframeElement());
+      }, workspace);
       setValidationResult(result);
       if (result.allPassed && completedCount === totalCount) {
         setIsCompleted(true);
@@ -123,11 +123,11 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
   return (
     <div className="flex h-screen w-screen flex-col bg-[#0f0f11] text-zinc-200 overflow-hidden font-sans">
       {/* Top Header */}
-      <header className="flex h-11 items-center justify-between px-4 bg-[#141416] border-b border-zinc-800/80 z-30">
-        <div className="flex items-center gap-3">
+      <header className="flex h-11 shrink-0 items-center justify-between gap-3 px-3 bg-[#141416] border-b border-zinc-800/80 z-30">
+        <div className="flex min-w-0 items-center gap-2.5">
           <button
             onClick={onBackToRoadmap || onBack}
-            className="flex items-center gap-1.5 rounded bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 text-xs text-zinc-300 font-medium transition-colors"
+            className="flex items-center gap-1.5 rounded bg-zinc-800/80 hover:bg-zinc-700 px-2.5 py-1 text-xs text-zinc-300 font-medium transition-colors"
             aria-label="Volver al roadmap"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
@@ -137,32 +137,27 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
             <button
               onClick={onPrevious}
               disabled={navigationState ? !navigationState.hasPrevious : false}
-              className="flex items-center gap-1 rounded bg-zinc-800 hover:bg-zinc-700 px-2 py-1 text-xs text-zinc-300 disabled:opacity-40"
+              className="flex items-center gap-1 rounded bg-zinc-800/80 hover:bg-zinc-700 px-2 py-1 text-xs text-zinc-300 disabled:opacity-40"
               aria-label="Anterior"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
-              <span className="text-[11px] hidden sm:inline">Anterior</span>
+              <span className="text-[11px] hidden md:inline">Anterior</span>
             </button>
           )}
 
-          <div className="h-3.5 w-px bg-zinc-800" />
+          <div className="hidden h-3.5 w-px bg-zinc-800 sm:block" />
 
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1 rounded bg-indigo-950/60 border border-indigo-700/60 text-indigo-300 px-2 py-0.5 text-xs font-semibold">
-              <Rocket className="h-3.5 w-3.5" />
-              <span>Proyecto</span>
-            </span>
-            <h2 className="hidden max-w-72 truncate text-xs font-semibold text-zinc-100 xl:block">{project.title}</h2>
-          </div>
+          <span className="hidden sm:flex items-center gap-1 rounded bg-indigo-950/60 border border-indigo-700/60 text-indigo-300 px-2 py-0.5 text-[11px] font-semibold">
+            <Rocket className="h-3 w-3" />
+            <span>Proyecto</span>
+          </span>
+          <h2 className="min-w-0 truncate text-xs font-semibold text-zinc-100">{project.title}</h2>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2.5">
           {project.languageVariants && onLanguageChange && (
             <LanguageSelector value={language} onChange={onLanguageChange} compact />
           )}
-          <div className="text-xs font-mono text-zinc-400">
-            Requisitos: <span className="text-zinc-200 font-bold">{completedCount}/{totalCount}</span>
-          </div>
 
           {isCompleted && (
             <span className="flex items-center gap-1 rounded bg-emerald-950/80 border border-emerald-700 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
@@ -184,7 +179,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
             ) : (
               <button
                 onClick={onNext}
-                className="flex items-center gap-1 rounded bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-200 transition-colors"
+                className="flex items-center gap-1 rounded bg-zinc-800/80 hover:bg-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-200 transition-colors"
                 aria-label="Siguiente"
               >
                 <span>Siguiente</span>
@@ -197,9 +192,9 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
 
       <nav className="grid h-10 shrink-0 grid-cols-3 border-b border-zinc-800 bg-[#111113] p-1 lg:hidden" aria-label="Paneles del proyecto">
         {([
-          ['brief', 'Requisitos'],
+          ['brief', 'Proyecto'],
           ['code', 'Código'],
-          ['output', 'Salida'],
+          ['output', 'Consola'],
         ] as const).map(([pane, label]) => (
           <button
             key={pane}
@@ -215,91 +210,101 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
         ))}
       </nav>
 
-      {/* Main 3-Column Split */}
-      <div className="flex flex-1 w-full overflow-hidden">
-        {/* Left Drawer: Project Brief & Requirements Checklist */}
-        <div className={`${compactPane === 'brief' ? 'flex' : 'hidden'} h-full w-full shrink-0 flex-col space-y-4 overflow-y-auto border-r border-zinc-800/80 bg-[#141416] p-4 text-xs lg:flex lg:w-80`}>
-          {/* Brief */}
-          <div className="space-y-1.5">
-            <h4 className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">Objetivo del proyecto</h4>
-            <div className="rounded-lg bg-zinc-900/80 p-3 border border-zinc-800 text-zinc-300 leading-relaxed font-sans text-xs whitespace-pre-line">
-              {project.brief}
-            </div>
-          </div>
+      <div className="flex min-h-0 flex-1 w-full overflow-hidden">
+        {/* Left panel: brief, checklist and steps with a sticky action footer */}
+        <aside
+          className={`${compactPane === 'brief' ? 'flex' : 'hidden'} h-full w-full shrink-0 flex-col overflow-hidden border-r border-zinc-800/80 bg-[#141416] lg:flex lg:w-[350px]`}
+        >
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+            <section className="space-y-2">
+              <h4 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Objetivo</h4>
+              <p className="text-[13px] leading-relaxed text-zinc-300 whitespace-pre-line">{project.brief}</p>
+            </section>
 
-          {/* Requirements Checklist */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h4 className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold flex items-center gap-1">
-                <ListTodo className="h-3.5 w-3.5 text-zinc-400" />
-                <span>Lista de requisitos</span>
-              </h4>
-              <span className="text-[11px] font-mono text-zinc-400 font-semibold">
-                {Math.round((completedCount / (totalCount || 1)) * 100)}%
-              </span>
-            </div>
+            <section className="mt-7 space-y-3">
+              <div className="flex items-baseline justify-between">
+                <h4 className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  <ListTodo className="h-3.5 w-3.5" />
+                  <span>Requisitos</span>
+                </h4>
+                <span className="text-[11px] font-semibold tabular-nums text-zinc-400">
+                  {completedCount}/{totalCount}
+                </span>
+              </div>
 
-            <div className="space-y-1.5">
-              {project.requirements.map((req) => {
-                const isChecked = !!checkedRequirements[req.id];
+              <div className="h-1 overflow-hidden rounded-full bg-zinc-800" role="progressbar" aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100} aria-label="Progreso de requisitos">
+                <div
+                  className={`h-full rounded-full transition-all duration-300 ${progressPercent === 100 ? 'bg-emerald-400' : 'bg-yellow-300'}`}
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
 
-                return (
-                  <button
-                    type="button"
-                    key={req.id}
-                    onClick={() => toggleRequirement(req.id)}
-                    className={`w-full p-2.5 rounded-lg border cursor-pointer text-left transition-colors ${
-                      isChecked
-                        ? 'bg-emerald-950/20 border-emerald-800/60 text-emerald-100'
-                        : 'bg-zinc-900/60 border-zinc-800 text-zinc-300 hover:border-zinc-700'
-                    }`}
-                  >
-                    <div className="flex items-start gap-2">
-                      {isChecked ? (
-                        <CheckSquare className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                      ) : (
-                        <Square className="h-4 w-4 text-zinc-500 shrink-0 mt-0.5" />
-                      )}
-                      <div>
-                        <div className={`font-semibold ${isChecked ? 'line-through text-zinc-400' : 'text-zinc-200'}`}>
-                          {req.title}
-                        </div>
-                        <p className="text-[11px] text-zinc-400 mt-1 leading-relaxed">{req.description}</p>
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Suggested Implementation Steps */}
-          {project.suggestedSteps && (
-            <div className="space-y-1.5 pt-2 border-t border-zinc-800">
-              <h4 className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 font-semibold">Etapas sugeridas</h4>
-              <ul className="space-y-1 text-zinc-400 text-[11px] leading-relaxed">
-                {project.suggestedSteps.map((step, idx) => (
-                  <li key={idx} className="bg-zinc-900/60 p-2 rounded border border-zinc-800">{step}</li>
-                ))}
+              <ul className="divide-y divide-zinc-800/70">
+                {project.requirements.map((req) => {
+                  const isChecked = !!checkedRequirements[req.id];
+                  return (
+                    <li key={req.id}>
+                      <button
+                        type="button"
+                        onClick={() => toggleRequirement(req.id)}
+                        className="group flex w-full items-start gap-2.5 py-2.5 text-left transition-colors"
+                        aria-pressed={isChecked}
+                      >
+                        {isChecked ? (
+                          <CheckSquare className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                        ) : (
+                          <Square className="mt-0.5 h-4 w-4 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400" />
+                        )}
+                        <span className="min-w-0">
+                          <span className={`block text-[13px] font-medium leading-snug ${isChecked ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}>
+                            {req.title}
+                          </span>
+                          <span className="mt-0.5 block text-xs leading-relaxed text-zinc-500">{req.description}</span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
-            </div>
-          )}
+            </section>
 
-          {/* Action Buttons */}
-          <div className="pt-3 border-t border-zinc-800 space-y-2 mt-auto">
+            {project.suggestedSteps && project.suggestedSteps.length > 0 && (
+              <section className="mt-7 space-y-2.5">
+                <h4 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Etapas sugeridas</h4>
+                <ol className="space-y-2">
+                  {project.suggestedSteps.map((step, idx) => (
+                    <li key={idx} className="flex items-start gap-2.5 text-[13px] leading-relaxed text-zinc-400">
+                      <span className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-zinc-700 text-[10px] font-semibold tabular-nums text-zinc-500">
+                        {idx + 1}
+                      </span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
+          </div>
+
+          {/* Sticky action footer */}
+          <div className="shrink-0 space-y-2.5 border-t border-zinc-800/80 bg-[#141416] px-5 py-4">
             {validationResult && (
-              <div className={`rounded-lg border p-3 ${validationResult.allPassed ? 'border-emerald-700 bg-emerald-950/30' : 'border-rose-800 bg-rose-950/20'}`} aria-live="polite">
-                <p className="font-bold text-zinc-100">{validationResult.passedCount} de {validationResult.totalCount} comprobaciones superadas</p>
-                <ul className="mt-2 space-y-1.5">
+              <div
+                className={`rounded-lg border p-3 ${validationResult.allPassed ? 'border-emerald-800/70 bg-emerald-950/25' : 'border-rose-900/70 bg-rose-950/15'}`}
+                aria-live="polite"
+              >
+                <p className="text-xs font-bold text-zinc-100">
+                  {validationResult.passedCount} de {validationResult.totalCount} comprobaciones superadas
+                </p>
+                <ul className="mt-2 space-y-1">
                   {validationResult.tests.map((result) => (
-                    <li key={result.id} className={`flex items-start gap-1.5 text-[11px] ${result.passed ? 'text-emerald-300' : 'text-rose-300'}`}>
+                    <li key={result.id} className={`flex items-start gap-1.5 text-[11px] leading-snug ${result.passed ? 'text-emerald-300' : 'text-rose-300'}`}>
                       {result.passed ? <CheckCircle2 className="mt-0.5 h-3 w-3 shrink-0" /> : <XCircle className="mt-0.5 h-3 w-3 shrink-0" />}
                       <span>{result.description}</span>
                     </li>
                   ))}
                 </ul>
                 {validationResult.allPassed && completedCount < totalCount && (
-                  <p className="mt-2 border-t border-amber-900 pt-2 text-[11px] text-amber-200">
+                  <p className="mt-2 border-t border-zinc-800 pt-2 text-[11px] text-amber-300">
                     El código funciona. Falta revisar la lista de requisitos antes de completar el proyecto.
                   </p>
                 )}
@@ -310,7 +315,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
               <button
                 onClick={handleValidateProject}
                 disabled={isEvaluating}
-                className="w-full flex items-center justify-center gap-2 rounded bg-yellow-300 hover:bg-yellow-200 py-2 text-zinc-950 font-bold text-xs shadow-sm transition-colors disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-md bg-yellow-300 py-2 text-xs font-bold text-zinc-950 shadow-sm transition-colors hover:bg-yellow-200 disabled:opacity-50"
                 aria-label="Comprobar proyecto"
               >
                 {isEvaluating ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Rocket className="h-3.5 w-3.5" />}
@@ -319,7 +324,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
             ) : (
               <button
                 onClick={handleSubmitProject}
-                className="w-full flex items-center justify-center gap-2 rounded bg-zinc-100 hover:bg-white py-2 text-zinc-900 font-bold text-xs shadow-sm transition-colors"
+                className="flex w-full items-center justify-center gap-2 rounded-md bg-zinc-100 py-2 text-xs font-bold text-zinc-900 shadow-sm transition-colors hover:bg-white"
               >
                 <Rocket className="h-3.5 w-3.5 fill-zinc-900" />
                 <span>Marcar proyecto como completado</span>
@@ -328,18 +333,18 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
 
             <button
               onClick={handleReset}
-              className="w-full flex items-center justify-center gap-1 text-zinc-400 hover:text-zinc-200 py-1 text-[11px] transition-colors"
+              className="flex w-full items-center justify-center gap-1.5 py-0.5 text-[11px] text-zinc-500 transition-colors hover:text-zinc-300"
             >
               <RotateCcw className="h-3 w-3" />
               <span>Restaurar plantilla inicial</span>
             </button>
           </div>
-        </div>
+        </aside>
 
-        {/* Center: File Tree & Code Editor */}
-        <div className={`${compactPane === 'code' ? 'flex' : 'hidden'} flex-1 overflow-hidden lg:flex`}>
+        {/* Center: editor */}
+        <div className={`${compactPane === 'code' ? 'flex' : 'hidden'} min-w-0 flex-1 overflow-hidden lg:flex`}>
           {showFileTree && (
-            <div className="w-48 shrink-0 h-full border-r border-zinc-800/80 bg-[#121214]">
+            <div className="h-full w-48 shrink-0 border-r border-zinc-800/80 bg-[#121214]">
               <FileTree
                 files={workspace.files}
                 activeFilePath={workspace.activeFilePath}
@@ -364,12 +369,13 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
             </div>
           )}
 
-          <div className="flex-1 flex flex-col h-full bg-[#18181b] border-r border-zinc-800/80">
-            {/* Tabs */}
-            <div className="flex h-8 items-center gap-1 bg-[#141416] border-b border-zinc-800/80 px-2">
+          <div className="flex h-full min-w-0 flex-1 flex-col bg-[#18181b]">
+            <div className="flex h-9 shrink-0 items-center gap-1 border-b border-zinc-800/80 bg-[#141416] px-2">
               <button
                 onClick={() => setShowFileTree(!showFileTree)}
-                className={`p-1 rounded text-zinc-400 hover:text-zinc-200 ${showFileTree ? 'bg-zinc-800 text-zinc-200' : ''}`}
+                title={showFileTree ? 'Ocultar archivos' : 'Mostrar archivos'}
+                aria-label={showFileTree ? 'Ocultar archivos' : 'Mostrar archivos'}
+                className={`rounded p-1 text-zinc-500 transition-colors hover:text-zinc-200 ${showFileTree ? 'bg-zinc-800 text-zinc-200' : ''}`}
               >
                 <FolderTree className="h-3.5 w-3.5" />
               </button>
@@ -378,10 +384,10 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
                 <button
                   key={f.path}
                   onClick={() => setWorkspace((prev) => ({ ...prev, activeFilePath: f.path }))}
-                  className={`px-3 py-1 text-xs font-mono transition-colors ${
+                  className={`px-3 py-1.5 font-mono text-xs transition-colors ${
                     f.path === workspace.activeFilePath
-                      ? 'bg-[#18181b] text-zinc-100 font-semibold border-t-2 border-zinc-400'
-                      : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-200'
+                      ? 'rounded bg-[#18181b] font-semibold text-zinc-100'
+                      : 'rounded text-zinc-500 hover:bg-white/5 hover:text-zinc-200'
                   }`}
                 >
                   {f.name}
@@ -389,7 +395,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
               ))}
             </div>
 
-            <div className="flex-1 w-full h-full bg-[#18181b]">
+            <div className="h-full min-h-0 w-full flex-1 bg-[#18181b]">
               <CodeEditor
                 file={activeFile}
                 workspaceFiles={workspace.files}
@@ -413,17 +419,15 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
           </div>
         </div>
 
-        {/* Right: Live Preview & Runtime Console */}
-        <div className={`${compactPane === 'output' ? 'flex' : 'hidden'} h-full w-full shrink-0 flex-col lg:flex lg:w-[45%]`}>
-          {language === 'python' ? (
-            <LogicRunnerPanel
-              workspace={workspace}
-              language="python"
-              packages={project.languageVariants?.python.packages}
-            />
-          ) : (
-            <PreviewPane ref={previewRef} workspace={workspace} />
-          )}
+        {/* Right: execution console (these projects validate logic, not visuals) */}
+        <div
+          className={`${compactPane === 'output' ? 'flex' : 'hidden'} h-full w-full shrink-0 flex-col overflow-hidden border-l border-zinc-800/80 lg:flex lg:w-[380px] xl:w-[420px]`}
+        >
+          <LogicRunnerPanel
+            workspace={workspace}
+            language={language}
+            packages={language === 'python' ? project.languageVariants?.python.packages : undefined}
+          />
         </div>
       </div>
     </div>

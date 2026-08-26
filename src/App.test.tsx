@@ -6,6 +6,7 @@ import App from './App';
 import { loadAppNavigationState, loadUserProgress } from './engine/persistence';
 import { FUNDAMENTOS_COURSE } from './curriculum/fundamentos/course';
 import { AI_ENGINEER_COURSE } from './curriculum/ai-engineer/course';
+import { OPEN_CELLS_COURSE } from './curriculum/open-cells/course';
 
 describe('App navigation persistence', () => {
   beforeEach(() => {
@@ -37,6 +38,16 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('group', { name: 'Lenguaje del ejercicio' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Python' })).toBeTruthy();
     expect(screen.getByText('Clase visual guiada')).toBeTruthy();
+  });
+
+  it('mantiene Open Cells como un curso independiente con su propio recorrido', () => {
+    render(<App />);
+    expect(screen.getByRole('button', { name: `Ver recorrido: ${OPEN_CELLS_COURSE.title}` })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: `Ver recorrido: ${OPEN_CELLS_COURSE.title}` }));
+    expect(screen.getByRole('heading', { name: OPEN_CELLS_COURSE.title })).toBeTruthy();
+    expect(screen.getByText(/68 lecciones · 141 prácticas/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^6\. Crear tu primer componente Cells/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^46\. onPageLeave y cleanup/ })).toBeTruthy();
   });
 
   it('abre un curso desde el inicio del roadmap aunque el catálogo estuviera desplazado', () => {

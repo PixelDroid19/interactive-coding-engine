@@ -1,8 +1,12 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { PlaygroundView } from './PlaygroundView';
+
+vi.mock('../runtime/CellsLearningLab', () => ({
+  CellsLearningLab: ({ variant }: { variant?: string }) => <div data-testid="cells-runtime">Runtime Cells {variant}</div>,
+}));
 
 describe('PlaygroundView', () => {
   beforeEach(() => {
@@ -37,6 +41,19 @@ describe('PlaygroundView', () => {
 
     expect(htmlTemplate.getAttribute('aria-pressed')).toBe('false');
     expect(jsTemplate.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('abre proyectos Cells reales como plantillas independientes de Lit', () => {
+    render(<PlaygroundView onBack={() => {}} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Componente Cells' }));
+
+    expect(screen.getByTestId('cells-runtime').textContent).toContain('component');
+    expect(screen.getByText('Proyecto Cells independiente')).toBeTruthy();
+    expect(screen.queryByTitle('Vista previa')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicación Cells' }));
+    expect(screen.getByTestId('cells-runtime').textContent).toContain('application');
   });
 
   it('permite ocultar y volver a mostrar el explorador de archivos', () => {

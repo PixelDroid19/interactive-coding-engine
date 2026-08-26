@@ -301,7 +301,7 @@ export function buildRoadmap(course: Course, scrims: Record<string, ScrimLessonD
         }
       } else if (item.type === 'reading') {
         const last = rows[rows.length - 1];
-        if (last) {
+        if (last && item.relatedLessonId === last.main.lessonId && !last.reading) {
           last.reading = {
             id: `cp-${item.id}`,
             kind: 'checkpoint',
@@ -310,6 +310,27 @@ export function buildRoadmap(course: Course, scrims: Record<string, ScrimLessonD
             lessonId: item.id,
             moduleId: mod.id,
           };
+        } else {
+          rows.push({
+            main: {
+              id: `m-${item.id}`,
+              kind: 'main',
+              itemType: item.type,
+              label: item.title,
+              lessonId: item.id,
+              moduleId: mod.id,
+            },
+            hasChallenge: Boolean(item.handsOnLab),
+            challengeTitle: item.handsOnLab ? 'Laboratorio interactivo' : undefined,
+            concepts: item.keyPoints.filter((point) => point.length <= 60).slice(0, 2).map((point, index) => ({
+              id: `st-${item.id}-${index}`,
+              kind: 'concept' as const,
+              label: point,
+              lessonId: item.id,
+              moduleId: mod.id,
+              focusTerm: point,
+            })),
+          });
         }
       } else if (item.type === 'reasoning') {
         const last = rows[rows.length - 1];

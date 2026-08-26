@@ -1,0 +1,169 @@
+import { parseCellsCommand } from './cellsCommandParser';
+import { buildCellsPreviewDocument } from './cellsPreviewCompiler';
+import { auditCellsProject } from './cellsProjectAudit';
+import { createCellsAppWorkspace } from './cellsAppRecipes';
+import { createCellsComponentWorkspace } from './cellsRecipes';
+import { createVersionedCellsWorkspace, deleteCellsFile, writeCellsFile, type VersionedCellsWorkspace } from './cellsVirtualFileSystem';
+import type { CellsWorkerRequest, CellsWorkerResponse } from './cellsWorkerProtocol';
+import { normalizeCellsRuntimeError } from './cellsWorkerProtocol';
+import { exportCellsWorkspaceZip } from './cellsZip';
+
+type RequestType = CellsWorkerRequest['type'];
+
+function response<T extends CellsWorkerResponse['type']>(
+  request: CellsWorkerRequest,
+  type: T,
+  payload: Extract<CellsWorkerResponse, { type: T }>['payload'],
+): Extract<CellsWorkerResponse, { type: T }> {
+  return {
+    type,
+    payload,
+    requestId: request.requestId,
+    sessionId: request.sessionId,
+    generation: request.generation,
+  } as Extract<CellsWorkerResponse, { type: T }>;
+}
+
+function packageName(workspace: VersionedCellsWorkspace): string {
+  try {
+    const manifest = JSON.parse(workspace.snapshot.files['package.json']?.content ?? '{}');
+    return String(manifest.name ?? 'open-cells-project').split('/').at(-1) || 'open-cells-project';
+  } catch {
+    return 'open-cells-project';
+  }
+}
+
+export class CellsRuntimeSession {
+  private workspace?: VersionedCellsWorkspace;
+  private readonly cancelled = new Set<string>();
+
+  constructor(private readonly sessionId: string) {}
+
+  private requireWorkspace(request: CellsWorkerRequest): VersionedCellsWorkspace {
+    if (!this.workspace) throw { code: 'INVALID_WORKSPACE', message: 'Primero crea o abre un proyecto Cells.' };
+    if (request.generation !== this.workspace.generation) {
+      throw {
+        code: 'INVALID_WORKSPACE',
+        message: `La operación pertenece a la generación ${request.generation}, pero el proyecto está en la ${this.workspace.generation}.`,
+        hint: 'Actualiza el proyecto antes de volver a ejecutar la operación.',
+      };
+    }
+    return this.workspace;
+  }
+
+  private runParsedCommand(request: CellsWorkerRequest, commandText: string): CellsWorkerResponse {
+    const parsed = parseCellsCommand(commandText);
+    if (parsed.runtimeAction === 'create-component' || parsed.runtimeAction === 'create-application') {
+      const scaffold = parsed.options.scaffold as { name: string; namespace?: '@open-cells-learning' };
+      this.workspace = parsed.runtimeAction === 'create-application'
+        ? createCellsAppWorkspace(scaffold)
+        : createCellsComponentWorkspace(scaffold);
+      return response(request, 'command:completed', {
+        command: commandText,
+        output: `Proyecto ${scaffold.name} creado dentro del navegador.`,
+        workspace: this.workspace.snapshot,
+      });
+    }
+    const workspace = this.requireWorkspace(request);
+    if (parsed.runtimeAction === 'build-preview') {
+      const built = buildCellsPreviewDocument(workspace.snapshot);
+      return response(request, 'preview:built', built);
+    }
+    if (parsed.runtimeAction === 'test-component' || parsed.runtimeAction === 'test-application') {
+      const audited = auditCellsProject(workspace.snapshot);
+      return response(request, 'tests:completed', {
+        results: audited.results,
+        ...(parsed.options.coverage ? { coverage: audited.coverage } : {}),
+      });
+    }
+    if (parsed.runtimeAction === 'generate-locales') {
+      const sourcePath = Object.keys(workspace.snapshot.files).find((path) => /^src\/[^/]+\.js$/.test(path));
+      const source = sourcePath ? workspace.snapshot.files[sourcePath].content : '';
+      const keys = [...new Set(Array.from(source.matchAll(/this\.t\(['"]([^'"]+)['"]/g), (match) => match[1]))];
+      return response(request, 'locales:generated', { workspace: workspace.snapshot, keys });
+    }
+    if (parsed.runtimeAction === 'generate-documentation') {
+      return response(request, 'documentation:generated', { workspace: workspace.snapshot });
+    }
+    throw { code: 'COMMAND_FAILED', message: `La acción ${parsed.runtimeAction} no está implementada.` };
+  }
+
+  async handle(request: CellsWorkerRequest): Promise<CellsWorkerResponse> {
+    try {
+      if (request.sessionId !== this.sessionId) {
+        throw { code: 'INVALID_REQUEST', message: 'La petición pertenece a otra sesión.' };
+      }
+      if (request.type === 'request:cancel') {
+        this.cancelled.add(request.payload.targetRequestId);
+        return response(request, 'request:cancelled', { targetRequestId: request.payload.targetRequestId });
+      }
+      if (request.type === 'runtime:dispose') {
+        this.workspace = undefined;
+        return response(request, 'request:cancelled', { targetRequestId: request.requestId });
+      }
+      if (this.cancelled.has(request.requestId)) {
+        throw { code: 'CANCELLED', message: 'La operación fue cancelada.' };
+      }
+      if (request.type === 'project:create') {
+        this.workspace = createCellsComponentWorkspace(request.payload.scaffold);
+        if (request.generation !== this.workspace.generation) {
+          throw { code: 'INVALID_WORKSPACE', message: 'Un proyecto nuevo debe comenzar en la generación 0.' };
+        }
+        return response(request, 'workspace:updated', { workspace: this.workspace.snapshot });
+      }
+      if (request.type === 'project:load') {
+        this.workspace = createVersionedCellsWorkspace(request.payload.workspace, request.generation);
+        return response(request, 'workspace:updated', { workspace: this.workspace.snapshot });
+      }
+      if (request.type === 'file:write') {
+        const workspace = this.workspace;
+        if (!workspace || request.generation !== workspace.generation + 1) {
+          throw { code: 'INVALID_WORKSPACE', message: 'La escritura no parte de la siguiente generación del proyecto.' };
+        }
+        this.workspace = writeCellsFile(workspace, request.payload.path, request.payload.content);
+        return response(request, 'workspace:updated', { workspace: this.workspace.snapshot });
+      }
+      if (request.type === 'file:delete') {
+        const workspace = this.workspace;
+        if (!workspace || request.generation !== workspace.generation + 1) {
+          throw { code: 'INVALID_WORKSPACE', message: 'La eliminación no parte de la siguiente generación del proyecto.' };
+        }
+        this.workspace = deleteCellsFile(workspace, request.payload.path);
+        return response(request, 'workspace:updated', { workspace: this.workspace.snapshot });
+      }
+      if (request.type === 'command:run') return this.runParsedCommand(request, request.payload.command);
+      const workspace = this.requireWorkspace(request);
+      if (request.type === 'preview:build') {
+        const instrumentSource = request.payload.runContractTests
+          ? (await import('./cellsPreviewInstrumentation')).instrumentCellsSource
+          : undefined;
+        return response(request, 'preview:built', buildCellsPreviewDocument(workspace.snapshot, {
+          ...request.payload,
+          instrumentSource,
+        }));
+      }
+      if (request.type === 'tests:run') {
+        const audited = auditCellsProject(workspace.snapshot);
+        return response(request, 'tests:completed', {
+          results: audited.results,
+          ...(request.payload.coverage ? { coverage: audited.coverage } : {}),
+        });
+      }
+      if (request.type === 'locales:generate') {
+        return this.runParsedCommand(request, 'cells component:locales');
+      }
+      if (request.type === 'documentation:generate') {
+        return this.runParsedCommand(request, 'cells component:documentation');
+      }
+      if (request.type === 'project:export') {
+        return response(request, 'project:exported', {
+          bytes: exportCellsWorkspaceZip(workspace.snapshot),
+          fileName: `${packageName(workspace)}.zip`,
+        });
+      }
+      throw { code: 'INVALID_REQUEST', message: `La operación ${(request as { type: RequestType }).type} no está disponible.` };
+    } catch (error) {
+      return response(request, 'runtime:error', { error: normalizeCellsRuntimeError(error) });
+    }
+  }
+}

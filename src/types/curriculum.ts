@@ -81,7 +81,13 @@ export interface ReadingItem extends BaseCurriculumItem {
   practiceItemId?: string;
   sources?: ReadingSource[];
   interactiveLab?: InteractiveAILab;
-  handsOnLab?: 'embeddings-webgpu';
+  handsOnLab?:
+    | 'embeddings-webgpu'
+    | 'open-cells-playground'
+    | 'open-cells-app-playground'
+    | 'open-cells-channels-playground'
+    | 'open-cells-data-playground'
+    | 'open-cells-delivery-playground';
 }
 
 export interface ReasoningNode {

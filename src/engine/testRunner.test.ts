@@ -619,4 +619,26 @@ describe('testRunner para componentes ejecutados en navegador', () => {
     expect(result.tests[0].isEvaluationError).not.toBe(true);
     expect(result.tests[0].errorMessage).toContain('status-badge');
   });
+
+  it('distingue esperar undefined de no declarar un resultado esperado', async () => {
+    const challenge = {
+      id: 'ausente-real', title: 'Conserva ausencias', timestamp: 0, instructions: '', hints: [],
+      tests: [{
+        id: 'ausente',
+        description: 'No inventa un valor',
+        validatorType: 'function-call',
+        targetFunction: 'buscar',
+        args: ['desconocido'],
+        expectedReturn: undefined,
+      }],
+    } as any;
+
+    const result = await runChallengeValidation(
+      challenge,
+      wsFromJs("function buscar() { return 'valor fijo'; }"),
+    );
+
+    expect(result.allPassed).toBe(false);
+    expect(result.tests[0]).toMatchObject({ passed: false, receivedValue: 'valor fijo', expectedValue: undefined });
+  });
 });

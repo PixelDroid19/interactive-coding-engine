@@ -28,6 +28,7 @@ import { PreviewPane, PreviewPaneRef } from '../preview/PreviewPane';
 import { LogicRunnerPanel, LogicRunnerPanelRef } from '../preview/LogicRunnerPanel';
 import { NavigationState } from '../../engine/navigation';
 import { LanguageSelector } from '../runtime/LanguageSelector';
+import { ThemeToggle } from '../ThemeToggle';
 
 interface DebuggingViewProps {
   exercise: DebuggingExerciseItem;
@@ -340,6 +341,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <ThemeToggle compact />
             {exercise.languageVariants && onLanguageChange && (
               <LanguageSelector value={language} onChange={onLanguageChange} compact />
             )}

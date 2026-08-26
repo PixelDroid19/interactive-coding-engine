@@ -35,6 +35,7 @@ export interface CompileLessonInput {
   templateId?: ScrimLessonData['templateId'];
   executionMode?: ScrimLessonData['executionMode'];
   initialWorkspace: WorkspaceSnapshot;
+  teachingFilePaths?: string[];
   beats: LessonBeat[];
   concepts?: string[];
   skillsIntroduced: string[];
@@ -49,6 +50,7 @@ export interface CompileLessonInput {
   teachNotes?: { title: string; body: string }[];
   author?: ScrimLessonData['author'];
   audioUrl?: string;
+  narrationMode?: ScrimLessonData['narrationMode'];
   language?: string;
   durationMs?: number;
   fitTimelineToDuration?: boolean;
@@ -511,9 +513,11 @@ export function compileLesson(input: CompileLessonInput): ScrimLessonData {
     executionMode: input.executionMode ?? 'browser',
     durationMs,
     initialWorkspace: cloneWorkspace(input.initialWorkspace),
+    teachingFilePaths: input.teachingFilePaths,
     events,
     snapshots: generateSnapshots(input.initialWorkspace, events, 4000),
     audioTrack,
+    narrationMode: input.narrationMode,
     challenges,
     chapters,
     concepts: input.concepts,

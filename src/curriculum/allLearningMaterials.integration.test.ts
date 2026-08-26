@@ -5,8 +5,9 @@ import { FUNDAMENTOS_COURSE } from './fundamentos/course';
 import { JAVASCRIPT_COURSE } from './javascript/course';
 import { COMPONENT_COURSE } from './web-components-lit/course';
 import { AI_ENGINEER_COURSE } from './ai-engineer/course';
+import { OPEN_CELLS_COURSE } from './open-cells/course';
 
-const courses: Course[] = [FUNDAMENTOS_COURSE, JAVASCRIPT_COURSE, COMPONENT_COURSE, AI_ENGINEER_COURSE];
+const courses: Course[] = [FUNDAMENTOS_COURSE, JAVASCRIPT_COURSE, COMPONENT_COURSE, AI_ENGINEER_COURSE, OPEN_CELLS_COURSE];
 
 function itemsOf<T extends 'reading' | 'reasoning'>(course: Course, type: T) {
   return course.modules.flatMap((module) => module.items).filter((item) => item.type === type);
@@ -92,9 +93,9 @@ describe('auditoría integrada del material de aprendizaje', () => {
     }
   });
 
-  it('las 132 lecturas explican, ejemplifican, anticipan errores y conectan con la práctica', () => {
+  it('todas las lecturas explican, ejemplifican, anticipan errores y conectan con la práctica', () => {
     const readings = courses.flatMap((course) => itemsOf(course, 'reading')) as ReadingItem[];
-    expect(readings).toHaveLength(132);
+    expect(readings).toHaveLength(200);
     expect(new Set(readings.map((reading) => reading.id)).size).toBe(readings.length);
 
     for (const reading of readings) {
@@ -117,9 +118,9 @@ describe('auditoría integrada del material de aprendizaje', () => {
     }
   });
 
-  it('las 127 actividades Piensa son claras, guiadas y resolubles desde lo que muestran', () => {
+  it('todas las actividades Piensa son claras, guiadas y resolubles desde lo que muestran', () => {
     const activities = courses.flatMap((course) => itemsOf(course, 'reasoning')) as ReasoningExerciseItem[];
-    expect(activities).toHaveLength(127);
+    expect(activities).toHaveLength(195);
     expect(new Set(activities.map((item) => item.id)).size).toBe(activities.length);
 
     for (const item of activities) {

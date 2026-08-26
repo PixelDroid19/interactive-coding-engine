@@ -228,10 +228,12 @@ export interface ScrimLessonData {
   id: string;
   title: string;
   description: string;
-  templateId: 'vanilla-js' | 'js-only' | 'lit' | 'react';
+  templateId: 'vanilla-js' | 'js-only' | 'lit' | 'react' | 'cells-component' | 'cells-application';
   executionMode?: 'logic' | 'browser';
   durationMs: number;
   initialWorkspace: WorkspaceSnapshot;
+  /** Archivos que forman la superficie didáctica; el runtime conserva el resto del proyecto. */
+  teachingFilePaths?: string[];
   languageVariants?: LanguageVariants;
   /** Paquetes de Pyodide que necesita la variante activa. */
   runtimePackages?: string[];

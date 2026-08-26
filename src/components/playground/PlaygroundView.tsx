@@ -6,6 +6,8 @@ import { FileTree } from '../editor/FileTree';
 import { PreviewPane, PreviewPaneRef } from '../preview/PreviewPane';
 import { loadPlaygroundDraft, savePlaygroundDraft } from '../../engine/persistence';
 import { TemplateDefinition } from '../../types/runtime';
+import { CellsLearningLab } from '../runtime/CellsLearningLab';
+import { ThemeToggle } from '../ThemeToggle';
 import {
   ArrowLeft,
   FolderTree,
@@ -15,6 +17,15 @@ import {
 
 interface PlaygroundViewProps {
   onBack: () => void;
+}
+
+const CELLS_TEMPLATES: Array<Pick<TemplateDefinition, 'id' | 'name'>> = [
+  { id: 'cells-component', name: 'Componente Cells' },
+  { id: 'cells-application', name: 'Aplicación Cells' },
+];
+
+function isCellsTemplate(id: TemplateDefinition['id']): id is 'cells-component' | 'cells-application' {
+  return id === 'cells-component' || id === 'cells-application';
 }
 
 export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
@@ -29,6 +40,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
     };
   });
   const [showFileTree, setShowFileTree] = useState(initialDraft?.showFileTree ?? true);
+  const [cellsResetKey, setCellsResetKey] = useState(0);
   const previewRef = useRef<PreviewPaneRef | null>(null);
 
   useEffect(() => {
@@ -37,6 +49,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
 
   const handleSelectTemplate = (tplId: TemplateDefinition['id']) => {
     setSelectedTemplateId(tplId);
+    if (isCellsTemplate(tplId)) return;
     const tpl = STARTER_TEMPLATES[tplId];
     setWorkspace({
       activeFilePath: tpl.entrypoint,
@@ -45,6 +58,10 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
   };
 
   const handleReset = () => {
+    if (isCellsTemplate(selectedTemplateId)) {
+      setCellsResetKey((current) => current + 1);
+      return;
+    }
     const tpl = STARTER_TEMPLATES[selectedTemplateId];
     setWorkspace({
       activeFilePath: tpl.entrypoint,
@@ -84,7 +101,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
             role="group"
             aria-label="Plantilla inicial"
           >
-            {Object.values(STARTER_TEMPLATES).map((tpl) => (
+            {[...Object.values(STARTER_TEMPLATES), ...CELLS_TEMPLATES].map((tpl) => (
               <button
                 key={tpl.id}
                 onClick={() => handleSelectTemplate(tpl.id)}
@@ -100,6 +117,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
             ))}
           </div>
 
+          <ThemeToggle compact />
           <button
             onClick={handleReset}
             className="flex items-center gap-1 rounded bg-zinc-800 hover:bg-zinc-700 px-2.5 py-1 text-xs text-zinc-300 transition-colors"
@@ -112,7 +130,19 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
         </div>
       </header>
 
-      {/* Main 3-Pane Workspace */}
+      {isCellsTemplate(selectedTemplateId) ? (
+        <main className="playground-cells-shell flex-1 overflow-auto" aria-label="Proyecto Cells independiente">
+          <div className="playground-cells-shell__intro">
+            <span>Proyecto Cells independiente</span>
+            <p>Trabaja con el scaffold, los comandos, la vista previa, las pruebas y la exportación del runtime Cells del navegador.</p>
+          </div>
+          <CellsLearningLab
+            key={`${selectedTemplateId}:${cellsResetKey}`}
+            variant={selectedTemplateId === 'cells-application' ? 'application' : 'component'}
+          />
+        </main>
+      ) : (
+      /* Main 3-Pane Workspace */
       <div className="playground-layout flex flex-1 w-full overflow-hidden">
         {/* File Tree */}
         {showFileTree && (
@@ -196,6 +226,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
           <PreviewPane ref={previewRef} workspace={workspace} />
         </div>
       </div>
+      )}
     </div>
   );
 };

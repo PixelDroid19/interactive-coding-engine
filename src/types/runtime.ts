@@ -40,7 +40,7 @@ export interface ChallengeValidationResult {
 }
 
 export interface TemplateDefinition {
-  id: 'vanilla-js' | 'js-only' | 'lit' | 'react';
+  id: 'vanilla-js' | 'js-only' | 'lit' | 'react' | 'cells-component' | 'cells-application';
   name: string;
   description: string;
   iconName: string;

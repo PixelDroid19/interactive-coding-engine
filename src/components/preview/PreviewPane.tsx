@@ -10,6 +10,7 @@ interface PreviewPaneProps {
   autoReload?: boolean;
   isFloating?: boolean;
   onToggleFloating?: () => void;
+  previewRuntime?: 'standard' | 'cells';
 }
 
 export const PreviewPane = forwardRef<FloatingBrowserRef, PreviewPaneProps>(({
@@ -18,6 +19,7 @@ export const PreviewPane = forwardRef<FloatingBrowserRef, PreviewPaneProps>(({
   autoReload = true,
   isFloating = false,
   onToggleFloating,
+  previewRuntime,
 }, ref) => {
   return (
     <FloatingBrowser
@@ -27,7 +29,7 @@ export const PreviewPane = forwardRef<FloatingBrowserRef, PreviewPaneProps>(({
       autoReload={autoReload}
       isFloating={isFloating}
       onToggleFloating={onToggleFloating || (() => {})}
+      previewRuntime={previewRuntime}
     />
   );
 });
-

@@ -171,6 +171,23 @@ function prepareExecutableJavaScript(source: string): string {
     .replace(/\bexport\s+(?=(?:async\s+)?(?:function|class|const|let|var)\b)/g, '');
 }
 
+function javascriptFiles(workspace: WorkspaceSnapshot) {
+  return Object.values(workspace.files).filter(
+    (file) => file.language === 'javascript' || file.language === 'typescript' || file.name.endsWith('.js') || file.name.endsWith('.jsx'),
+  );
+}
+
+function sourceForTest(test: ChallengeTest, workspace: WorkspaceSnapshot): string {
+  const files = javascriptFiles(workspace);
+  if (test.validatorType !== 'function-call' || !test.targetFunction) {
+    return files.map((file) => file.content).join('\n\n');
+  }
+
+  const escapedName = test.targetFunction.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const declaration = new RegExp(`(?:function\\s+${escapedName}\\b|(?:const|let|var)\\s+${escapedName}\\s*=)`);
+  return files.find((file) => declaration.test(file.content))?.content ?? files.map((file) => file.content).join('\n\n');
+}
+
 export async function runChallengeValidation(
   challenge: ScrimChallenge,
   workspace: WorkspaceSnapshot,
@@ -189,21 +206,21 @@ export async function runChallengeValidation(
   // Chequeo previo de sintaxis: si el programa no compila, no lo evaluamos.
   // Así un error de sintaxis se reporta como "no pudimos evaluar" y no como
   // "tu respuesta es incorrecta".
-  const jsFilesPre = Object.values(workspace.files).filter(
-    (f) => f.language === 'javascript' || f.language === 'typescript' || f.name.endsWith('.js') || f.name.endsWith('.jsx')
-  );
-  const combinedJsPre = jsFilesPre.map((f) => f.content).join('\n\n');
-  const syntaxProbe = prepareExecutableJavaScript(combinedJsPre);
-  let syntaxError: string | null = null;
-  if (combinedJsPre.trim().length > 0) {
-    try {
-      new Function(syntaxProbe);
-    } catch (e: any) {
-      syntaxError = e.message || 'Error de sintaxis';
-    }
-  }
-
   for (const test of challenge.tests) {
+    let syntaxError: string | null = null;
+    // El iframe compila los módulos de browser-script y source-regex solo
+    // inspecciona estructura. Unir todo el grafo ESM en un único Function
+    // inventa colisiones entre exports válidos de archivos diferentes.
+    if (test.validatorType !== 'browser-script' && test.validatorType !== 'source-regex') {
+      const source = sourceForTest(test, workspace);
+      if (source.trim().length > 0) {
+        try {
+          new Function(prepareExecutableJavaScript(source));
+        } catch (error: any) {
+          syntaxError = error.message || 'Error de sintaxis';
+        }
+      }
+    }
     if (syntaxError) {
       testResults.push({
         id: test.id,
@@ -276,10 +293,7 @@ async function evaluateSingleTest(
   iframeElement?: HTMLIFrameElement | null,
   generation?: number
 ): Promise<TestResultItem> {
-  const jsFiles = Object.values(workspace.files).filter(
-    (f) => f.language === 'javascript' || f.language === 'typescript' || f.name.endsWith('.js') || f.name.endsWith('.jsx')
-  );
-  const combinedJs = jsFiles.map((f) => f.content).join('\n\n');
+  const combinedJs = sourceForTest(test, workspace);
   const htmlFiles = Object.values(workspace.files).filter((f) => f.language === 'html' || f.name.endsWith('.html'));
   const combinedHtml = htmlFiles.map((f) => f.content).join('\n\n');
 
@@ -620,7 +634,7 @@ async function evaluateSingleTest(
           };
         }
 
-        if (test.expectedReturn !== undefined) {
+        if (Object.prototype.hasOwnProperty.call(test, 'expectedReturn')) {
           // For strings, if no explicit matcher, use exact/deep-equal for numbers/booleans/arrays, but for strings be a bit lenient? Keep exact for now unless matcher specified
           const isMatch = evaluationValuesEqual(result, test.expectedReturn);
           return {

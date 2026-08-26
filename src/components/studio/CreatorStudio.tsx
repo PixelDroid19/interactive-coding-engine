@@ -7,7 +7,6 @@ import { ScrimChallenge, ScrimLessonData, WorkspaceSnapshot, WorkspaceFile } fro
 import { CodeEditor } from '../editor/CodeEditor';
 import { FileTree } from '../editor/FileTree';
 import { PreviewPane, PreviewPaneRef } from '../preview/PreviewPane';
-import { TemplateDefinition } from '../../types/runtime';
 import {
   Mic,
   MicOff,
@@ -38,7 +37,7 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
 }) => {
   // Step: 1. choose-template, 2. prepare-workspace, 3. recording, 4. review-publish
   const [step, setStep] = useState<'template' | 'prepare' | 'recording' | 'review'>('template');
-  const [selectedTemplateId, setSelectedTemplateId] = useState<TemplateDefinition['id']>('vanilla-js');
+  const [selectedTemplateId, setSelectedTemplateId] = useState<ScrimLessonData['templateId']>('vanilla-js');
 
   // Metadata
   const [lessonTitle, setLessonTitle] = useState('Nueva lección');
@@ -77,7 +76,7 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
   }, []);
 
   // Switch template
-  const handleSelectTemplate = (templateId: TemplateDefinition['id']) => {
+  const handleSelectTemplate = (templateId: ScrimLessonData['templateId']) => {
     setSelectedTemplateId(templateId);
     const tpl = STARTER_TEMPLATES[templateId];
     setWorkspace({
@@ -336,7 +335,7 @@ export const CreatorStudio: React.FC<CreatorStudioProps> = ({
               <button
                 type="button"
                 key={tpl.id}
-                onClick={() => handleSelectTemplate(tpl.id)}
+                onClick={() => handleSelectTemplate(tpl.id as ScrimLessonData['templateId'])}
                 aria-label={`Usar plantilla ${tpl.name}`}
                 className="group flex flex-col p-4 rounded-xl bg-zinc-900/80 border border-zinc-800 hover:border-zinc-600 hover:bg-zinc-900 cursor-pointer transition-all shadow-sm text-left"
               >

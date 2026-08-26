@@ -10,6 +10,7 @@ import { FlowchartDiagram } from './diagrams/FlowchartDiagram';
 import { ModuleDependencyDiagram } from './diagrams/ModuleDependencyDiagram';
 import { VectorRankingDiagram } from './diagrams/VectorRankingDiagram';
 import { ContextBudgetDiagram } from './diagrams/ContextBudgetDiagram';
+import { ThemeToggle } from '../ThemeToggle';
 
 interface Props {
   item: ReasoningExerciseItem;
@@ -78,6 +79,7 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
           <span className="category-tag"><Network size={13} /> Piensa</span>
           <span className="topbar-lesson-title truncate">{item.title}</span>
         </div>
+        <ThemeToggle compact />
       </header>
       <main className="reasoning-main">
         <section className="reasoning-card">

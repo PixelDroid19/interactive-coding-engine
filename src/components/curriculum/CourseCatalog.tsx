@@ -29,7 +29,7 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress,
         {courses.map((course) => {
           const items = course.modules.flatMap((module) => module.items);
           const completed = items.filter((item) => progress.completedItemIds.includes(item.id)).length;
-          const lessons = items.filter((item) => item.type === 'scrim').length;
+          const lessons = items.filter((item) => item.type === 'scrim' || (item.type === 'reading' && !item.relatedLessonId)).length;
           const percent = items.length ? Math.round((completed / items.length) * 100) : 0;
           const variant = course.level === 'Beginner' ? 'green' : course.level === 'Intermediate' ? 'yellow' : course.level === 'Advanced' ? 'red' : 'yellow';
           const levelLabel = course.level === 'Beginner' ? 'Desde cero' : course.level === 'Intermediate' ? 'Intermedio' : course.level === 'Advanced' ? 'Avanzado' : course.level;
