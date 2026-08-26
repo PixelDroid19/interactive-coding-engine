@@ -49,6 +49,10 @@ describe('paridad estructural con Cells Academy CLI', () => {
       'src/academy-learning-card.css.js',
       'locales/locales.json',
       'demo/locales/locales.json',
+      'demo/index.html',
+      'demo/basic.html',
+      'demo/demo.js',
+      'demo/demo-build.js',
       'test/unit/locales/locales.json',
       'vite.config.js',
     ];
@@ -61,8 +65,8 @@ describe('paridad estructural con Cells Academy CLI', () => {
     expect(cli.has('src/components/AcademyTypeText.js')).toBe(true);
     expect(cli.has('src/components/AcademyButtonDefault.js')).toBe(true);
     expect(browser.has('src/mixins/WidgetMixin.js')).toBe(true);
-    expect(browser.has('src/components/OpenCellsTypeText.js')).toBe(true);
-    expect(browser.has('src/components/OpenCellsButtonDefault.js')).toBe(true);
+    expect(browser.has('src/components/OpenCellsTypeText.js')).toBe(false);
+    expect(browser.has('src/components/OpenCellsButtonDefault.js')).toBe(false);
     const cliManifest = JSON.parse(cli.get('package.json')!);
     const browserManifest = JSON.parse(browser.get('package.json')!);
     expect(browserManifest.dependencies.lit).toBe(cliManifest.dependencies.lit);
@@ -101,6 +105,9 @@ describe('paridad estructural con Cells Academy CLI', () => {
       expect(cli.has(requiredPath), `La CLI debe definir ${requiredPath}`).toBe(true);
       expect(browser.has(requiredPath), `El runtime browser debe definir ${requiredPath}`).toBe(true);
     }
+    expect(browser.has('app/pages/academy-home-page/locales/locales.json')).toBe(true);
+    expect(browser.has('app/bridge/native-adapter.js')).toBe(true);
+    expect(browser.has('app/locales/en.js')).toBe(false);
     const cliManifest = JSON.parse(cli.get('package.json')!);
     const browserManifest = JSON.parse(browser.get('package.json')!);
     expect(browserManifest.dependencies['@open-cells/core']).toBe(cliManifest.dependencies['@open-cells/core']);

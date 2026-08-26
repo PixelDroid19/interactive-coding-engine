@@ -12,11 +12,14 @@ describe('createCellsComponentWorkspace', () => {
       'package.json',
       'README.md',
       'custom-elements.json',
-      'index.html',
       'src/academy-learning-card.js',
-      'src/locales/en.js',
-      'src/locales/es.js',
+      'locales/locales.json',
       'demo/index.html',
+      'demo/basic.html',
+      'demo/demo.js',
+      'demo/demo-build.js',
+      'demo/locales/locales.json',
+      'test/unit/locales/locales.json',
       'test/unit/academy-learning-card.test.js',
       'types/open-cells.d.ts',
     ]));
@@ -28,11 +31,23 @@ describe('createCellsComponentWorkspace', () => {
     expect(source).toContain("from 'lit'");
     expect(source).toContain("from '@open-wc/scoped-elements/lit-element.js'");
     expect(source).toContain("WidgetMixin");
-    expect(source).toContain("OpenCellsTypeText");
-    expect(source).toContain("OpenCellsButtonDefault");
+    expect(source).toContain("BbvaTypeText");
+    expect(source).toContain("BbvaButtonDefault");
     expect(source).toContain('WidgetMixin(ScopedElementsMixin(LitElement))');
-    expect(source).toContain("'open-cells-type-text': OpenCellsTypeText");
-    expect(source).toContain("'open-cells-button-default': OpenCellsButtonDefault");
+    expect(source).toContain("'bbva-type-text': BbvaTypeText");
+    expect(source).toContain("'bbva-button-default': BbvaButtonDefault");
+  });
+
+  it('consume el css.js generado desde el SCSS en lugar de duplicar estilos dentro del componente', () => {
+    const source = workspace.snapshot.files['src/academy-learning-card.js'].content;
+    const scss = workspace.snapshot.files['src/academy-learning-card.scss'].content;
+    const runtimeStyles = workspace.snapshot.files['src/academy-learning-card.css.js'].content;
+
+    expect(source).toContain("import styles from './academy-learning-card.css.js';");
+    expect(source).toContain('static styles = styles;');
+    expect(source).not.toContain('static styles = css`');
+    expect(source).not.toMatch(/import\s*\{[^}]*\bcss\b[^}]*\}\s*from\s*['"]lit['"]/);
+    expect(runtimeStyles).toContain(scss.trim());
   });
 
   it('traduce todo texto visible y emite un evento público con detalle', () => {
@@ -44,14 +59,31 @@ describe('createCellsComponentWorkspace', () => {
   });
 
   it('mantiene las claves y placeholders sincronizados entre inglés y español', () => {
-    const english = workspace.snapshot.files['src/locales/en.js'].content;
-    const spanish = workspace.snapshot.files['src/locales/es.js'].content;
+    const catalog = JSON.parse(workspace.snapshot.files['locales/locales.json'].content);
+    const english = catalog.en;
+    const spanish = catalog.es;
     for (const key of ['learningCard.title', 'learningCard.description', 'learningCard.continue']) {
-      expect(english).toContain(`'${key}'`);
-      expect(spanish).toContain(`'${key}'`);
+      expect(english).toHaveProperty(key);
+      expect(spanish).toHaveProperty(key);
     }
-    expect(english).toContain('${name}');
-    expect(spanish).toContain('${name}');
+    expect(english['learningCard.title']).toContain('${name}');
+    expect(spanish['learningCard.title']).toContain('${name}');
+    expect(workspace.snapshot.files['src/locales/en.js']).toBeUndefined();
+    expect(workspace.snapshot.files['src/locales/es.js']).toBeUndefined();
+    expect(JSON.parse(workspace.snapshot.files['demo/locales/locales.json'].content)).toEqual(catalog);
+    expect(JSON.parse(workspace.snapshot.files['test/unit/locales/locales.json'].content)).toEqual(catalog);
+  });
+
+  it('incluye una demo que consume la entrada pública y expone controles reales', () => {
+    expect(workspace.snapshot.files['demo/index.html'].content).toContain('src="./demo.js"');
+    expect(workspace.snapshot.files['demo/index.html'].content).toContain('data-cells-demo-subject');
+    expect(workspace.snapshot.files['demo/index.html'].content).not.toContain('<h1>Demo interactiva</h1>');
+    expect(workspace.snapshot.files['demo/basic.html'].content).toContain('<academy-learning-card');
+    const controller = workspace.snapshot.files['demo/demo.js'].content;
+    expect(controller).toContain("from '../academy-learning-card.js'");
+    expect(controller).toContain("addEventListener('input'");
+    expect(controller).toContain("addEventListener('academy-learning-card-continue'");
+    expect(workspace.snapshot.files['demo/demo-build.js'].content).toContain("import './demo.js'");
   });
 
   it('declara solo las dependencias directas del componente', () => {
@@ -59,6 +91,8 @@ describe('createCellsComponentWorkspace', () => {
     expect(manifest.name).toBe('@open-cells-learning/academy-learning-card');
     expect(manifest.types).toBe('./types/open-cells.d.ts');
     expect(manifest.dependencies).toEqual({
+      '@bbva-spherica-components/bbva-button-default': '^1.0.0',
+      '@bbva-spherica-components/bbva-type-text': '^2.0.0',
       '@open-wc/scoped-elements': '3.0.10',
       '@webcomponents/scoped-custom-element-registry': '0.0.10',
       lit: '3.3.3',

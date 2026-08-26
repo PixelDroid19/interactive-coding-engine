@@ -8,7 +8,8 @@ const DATABASE_VERSION = 2;
 
 export interface CellsLabSession {
   version: 1;
-  activePanel: 'code' | 'preview' | 'tests';
+  activePanel: 'code' | 'preview' | 'tests' | 'terminal';
+  expandedFolders: string[];
   command: string;
   previewLocale: 'es' | 'en';
   tests: CellsTestResult[];
@@ -21,7 +22,10 @@ function isCellsLabSession(value: unknown): value is CellsLabSession {
   if (!value || typeof value !== 'object') return false;
   const session = value as Partial<CellsLabSession>;
   return session.version === 1
-    && ['code', 'preview', 'tests'].includes(session.activePanel ?? '')
+    && ['code', 'preview', 'tests', 'terminal'].includes(session.activePanel ?? '')
+    && Array.isArray(session.expandedFolders)
+    && session.expandedFolders.length <= 256
+    && session.expandedFolders.every((path) => typeof path === 'string' && path.length > 0 && path.length <= 512)
     && typeof session.command === 'string'
     && session.command.length <= 512
     && ['es', 'en'].includes(session.previewLocale ?? '')

@@ -3,7 +3,7 @@ import { CheckCircle2, Code2, Download, Eye, FileCode2, FlaskConical, Play, Rota
 import type { WorkspaceFile, WorkspaceSnapshot } from '../../types/scrim';
 import { CellsRuntimeClient, CellsRuntimeClientError } from '../../engine/cells/cellsRuntimeClient';
 import type { CellsCoverageResult, CellsTestResult } from '../../engine/cells/cellsWorkerProtocol';
-import { createCellsPracticeWorkspace } from '../../engine/cells/cellsRecipes';
+import { createCellsPracticeWorkspace, type CellsComponentPracticeStage } from '../../engine/cells/cellsRecipes';
 import {
   createCellsProjectPracticeWorkspace,
   type CellsAppPracticeStage,
@@ -14,6 +14,7 @@ import { createVersionedCellsWorkspace } from '../../engine/cells/cellsVirtualFi
 import { waitForCellsBrowserTests } from '../../engine/cells/cellsBrowserRunner';
 import { createCellsCoverageReport, createIstanbulCoverageReport, mergeCellsCoverageReports } from '../../engine/cells/cellsCoverage';
 import { CodeEditor } from '../editor/CodeEditor';
+import { WorkspaceTree } from '../editor/WorkspaceTree';
 
 function messageFor(error: unknown): string {
   if (error instanceof CellsRuntimeClientError) {
@@ -25,14 +26,26 @@ function messageFor(error: unknown): string {
 interface CellsLearningLabProps {
   variant?: 'component' | 'application';
   stage?: CellsAppPracticeStage;
+  componentStage?: CellsComponentPracticeStage;
   project?: CellsAppProject;
 }
 
 const APP_MISSIONS: Record<CellsAppPracticeStage, string> = {
   lifecycle: 'La página conserva una suscripción al salir y tampoco navega al detalle. Completa cleanup y navegación por nombre sin acoplar la tarjeta al router.',
-  channels: 'La tarjeta ya emite una intención, pero la página todavía no publica ni observa el canal de selección. Conecta ambos extremos con un nombre y un payload estables.',
+  channels: 'Conecta el canal de selección y completa la frontera externa: valida el mensaje del shell y traduce el ciclo de vida a un canal interno sin filtrar objetos nativos hacia los componentes.',
   data: 'El data manager distingue estados, pero una respuesta antigua todavía puede ganar y disconnect no cancela el trabajo activo. Protege ambas fronteras sin cambiar su API pública.',
   delivery: 'La aplicación funciona en desarrollo, pero la ruta desconocida y la configuración de producción están incompletas. Deja el proyecto listo para una entrega reproducible.',
+};
+
+const COMPONENT_MISSIONS: Record<CellsComponentPracticeStage, string> = {
+  scaffold: 'El proyecto todavía no expone su entrada pública ni el comando de documentación. Completa package.json y comprueba cómo lo consumirían la demo, las pruebas y otra aplicación.',
+  api: 'El componente perdió una propiedad pública y no comunica la acción. Reconstruye learnerName y el evento de negocio sin obligar al consumidor a llamar métodos internos.',
+  composition: 'El botón está importado pero no pertenece al registro scoped y la acción no sale del Shadow DOM. Repara ambas fronteras y compruébalas en la demo.',
+  styles: 'El componente consume css.js correctamente, pero el artefacto quedó desactualizado respecto al SCSS. Regenera el estilo runtime desde la fuente y comprueba que ambos vuelven a describir la misma interfaz.',
+  i18n: 'Los catálogos ya no tienen la misma API y el título perdió su placeholder. Restaura paridad EN/ES y conserva el nombre variable.',
+  demo: 'La demo está entrando por un archivo interno y dejó de conectar su control con la propiedad pública. Haz que vuelva a comportarse como un consumidor externo real.',
+  tests: 'La suite comprueba detail y bubbles, pero dejó de demostrar que el evento cruza Shadow DOM. Completa la prueba pública sin inspeccionar miembros privados.',
+  delivery: 'La metadata contradice el tag real y la documentación no explica cómo consumir ni verificar el paquete. Alinea el contrato antes de exportarlo.',
 };
 
 const PROJECT_NAMES: Record<CellsAppProject, string> = {
@@ -47,7 +60,7 @@ function defaultCellsCommand(variant: 'component' | 'application'): string {
   return variant === 'application' ? 'cells app:test --coverage' : 'cells component:test --coverage';
 }
 
-export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'component', stage = 'lifecycle', project = 'store' }) => {
+export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'component', stage = 'lifecycle', componentStage = 'composition', project = 'store' }) => {
   const runtimeRef = useRef<CellsRuntimeClient | null>(null);
   const repositoryRef = useRef<CellsWorkspaceRepository | null>(null);
   const dirtyPathsRef = useRef(new Set<string>());
@@ -61,8 +74,8 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
     return repositoryRef.current;
   };
   const starter = useMemo(
-    () => variant === 'application' ? createCellsProjectPracticeWorkspace(project, stage) : createCellsPracticeWorkspace(),
-    [project, stage, variant],
+    () => variant === 'application' ? createCellsProjectPracticeWorkspace(project, stage) : createCellsPracticeWorkspace(componentStage),
+    [componentStage, project, stage, variant],
   );
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(starter.snapshot);
   const [syncedWorkspace, setSyncedWorkspace] = useState<WorkspaceSnapshot>(starter.snapshot);
@@ -76,10 +89,10 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
   const [terminalOutput, setTerminalOutput] = useState('Runtime detenido. El Worker se iniciará al abrir el proyecto.');
   const [activeInspectorTab, setActiveInspectorTab] = useState<'preview' | 'tests' | 'terminal'>('preview');
   const [fileQuery, setFileQuery] = useState('');
+  const [expandedFolders, setExpandedFolders] = useState<string[]>([]);
   const [previewLocale, setPreviewLocale] = useState<'es' | 'en'>('es');
-  const [observedEvents, setObservedEvents] = useState<Array<{ name: string; detail: unknown }>>([]);
   const [sessionHydrated, setSessionHydrated] = useState(false);
-  const draftKey = `course-open-cells:${variant}:${variant === 'application' ? `${project}:${stage}` : 'first-component'}`;
+  const draftKey = `course-open-cells:v2:${variant}:${variant === 'application' ? `${project}:${stage}` : componentStage}`;
   const workspaceRef = useRef(workspace);
   const generationRef = useRef(generation);
   workspaceRef.current = workspace;
@@ -95,8 +108,6 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
       } else if (event.data.type === 'ready') {
         setTerminalOutput('Componente renderizado dentro del iframe aislado.');
         iframeRef.current?.contentWindow?.postMessage({ source: 'open-cells-shell', type: 'locale:set', locale: previewLocale }, '*');
-      } else if (event.data.type === 'business:event' && typeof event.data.name === 'string') {
-        setObservedEvents((current) => [...current.slice(-3), { name: event.data.name, detail: event.data.detail }]);
       }
     };
     window.addEventListener('message', onPreviewMessage);
@@ -119,7 +130,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
     setTests([]);
     setCoverage(null);
     try {
-      const initial = variant === 'application' ? createCellsProjectPracticeWorkspace(project, stage) : createCellsPracticeWorkspace();
+      const initial = variant === 'application' ? createCellsProjectPracticeWorkspace(project, stage) : createCellsPracticeWorkspace(componentStage);
       if (removeSaved) {
         await Promise.all([
           ensureRepository().remove(draftKey),
@@ -134,7 +145,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
       setCommand(defaultCellsCommand(variant));
       setPreviewLocale('es');
       setTerminalOutput('Proyecto abierto en memoria. No se inició ningún servidor ni proceso Node.');
-      setObservedEvents([]);
+      setExpandedFolders([]);
       setStatus('ready');
     } catch (caught) {
       setError(messageFor(caught));
@@ -151,13 +162,16 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
           ensureRepository().load(draftKey),
           ensureRepository().loadSession(draftKey),
         ]);
-        const initial = saved ?? (variant === 'application' ? createCellsProjectPracticeWorkspace(project, stage) : createCellsPracticeWorkspace());
+        const initial = saved ?? (variant === 'application' ? createCellsProjectPracticeWorkspace(project, stage) : createCellsPracticeWorkspace(componentStage));
         const result = await ensureRuntime().loadProject(initial.snapshot, initial.generation);
         if (cancelled || result.type !== 'workspace:updated') return;
         applyWorkspace(result.payload.workspace, initial.generation);
         if (savedSession) {
-          const tab = savedSession.activePanel === 'tests' ? 'tests' : 'preview';
+          const tab = ['preview', 'tests', 'terminal'].includes(savedSession.activePanel)
+            ? savedSession.activePanel as 'preview' | 'tests' | 'terminal'
+            : 'preview';
           setActiveInspectorTab(tab);
+          setExpandedFolders(savedSession.expandedFolders);
           setCommand(savedSession.command);
           setPreviewLocale(savedSession.previewLocale);
           setTests(savedSession.tests);
@@ -190,7 +204,8 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
     const timer = window.setTimeout(() => {
       void ensureRepository().saveSession(draftKey, {
         version: 1,
-        activePanel: activeInspectorTab === 'tests' ? 'tests' : 'preview',
+        activePanel: activeInspectorTab,
+        expandedFolders,
         command,
         previewLocale,
         tests,
@@ -200,7 +215,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
       }).catch((caught) => setError(messageFor(caught)));
     }, 120);
     return () => window.clearTimeout(timer);
-  }, [activeInspectorTab, command, coverage, draftKey, previewLocale, sessionHydrated, terminalOutput, tests]);
+  }, [activeInspectorTab, command, coverage, draftKey, expandedFolders, previewLocale, sessionHydrated, terminalOutput, tests]);
 
   const syncDirtyFiles = async (): Promise<number> => {
     let currentGeneration = generationRef.current;
@@ -228,7 +243,6 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
       const result = await ensureRuntime().buildPreview(currentGeneration);
       if (result.type !== 'preview:built') throw new Error('La vista previa no produjo un documento.');
       setPreviewHtml(result.payload.html);
-      setObservedEvents([]);
       setActiveInspectorTab('preview');
       setTerminalOutput('Vista previa construida dentro del Worker. El iframe ejecuta solo el resultado aislado.');
       setStatus('ready');
@@ -312,10 +326,6 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
     } catch (caught) { setError(messageFor(caught)); setStatus('error'); }
   };
 
-  const filteredFiles = Object.values(workspace.files).filter((file) => (
-    file.path.toLocaleLowerCase('es').includes(fileQuery.trim().toLocaleLowerCase('es'))
-  ));
-
   const exportProject = async () => {
     setStatus('running'); setError('');
     try {
@@ -366,7 +376,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
         <span className="cells-lab__brief-badge">Tu misión</span>
         <p>{variant === 'application'
           ? APP_MISSIONS[stage]
-          : 'El botón está importado, pero no pertenece todavía al registro scoped. Además, la acción no comunica nada hacia fuera. Completa ambos contratos sin cambiar la API pública ni escribir un registro global.'}</p>
+          : COMPONENT_MISSIONS[componentStage]}</p>
       </div>
 
       <div className="cells-lab__workbench">
@@ -383,21 +393,21 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
               onChange={(event) => setFileQuery(event.target.value)}
             />
             <div className="cells-lab__files-list">
-              {filteredFiles.map((file) => (
-                <button
-                  key={file.path}
-                  type="button"
-                  aria-current={file.path === workspace.activeFilePath}
-                  onClick={() => setWorkspace((current) => {
-                    const next = { ...current, activeFilePath: file.path };
-                    void ensureRepository().save(draftKey, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
-                    return next;
-                  })}
-                >
-                  <span className="cells-lab__file-name">{file.path}</span>
-                  {file.path === activeFile?.path && dirty && <span className="cells-lab__file-dot" title="Sin guardar" />}
-                </button>
-              ))}
+              <WorkspaceTree
+                files={workspace.files}
+                activeFilePath={workspace.activeFilePath}
+                query={fileQuery}
+                expandedPaths={expandedFolders}
+                onExpandedPathsChange={setExpandedFolders}
+                onFileSelect={(path) => setWorkspace((current) => {
+                  const next = { ...current, activeFilePath: path };
+                  void ensureRepository().save(draftKey, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
+                  return next;
+                })}
+                renderFileActions={(file) => file.path === activeFile?.path && dirty
+                  ? <span className="cells-lab__file-dot" title="Sin guardar" />
+                  : null}
+              />
             </div>
           </nav>
 
@@ -414,6 +424,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
                 file={activeFile}
                 workspaceFiles={workspace.files}
                 lessonId={`open-cells-${variant}-${project}-${stage}`}
+                lineWrapping
                 onCodeChange={(content) => activeFile && setWorkspace((current) => {
                   const next = {
                     ...current,
@@ -470,7 +481,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
             </div>
 
             <div className="cells-lab__inspector-tabtools">
-              {activeInspectorTab === 'preview' && (
+          {activeInspectorTab === 'preview' && variant === 'application' && (
                 <div className="cells-lab__preview-tools">
                   <div role="group" aria-label="Idioma de la demo">
                     {(['es', 'en'] as const).map((locale) => (
@@ -524,14 +535,6 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
                     <Play size={14} /> Construir vista previa
                   </button>
                 </div>
-              )}
-              {variant === 'component' && previewHtml && (
-                <aside className="cells-lab__event-inspector" aria-label="Eventos públicos observados">
-                  <strong>Eventos públicos</strong>
-                  {observedEvents.length === 0
-                    ? <span>Pulsa el botón de la demo para observar nombre y detail.</span>
-                    : observedEvents.map((event, index) => <code key={`${event.name}:${index}`}>{event.name} · {JSON.stringify(event.detail)}</code>)}
-                </aside>
               )}
             </div>
 

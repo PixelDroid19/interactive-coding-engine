@@ -128,6 +128,27 @@ export const ROUTES = [
 `, 'javascript'),
     'app/scripts/channels.js': file('app/scripts/channels.js', `
 export const PRODUCT_SELECTED_CHANNEL = 'academy:store:product:selected';
+export const APP_LIFECYCLE_CHANNEL = 'academy:app:lifecycle';
+`, 'javascript'),
+    'app/bridge/native-adapter.js': file('app/bridge/native-adapter.js', `
+import { APP_LIFECYCLE_CHANNEL } from '../scripts/channels.js';
+
+export function createNativeAdapter({ publish, navigate }) {
+  return {
+    handle(message) {
+      if (!message || typeof message.type !== 'string') return false;
+      if (message.type === 'app:lifecycle') {
+        publish(APP_LIFECYCLE_CHANNEL, { state: message.state });
+        return true;
+      }
+      if (message.type === 'app:deep-link' && typeof message.route === 'string') {
+        navigate(message.route, message.params ?? {});
+        return true;
+      }
+      return false;
+    },
+  };
+}
 `, 'javascript'),
     'app/pages/academy-home-page/academy-home-page.js': file('app/pages/academy-home-page/academy-home-page.js', `
 import { LitElement, css, html } from 'lit';
@@ -135,6 +156,8 @@ import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { PageMixin } from '@open-cells/page-mixin';
 import { AcademyProductCard } from '../../components/academy-product-card/academy-product-card.js';
 import { PRODUCT_SELECTED_CHANNEL } from '../../scripts/channels.js';
+
+const t = (key, values = {}) => globalThis.IntlMsg?.t?.(key, values) ?? '[' + key + ']';
 
 export class AcademyHomePage extends PageMixin(ScopedElementsMixin(LitElement)) {
   static get is() { return 'academy-home-page'; }
@@ -169,8 +192,8 @@ export class AcademyHomePage extends PageMixin(ScopedElementsMixin(LitElement)) 
   render() {
     return html\`
       <main>
-        <h1>Catálogo Cells</h1>
-        <p>Selecciona un producto para navegar sin acoplar la tarjeta al router.</p>
+        <h1>${'${'}t('home.title')}</h1>
+        <p>${'${'}t('home.description')}</p>
         <div class="grid" @academy-product-card-select=${'${'}this.handleProductSelected}>
           ${'${'}this.products.map((product) => html\`<academy-product-card .product=${'${'}product}></academy-product-card>\`)}
         </div>
@@ -185,13 +208,15 @@ customElements.define(AcademyHomePage.is, AcademyHomePage);
 import { LitElement, html } from 'lit';
 import { PageMixin } from '@open-cells/page-mixin';
 
+const t = (key, values = {}) => globalThis.IntlMsg?.t?.(key, values) ?? '[' + key + ']';
+
 export class AcademyProductDetailPage extends PageMixin(LitElement) {
   static get is() { return 'academy-product-detail-page'; }
   static properties = { productId: { state: true } };
   constructor() { super(); this.productId = ''; }
   onPageEnter(params = {}) { this.productId = params.id ?? ''; }
   render() {
-    return html\`<main><button @click=${'${'}() => this.navigate('home')}>Volver</button><h1>Producto ${'${'}this.productId}</h1></main>\`;
+    return html\`<main><button @click=${'${'}() => this.navigate('home')}>${'${'}t('detail.back')}</button><h1>${'${'}t('detail.title')} · ${'${'}this.productId}</h1></main>\`;
   }
 }
 customElements.define(AcademyProductDetailPage.is, AcademyProductDetailPage);
@@ -199,9 +224,10 @@ customElements.define(AcademyProductDetailPage.is, AcademyProductDetailPage);
     'app/pages/academy-not-found-page/academy-not-found-page.js': file('app/pages/academy-not-found-page/academy-not-found-page.js', `
 import { LitElement, html } from 'lit';
 import { PageMixin } from '@open-cells/page-mixin';
+const t = (key) => globalThis.IntlMsg?.t?.(key) ?? '[' + key + ']';
 export class AcademyNotFoundPage extends PageMixin(LitElement) {
   static get is() { return 'academy-not-found-page'; }
-  render() { return html\`<main><h1>Ruta no encontrada</h1><button @click=${'${'}() => this.navigate('home')}>Ir al inicio</button></main>\`; }
+  render() { return html\`<main><h1>${'${'}t('notFound.title')}</h1><button @click=${'${'}() => this.navigate('home')}>${'${'}t('app.back')}</button></main>\`; }
 }
 customElements.define(AcademyNotFoundPage.is, AcademyNotFoundPage);
 `, 'javascript'),
@@ -216,7 +242,7 @@ export class AcademyProductCard extends WidgetMixin(LitElement) {
   constructor() { super(); this.product = { id: '', name: '', price: 0 }; }
   selectProduct() { this.emitEvent('select', { ...this.product }); }
   render() {
-    return html\`<article><h2>${'${'}this.product.name}</h2><p>${'${'}this.product.price} €</p><button @click=${'${'}this.selectProduct}>Ver detalle</button></article>\`;
+    return html\`<article><h2>${'${'}this.product.name}</h2><p>${'${'}this.product.price} €</p><button @click=${'${'}this.selectProduct}>${'${'}this.t('home.viewDetail')}</button></article>\`;
   }
 }
 customElements.define(AcademyProductCard.is, AcademyProductCard);
@@ -322,11 +348,21 @@ const appConfig = {
 
 export default appConfig;
 `, 'javascript'),
-    'app/locales/en.js': file('app/locales/en.js', `export default { 'app.title': 'Cells catalog', 'app.back': 'Back' };\n`, 'javascript'),
-    'app/locales/es.js': file('app/locales/es.js', `export default { 'app.title': 'Catálogo Cells', 'app.back': 'Volver' };\n`, 'javascript'),
     'app/locales-app/locales.json': file('app/locales-app/locales.json', `${JSON.stringify({
       en: { 'app.title': 'Cells catalog', 'app.back': 'Back' },
       es: { 'app.title': 'Catálogo Cells', 'app.back': 'Volver' },
+    }, null, 2)}\n`, 'json'),
+    'app/pages/academy-home-page/locales/locales.json': file('app/pages/academy-home-page/locales/locales.json', `${JSON.stringify({
+      en: { 'home.title': 'Cells catalog', 'home.description': 'Choose a product to see its details.', 'home.viewDetail': 'View details' },
+      es: { 'home.title': 'Catálogo Cells', 'home.description': 'Elige un producto para ver su detalle.', 'home.viewDetail': 'Ver detalle' },
+    }, null, 2)}\n`, 'json'),
+    'app/pages/academy-product-detail-page/locales/locales.json': file('app/pages/academy-product-detail-page/locales/locales.json', `${JSON.stringify({
+      en: { 'detail.title': 'Product detail', 'detail.back': 'Back to catalog' },
+      es: { 'detail.title': 'Detalle del producto', 'detail.back': 'Volver al catálogo' },
+    }, null, 2)}\n`, 'json'),
+    'app/pages/academy-not-found-page/locales/locales.json': file('app/pages/academy-not-found-page/locales/locales.json', `${JSON.stringify({
+      en: { 'notFound.title': 'Page not found' },
+      es: { 'notFound.title': 'Página no encontrada' },
     }, null, 2)}\n`, 'json'),
     'vite.config.js': file('vite.config.js', `
 import { defineConfig } from 'vitest/config';
@@ -429,7 +465,13 @@ export function createCellsAppPracticeWorkspace(
     const starter = complete.snapshot.files[pagePath].content
       .replace('    this.subscribe(PRODUCT_SELECTED_CHANNEL, (product) => { this.lastSelection = product.id; });', '    // TODO: observa el canal y conserva el id del último producto.')
       .replace('    this.publish(PRODUCT_SELECTED_CHANNEL, product);', '    // TODO: publica el producto seleccionado para consumidores lejanos.');
-    return createVersionedCellsWorkspace(writeCellsFile(complete, pagePath, starter).snapshot, 0);
+    const bridgePath = 'app/bridge/native-adapter.js';
+    const bridge = complete.snapshot.files[bridgePath].content
+      .replace("      if (!message || typeof message.type !== 'string') return false;", '      // TODO: rechaza mensajes externos sin un type válido.')
+      .replace('        publish(APP_LIFECYCLE_CHANNEL, { state: message.state });', '        // TODO: traduce el ciclo nativo al canal interno de la aplicación.');
+    const withPage = writeCellsFile(complete, pagePath, starter);
+    const changed = writeCellsFile(withPage, bridgePath, bridge);
+    return createVersionedCellsWorkspace({ ...changed.snapshot, activeFilePath: bridgePath }, 0);
   }
 
   if (stage === 'data') {

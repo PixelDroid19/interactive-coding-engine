@@ -22,6 +22,74 @@ export function createCellsComponentWorkspace(scaffold: CellsComponentScaffold):
   const tagName = scaffold.name;
   const className = classNameFor(tagName);
   const sourcePath = `src/${tagName}.js`;
+  const componentScss = `:host {
+  display: block;
+  color: #072b25;
+}
+
+.learning-card {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  min-height: 15rem;
+  padding: clamp(1.5rem, 6vw, 2.5rem);
+  overflow: hidden;
+  border: 1px solid #d8d3b2;
+  border-radius: 1.5rem;
+  background: linear-gradient(145deg, #fffef4 0%, #f8f1cf 100%);
+  box-shadow: 0 1rem 2.5rem rgb(7 43 37 / 14%);
+}
+
+.learning-card::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgb(7 43 37 / 10%) 0.7px, transparent 0.7px);
+  background-size: 8px 8px;
+  content: '';
+}
+
+.learning-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.learning-card__eyebrow {
+  width: max-content;
+  margin: 0;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #7aa192;
+  border-radius: 999px;
+  color: #285d50;
+  font: 700 0.7rem/1 system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transform: rotate(-5deg);
+}
+
+bbva-type-text {
+  display: block;
+}
+
+bbva-button-default {
+  align-self: end;
+  justify-self: start;
+  margin-top: 1rem;
+}`;
+  const localeCatalog = {
+    en: {
+      'learningCard.eyebrow': 'Learning component',
+      'learningCard.title': 'Welcome, ${name}',
+      'learningCard.description': 'You are learning to build a real Cells component.',
+      'learningCard.continue': 'Continue',
+    },
+    es: {
+      'learningCard.eyebrow': 'Componente de aprendizaje',
+      'learningCard.title': 'Bienvenido, ${name}',
+      'learningCard.description': 'Estás aprendiendo a construir un componente Cells real.',
+      'learningCard.continue': 'Continuar',
+    },
+  };
 
   const files: Record<string, WorkspaceFile> = {
     'package.json': file('package.json', `${JSON.stringify({
@@ -40,6 +108,8 @@ export function createCellsComponentWorkspace(scaffold: CellsComponentScaffold):
         build: 'cells component:build:demo',
       },
       dependencies: {
+        '@bbva-spherica-components/bbva-button-default': '^1.0.0',
+        '@bbva-spherica-components/bbva-type-text': '^2.0.0',
         '@open-wc/scoped-elements': '3.0.10',
         '@webcomponents/scoped-custom-element-registry': '0.0.10',
         lit: '3.3.3',
@@ -61,38 +131,27 @@ if (!customElements.get('${tagName}')) customElements.define('${tagName}', ${cla
 export { ${className} };
 `, 'javascript'),
     [`src/${className}.js`]: file(`src/${className}.js`, `export { ${className} } from './${tagName}.js';\n`, 'javascript'),
-    [`src/${tagName}.scss`]: file(`src/${tagName}.scss`, `
-:host {
-  display: block;
-  font-family: system-ui, sans-serif;
-}
-
-article {
-  border: 2px solid #111827;
-  padding: 1.25rem;
-  background: #ffffff;
-}
-`, 'css'),
+    [`src/${tagName}.scss`]: file(`src/${tagName}.scss`, `${componentScss}\n`, 'css'),
     [`src/${tagName}.css.js`]: file(`src/${tagName}.css.js`, `
 import { css } from 'lit';
 
 export default css\`
-  :host { display: block; font-family: system-ui, sans-serif; }
-  article { border: 2px solid #111827; padding: 1.25rem; background: #ffffff; }
+${componentScss}
 \`;
 `, 'javascript'),
     [sourcePath]: file(sourcePath, `
-import { LitElement, css, html } from 'lit';
+import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { WidgetMixin } from './mixins/WidgetMixin.js';
-import { OpenCellsTypeText } from './components/OpenCellsTypeText.js';
-import { OpenCellsButtonDefault } from './components/OpenCellsButtonDefault.js';
+import styles from './${tagName}.css.js';
+import { BbvaTypeText } from '@bbva-spherica-components/bbva-type-text';
+import { BbvaButtonDefault } from '@bbva-spherica-components/bbva-button-default';
 
 export class ${className} extends WidgetMixin(ScopedElementsMixin(LitElement)) {
   static get scopedElements() {
     return {
-      'open-cells-type-text': OpenCellsTypeText,
-      'open-cells-button-default': OpenCellsButtonDefault,
+      'bbva-type-text': BbvaTypeText,
+      'bbva-button-default': BbvaButtonDefault,
     };
   }
 
@@ -100,11 +159,7 @@ export class ${className} extends WidgetMixin(ScopedElementsMixin(LitElement)) {
     learnerName: { type: String, attribute: 'learner-name' },
   };
 
-  static styles = css\`
-    :host { display: block; font-family: system-ui, sans-serif; }
-    article { border: 2px solid #111827; padding: 1.25rem; background: #ffffff; }
-    open-cells-button-default { margin-top: 1rem; }
-  \`;
+  static styles = styles;
 
   learnerName = 'Alex';
 
@@ -114,15 +169,24 @@ export class ${className} extends WidgetMixin(ScopedElementsMixin(LitElement)) {
 
   render() {
     return html\`
-      <article>
-        <open-cells-type-text
+      <article class="learning-card">
+        <p class="learning-card__eyebrow">${'${'}this.t('learningCard.eyebrow')}</p>
+        <bbva-type-text
+          tag="h2"
+          font-type="title-secondary"
+          size="2XL"
           text="${'${'}this.t('learningCard.title', { name: this.learnerName })}"
-        ></open-cells-type-text>
-        <p>${'${'}this.t('learningCard.description')}</p>
-        <open-cells-button-default
-          text="${'${'}this.t('learningCard.continue')}"
+        ></bbva-type-text>
+        <bbva-type-text
+          tag="p"
+          font-type="body"
+          size="M"
+          text="${'${'}this.t('learningCard.description')}"
+        ></bbva-type-text>
+        <bbva-button-default
+          .text=${'${'}this.t('learningCard.continue')}
           @click=${'${'}this.handleContinue}
-        ></open-cells-button-default>
+        ></bbva-button-default>
       </article>
     \`;
   }
@@ -154,76 +218,62 @@ export const WidgetMixin = (Base) => class extends Base {
   }
 };
 `, 'javascript'),
-    'src/components/OpenCellsTypeText.js': file('src/components/OpenCellsTypeText.js', `
-import { LitElement, html } from 'lit';
-
-export class OpenCellsTypeText extends LitElement {
-  static properties = { text: { type: String } };
-  constructor() { super(); this.text = ''; }
-  render() { return html\`<span part="text">\${this.text}</span>\`; }
-}
-`, 'javascript'),
-    'src/components/OpenCellsButtonDefault.js': file('src/components/OpenCellsButtonDefault.js', `
-import { LitElement, css, html } from 'lit';
-
-export class OpenCellsButtonDefault extends LitElement {
-  static properties = { text: { type: String }, disabled: { type: Boolean, reflect: true } };
-  static styles = css\`button { font: inherit; padding: .7rem 1rem; border: 2px solid #111827; background: #ffe600; cursor: pointer; }\`;
-  constructor() { super(); this.text = ''; this.disabled = false; }
-  render() { return html\`<button type="button" ?disabled=\${this.disabled}>\${this.text}</button>\`; }
-}
-`, 'javascript'),
-    'src/locales/en.js': file('src/locales/en.js', `
-export default {
-  'learningCard.title': 'Welcome, \${name}',
-  'learningCard.description': 'You are learning to build a real Cells component.',
-  'learningCard.continue': 'Continue',
-};
-`, 'javascript'),
-    'src/locales/es.js': file('src/locales/es.js', `
-export default {
-  'learningCard.title': 'Bienvenido, \${name}',
-  'learningCard.description': 'Estás aprendiendo a construir un componente Cells real.',
-  'learningCard.continue': 'Continuar',
-};
-`, 'javascript'),
-    'locales/locales.json': file('locales/locales.json', `${JSON.stringify({
-      en: {
-        'learningCard.title': 'Welcome, ${name}',
-        'learningCard.description': 'You are learning to build a real Cells component.',
-        'learningCard.continue': 'Continue',
-      },
-      es: {
-        'learningCard.title': 'Bienvenido, ${name}',
-        'learningCard.description': 'Estás aprendiendo a construir un componente Cells real.',
-        'learningCard.continue': 'Continuar',
-      },
-    }, null, 2)}\n`, 'json'),
-    'demo/locales/locales.json': file('demo/locales/locales.json', `${JSON.stringify({
-      en: { 'learningCard.continue': 'Continue' },
-      es: { 'learningCard.continue': 'Continuar' },
-    }, null, 2)}\n`, 'json'),
-    'test/unit/locales/locales.json': file('test/unit/locales/locales.json', `${JSON.stringify({
-      en: { 'learningCard.continue': 'Continue' },
-      es: { 'learningCard.continue': 'Continuar' },
-    }, null, 2)}\n`, 'json'),
+    'locales/locales.json': file('locales/locales.json', `${JSON.stringify(localeCatalog, null, 2)}\n`, 'json'),
+    'demo/locales/locales.json': file('demo/locales/locales.json', `${JSON.stringify(localeCatalog, null, 2)}\n`, 'json'),
+    'test/unit/locales/locales.json': file('test/unit/locales/locales.json', `${JSON.stringify(localeCatalog, null, 2)}\n`, 'json'),
     'demo/index.html': file('demo/index.html', `
 <!doctype html>
 <html lang="es">
-  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Laboratorio de ${tagName}</title>
+  </head>
   <body>
-    <${tagName} learner-name="Ada"></${tagName}>
-    <script type="module" src="../${tagName}.js"></script>
+    <${tagName} data-cells-demo-subject learner-name="Ada"></${tagName}>
+    <script type="module" src="./demo.js"></script>
   </body>
 </html>
 `, 'html'),
-    'index.html': file('index.html', `
+    'demo/basic.html': file('demo/basic.html', `
 <!doctype html>
-<html lang="es"><body><script type="module" src="./demo/index.html"></script></body></html>
+<html lang="es">
+  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Ejemplo básico</title></head>
+  <body>
+    <${tagName} learner-name="Ada"></${tagName}>
+    <script type="module" src="./demo.js"></script>
+  </body>
+</html>
 `, 'html'),
+    'demo/demo.js': file('demo/demo.js', `
+import { ${className} } from '../${tagName}.js';
+
+export { ${className} };
+
+const card = document.querySelector('${tagName}');
+const nameInput = document.querySelector('#learner-name');
+const localeSelect = document.querySelector('#locale');
+const eventLog = document.querySelector('#event-log');
+
+nameInput?.addEventListener('input', (event) => {
+  card.learnerName = event.target.value;
+});
+
+localeSelect?.addEventListener('change', (event) => {
+  globalThis.__OPEN_CELLS_LOCALE__ = event.target.value;
+  card?.requestUpdate();
+});
+
+card?.addEventListener('${tagName}-continue', (event) => {
+  if (eventLog) eventLog.textContent = event.type + ' · ' + JSON.stringify(event.detail);
+});
+`, 'javascript'),
+    'demo/demo-build.js': file('demo/demo-build.js', `
+import './demo.js';
+`, 'javascript'),
     [`test/unit/${tagName}.test.js`]: file(`test/unit/${tagName}.test.js`, `
-import { OpenCellsButtonDefault } from '../../src/components/OpenCellsButtonDefault.js';
-import { OpenCellsTypeText } from '../../src/components/OpenCellsTypeText.js';
+import { BbvaButtonDefault } from '@bbva-spherica-components/bbva-button-default';
+import { BbvaTypeText } from '@bbva-spherica-components/bbva-type-text';
 import { ${className} } from '../../${tagName}.js';
 
 const catalogs = ${JSON.stringify({
@@ -253,10 +303,10 @@ describe('${tagName}', () => {
   afterEach(() => document.body.replaceChildren());
 
   it('declara dependencias scoped sin registro global', () => {
-    expect(${className}.scopedElements['open-cells-type-text']).toBe(OpenCellsTypeText);
-    expect(${className}.scopedElements['open-cells-button-default']).toBe(OpenCellsButtonDefault);
-    expect(customElements.get('open-cells-type-text')).toBeUndefined();
-    expect(customElements.get('open-cells-button-default')).toBeUndefined();
+    expect(${className}.scopedElements['bbva-type-text']).toBe(BbvaTypeText);
+    expect(${className}.scopedElements['bbva-button-default']).toBe(BbvaButtonDefault);
+    expect(customElements.get('bbva-type-text')).toBeUndefined();
+    expect(customElements.get('bbva-button-default')).toBeUndefined();
   });
 
   it('renderiza ambos idiomas con valores diferentes', async () => {
@@ -267,7 +317,7 @@ describe('${tagName}', () => {
   });
 
   it('emite el evento público completo', async () => {
-    const element = document.createElement('${tagName}');
+    const element = /** @type {${className}} */ (document.createElement('${tagName}'));
     element.learnerName = 'Lina';
     const received = new Promise((resolve) => element.addEventListener('${tagName}-continue', resolve, { once: true }));
     element.handleContinue();
@@ -291,6 +341,12 @@ describe('${tagName}', () => {
 # ${tagName}
 
 Componente Cells educativo con dependencias scoped, traducciones en inglés y español y un evento público.
+
+## Desarrollo
+
+- \`cells component:dev\` abre la demo consumidora.
+- \`cells component:test\` ejecuta los contratos públicos.
+- \`cells component:documentation\` actualiza la documentación de la API.
 
 ## Evento
 
@@ -332,6 +388,27 @@ declare module '@open-wc/scoped-elements/lit-element.js' {
   export function ScopedElementsMixin<T extends Constructor>(base: T): T;
 }
 
+declare module '@bbva-spherica-components/bbva-type-text' {
+  export class BbvaTypeText extends HTMLElement { text: string; }
+}
+
+declare module '@bbva-spherica-components/bbva-button-default' {
+  export class BbvaButtonDefault extends HTMLElement { disabled: boolean; text: string; }
+}
+
+interface CellsTestExpectation {
+  toBe(expected: unknown): void;
+  toBeUndefined(): void;
+  toContain(expected: unknown): void;
+  toEqual(expected: unknown): void;
+}
+
+declare function describe(name: string, callback: () => void): void;
+declare function beforeEach(callback: () => void): void;
+declare function afterEach(callback: () => void): void;
+declare function it(name: string, callback: () => void | Promise<void>): void;
+declare function expect(value: unknown): CellsTestExpectation;
+
 `, 'typescript'),
   };
 
@@ -339,12 +416,65 @@ declare module '@open-wc/scoped-elements/lit-element.js' {
   return createVersionedCellsWorkspace(snapshot);
 }
 
-export function createCellsPracticeWorkspace(): VersionedCellsWorkspace {
+export type CellsComponentPracticeStage = 'scaffold' | 'api' | 'composition' | 'styles' | 'i18n' | 'demo' | 'tests' | 'delivery';
+
+export function createCellsPracticeWorkspace(stage: CellsComponentPracticeStage = 'composition'): VersionedCellsWorkspace {
   const complete = createCellsComponentWorkspace({ name: 'academy-learning-card' });
   const path = 'src/academy-learning-card.js';
-  const starter = complete.snapshot.files[path].content
-    .replace("      'open-cells-button-default': OpenCellsButtonDefault,", '      // TODO: registra aquí el botón scoped que ya está importado.')
-    .replace("    this.emitEvent('continue', { learnerName: this.learnerName });", '    // TODO: comunica la acción pública con el nombre de quien aprende.');
-  const changed = writeCellsFile(complete, path, starter);
-  return createVersionedCellsWorkspace(changed.snapshot, 0);
+  if (stage === 'scaffold') {
+    const manifestPath = 'package.json';
+    const manifest = JSON.parse(complete.snapshot.files[manifestPath].content);
+    delete manifest.exports;
+    delete manifest.scripts.documentation;
+    const changed = writeCellsFile(complete, manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    return createVersionedCellsWorkspace({ ...changed.snapshot, activeFilePath: manifestPath }, 0);
+  }
+  if (stage === 'api') {
+    const starter = complete.snapshot.files[path].content
+      .replace("    learnerName: { type: String, attribute: 'learner-name' },", '    // TODO: declara learnerName como propiedad String y atributo learner-name.')
+      .replace("    this.emitEvent('continue', { learnerName: this.learnerName });", '    // TODO: publica la intención con el nombre actual; no emitas el click crudo.');
+    return createVersionedCellsWorkspace(writeCellsFile(complete, path, starter).snapshot, 0);
+  }
+  if (stage === 'composition') {
+    const starter = complete.snapshot.files[path].content
+      .replace("      'bbva-button-default': BbvaButtonDefault,", '      // TODO: registra aquí el botón del catálogo que ya está importado.')
+      .replace("    this.emitEvent('continue', { learnerName: this.learnerName });", '    // TODO: comunica la acción pública con el nombre de quien aprende.');
+    return createVersionedCellsWorkspace(writeCellsFile(complete, path, starter).snapshot, 0);
+  }
+  if (stage === 'styles') {
+    const stylePath = 'src/academy-learning-card.css.js';
+    const staleRuntimeStyle = `import { css } from 'lit';\n\nexport default css\`:host { display: block; }\`;\n`;
+    const changed = writeCellsFile(complete, stylePath, staleRuntimeStyle);
+    return createVersionedCellsWorkspace({ ...changed.snapshot, activeFilePath: stylePath }, 0);
+  }
+  if (stage === 'i18n') {
+    const localePath = 'locales/locales.json';
+    const catalog = JSON.parse(complete.snapshot.files[localePath].content);
+    delete catalog.en['learningCard.continue'];
+    catalog.es['learningCard.title'] = 'Bienvenido';
+    const changed = writeCellsFile(complete, localePath, `${JSON.stringify(catalog, null, 2)}\n`);
+    return createVersionedCellsWorkspace({ ...changed.snapshot, activeFilePath: localePath }, 0);
+  }
+  if (stage === 'demo') {
+    const demoPath = 'demo/demo.js';
+    const controller = complete.snapshot.files[demoPath].content
+      .replace("from '../academy-learning-card.js'", "from '../src/academy-learning-card.js'")
+      .replace('  card.learnerName = event.target.value;', '  // TODO: conecta el valor del control con la propiedad pública del componente.');
+    const changed = writeCellsFile(complete, demoPath, controller);
+    return createVersionedCellsWorkspace({ ...changed.snapshot, activeFilePath: demoPath }, 0);
+  }
+  if (stage === 'tests') {
+    const testPath = 'test/unit/academy-learning-card.test.js';
+    const testSource = complete.snapshot.files[testPath].content
+      .replace('    expect(event.composed).toBe(true);', '    // TODO: comprueba que el evento también cruza el límite del Shadow DOM.');
+    const changed = writeCellsFile(complete, testPath, testSource);
+    return createVersionedCellsWorkspace({ ...changed.snapshot, activeFilePath: testPath }, 0);
+  }
+  const metadataPath = 'custom-elements.json';
+  const metadata = JSON.parse(complete.snapshot.files[metadataPath].content);
+  metadata.modules[0].declarations[0].tagName = 'academy-card-incompleta';
+  const withMetadata = writeCellsFile(complete, metadataPath, `${JSON.stringify(metadata, null, 2)}\n`);
+  const readmePath = 'README.md';
+  const changed = writeCellsFile(withMetadata, readmePath, '# academy-learning-card\n\nTODO: documenta propiedades, evento público, demo y comandos para continuar fuera del curso.\n');
+  return createVersionedCellsWorkspace({ ...changed.snapshot, activeFilePath: metadataPath }, 0);
 }

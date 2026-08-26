@@ -11,10 +11,10 @@ describe('auditoría de aplicación Cells', () => {
   });
 
   it.each([
-    ['channels', ['channel-subscribe', 'channel-publish']],
+    ['channels', ['channel-subscribe', 'channel-publish', 'native-boundary']],
     ['data', ['data-race', 'data-cleanup']],
     ['delivery', ['not-found-route', 'environment-config']],
-  ] as const)('cada etapa %s retira solo sus dos contratos de práctica', (stage, expectedFailures) => {
+  ] as const)('cada etapa %s retira solo los contratos de su práctica', (stage, expectedFailures) => {
     const audit = auditCellsApplication(createCellsAppPracticeWorkspace(stage).snapshot);
     expect(audit.results.filter((result) => !result.passed).map((result) => result.id)).toEqual(expectedFailures);
   });

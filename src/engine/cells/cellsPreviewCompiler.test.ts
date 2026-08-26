@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createCellsComponentWorkspace } from './cellsRecipes';
+import { createCellsAppWorkspace } from './cellsAppRecipes';
 import { buildCellsPreviewDocument } from './cellsPreviewCompiler';
 import { writeCellsFile } from './cellsVirtualFileSystem';
 
@@ -14,10 +15,26 @@ describe('buildCellsPreviewDocument', () => {
     expect(result.html).toContain('workspace%3A%2Fsrc%2Fmixins%2FWidgetMixin.js');
     expect(result.html).toContain('https%3A%2F%2Fesm.sh%2F%40webcomponents%2Fscoped-custom-element-registry%400.0.10');
     expect(result.html).toContain('https%3A%2F%2Fesm.sh%2F%40open-wc%2Fscoped-elements%403.0.6%2Flit-element.js');
-    expect(result.html).toContain('<academy-learning-card learner-name="Ada"></academy-learning-card>');
-    expect(result.html).toContain('workspace:/academy-learning-card.js');
+    expect(result.html).toContain('<academy-learning-card data-cells-demo-subject learner-name="Ada"');
+    expect(result.html).toContain('workspace:/demo/demo.js');
     expect(result.html).toContain('__OPEN_CELLS_LOCALES__');
     expect(result.html).toContain('globalThis.IntlMsg');
+    expect(result.html).toContain('Bienvenido');
+    expect(result.html).toContain('data-cells-demo-shell');
+    expect(result.html).toContain('Visual');
+    expect(result.html).toContain('Código');
+    expect(result.html).toContain('Documentación');
+    expect(result.html).toContain('Móvil');
+    expect(result.html).toContain('Eventos');
+    expect(result.html).toContain('Ocultar interfaz');
+  });
+
+  it('mantiene las aplicaciones como render completo sin el marco de demo de componentes', () => {
+    const workspace = createCellsAppWorkspace({ name: 'academy-store-app' });
+    const result = buildCellsPreviewDocument(workspace.snapshot);
+
+    expect(result.html).not.toContain('data-cells-demo-shell');
+    expect(result.html).toContain('<main id="app"');
   });
 
   it('rechaza paquetes que no están en la allowlist', () => {
@@ -42,8 +59,12 @@ describe('buildCellsPreviewDocument', () => {
 
     expect(result.html).toContain("source: 'open-cells-tests'");
     expect(result.html).toContain('await element.updateComplete');
+    expect(result.html).toContain("querySelector('bbva-type-text')");
+    expect(result.html).toContain('titleHost?.shadowRoot?.textContent');
     expect(result.html).toContain('constructor.scopedElements');
+    expect(result.html).toContain("__OPEN_CELLS_LOCALE__ = 'es'");
     expect(result.html).toContain("__OPEN_CELLS_LOCALE__ = 'en'");
+    expect(result.html).toContain('__OPEN_CELLS_CONTRACT_TESTS__ = true');
     expect(result.html).toContain('.click()');
     expect(result.html).toContain('event?.detail');
   });

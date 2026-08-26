@@ -7,12 +7,24 @@ describe('scaffold de aplicación Cells', () => {
   it('genera rutas, páginas, componente, data manager, configuración y pruebas', () => {
     expect(Object.keys(workspace.files)).toEqual(expect.arrayContaining([
       'app/scripts/app.js', 'app/scripts/app-routes.js', 'app/scripts/channels.js',
+      'app/bridge/native-adapter.js',
       'app/pages/academy-home-page/academy-home-page.js',
       'app/pages/academy-product-detail-page/academy-product-detail-page.js',
       'app/components/academy-product-card/academy-product-card.js',
       'app/data/academy-product-data-manager.js', 'app/config/dev.js', 'app/config/prod.js',
-      'app/locales/en.js', 'app/locales/es.js', 'test/unit/app.test.js',
+      'app/locales-app/locales.json',
+      'app/pages/academy-home-page/locales/locales.json',
+      'app/pages/academy-product-detail-page/locales/locales.json',
+      'app/pages/academy-not-found-page/locales/locales.json',
+      'test/unit/app.test.js',
     ]));
+    expect(workspace.files['app/locales/en.js']).toBeUndefined();
+    expect(workspace.files['app/locales/es.js']).toBeUndefined();
+    const globalCatalog = JSON.parse(workspace.files['app/locales-app/locales.json'].content);
+    const pageCatalog = JSON.parse(workspace.files['app/pages/academy-home-page/locales/locales.json'].content);
+    expect(globalCatalog.es).toHaveProperty('app.title');
+    expect(pageCatalog.es).toHaveProperty('home.title');
+    expect(pageCatalog.es).not.toHaveProperty('app.title');
   });
 
   it('usa el contrato público de páginas, rutas y canales', () => {
@@ -46,7 +58,7 @@ describe('scaffold de aplicación Cells', () => {
   });
 
   it('crea etapas progresivas sobre el mismo proyecto exportable', () => {
-    expect(createCellsAppPracticeWorkspace('channels').snapshot.activeFilePath).toContain('academy-home-page');
+    expect(createCellsAppPracticeWorkspace('channels').snapshot.activeFilePath).toBe('app/bridge/native-adapter.js');
     expect(createCellsAppPracticeWorkspace('data').snapshot.activeFilePath).toContain('data-manager');
     expect(createCellsAppPracticeWorkspace('delivery').snapshot.activeFilePath).toBe('app/scripts/app-routes.js');
   });

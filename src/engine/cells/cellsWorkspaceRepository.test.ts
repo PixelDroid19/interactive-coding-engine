@@ -46,6 +46,7 @@ describe('CellsWorkspaceRepository', () => {
     const session: CellsLabSession = {
       version: 1,
       activePanel: 'tests',
+      expandedFolders: ['src', 'demo'],
       command: 'cells component:test --coverage',
       previewLocale: 'en',
       tests: [{ id: 'render', title: 'Render', passed: true, message: 'ok' }],
@@ -58,5 +59,20 @@ describe('CellsWorkspaceRepository', () => {
     expect(await repository.loadSession('component:first')).toEqual(session);
     await repository.removeSession('component:first');
     expect(await repository.loadSession('component:first')).toBeNull();
+  });
+
+  it('rechaza una sesión con rutas de carpetas corruptas', async () => {
+    const repository = new CellsWorkspaceRepository(new IDBFactory());
+    await expect(repository.saveSession('component:broken', {
+      version: 1,
+      activePanel: 'preview',
+      expandedFolders: [''],
+      command: 'cells component:preview',
+      previewLocale: 'es',
+      tests: [],
+      coverage: null,
+      terminalOutput: '',
+      savedAt: Date.now(),
+    })).rejects.toThrow('no son válidas');
   });
 });

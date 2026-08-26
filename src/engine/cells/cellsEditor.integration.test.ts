@@ -28,6 +28,17 @@ describe('inteligencia del editor Cells', () => {
     expect(hover?.documentation).toContain('Emite un evento público');
   });
 
+  it('reconoce los globals de Vitest declarados por el proyecto Cells', () => {
+    const workspace = createCellsComponentWorkspace({ name: 'academy-learning-card' }).snapshot;
+    const service = new TypeScriptLanguageService(typeScriptLibraries);
+    service.replaceWorkspace(Object.values(workspace.files)
+      .filter((file) => file.language === 'javascript' || file.language === 'typescript')
+      .map(({ path, content }) => ({ path, content })));
+
+    const diagnostics = service.diagnostics('test/unit/academy-learning-card.test.js');
+    expect(diagnostics, diagnostics.map((diagnostic) => diagnostic.message).join('\n')).toEqual([]);
+  });
+
   it('entiende imports locales y APIs de páginas Cells en una app completa', () => {
     const workspace = createCellsAppWorkspace({ name: 'academy-store-app' }).snapshot;
     const service = new TypeScriptLanguageService(typeScriptLibraries);
