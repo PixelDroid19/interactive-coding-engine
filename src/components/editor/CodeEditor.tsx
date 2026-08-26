@@ -4,6 +4,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { css } from '@codemirror/lang-css';
 import { html } from '@codemirror/lang-html';
 import { javascript } from '@codemirror/lang-javascript';
+import { json } from '@codemirror/lang-json';
 import { python } from '@codemirror/lang-python';
 import { bracketMatching, foldGutter, indentOnInput, indentUnit } from '@codemirror/language';
 import { Compartment, EditorState, Transaction, type Extension } from '@codemirror/state';
@@ -51,6 +52,8 @@ interface CodeEditorProps {
   onSelectionChange?: (from: number, to: number) => void;
   instructorCursor?: { line: number; ch: number };
   lessonId?: string;
+  /** Ajusta líneas largas al ancho disponible; útil en laboratorios con varios paneles. */
+  lineWrapping?: boolean;
   /** Inyección para pruebas de integración; en producto se usa el Web Worker real. */
   languageClient?: EditorLanguageClient;
 }
@@ -88,26 +91,48 @@ function isJavaScriptLike(file: WorkspaceFile): boolean {
     || /\.(?:js|jsx|ts|tsx)$/i.test(file.name);
 }
 
+function isHtml(file: WorkspaceFile): boolean {
+  return file.language === 'html' || /\.html?$/i.test(file.name);
+}
+
+function isCss(file: WorkspaceFile): boolean {
+  return file.language === 'css' || /\.(?:css|scss)$/i.test(file.name);
+}
+
+function isJson(file: WorkspaceFile): boolean {
+  return file.language === 'json' || /\.json$/i.test(file.name);
+}
+
+function isPython(file: WorkspaceFile): boolean {
+  return file.language === 'python' || /\.py$/i.test(file.name);
+}
+
+function supportsSyntaxDiagnostics(file: WorkspaceFile): boolean {
+  return isJavaScriptLike(file) || isHtml(file) || isCss(file) || isJson(file) || isPython(file);
+}
+
 function languageExtension(file: WorkspaceFile): Extension {
-  if (file.name.endsWith('.html')) return html();
-  if (file.name.endsWith('.css')) return css();
-  if (file.language === 'python' || file.name.endsWith('.py')) return python();
+  if (isHtml(file)) return html();
+  if (isCss(file)) return css();
+  if (isJson(file)) return json();
+  if (isPython(file)) return python();
   if (/\.(?:tsx|jsx)$/i.test(file.name)) {
     return javascript({ jsx: true, typescript: file.name.endsWith('.tsx') });
   }
-  return javascript({ typescript: /\.ts$/i.test(file.name) });
+  if (isJavaScriptLike(file)) return javascript({ typescript: /\.ts$/i.test(file.name) });
+  return [];
 }
 
 function fileFeatureExtensions(file: WorkspaceFile, readOnly: boolean): Extension[] {
-  const isHtml = file.name.endsWith('.html');
-  const isCss = file.name.endsWith('.css');
+  const htmlFile = isHtml(file);
+  const cssFile = isCss(file);
   const extensions: Extension[] = [];
-  if ((isHtml || isCss) && !readOnly) {
+  if ((htmlFile || cssFile) && !readOnly) {
     extensions.push(abbreviationTracker({
-      syntax: isCss ? EmmetKnownSyntax.css : EmmetKnownSyntax.html,
+      syntax: cssFile ? EmmetKnownSyntax.css : EmmetKnownSyntax.html,
     }));
   }
-  if (isHtml || isCss) extensions.push(color);
+  if (htmlFile || cssFile) extensions.push(color);
   return extensions;
 }
 
@@ -187,6 +212,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   onSelectionChange,
   instructorCursor,
   lessonId,
+  lineWrapping = false,
   languageClient,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -252,7 +278,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             autocompletion({ activateOnTyping: true, icons: true, maxRenderedOptions: 80 }),
           ]),
       createSpanishHoverTooltip(lessonIdRef.current),
-      ...(!readOnlyRef.current ? createSemanticLintExtensions(client, getPath, reportDiagnostics) : []),
+      ...(!readOnlyRef.current && supportsSyntaxDiagnostics(activeFile)
+        ? createSemanticLintExtensions(client, getPath, reportDiagnostics)
+        : []),
       ...(semantic && !readOnlyRef.current
         ? [
             createSemanticHover(client, getPath, lessonIdRef.current),
@@ -299,6 +327,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         rectangularSelection(),
         crosshairCursor(),
         highlightActiveLine(),
+        ...(lineWrapping ? [EditorView.lineWrapping] : []),
         keymap.of([...closeBracketsKeymap, ...completionKeymap, ...defaultKeymap, ...historyKeymap]),
         compartments.language.of(languageExtension(initialFile)),
         compartments.readOnly.of(readOnlyExtensions(readOnlyRef.current)),
@@ -418,13 +447,28 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   }
 
   const semantic = isJavaScriptLike(file);
-  const isPython = file.language === 'python' || file.name.endsWith('.py');
+  const pythonFile = isPython(file);
+  const emmetAvailable = isHtml(file) || isCss(file);
+  const syntaxOnly = supportsSyntaxDiagnostics(file) && !semantic;
+  const languageLabel = file.language === 'json'
+    ? 'JSON'
+    : file.language === 'python'
+      ? 'Python'
+      : file.language.toUpperCase();
   const statusText = readOnly
     ? 'Solo lectura durante la reproducción'
-    : isPython
-      ? 'Python · sintaxis y sugerencias activas'
-      : !semantic
-      ? `${file.language.toUpperCase()} · Emmet disponible con Tab`
+    : emmetAvailable
+      ? `${languageLabel} · Emmet disponible con Tab`
+      : syntaxOnly
+        ? diagnostics.state === 'loading'
+          ? `${languageLabel} · verificando sintaxis…`
+          : diagnostics.state === 'error'
+            ? `${languageLabel} · análisis no disponible`
+            : diagnostics.errors === 0 && diagnostics.warnings === 0
+              ? `${languageLabel} · sintaxis válida${pythonFile ? ' · sugerencias activas' : ''}`
+              : `${diagnostics.errors} ${diagnostics.errors === 1 ? 'error' : 'errores'} · ${diagnostics.warnings} ${diagnostics.warnings === 1 ? 'advertencia' : 'advertencias'}`
+        : !semantic
+          ? `${languageLabel} · edición de texto`
       : diagnostics.state === 'loading'
         ? 'Preparando inteligencia de código…'
         : diagnostics.state === 'error'

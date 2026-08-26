@@ -2,6 +2,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import { WorkspaceFile } from '../../types/scrim';
 import { InstructorCursor } from '../player/InstructorCursor';
 import { Plus, FilePlus, Trash2, Edit2, Check, X, Box } from 'lucide-react';
+import { WorkspaceTree } from './WorkspaceTree';
 
 interface FileTreeProps {
   files: Record<string, WorkspaceFile>;
@@ -65,9 +66,11 @@ export const FileTree: React.FC<FileTreeProps> = ({
   };
 
   const handleRenameSubmit = (oldPath: string) => {
-    const newName = renameValue.trim();
-    if (newName && newName !== oldPath && !files[newName]) {
-      onFileRename?.(oldPath, newName);
+    const requestedName = renameValue.trim();
+    const directory = oldPath.includes('/') ? oldPath.slice(0, oldPath.lastIndexOf('/') + 1) : '';
+    const newPath = requestedName.includes('/') ? requestedName : `${directory}${requestedName}`;
+    if (requestedName && newPath !== oldPath && !files[newPath]) {
+      onFileRename?.(oldPath, newPath);
     }
     setRenamingPath(null);
   };
@@ -153,20 +156,15 @@ export const FileTree: React.FC<FileTreeProps> = ({
       {/* Files List */}
       <div className="files-list relative flex-1 overflow-y-auto min-h-[140px]">
         <div ref={fileStackRef} className="relative">
-        {(Object.values(files) as WorkspaceFile[])
-          .slice()
-          .sort((a, b) => {
-            const rank = (name: string) =>
-              name.endsWith('.html') ? 0 : name.endsWith('.css') ? 1 : name.endsWith('.js') || name.endsWith('.ts') ? 2 : 3;
-            return rank(a.name) - rank(b.name) || a.name.localeCompare(b.name);
-          })
-          .map((file) => {
-          const isActive = file.path === activeFilePath;
-          const isRenaming = renamingPath === file.path;
-
-          if (isRenaming) {
-            return (
-              <div key={file.path} data-file-row className="flex items-center gap-1 px-3 py-1 bg-zinc-900">
+          <WorkspaceTree
+            files={files}
+            activeFilePath={activeFilePath}
+            onFileSelect={onFileSelect}
+            renderFileIcon={(file) => getFileBadge(file.name)}
+            renderFileActions={(file) => {
+              const isRenaming = renamingPath === file.path;
+              if (isRenaming) return (
+              <div className="workspace-tree__rename" onClick={(event) => event.stopPropagation()}>
                 <input
                   autoFocus
                   type="text"
@@ -186,28 +184,10 @@ export const FileTree: React.FC<FileTreeProps> = ({
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
-            );
-          }
-
-          return (
-            <div
-              key={file.path}
-              data-file-row
-              className={`file-item-btn group w-full ${isActive ? 'file-item-btn-active' : ''}`}
-            >
-              <button
-                type="button"
-                onClick={() => onFileSelect(file.path)}
-                className="flex min-w-0 flex-1 items-center gap-2 text-left"
-                aria-label={`Abrir ${file.name}`}
-                aria-current={isActive ? 'true' : undefined}
-              >
-                {getFileBadge(file.name)}
-                <span>{file.name}</span>
-              </button>
-
-              {!readOnly && (
-                <div className="hidden items-center gap-1 group-hover:flex group-focus-within:flex">
+              );
+              if (readOnly) return null;
+              return (
+                <div className="workspace-tree__actions">
                   {onFileRename && (
                     <button
                       onClick={(e) => {
@@ -236,10 +216,9 @@ export const FileTree: React.FC<FileTreeProps> = ({
                     </button>
                   )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+              );
+            }}
+          />
         <InstructorCursor containerType="files" mapPosition={mapFilesPointer} />
         </div>
       </div>

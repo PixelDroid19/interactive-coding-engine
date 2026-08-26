@@ -45,7 +45,7 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('button', { name: `Ver recorrido: ${OPEN_CELLS_COURSE.title}` })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: `Ver recorrido: ${OPEN_CELLS_COURSE.title}` }));
     expect(screen.getByRole('heading', { name: OPEN_CELLS_COURSE.title })).toBeTruthy();
-    expect(screen.getByText(/68 lecciones · 141 prácticas/)).toBeTruthy();
+    expect(screen.getByText(/68 lecciones · 136 prácticas/)).toBeTruthy();
     expect(screen.getByRole('button', { name: /^6\. Crear tu primer componente Cells/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^46\. onPageLeave y cleanup/ })).toBeTruthy();
   });

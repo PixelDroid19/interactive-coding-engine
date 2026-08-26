@@ -58,16 +58,25 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
   const isDraggingRef = useRef(false);
   const dragStartRef = useRef({ mouseX: 0, mouseY: 0, posX: 0, posY: 0 });
 
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   const isResizingRef = useRef(false);
   const resizeStartRef = useRef({ mouseX: 0, mouseY: 0, startW: 0, startH: 0 });
 
   const clampPosition = useCallback((nextX: number, nextY: number, nextSize = size) => ({
-    x: Math.max(8, Math.min(Math.max(8, window.innerWidth - nextSize.width - 8), nextX)),
-    y: Math.max(52, Math.min(Math.max(52, window.innerHeight - nextSize.height - 64), nextY)),
+    x: Math.max(8, Math.min(Math.max(8, (typeof window !== 'undefined' ? window.innerWidth : 1024) - nextSize.width - 8), nextX)),
+    y: Math.max(52, Math.min(Math.max(52, (typeof window !== 'undefined' ? window.innerHeight : 768) - nextSize.height - 64), nextY)),
   }), [size]);
 
   useEffect(() => {
     const place = () => {
+      if (typeof window === 'undefined' || !isMountedRef.current) return;
       const availableWidth = Math.max(160, window.innerWidth - 16);
       const minimumWidth = Math.min(340, availableWidth);
       const isNarrowViewport = window.innerWidth <= 768;
@@ -225,7 +234,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
     return new Promise<void>((resolve) => {
       const iframe = iframeRef.current!;
       const onLoad = () => {
-        setIsExecuting(false);
+        if (isMountedRef.current) setIsExecuting(false);
         iframe.removeEventListener('load', onLoad);
         // Small delay to let JS execute
         setTimeout(() => resolve(), 50);
@@ -237,7 +246,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
       // Fallback if load doesn't fire (srcdoc)
       setTimeout(() => {
         iframe.removeEventListener('load', onLoad);
-        setIsExecuting(false);
+        if (isMountedRef.current) setIsExecuting(false);
         resolve();
       }, 350);
     });

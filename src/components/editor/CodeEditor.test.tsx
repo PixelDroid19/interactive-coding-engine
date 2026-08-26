@@ -26,6 +26,13 @@ const pythonFile: WorkspaceFile = {
   content: 'def saludar(nombre):\n  return f"Hola, {nombre}"',
 };
 
+const jsonFile: WorkspaceFile = {
+  name: 'package.json',
+  path: 'package.json',
+  language: 'json',
+  content: '{\n  "name": "academy-learning-card",\n  "version": "0.1.0"\n}',
+};
+
 function languageClient(): EditorLanguageClient {
   return {
     replaceWorkspace: () => {},
@@ -94,13 +101,24 @@ describe('CodeEditor', () => {
     await waitFor(() => expect(screen.getByRole('status').textContent).toContain('1 error'));
   });
 
-  it('activa la sintaxis y el autocompletado propio de Python', () => {
+  it('activa la sintaxis y el autocompletado propio de Python', async () => {
     const { container } = render(
       <CodeEditor file={pythonFile} workspaceFiles={{ 'main.py': pythonFile }} />,
     );
 
     expect(container.querySelector('.cm-line span')?.textContent).toBe('def');
-    expect(screen.getByRole('status').textContent).toContain('Python · sintaxis y sugerencias activas');
+    await waitFor(() => expect(screen.getByRole('status').textContent).toContain('Python · sintaxis válida · sugerencias activas'));
     expect(screen.getByRole('status').textContent).not.toContain('Emmet');
+  });
+
+  it('reconoce package.json como JSON válido sin anunciar Emmet ni errores falsos', async () => {
+    const { container } = render(
+      <CodeEditor file={jsonFile} workspaceFiles={{ 'package.json': jsonFile }} />,
+    );
+
+    await waitFor(() => expect(screen.getByRole('status').textContent).toContain('JSON · sintaxis válida'));
+    expect(screen.getByRole('status').textContent).not.toContain('Emmet');
+    expect(container.querySelectorAll('.cm-lintRange-error')).toHaveLength(0);
+    expect(container.querySelectorAll('.cm-lint-marker-error')).toHaveLength(0);
   });
 });
