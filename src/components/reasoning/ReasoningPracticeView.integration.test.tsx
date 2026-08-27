@@ -3,6 +3,7 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReasoningExerciseItem } from '../../types/curriculum';
+import { OPEN_CELLS_COURSE } from '../../curriculum/open-cells/course';
 import { ReasoningPracticeView } from './ReasoningPracticeView';
 
 const item: ReasoningExerciseItem = {
@@ -55,5 +56,38 @@ describe('ReasoningPracticeView', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Mostrar una pista' }));
     expect(screen.getByText(/Primero necesitas el dato/)).toBeTruthy();
     expect(screen.getByText('Ver explicación completa')).toBeTruthy();
+  });
+
+  it('permite resolver una tabla de decisión generada desde una lección Cells real', () => {
+    const generated = OPEN_CELLS_COURSE.modules.flatMap((module) => module.items)
+      .find((entry): entry is ReasoningExerciseItem => entry.type === 'reasoning' && entry.activity.kind === 'decision-table' && entry.id === 'open-cells-09-razona');
+    expect(generated).toBeDefined();
+    if (!generated || generated.activity.kind !== 'decision-table') return;
+
+    render(<ReasoningPracticeView item={generated} onBack={() => {}} onNext={() => {}} />);
+    for (const currentCase of generated.activity.cases) {
+      fireEvent.change(screen.getByLabelText(currentCase.label), {
+        target: { value: generated.activity.expectedOutcomes[currentCase.id] },
+      });
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Comprobar mi razonamiento' }));
+    expect(screen.getByRole('heading', { name: 'Resuelto' })).toBeTruthy();
+  });
+
+  it('permite construir un mapa de dependencias generado desde una lección Cells real', () => {
+    const generated = OPEN_CELLS_COURSE.modules.flatMap((module) => module.items)
+      .find((entry): entry is ReasoningExerciseItem => entry.type === 'reasoning' && entry.activity.kind === 'dependency-map' && entry.id === 'open-cells-08-razona');
+    expect(generated).toBeDefined();
+    if (!generated || generated.activity.kind !== 'dependency-map') return;
+
+    render(<ReasoningPracticeView item={generated} onBack={() => {}} onNext={() => {}} />);
+    const labels = Object.fromEntries(generated.activity.modules.map((module) => [module.id, module.label]));
+    for (const connection of generated.activity.expectedDependencies) {
+      fireEvent.click(screen.getByRole('checkbox', {
+        name: `${labels[connection.from]} → ${labels[connection.to]}`,
+      }));
+    }
+    fireEvent.click(screen.getByRole('button', { name: 'Comprobar mi razonamiento' }));
+    expect(screen.getByRole('heading', { name: 'Resuelto' })).toBeTruthy();
   });
 });

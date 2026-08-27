@@ -1,4 +1,4 @@
-import type { ReasoningExerciseItem } from '../../types/curriculum';
+import type { ReadingItem, ReasoningActivity, ReasoningExerciseItem } from '../../types/curriculum';
 
 function sequence(number: number, title: string, prompt: string, labels: string[], explanation: string): ReasoningExerciseItem {
   const ids = labels.map((_, index) => `step-${number}-${index + 1}`);
@@ -90,7 +90,7 @@ export const OPEN_CELLS_REASONING: ReasoningExerciseItem[] = [
   sequence(68, 'Continúa fuera de la plataforma', 'Ordena la entrega final de una app Cells exportada.', ['Descargar el ZIP', 'Validar su integridad', 'Descomprimir en una carpeta nueva', 'Instalar dependencias declaradas', 'Ejecutar tests, build y navegación'], 'La entrega termina cuando un consumidor limpio reproduce el proyecto con sus contratos intactos.'),
 ];
 
-export function addOpenCellsReasoning<T extends { id: string }>(items: T[]): Array<T | ReasoningExerciseItem> {
+export function addOpenCellsReasoning(items: ReadingItem[]): Array<ReadingItem | ReasoningExerciseItem> {
   const byLesson = new Map(OPEN_CELLS_REASONING.map((item) => [item.relatedLessonId, item]));
   return items.flatMap((item) => {
     const practice = byLesson.get(item.id) ?? generatedReasoning(item);
@@ -98,34 +98,74 @@ export function addOpenCellsReasoning<T extends { id: string }>(items: T[]): Arr
   });
 }
 
-function generatedReasoning(item: { id: string; title?: string }): ReasoningExerciseItem | undefined {
+function concise(text: string, maximum = 104): string {
+  const firstSentence = text.trim().split(/(?<=[.!?])\s+/)[0] ?? text.trim();
+  return firstSentence.length <= maximum ? firstSentence : `${firstSentence.slice(0, maximum - 1).trimEnd()}…`;
+}
+
+function generatedActivity(item: ReadingItem, number: number): ReasoningActivity {
+  const sections = item.sections.slice(0, 3);
+  const nodes = sections.map((section, index) => ({
+    id: `cells-${number}-concepto-${index + 1}`,
+    label: `${section.title}: ${concise(section.content)}`,
+  }));
+
+  if (number % 3 === 0) {
+    const options = nodes.map((node) => node.label);
+    return {
+      kind: 'decision-table',
+      prompt: `Relaciona cada situación de “${item.title}” con la responsabilidad que realmente la explica.`,
+      cases: sections.map((section, index) => ({
+        id: `cells-${number}-caso-${index + 1}`,
+        label: concise(section.example ?? section.content, 132),
+        options: [...options.slice(index + 1), ...options.slice(0, index + 1)],
+      })),
+      expectedOutcomes: Object.fromEntries(nodes.map((node, index) => [`cells-${number}-caso-${index + 1}`, node.label])),
+    };
+  }
+
+  if (number % 3 === 2) {
+    const expectedDependencies = nodes.slice(0, -1).map((node, index) => ({ from: node.id, to: nodes[index + 1].id }));
+    return {
+      kind: 'dependency-map',
+      prompt: `Conecta las ideas de “${item.title}” según qué comprensión necesita existir antes de la siguiente.`,
+      modules: nodes,
+      dependencyOptions: [
+        ...expectedDependencies,
+        { from: nodes[0].id, to: nodes.at(-1)!.id },
+        { from: nodes.at(-1)!.id, to: nodes[0].id },
+      ],
+      expectedDependencies,
+    };
+  }
+
+  return {
+    kind: 'sequence',
+    prompt: `Ordena el recorrido de “${item.title}” desde el modelo mental hasta la comprobación del error frecuente.`,
+    steps: nodes,
+    expectedOrder: nodes.map((node) => node.id),
+  };
+}
+
+function generatedReasoning(item: ReadingItem): ReasoningExerciseItem | undefined {
   const match = item.id.match(/open-cells-(\d+)-lectura/);
   if (!match) return undefined;
   const number = Number(match[1]);
-  const title = item.title ?? `Lección ${number}`;
-  const ids = [`cells-${number}-entrada`, `cells-${number}-contrato`, `cells-${number}-evidencia`];
+  const title = item.title;
+  const keyPoints = item.keyPoints.filter(Boolean);
   return {
     id: `open-cells-${String(number).padStart(2, '0')}-razona`,
     type: 'reasoning',
     relatedLessonId: item.id,
     title: `Razona: ${title}`,
-    description: `Ordena una investigación de “${title}” desde la entrada que cambia hasta la evidencia que permite aceptar o refutar el contrato.`,
+    description: `Representa las decisiones específicas de “${title}” y comprueba que puedes relacionar modelo, contrato y error frecuente sin memorizar una línea de código.`,
     estimatedMinutes: 7,
-    activity: {
-      kind: 'sequence',
-      prompt: `Antes de editar “${title}”, ordena causa, contrato y comprobación observable para no cambiar varias responsabilidades al mismo tiempo.`,
-      steps: [
-        { id: ids[0], label: 'Identificar la entrada y quién la controla' },
-        { id: ids[1], label: 'Predecir el contrato público que debe conservarse' },
-        { id: ids[2], label: 'Comprobar una salida observable con dos casos distintos' },
-      ],
-      expectedOrder: ids,
-    },
+    activity: generatedActivity(item, number),
     hints: [
-      { level: 1, text: 'Empieza por la causa que existe antes de que el componente produzca una salida.' },
-      { level: 2, text: 'Una predicción útil se escribe antes de ejecutar la comprobación, no después de ver el resultado.' },
-      { level: 3, text: 'La evidencia observable queda al final porque contrasta la entrada con el contrato esperado.' },
+      { level: 1, text: keyPoints[0] ?? `Vuelve al modelo mental de “${title}” y localiza quién posee la primera decisión.` },
+      { level: 2, text: keyPoints[1] ?? 'Relaciona cada responsabilidad con la salida pública que puede observar un consumidor.' },
+      { level: 3, text: item.transferPrompt ?? 'Traslada el contrato a otro dominio y conserva el mismo orden de causas y evidencias.' },
     ],
-    explanation: `En “${title}”, identificar primero la entrada evita confundir causa y síntoma. Después se formula el contrato y por último se usa una salida pública para comprobarlo con más de un caso.`,
+    explanation: item.sections.map((section) => `${section.title}: ${section.content}`).join(' '),
   };
 }
