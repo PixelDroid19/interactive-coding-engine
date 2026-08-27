@@ -389,13 +389,16 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
           )}
         </div>
       </div>
-      <div className="browser-navbar">
-        <button className="browser-btn" aria-label="Atrás (no disponible)" title="Navegación no disponible" disabled aria-disabled="true" style={{ opacity: 0.4, cursor: 'not-allowed' }}><ArrowLeft size={13} /></button>
-        <button className="browser-btn" aria-label="Adelante (no disponible)" title="Navegación no disponible" disabled aria-disabled="true" style={{ opacity: 0.4, cursor: 'not-allowed' }}><ArrowRight size={13} /></button>
-        <div className="browser-url-box" aria-label="Ruta actual">
-          <span className="browser-url-text">/index.html</span>
+      {/* Browser Navbar (only for full-page standard previews, NOT for native component workbench) */}
+      {!(previewRuntime === 'cells' && cellsPreview?.componentDemo) && (
+        <div className="browser-navbar">
+          <button className="browser-btn" aria-label="Atrás (no disponible)" title="Navegación no disponible" disabled aria-disabled="true" style={{ opacity: 0.4, cursor: 'not-allowed' }}><ArrowLeft size={13} /></button>
+          <button className="browser-btn" aria-label="Adelante (no disponible)" title="Navegación no disponible" disabled aria-disabled="true" style={{ opacity: 0.4, cursor: 'not-allowed' }}><ArrowRight size={13} /></button>
+          <div className="browser-url-box" aria-label="Ruta actual">
+            <span className="browser-url-text">/index.html</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Preview Sandbox Iframe Container */}
       <div className="browser-viewport">
@@ -410,7 +413,8 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
             demo={cellsPreview.componentDemo}
             iframeRef={iframeRef}
             title="Vista previa"
-            compact
+            compact={isFloating && !isMaximized}
+            onRequestExpand={() => setIsMaximized(true)}
           />
         ) : (
           <iframe
@@ -424,13 +428,15 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
         <InstructorCursor containerType="preview" mapPosition={mapPreviewPointer} />
       </div>
 
-      {/* Embedded Runtime Console Drawer */}
-      <RuntimeConsole
-        logs={logs}
-        onClearLogs={() => setLogs([])}
-        isOpen={isConsoleOpen}
-        onToggle={() => setIsConsoleOpen(!isConsoleOpen)}
-      />
+      {/* Embedded Runtime Console Drawer (only for standard previews; CellsPreviewWorkbench has its own native console) */}
+      {!(previewRuntime === 'cells' && cellsPreview?.componentDemo) && (
+        <RuntimeConsole
+          logs={logs}
+          onClearLogs={() => setLogs([])}
+          isOpen={isConsoleOpen}
+          onToggle={() => setIsConsoleOpen(!isConsoleOpen)}
+        />
+      )}
 
       {/* Resize Handle for Floating Window */}
       {isFloating && !isMaximized && (

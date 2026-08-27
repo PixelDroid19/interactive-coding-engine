@@ -151,4 +151,21 @@ describe('FloatingBrowser para una demo Cells', () => {
     await waitFor(() => expect(Number.parseInt(browserWindow.style.width, 10)).toBeGreaterThanOrEqual(480));
     expect(Number.parseInt(browserWindow.style.width, 10)).toBeLessThanOrEqual(560);
   });
+
+  it('abre el workbench completo desde la vista flotante compacta', async () => {
+    render(
+      <FloatingBrowser
+        workspace={cellsWorkspace}
+        isFloating
+        previewRuntime="cells"
+        onToggleFloating={() => {}}
+      />,
+    );
+
+    expect(screen.queryByLabelText('Panel de propiedades')).toBeNull();
+    fireEvent.click(await screen.findByRole('button', { name: 'Abrir herramientas de desarrollo' }));
+
+    await waitFor(() => expect(screen.getByLabelText('Panel de propiedades')).toBeTruthy());
+    expect(screen.getByLabelText('Inspector de eventos')).toBeTruthy();
+  });
 });
