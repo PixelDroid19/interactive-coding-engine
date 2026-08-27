@@ -1,7 +1,40 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { ScrimEvent } from '../../types/scrim';
+import type { WorkspaceSnapshot } from '../../types/scrim';
+import { buildCellsPreviewDocument } from '../../engine/cells/cellsPreviewCompiler';
+import { auditCellsProject } from '../../engine/cells/cellsProjectAudit';
 import { OPEN_CELLS_COURSE, OPEN_CELLS_SCRIMS } from './course';
+
+function applyTape(workspace: WorkspaceSnapshot, events: ScrimEvent[]): WorkspaceSnapshot {
+  const files = Object.fromEntries(Object.entries(workspace.files).map(([path, file]) => [path, { ...file }]));
+  let activeFilePath = workspace.activeFilePath;
+  for (const event of events) {
+    if (event.type === 'file-switch') activeFilePath = event.filePath;
+    if (event.type === 'file-create') files[event.file.path] = { ...event.file };
+    if (event.type === 'file-delete') delete files[event.filePath];
+    if (event.type === 'file-rename') {
+      const source = files[event.oldPath];
+      if (source) {
+        files[event.newPath] = { ...source, path: event.newPath, name: event.newPath.split('/').at(-1) ?? source.name };
+        delete files[event.oldPath];
+      }
+    }
+    if (event.type === 'code-change') {
+      const source = files[event.filePath];
+      if (!source) throw new Error(`${event.filePath} no existe durante la cinta.`);
+      let content = event.fullContent;
+      if (content === undefined) {
+        content = source.content;
+        for (const change of [...event.changes].sort((left, right) => right.from - left.from)) {
+          content = `${content.slice(0, change.from)}${change.text}${content.slice(change.to)}`;
+        }
+      }
+      files[event.filePath] = { ...source, content };
+    }
+  }
+  return { ...workspace, files, activeFilePath };
+}
 
 describe('recorrido guiado completo de Open Cells', () => {
   const lessons = Object.values(OPEN_CELLS_SCRIMS).sort((left, right) => left.id.localeCompare(right.id));
@@ -63,6 +96,37 @@ describe('recorrido guiado completo de Open Cells', () => {
       for (const cue of lesson.audioTrack.narrationScript ?? []) {
         expect(script, `${lesson.id} no contiene el subtítulo completo`).toContain(cue.text);
       }
+    }
+  });
+
+  it('cada cinta termina en un proyecto Cells que el runtime puede previsualizar', () => {
+    for (const lesson of lessons) {
+      const finalWorkspace = applyTape(lesson.initialWorkspace, lesson.events);
+      const preview = buildCellsPreviewDocument(finalWorkspace);
+      expect(preview.html, `${lesson.id} produjo un preview vacío`).toContain('<!doctype html>');
+      if (lesson.templateId === 'cells-component') {
+        expect(preview.componentDemo, `${lesson.id} no expuso el componente trabajado`).toBeDefined();
+      } else {
+        expect(preview.componentDemo, `${lesson.id} trató una aplicación como demo de componente`).toBeUndefined();
+      }
+    }
+  });
+
+  it('las clases generadas dejan completos los contratos públicos que enseñan', () => {
+    for (const lesson of lessons.filter((candidate) => candidate.id !== 'open-cells-06')) {
+      const finalWorkspace = applyTape(lesson.initialWorkspace, lesson.events);
+      const failed = auditCellsProject(finalWorkspace).results.filter((result) => !result.passed);
+      expect(failed, `${lesson.id} dejó contratos rotos: ${failed.map((result) => result.id).join(', ')}`).toEqual([]);
+    }
+  });
+
+  it('no exige un concepto Cells antes de haberlo introducido', () => {
+    const introduced = new Set<string>();
+    for (const lesson of lessons) {
+      for (const required of lesson.skillsRequired.filter((skill) => skill.startsWith('cells-'))) {
+        expect(introduced.has(required), `${lesson.id} exige ${required} antes de enseñarlo`).toBe(true);
+      }
+      lesson.skillsIntroduced.filter((skill) => skill.startsWith('cells-')).forEach((skill) => introduced.add(skill));
     }
   });
 });

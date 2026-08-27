@@ -414,7 +414,7 @@ function skillGroup(number: number): { required: string[]; introduced: string[];
   if (number <= 46) return { required: ['lit-component', 'async-javascript'], introduced: ['cells-app-runtime', 'cells-page-lifecycle'], representation: 'ruta → página activa → entrada y cleanup' };
   if (number <= 54) return { required: ['events', 'objects'], introduced: ['cells-channels', 'cells-navigation'], representation: 'intención → evento, canal o navegación → consumidor' };
   if (number <= 62) return { required: ['promises', 'events'], introduced: ['cells-data-manager', 'cells-request-lifecycle'], representation: 'petición → estado → respuesta vigente o descarte → cleanup' };
-  return { required: ['cells-components', 'cells-applications'], introduced: ['cells-production-parity', 'cells-delivery'], representation: 'workspace limpio → test y build → ZIP → continuación con CLI' };
+  return { required: ['cells-app-runtime', 'cells-public-testing'], introduced: ['cells-production-parity', 'cells-delivery'], representation: 'workspace limpio → test y build → ZIP → continuación con CLI' };
 }
 
 export function createOpenCellsGuidedLesson(reading: ReadingItem): ScrimLessonData {
