@@ -414,6 +414,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
             iframeRef={iframeRef}
             title="Vista previa"
             compact={isFloating && !isMaximized}
+            fillContainer
             onRequestExpand={() => setIsMaximized(true)}
           />
         ) : (

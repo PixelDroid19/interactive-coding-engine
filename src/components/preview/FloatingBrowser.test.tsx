@@ -166,6 +166,10 @@ describe('FloatingBrowser para una demo Cells', () => {
     const viewport = preview.parentElement as HTMLElement;
     expect(viewport.classList.contains('browser-viewport--cells')).toBe(true);
     expect(preview.classList.contains('cells-studio')).toBe(true);
+    expect(preview.style.position).toBe('absolute');
+    expect(preview.style.inset).toBe('0');
+    expect(preview.style.width).toBe('auto');
+    expect(preview.style.height).toBe('auto');
   });
 
   it('abre el workbench completo desde la vista flotante compacta', async () => {

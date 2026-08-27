@@ -169,6 +169,13 @@ export default function App() {
 
     const applyHudAugs = () => {
       const isHud = document.documentElement.classList.contains('hud');
+      if (!isHud) {
+        document.querySelectorAll('[data-augmented-ui], [data-augmented-ui-reset]').forEach((el) => {
+          el.removeAttribute('data-augmented-ui');
+          el.removeAttribute('data-augmented-ui-reset');
+        });
+        return;
+      }
       const map: Array<[string, string, boolean?]> = [
         ['.editor-window-wrapper', 'hud-editor tl-clip tr-clip br-clip bl-clip border inlay'],
         ['.browser-window', 'hud-browser tl-clip tr-clip br-clip bl-clip border inlay'],
@@ -203,13 +210,8 @@ export default function App() {
       ];
       map.forEach(([sel, aug, reset]) => {
         document.querySelectorAll(sel).forEach((el) => {
-          if (isHud) {
-            el.setAttribute('data-augmented-ui', aug);
-            if (reset) el.setAttribute('data-augmented-ui-reset', '');
-          } else {
-            el.removeAttribute('data-augmented-ui');
-            el.removeAttribute('data-augmented-ui-reset');
-          }
+          el.setAttribute('data-augmented-ui', aug);
+          if (reset) el.setAttribute('data-augmented-ui-reset', '');
         });
       });
     };

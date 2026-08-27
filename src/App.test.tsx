@@ -63,8 +63,15 @@ describe('App navigation persistence', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar a tema cyberpunk' }));
     await vi.waitFor(() => expect(icon?.getAttribute('data-augmented-ui')).toContain('hud-icon'));
 
+    const detachedCyberBorder = document.createElement('div');
+    detachedCyberBorder.setAttribute('data-augmented-ui', 'hud-orphan border');
+    detachedCyberBorder.setAttribute('data-augmented-ui-reset', '');
+    document.body.append(detachedCyberBorder);
+
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar a tema por defecto' }));
     await vi.waitFor(() => expect(icon?.hasAttribute('data-augmented-ui')).toBe(false));
+    expect(detachedCyberBorder.hasAttribute('data-augmented-ui')).toBe(false);
+    expect(detachedCyberBorder.hasAttribute('data-augmented-ui-reset')).toBe(false);
   });
 
   it('abre un curso desde el inicio del roadmap aunque el catálogo estuviera desplazado', () => {

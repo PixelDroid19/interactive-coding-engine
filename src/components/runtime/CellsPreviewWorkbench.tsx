@@ -49,6 +49,7 @@ export interface CellsPreviewWorkbenchProps {
   compact?: boolean;
   className?: string;
   onRequestExpand?: () => void;
+  fillContainer?: boolean;
 }
 
 export const VIEWPORTS: Array<{ id: ViewportPreset; label: string; width?: number; height?: number }> = [
@@ -76,6 +77,7 @@ export const CellsPreviewWorkbench: React.FC<CellsPreviewWorkbenchProps> = ({
   compact = false,
   className = '',
   onRequestExpand,
+  fillContainer = false,
 }) => {
   const [tab, setTab] = useState<WorkbenchTab>('visual');
   const [caseId, setCaseId] = useState(demo.cases[0]?.id ?? 'basic');
@@ -328,6 +330,7 @@ export const CellsPreviewWorkbench: React.FC<CellsPreviewWorkbenchProps> = ({
     <section
       className={`cells-studio ${compact ? 'is-compact' : ''} ${interfaceHidden ? 'is-interface-hidden' : ''} ${isFullscreen ? 'is-fullscreen' : ''} ${className}`}
       data-testid="cells-preview-workbench"
+      style={fillContainer ? { position: 'absolute', inset: 0, width: 'auto', height: 'auto' } : undefined}
     >
       {/* 1. TOP COMPONENT HEADER BAR */}
       {!interfaceHidden && (
