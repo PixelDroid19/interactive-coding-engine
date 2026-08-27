@@ -722,6 +722,19 @@
   box-shadow: none !important;
 }
 
+.hud .player-bar-hud-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  pointer-events: none;
+}
+
+.hud .player-bar > :not(.player-bar-hud-surface) {
+  position: relative;
+  z-index: 1;
+}
+
 .hud .play-main-btn {
   width: 34px !important;
   height: 34px !important;

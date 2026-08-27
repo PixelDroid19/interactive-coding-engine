@@ -173,7 +173,7 @@ export default function App() {
         ['.editor-window-wrapper', 'hud-editor tl-clip tr-clip br-clip bl-clip border inlay'],
         ['.browser-window', 'hud-browser tl-clip tr-clip br-clip bl-clip border inlay'],
         ['.files-sidebar', 'hud-sidebar tl-clip br-clip bl-clip border inlay'],
-        ['.player-bar', 'hud-player tl-clip tr-clip border inlay'],
+        ['.player-bar-hud-surface', 'hud-player tl-clip tr-clip border inlay'],
         ['.caption-chip', 'hud-narration tl-clip tr-clip br-clip bl-clip border inlay', true],
         ['.window-topbar .window-titlebar-left > button:first-child', 'hud-roadmap tr-clip bl-clip border inlay', true],
         ['.window-topbar .window-titlebar-left > button:nth-child(2)', 'hud-prev tl-clip br-clip border inlay', true],

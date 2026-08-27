@@ -55,6 +55,13 @@ describe('Timeline', () => {
     expect(markup).not.toContain('Chapter');
   });
 
+  it('mantiene la máscara cyber separada de los controles que abren menús', () => {
+    const markup = renderTimeline();
+
+    expect(markup).toContain('class="player-bar-hud-surface"');
+    expect(markup).toContain('aria-hidden="true"');
+  });
+
   it('elige el reto más cercano al tiempo del cursor', async () => {
     const timelineModule = (await import('./Timeline')) as unknown as {
       getClosestChallenge: (

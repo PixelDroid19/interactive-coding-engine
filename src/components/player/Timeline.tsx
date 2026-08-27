@@ -188,6 +188,7 @@ export const Timeline: React.FC<TimelineProps> = ({
 
   return (
     <footer className="player-bar">
+      <div className="player-bar-hud-surface" aria-hidden="true" />
       {/* LEFT: play + time + chapter (reservado para no saltar) */}
       <div className="player-left">
         <button
