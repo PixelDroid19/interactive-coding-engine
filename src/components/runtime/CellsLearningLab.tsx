@@ -73,6 +73,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
   const runtimeRef = useRef<CellsRuntimeClient | null>(null);
   const repositoryRef = useRef<CellsWorkspaceRepository | null>(null);
   const dirtyPathsRef = useRef(new Set<string>());
+  const previewRequestRef = useRef(0);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const ensureRuntime = () => {
     if (!runtimeRef.current) runtimeRef.current = new CellsRuntimeClient();
@@ -91,6 +92,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
   const [generation, setGeneration] = useState(0);
   const [previewHtml, setPreviewHtml] = useState('');
   const [previewDemo, setPreviewDemo] = useState<CellsPreviewBuild['componentDemo']>();
+  const [previewState, setPreviewState] = useState<'idle' | 'building' | 'fresh' | 'stale' | 'error'>('idle');
   const [tests, setTests] = useState<CellsTestResult[]>([]);
   const [coverage, setCoverage] = useState<CellsCoverageResult | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'running' | 'error'>('loading');
@@ -116,8 +118,10 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
       if (event.source !== iframeRef.current?.contentWindow) return;
       if (event.data.type === 'error') {
         setError(`Vista previa: ${String(event.data.message)}`);
+        setPreviewState('error');
         setStatus('error');
       } else if (event.data.type === 'ready') {
+        setPreviewState('fresh');
         setTerminalOutput('Componente renderizado dentro del iframe aislado.');
         iframeRef.current?.contentWindow?.postMessage({ source: 'open-cells-shell', type: 'locale:set', locale: previewLocale }, '*');
       }
@@ -136,6 +140,21 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
     dirtyPathsRef.current.clear();
   };
 
+  const beginPreviewBuild = (): number => {
+    const request = previewRequestRef.current + 1;
+    previewRequestRef.current = request;
+    setPreviewState('building');
+    return request;
+  };
+
+  const applyPreviewBuild = (request: number, build: CellsPreviewBuild): boolean => {
+    if (request !== previewRequestRef.current) return false;
+    setPreviewHtml(build.html);
+    setPreviewDemo(build.componentDemo);
+    setPreviewState('fresh');
+    return true;
+  };
+
   const loadStarter = async (removeSaved = true) => {
     setStatus('loading');
     setError('');
@@ -152,8 +171,10 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
       const result = await ensureRuntime().loadProject(initial.snapshot, 0);
       if (result.type !== 'workspace:updated') throw new Error('El Worker no devolvió el proyecto inicial.');
       applyWorkspace(result.payload.workspace, 0);
+      previewRequestRef.current += 1;
       setPreviewHtml('');
       setPreviewDemo(undefined);
+      setPreviewState('idle');
       setActiveInspectorTab('preview');
       setActiveMobilePanel('editor');
       setCommand(defaultCellsCommand(variant));
@@ -200,13 +221,13 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
 
         // Auto-build preview immediately on load so the student sees the live component without clicking
         try {
+          const request = beginPreviewBuild();
           const previewRes = await ensureRuntime().buildPreview(initial.generation);
           if (!cancelled && previewRes.type === 'preview:built') {
-            setPreviewHtml(previewRes.payload.html);
-            setPreviewDemo(previewRes.payload.componentDemo);
+            applyPreviewBuild(request, previewRes.payload);
           }
         } catch {
-          // Non-blocking initial preview attempt
+          if (!cancelled) setPreviewState('error');
         }
       } catch (caught) {
         if (!cancelled) { setError(messageFor(caught)); setStatus('error'); }
@@ -229,15 +250,18 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
     if (!sessionHydrated) return;
     if (dirtyPathsRef.current.size === 0) return;
     const timer = window.setTimeout(async () => {
+      const request = beginPreviewBuild();
       try {
         const currentGeneration = await syncDirtyFiles();
         const result = await ensureRuntime().buildPreview(currentGeneration);
         if (result.type === 'preview:built') {
-          setPreviewHtml(result.payload.html);
-          setPreviewDemo(result.payload.componentDemo);
+          applyPreviewBuild(request, result.payload);
         }
-      } catch {
-        // Background live-reload non-blocking
+      } catch (caught) {
+        if (request === previewRequestRef.current) {
+          setPreviewState('error');
+          setError(`Vista previa desactualizada: ${messageFor(caught)}`);
+        }
       }
     }, 450);
     return () => window.clearTimeout(timer);
@@ -282,17 +306,20 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
 
   const buildPreview = async () => {
     setStatus('running'); setError('');
+    const request = beginPreviewBuild();
     try {
       const currentGeneration = await syncDirtyFiles();
       const result = await ensureRuntime().buildPreview(currentGeneration);
       if (result.type !== 'preview:built') throw new Error('La vista previa no produjo un documento.');
-      setPreviewHtml(result.payload.html);
-      setPreviewDemo(result.payload.componentDemo);
+      applyPreviewBuild(request, result.payload);
       setActiveInspectorTab('preview');
       setActiveMobilePanel('results');
       setTerminalOutput('Vista previa construida dentro del Worker. El iframe ejecuta solo el resultado aislado.');
       setStatus('ready');
-    } catch (caught) { setError(messageFor(caught)); setStatus('error'); }
+    } catch (caught) {
+      if (request === previewRequestRef.current) setPreviewState('error');
+      setError(messageFor(caught)); setStatus('error');
+    }
   };
 
   const runTests = async () => {
@@ -303,6 +330,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
       if (structuralResult.type !== 'tests:completed') throw new Error('El runner estructural no devolvió resultados.');
 
       const testRunId = crypto.randomUUID();
+      const request = beginPreviewBuild();
       const browserResultPromise = waitForCellsBrowserTests(
         window,
         testRunId,
@@ -310,8 +338,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
       );
       const previewResult = await ensureRuntime().buildPreview(currentGeneration, true, testRunId);
       if (previewResult.type !== 'preview:built') throw new Error('No se pudo preparar el iframe de pruebas.');
-      setPreviewHtml(previewResult.payload.html);
-      setPreviewDemo(previewResult.payload.componentDemo);
+      applyPreviewBuild(request, previewResult.payload);
       setActiveInspectorTab('tests');
       setActiveMobilePanel('results');
       const browserResult = await browserResultPromise;
@@ -343,7 +370,10 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
         setTerminalOutput(`${passed} de ${combined.length} contratos superados. El iframe navegó por rutas reales, comprobó ausencia tras cleanup y ejecutó estados y cancelación del data manager.`);
       }
       setStatus('ready');
-    } catch (caught) { setError(messageFor(caught)); setStatus('error'); }
+    } catch (caught) {
+      setPreviewState('error');
+      setError(messageFor(caught)); setStatus('error');
+    }
   };
 
   const runCommand = async (event: React.FormEvent) => {
@@ -359,8 +389,8 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
         setActiveMobilePanel('results');
         setTerminalOutput('Comprobaciones estructurales ejecutadas en el Worker. Usa “Comprobar” para ejecutar también el flujo conductual dentro del iframe.');
       } else if (result.type === 'preview:built') {
-        setPreviewHtml(result.payload.html);
-        setPreviewDemo(result.payload.componentDemo);
+        const request = beginPreviewBuild();
+        applyPreviewBuild(request, result.payload);
         setActiveInspectorTab('preview');
         setActiveMobilePanel('results');
         setTerminalOutput('Vista previa actualizada.');
@@ -503,6 +533,8 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
                     files: { ...current.files, [activeFile.path]: { ...activeFile, content } },
                   };
                   dirtyPathsRef.current.add(activeFile.path);
+                  previewRequestRef.current += 1;
+                  setPreviewState('stale');
                   void ensureRepository().save(draftKey, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
                   return next;
                 })}
@@ -588,6 +620,16 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
           </div>
 
           <div className="cells-lab__inspector-body">
+            {activeInspectorTab === 'preview' && (
+              <div className="cells-lab__preview-state" data-state={previewState} role="status" aria-live="polite">
+                <span aria-hidden="true" />
+                {previewState === 'building' && 'Actualizando desde el código…'}
+                {previewState === 'fresh' && 'Vista sincronizada con el proyecto'}
+                {previewState === 'stale' && 'Cambios pendientes de recompilar'}
+                {previewState === 'error' && 'La última edición no pudo renderizarse'}
+                {previewState === 'idle' && 'Vista previa pendiente'}
+              </div>
+            )}
             {/* VISTA PREVIA */}
             <div className={`cells-lab__pane cells-lab__pane--preview ${activeInspectorTab === 'preview' ? 'is-visible' : 'is-hidden'}`}>
               {previewHtml ? (

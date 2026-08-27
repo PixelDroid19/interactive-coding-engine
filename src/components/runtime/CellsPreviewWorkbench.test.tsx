@@ -77,6 +77,18 @@ describe('CellsPreviewWorkbench', () => {
     expect(screen.queryByLabelText('Caso de demostración')).toBeNull();
   });
 
+  it('remonta el runtime visual cuando cambia el documento compilado', () => {
+    const iframeRef = createRef<HTMLIFrameElement>();
+    const view = render(<CellsPreviewWorkbench html="<main>primera revisión</main>" demo={demo} iframeRef={iframeRef} />);
+    const firstFrame = screen.getByTitle('Vista previa del componente Cells');
+
+    view.rerender(<CellsPreviewWorkbench html="<main>segunda revisión</main>" demo={{ ...demo, source: `${demo.source}\n// segunda revisión` }} iframeRef={iframeRef} />);
+
+    const secondFrame = screen.getByTitle('Vista previa del componente Cells');
+    expect(secondFrame).not.toBe(firstFrame);
+    expect(secondFrame).toHaveProperty('srcdoc', '<main>segunda revisión</main>');
+  });
+
   it('mantiene la vista flotante compacta y abre las herramientas completas', () => {
     const iframeRef = createRef<HTMLIFrameElement>();
     const onRequestExpand = vi.fn();

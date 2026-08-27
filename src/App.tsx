@@ -224,9 +224,7 @@ export default function App() {
     const mo = new MutationObserver(applyHudAugs);
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     // Aplicar augs también en mutaciones del DOM (navegación)
-    const domMo = new MutationObserver(() => {
-      if (document.documentElement.classList.contains('hud')) applyHudAugs();
-    });
+    const domMo = new MutationObserver(applyHudAugs);
     domMo.observe(document.body, { childList: true, subtree: true });
     return () => {
       mo.disconnect();

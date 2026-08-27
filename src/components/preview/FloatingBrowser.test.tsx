@@ -152,6 +152,22 @@ describe('FloatingBrowser para una demo Cells', () => {
     expect(Number.parseInt(browserWindow.style.width, 10)).toBeLessThanOrEqual(560);
   });
 
+  it('ocupa toda la altura del preview sin dejar un bloque blanco bajo la consola', async () => {
+    render(
+      <FloatingBrowser
+        workspace={cellsWorkspace}
+        isFloating
+        previewRuntime="cells"
+        onToggleFloating={() => {}}
+      />,
+    );
+
+    const preview = await screen.findByTestId('cells-preview-workbench');
+    const viewport = preview.parentElement as HTMLElement;
+    expect(viewport.classList.contains('browser-viewport--cells')).toBe(true);
+    expect(preview.classList.contains('cells-studio')).toBe(true);
+  });
+
   it('abre el workbench completo desde la vista flotante compacta', async () => {
     render(
       <FloatingBrowser

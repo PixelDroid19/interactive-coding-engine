@@ -132,6 +132,22 @@ describe('buildCellsPreviewDocument', () => {
     expect(result.html).not.toContain('Ocultar interfaz');
   });
 
+  it('compila el módulo editado por el estudiante y no una representación fija', () => {
+    const workspace = createCellsComponentWorkspace({ name: 'academy-learning-card' });
+    const sourcePath = 'src/academy-learning-card.js';
+    const editedSource = workspace.snapshot.files[sourcePath].content
+      .replace("learnerName = 'Alex';", "learnerName = 'NombreDesdeElEditor';")
+      .replace('class="learning-card"', 'class="componente-editado-en-vivo"');
+    const changed = writeCellsFile(workspace, sourcePath, editedSource);
+
+    const result = buildCellsPreviewDocument(changed.snapshot);
+
+    expect(result.componentDemo?.source).toBe(editedSource);
+    expect(result.html).toContain(encodeURIComponent("learnerName = 'NombreDesdeElEditor';"));
+    expect(result.html).toContain(encodeURIComponent('class="componente-editado-en-vivo"'));
+    expect(result.html).not.toContain(encodeURIComponent("learnerName = 'Alex';"));
+  });
+
   it('rechaza paquetes que no están en la allowlist', () => {
     const workspace = createCellsComponentWorkspace({ name: 'academy-learning-card' });
     const changed = writeCellsFile(

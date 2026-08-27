@@ -401,7 +401,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
       )}
 
       {/* Main Preview Sandbox Iframe Container */}
-      <div className="browser-viewport">
+      <div className={`browser-viewport ${previewRuntime === 'cells' ? 'browser-viewport--cells' : ''}`}>
         {/* Transparent overlay while dragging to prevent iframe from intercepting mouse events */}
         {(isDragging || isResizing) && (
           <div className="absolute inset-0 z-30 bg-transparent cursor-move select-none" />

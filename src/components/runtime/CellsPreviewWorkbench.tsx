@@ -599,6 +599,7 @@ export const CellsPreviewWorkbench: React.FC<CellsPreviewWorkbenchProps> = ({
                   }}
                 >
                   <iframe
+                    key={html}
                     ref={iframeRef}
                     title={title}
                     sandbox="allow-scripts allow-modals allow-forms allow-same-origin"

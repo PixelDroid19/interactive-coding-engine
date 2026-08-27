@@ -45,9 +45,26 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('button', { name: `Ver recorrido: ${OPEN_CELLS_COURSE.title}` })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: `Ver recorrido: ${OPEN_CELLS_COURSE.title}` }));
     expect(screen.getByRole('heading', { name: OPEN_CELLS_COURSE.title })).toBeTruthy();
-    expect(screen.getByText(/68 lecciones · 136 prácticas/)).toBeTruthy();
+    const practiceCount = OPEN_CELLS_COURSE.modules.reduce(
+      (sum, module) => sum + module.items.filter((item) => item.type === 'reasoning' || item.type === 'debugging' || (item.type === 'reading' && Boolean(item.handsOnLab))).length,
+      0,
+    );
+    expect(screen.getByText(new RegExp(`68 lecciones · ${practiceCount} prácticas`))).toBeTruthy();
     expect(screen.getByRole('button', { name: /^6\. Crear tu primer componente Cells/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^46\. onPageLeave y cleanup/ })).toBeTruthy();
+  });
+
+  it('aplica los recortes augmented-ui solo mientras el tema Cyber está activo', async () => {
+    render(<App />);
+
+    const icon = document.querySelector('.course-card__icon');
+    expect(icon?.hasAttribute('data-augmented-ui')).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar a tema cyberpunk' }));
+    await vi.waitFor(() => expect(icon?.getAttribute('data-augmented-ui')).toContain('hud-icon'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cambiar a tema por defecto' }));
+    await vi.waitFor(() => expect(icon?.hasAttribute('data-augmented-ui')).toBe(false));
   });
 
   it('abre un curso desde el inicio del roadmap aunque el catálogo estuviera desplazado', () => {
