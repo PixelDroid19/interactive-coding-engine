@@ -100,6 +100,23 @@ describe('recorrido guiado completo de Open Cells', () => {
     }
   });
 
+  it('mantiene una narración legible y evita el guion mecánico repetido', () => {
+    const boilerplate = [
+      'Observa su entrada y busca qué otro archivo lo consume.',
+      'Ejecutamos el proyecto después de conectar sus archivos.',
+      'La lectura siguiente abre un laboratorio de proyecto',
+    ];
+    for (const lesson of lessons.filter((candidate) => candidate.id !== 'open-cells-06')) {
+      const cues = lesson.audioTrack.narrationScript ?? [];
+      for (const [index, cue] of cues.entries()) {
+        expect(boilerplate.some((phrase) => cue.text.includes(phrase)), `${lesson.id} conserva una frase de plantilla`).toBe(false);
+        const nextTimestamp = cues[index + 1]?.timestamp ?? lesson.durationMs;
+        const spokenMilliseconds = Math.ceil(cue.text.trim().split(/\s+/).length * 60_000 / 195);
+        expect(nextTimestamp - cue.timestamp, `${lesson.id} pisa el subtítulo “${cue.text}”`).toBeGreaterThanOrEqual(spokenMilliseconds);
+      }
+    }
+  });
+
   it('cada cinta termina en un proyecto Cells que el runtime puede previsualizar', () => {
     for (const lesson of lessons) {
       const finalWorkspace = applyTape(lesson.initialWorkspace, lesson.events);

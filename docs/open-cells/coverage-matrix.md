@@ -154,7 +154,7 @@ La cantidad no se fija por simetría con el curso de Lit. La ruta inicial contie
 
 ### Prácticas integradoras implementadas
 
-El recorrido combina 18 actividades de razonamiento con cinco laboratorios de código sobre proyectos exportables:
+El recorrido acompaña las 68 unidades con una actividad de razonamiento específica y concentra la edición libre en 14 laboratorios acumulativos sobre proyectos exportables. Los hitos principales son:
 
 1. Componente Cells con dependencias scoped, idioma y evento público.
 2. Aplicación con ciclo de página, cleanup y navegación nominal.

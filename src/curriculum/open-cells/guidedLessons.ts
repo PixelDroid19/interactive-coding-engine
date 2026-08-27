@@ -19,6 +19,10 @@ function suffix(number: number): string {
   return String(number).padStart(2, '0');
 }
 
+function sentence(text: string): string {
+  return `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+}
+
 function readNumber(reading: ReadingItem): number {
   const match = reading.id.match(/open-cells-(\d+)-lectura/);
   if (!match) throw new Error(`Lectura Cells sin número estable: ${reading.id}`);
@@ -383,26 +387,57 @@ function projectBeats(
   reading: ReadingItem,
   journey: OpenCellsProjectJourney,
   completeFiles: Record<string, string>,
-): LessonBeat[] {
+): { beats: LessonBeat[]; endAt: number } {
+  const number = readNumber(reading);
+  const spokenDuration = (text: string) => Math.max(4_800, Math.ceil(text.trim().split(/\s+/).length * 60_000 / 185) + 500);
+  const paths = journey.stops.map((stop) => stop.path);
+  const intro = `${reading.title}. ${reading.summary} Hoy seguiremos el recorrido ${paths.join(' → ')}. Para entender ${reading.title}, identificaremos quién posee cada dato, quién consume su salida y qué resultado observable confirma el contrato.`;
+  const firstOpeners = ['Empezamos por', 'Nuestro punto de partida es', 'La primera parada está en'];
+  const middleOpeners = ['Después abrimos', 'Seguimos en', 'El siguiente enlace aparece en', 'Ahora pasamos a'];
+  const lastOpeners = ['Terminamos en', 'La última parada es', 'Cerramos el recorrido en'];
+  const buildOpeners = ['Vamos a completar', 'Ahora sí editamos', 'Este es el archivo que modificaremos:', 'Aquí hacemos el cambio principal en'];
+  const observerNotes = [
+    (path: string) => `En ${reading.title}, ${path} queda intacto para comprobar el contrato desde fuera.`,
+    (path: string) => `${path} actúa como consumidor del cambio y no necesita otra edición en este paso.`,
+    (path: string) => `Solo inspeccionamos ${path}; cambiarlo también ocultaría la causa del resultado.`,
+  ];
   const beats: LessonBeat[] = [
     { at: 0, type: 'chapter', title: 'Construye el proyecto y sigue sus conexiones' },
-    { at: 500, type: 'speak', text: `${reading.title}. ${reading.summary}` },
+    { at: 500, type: 'speak', text: intro },
   ];
+  let cursor = 500 + spokenDuration(intro) + 600;
   journey.stops.forEach((stop, index) => {
-    const at = 8_000 + index * 9_000;
+    const previous = journey.stops[index - 1];
+    const next = journey.stops[index + 1];
+    const isLast = index === journey.stops.length - 1;
+    const openerIndex = number + index;
+    const opening = index === 0
+      ? `${firstOpeners[openerIndex % firstOpeners.length]} ${stop.path}. Este archivo ${stop.role}. Antes de tocarlo en ${reading.title}, localiza su salida pública y predice quién dependerá de ella.`
+      : isLast
+        ? `${lastOpeners[openerIndex % lastOpeners.length]} ${stop.path}. Este archivo ${stop.role}. Compáralo con ${previous.path}: deben colaborar sin duplicar responsabilidades.`
+        : `${middleOpeners[openerIndex % middleOpeners.length]} ${stop.path}. Este archivo ${stop.role}. Revisa qué recibe de ${previous.path} y qué deja preparado para ${next.path}.`;
+    const observation = stop.write
+      ? opening
+      : `${opening} ${observerNotes[openerIndex % observerNotes.length](stop.path)}`;
     beats.push(
-      { at, type: 'switch', filePath: stop.path },
-      { at: at + 350, type: 'gesture', durationMs: 1_500, points: [{ x: 22, y: 18, targetArea: 'editor' }, { x: 58, y: 42, targetArea: 'editor' }] },
-      { at: at + 500, type: 'speak', text: `Abrimos ${stop.path}. Este archivo ${stop.role}. Observa su entrada y busca qué otro archivo lo consume.` },
+      { at: cursor, type: 'switch', filePath: stop.path },
+      { at: cursor + 300, type: 'gesture', durationMs: 1_500, points: [{ x: 22, y: 18, targetArea: 'editor' }, { x: 58, y: 42, targetArea: 'editor' }] },
+      { at: cursor + 500, type: 'speak', text: observation },
     );
+    cursor += 500 + spokenDuration(observation) + 400;
     if (stop.write) {
+      const connection = next
+        ? `Después lo contrastaremos con ${next.path} para verificar el contrato desde otro archivo.`
+        : 'Con este cambio ya podremos ejecutar el recorrido y observar su resultado.';
+      const build = `${buildOpeners[openerIndex % buildOpeners.length]} ${stop.path}. ${sentence(stop.buildExplanation)} ${connection}`;
       beats.push(
-        { at: at + 3_300, type: 'speak', text: `Ahora construimos ${stop.path}: ${stop.buildExplanation}` },
-        { at: at + 4_100, type: 'write', filePath: stop.path, mode: 'replace', content: completeFiles[stop.path] },
+        { at: cursor, type: 'speak', text: build },
+        { at: cursor + 1_200, type: 'write', filePath: stop.path, mode: 'replace', content: completeFiles[stop.path] },
       );
+      cursor += spokenDuration(build) + 600;
     }
   });
-  return beats;
+  return { beats, endAt: cursor };
 }
 
 function skillGroup(number: number): { required: string[]; introduced: string[]; representation: string } {
@@ -425,6 +460,20 @@ export function createOpenCellsGuidedLesson(reading: ReadingItem): ScrimLessonDa
   const skills = skillGroup(number);
   const observable = reading.sections[1]?.content ?? reading.keyPoints[0];
   const mistake = reading.sections.at(-1)?.content ?? reading.keyPoints.at(-1) ?? '';
+  const projectTape = projectBeats(reading, journey, completeFiles);
+  const spokenDuration = (text: string) => Math.max(4_800, Math.ceil(text.trim().split(/\s+/).length * 60_000 / 185) + 500);
+  const evidenceOpeners = ['Ejecutamos el proyecto y buscamos una señal concreta:', 'Ya está conectado el recorrido. La comprobación importante es esta:', 'Con los archivos enlazados, observa este contrato:'];
+  const mistakeOpeners = ['Antes del ejercicio, intenta explicar este fallo:', 'Ahora piensa en el caso que suele romper este contrato:', 'Haz una última predicción sobre este error frecuente:'];
+  const handoffOpeners = ['La lectura siguiente organiza lo que acabamos de ver', 'A continuación podrás repasar el modelo con calma', 'El siguiente paso separa explicación y práctica'];
+  const variant = number % evidenceOpeners.length;
+  const evidenceCue = `${evidenceOpeners[variant]} ${observable} Si el preview contradice tu predicción sobre ${reading.title}, vuelve al último archivo editado y sigue su salida hasta el consumidor.`;
+  const mistakeCue = `${mistakeOpeners[variant]} ${mistake} En ${reading.title}, propón una causa, cambia una sola frontera y usa el preview o las pruebas para refutarla.`;
+  const handoffCue = `${handoffOpeners[variant]} sobre ${reading.title}. Después, el proyecto de ${reading.title} se abrirá completo para que experimentes y compares soluciones equivalentes sin recibir una línea para copiar.`;
+  const runAt = projectTape.endAt;
+  const evidenceAt = runAt + 1_000;
+  const mistakeAt = evidenceAt + spokenDuration(evidenceCue) + 600;
+  const handoffAt = mistakeAt + spokenDuration(mistakeCue) + 600;
+  const durationMs = handoffAt + spokenDuration(handoffCue) + 1_200;
 
   return compileLesson({
     id: `open-cells-${suffix(number)}`,
@@ -453,13 +502,13 @@ export function createOpenCellsGuidedLesson(reading: ReadingItem): ScrimLessonDa
     ],
     frequentQuestions: reading.frequentQuestions,
     teachNotes: reading.sections.slice(0, 3).map((section) => ({ title: section.title, body: section.content })),
-    durationMs: 72_000,
+    durationMs,
     beats: [
-      ...projectBeats(reading, journey, completeFiles),
-      { at: 58_000, type: 'run' },
-      { at: 59_000, type: 'speak', text: `Ejecutamos el proyecto después de conectar sus archivos. La evidencia que buscamos es esta: ${observable}` },
-      { at: 65_000, type: 'speak', text: `Antes de practicar, contrasta el resultado con este error frecuente: ${mistake}` },
-      { at: 69_000, type: 'speak', text: `La lectura siguiente abre un laboratorio de proyecto para ${reading.title}. Allí corregirás archivos reales, construirás la vista previa y ejecutarás contratos sin recibir una solución copiada.` },
+      ...projectTape.beats,
+      { at: runAt, type: 'run' },
+      { at: evidenceAt, type: 'speak', text: evidenceCue },
+      { at: mistakeAt, type: 'speak', text: mistakeCue },
+      { at: handoffAt, type: 'speak', text: handoffCue },
     ],
   });
 }

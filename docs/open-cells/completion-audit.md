@@ -6,12 +6,12 @@ Esta auditoría usa como contrato el encargo completo y como evidencia el worktr
 
 | Requisito | Estado | Evidencia comprobable |
 | --- | --- | --- |
-| Curso independiente | Cumplido | `course-open-cells`, catálogo propio, ruta y roadmap propios. La UI muestra 68 lecciones y 141 prácticas. |
+| Curso independiente | Cumplido | `course-open-cells`, catálogo propio, ruta y roadmap propios. La ruta contiene 68 clases, 68 actividades de razonamiento y 14 laboratorios de proyecto. |
 | Matriz Notas → Lit → Cells | Cumplido | `coverage-matrix.md` separa prerrequisitos Lit de los contratos Cells y los proyectos de transferencia. |
-| Ruta completa, progresiva y sin tope artificial de 45 | Cumplido | 68 unidades agrupadas en 8 fases, desde el límite Lit/Cells hasta aplicaciones, datos, CLI y capstone. |
-| Formato completo por unidad | Cumplido | Cada unidad sigue `scrim → lectura → razonamiento → depuración`; `guidedLessons.integration.test.ts` valida las 68 secuencias. |
+| Ruta completa, progresiva y sin tope artificial de 45 | Cumplido | 68 unidades agrupadas en 9 módulos, desde el límite Lit/Cells hasta aplicaciones, datos, CLI y entrega. |
+| Formato completo por unidad | Cumplido | Cada unidad sigue `clase guiada → lectura → razonamiento`; 14 hitos añaden un laboratorio de proyecto. `guidedLessons.integration.test.ts` valida las 68 secuencias. |
 | Clases guiadas | Cumplido | 68 cintas compiladas con capítulos, habla silenciosa, escrituras, cambios de archivo, puntero, preview y reto que pausa. |
-| Guiones humanos sin audio inventado | Cumplido | 68 guiones hablados en `docs/guiones/open-cells/`, marcados `pendiente-de-voz`; los cues coinciden con el texto. No se añadió MP3 ficticio. |
+| Guiones humanos sin audio inventado | Cumplido | 68 guiones hablados en `docs/guiones/open-cells/`, marcados `pendiente-de-voz`; recorren archivos y consumidores concretos, los cues coinciden con el texto y su cadencia se calcula por longitud. No se añadió MP3 ficticio. |
 | Retos sin solución visible | Cumplido | Starter distinto del programa demostrado, tres pistas progresivas y validación conductual con varias entradas. |
 | Worker tipado, perezoso y cancelable | Cumplido | Protocolo discriminado, `requestId`, `sessionId`, generación, errores serializables, carga perezosa, cancelación y cierre. |
 | VFS seguro y versionado | Cumplido | Rutas POSIX relativas, límites, rechazo de escape/colisiones, escrituras inmutables, generación e IndexedDB versionado. |

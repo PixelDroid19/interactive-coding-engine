@@ -18,6 +18,7 @@
     "audio:align:components": ".venv-tts/bin/python scripts/align-component-course-audio.py",
     "guiones:components": "tsx scripts/export-component-course-guiones.ts",
     "guiones:ai": "tsx scripts/export-ai-engineer-guiones.ts",
+    "guiones:cells": "tsx scripts/sync-open-cells-guiones.ts",
     "cells:gate": "tsx scripts/verify-open-cells-cli-gate.ts",
     "format:component-course": "tsx scripts/format-component-course-code.ts"
   },
