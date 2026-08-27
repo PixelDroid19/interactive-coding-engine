@@ -84,7 +84,7 @@ describe('auditoría integrada de todos los ejercicios', () => {
     expect(exercises.filter((exercise) => exercise.courseId === AI_ENGINEER_COURSE.id)).toHaveLength(78);
     expect(exercises.filter((exercise) => exercise.courseId === OPEN_CELLS_COURSE.id)).toHaveLength(1);
     expect(OPEN_CELLS_COURSE.modules.flatMap((module) => module.items)
-      .filter((item) => item.type === 'reading' && item.handsOnLab)).toHaveLength(68);
+      .filter((item) => item.type === 'reading' && item.handsOnLab)).toHaveLength(14);
   });
 
   it('mantiene contratos identificables, explicados y sin soluciones adjuntas', () => {

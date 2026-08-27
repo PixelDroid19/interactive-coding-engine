@@ -10,7 +10,7 @@ describe('curso Open Cells', () => {
     expect(OPEN_CELLS_COURSE.modules.flatMap((module) => module.items).some((item) => litIds.has(item.id))).toBe(false);
   });
 
-  it('entrega 68 unidades progresivas y una práctica de proyecto en cada lectura', () => {
+  it('entrega 68 unidades progresivas y laboratorios de proyecto al cerrar cada bloque', () => {
     const allItems = OPEN_CELLS_COURSE.modules.flatMap((module) => module.items);
     const items = allItems.filter((item) => item.type === 'reading');
     expect(items).toHaveLength(68);
@@ -24,15 +24,29 @@ describe('curso Open Cells', () => {
     const appPractice = items[45];
     expect(appPractice?.type).toBe('reading');
     if (appPractice?.type === 'reading') expect(appPractice.handsOnLab).toBe('open-cells-app-playground');
-    expect(items.filter((item) => item.type === 'reading' && item.handsOnLab)).toHaveLength(68);
-    expect(items[0]?.type === 'reading' && items[0].handsOnLab).toBe('open-cells-component-scaffold-playground');
-    expect(items[12]?.type === 'reading' && items[12].handsOnLab).toBe('open-cells-component-styles-playground');
+    expect(items.filter((item) => item.type === 'reading' && item.handsOnLab).map((item) => item.id)).toEqual([
+      'open-cells-05-lectura',
+      'open-cells-06-lectura',
+      'open-cells-10-lectura',
+      'open-cells-14-lectura',
+      'open-cells-22-lectura',
+      'open-cells-27-lectura',
+      'open-cells-30-lectura',
+      'open-cells-31-lectura',
+      'open-cells-34-lectura',
+      'open-cells-38-lectura',
+      'open-cells-46-lectura',
+      'open-cells-54-lectura',
+      'open-cells-62-lectura',
+      'open-cells-68-lectura',
+    ]);
+    expect(items[4]?.type === 'reading' && items[4].handsOnLab).toBe('open-cells-component-scaffold-playground');
     expect(items[13]?.type === 'reading' && items[13].handsOnLab).toBe('open-cells-component-styles-playground');
-    expect(items[22]?.type === 'reading' && items[22].handsOnLab).toBe('open-cells-component-i18n-playground');
-    expect(items[27]?.type === 'reading' && items[27].handsOnLab).toBe('open-cells-component-api-playground');
+    expect(items[26]?.type === 'reading' && items[26].handsOnLab).toBe('open-cells-component-i18n-playground');
     expect(items[30]?.type === 'reading' && items[30].handsOnLab).toBe('open-cells-component-demo-playground');
-    expect(items[31]?.type === 'reading' && items[31].handsOnLab).toBe('open-cells-component-tests-playground');
+    expect(items[33]?.type === 'reading' && items[33].handsOnLab).toBe('open-cells-component-tests-playground');
     expect(items[37]?.type === 'reading' && items[37].handsOnLab).toBe('open-cells-component-delivery-playground');
+    expect(items[45]?.type === 'reading' && items[45].handsOnLab).toBe('open-cells-app-playground');
     expect(items[53]?.type === 'reading' && items[53].handsOnLab).toBe('open-cells-channels-playground');
     expect(items[61]?.type === 'reading' && items[61].handsOnLab).toBe('open-cells-data-playground');
     expect(items[67]?.type === 'reading' && items[67].handsOnLab).toBe('open-cells-delivery-playground');

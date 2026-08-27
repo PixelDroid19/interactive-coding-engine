@@ -39,7 +39,7 @@ function applyTape(workspace: WorkspaceSnapshot, events: ScrimEvent[]): Workspac
 describe('recorrido guiado completo de Open Cells', () => {
   const lessons = Object.values(OPEN_CELLS_SCRIMS).sort((left, right) => left.id.localeCompare(right.id));
 
-  it('registra 68 clases separadas con lectura, razonamiento y laboratorio de proyecto', () => {
+  it('registra 68 clases separadas con lectura, razonamiento y cierres de proyecto', () => {
     expect(lessons).toHaveLength(68);
     for (const module of OPEN_CELLS_COURSE.modules) {
       for (let index = 0; index < module.items.length; index += 3) {
@@ -47,9 +47,10 @@ describe('recorrido guiado completo de Open Cells', () => {
         expect(block.map((item) => item.type)).toEqual([
           'scrim', 'reading', 'reasoning',
         ]);
-        expect(block[1]?.type === 'reading' && block[1].handsOnLab).toBeTruthy();
       }
     }
+    expect(OPEN_CELLS_COURSE.modules.flatMap((module) => module.items)
+      .filter((item) => item.type === 'reading' && item.handsOnLab)).toHaveLength(14);
   });
 
   it('las cintas no desvían la práctica hacia checkpoints genéricos', () => {
