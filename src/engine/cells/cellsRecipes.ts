@@ -36,7 +36,7 @@ export function createCellsComponentWorkspace(scaffold: CellsComponentScaffold):
   overflow: hidden;
   border: 1px solid #d8d3b2;
   border-radius: 1.5rem;
-  background: linear-gradient(145deg, #fffef4 0%, #f8f1cf 100%);
+  background: var(--learning-card-background, linear-gradient(145deg, #fffef4 0%, #f8f1cf 100%));
   box-shadow: 0 1rem 2.5rem rgb(7 43 37 / 14%);
 }
 
@@ -377,7 +377,31 @@ describe('${tagName}', () => {
       modules: [{
         kind: 'javascript-module',
         path: sourcePath,
-        declarations: [{ kind: 'class', name: className, tagName }],
+        declarations: [{
+          kind: 'class',
+          name: className,
+          tagName,
+          description: 'Componente de aprendizaje que muestra contenido localizado y publica una acción de continuación.',
+          members: [{
+            kind: 'field',
+            name: 'learnerName',
+            attribute: 'learner-name',
+            type: { text: 'string' },
+            default: "'Alex'",
+            description: 'Nombre que se incorpora al saludo localizado.',
+          }],
+          events: [{
+            name: `${tagName}-continue`,
+            type: { text: 'CustomEvent<{ learnerName: string }>' },
+            description: 'Comunica que la persona activó la acción principal.',
+          }],
+          slots: [],
+          cssProperties: [{
+            name: '--learning-card-background',
+            default: 'linear-gradient(145deg, #fffef4 0%, #f8f1cf 100%)',
+            description: 'Fondo consumible del contenedor principal.',
+          }],
+        }],
         exports: [{ kind: 'custom-element-definition', name: tagName, declaration: { name: className, module: sourcePath } }],
       }],
     }, null, 2)}\n`, 'json'),

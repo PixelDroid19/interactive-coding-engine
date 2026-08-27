@@ -207,10 +207,177 @@ export interface CellsPreviewBuild {
   componentDemo?: {
     tagName: string;
     packageName: string;
+    packageVersion?: string;
+    locales: Array<'es' | 'en'>;
     source: string;
-    cases: Array<{ id: string; label: string; properties: Record<string, string> }>;
+    htmlSource?: string;
+    cssSource?: string;
+    cases: Array<{
+      id: string;
+      label: string;
+      sourcePath: string;
+      markup: string;
+      properties: Record<string, string | number | boolean>;
+    }>;
     contract: Array<{ term: string; description: string }>;
+    documentation?: {
+      description?: string;
+      properties?: Array<{
+        name: string;
+        attribute?: string;
+        type: string;
+        default?: string;
+        description: string;
+      }>;
+      events?: Array<{
+        name: string;
+        detail?: string;
+        bubbles?: boolean;
+        composed?: boolean;
+        description: string;
+      }>;
+      slots?: Array<{
+        name: string;
+        description: string;
+      }>;
+      cssProperties?: Array<{
+        name: string;
+        default?: string;
+        description: string;
+      }>;
+      examples?: Array<{
+        title: string;
+        code: string;
+      }>;
+    };
   };
+}
+
+type ComponentDocumentation = NonNullable<NonNullable<CellsPreviewBuild['componentDemo']>['documentation']>;
+type ComponentProperty = NonNullable<ComponentDocumentation['properties']>[number];
+
+interface CustomElementsDeclaration {
+  tagName?: string;
+  description?: string;
+  members?: Array<{
+    kind?: string;
+    name?: string;
+    attribute?: string;
+    type?: { text?: string } | string;
+    default?: string;
+    description?: string;
+  }>;
+  events?: Array<{ name?: string; type?: { text?: string } | string; description?: string }>;
+  slots?: Array<{ name?: string; description?: string }>;
+  cssProperties?: Array<{ name?: string; default?: string; description?: string }>;
+}
+
+function typeText(value: { text?: string } | string | undefined): string {
+  if (typeof value === 'string') return value;
+  return value?.text ?? 'unknown';
+}
+
+function readComponentDocumentation(workspace: WorkspaceSnapshot, tagName: string): ComponentDocumentation | undefined {
+  const metadataFile = workspace.files['custom-elements.json'];
+  if (!metadataFile) return undefined;
+  try {
+    const metadata = JSON.parse(metadataFile.content) as { modules?: Array<{ declarations?: CustomElementsDeclaration[] }> };
+    const declaration = metadata.modules
+      ?.flatMap((module) => module.declarations ?? [])
+      .find((candidate) => candidate.tagName === tagName);
+    if (!declaration) return undefined;
+
+    const properties: ComponentProperty[] = (declaration.members ?? [])
+      .filter((member) => member.kind === 'field' && member.name)
+      .map((member) => ({
+        name: member.name!,
+        ...(member.attribute ? { attribute: member.attribute } : {}),
+        type: typeText(member.type),
+        ...(member.default !== undefined ? { default: member.default } : {}),
+        description: member.description?.trim() ?? '',
+      }));
+    const events = (declaration.events ?? [])
+      .filter((event) => event.name)
+      .map((event) => ({
+        name: event.name!,
+        detail: typeText(event.type),
+        description: event.description?.trim() ?? '',
+      }));
+    const slots = (declaration.slots ?? []).map((slot) => ({
+      name: slot.name?.trim() || 'default',
+      description: slot.description?.trim() ?? '',
+    }));
+    const cssProperties = (declaration.cssProperties ?? [])
+      .filter((property) => property.name)
+      .map((property) => ({
+        name: property.name!,
+        ...(property.default !== undefined ? { default: property.default } : {}),
+        description: property.description?.trim() ?? '',
+      }));
+
+    const documentation: ComponentDocumentation = {};
+    if (declaration.description?.trim()) documentation.description = declaration.description.trim();
+    if (properties.length > 0) documentation.properties = properties;
+    if (events.length > 0) documentation.events = events;
+    if (slots.length > 0) documentation.slots = slots;
+    if (cssProperties.length > 0) documentation.cssProperties = cssProperties;
+    return Object.keys(documentation).length > 0 ? documentation : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function attributeToProperty(attribute: string, properties: ComponentProperty[]): string {
+  return properties.find((property) => property.attribute === attribute)?.name
+    ?? attribute.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
+function coerceDemoValue(value: string | true, property: ComponentProperty | undefined): string | number | boolean {
+  const normalizedType = property?.type.toLowerCase() ?? '';
+  if (value === true || normalizedType.includes('boolean')) return value === true || value !== 'false';
+  if (normalizedType.includes('number')) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : value;
+  }
+  return value;
+}
+
+function ensureDemoSubject(markup: string, tagName: string): string {
+  if (/\bdata-cells-demo-subject\b/.test(markup)) return markup;
+  return markup.replace(new RegExp(`<${tagName}\\b`, 'i'), `<${tagName} data-cells-demo-subject`);
+}
+
+function readComponentDemos(
+  workspace: WorkspaceSnapshot,
+  tagName: string,
+  documentation: ComponentDocumentation | undefined,
+): NonNullable<CellsPreviewBuild['componentDemo']>['cases'] {
+  const secondaryPaths = Object.keys(workspace.files)
+    .filter((path) => /^demo\/[^/]+\.html$/.test(path) && path !== 'demo/index.html')
+    .sort();
+  const paths = secondaryPaths.length > 0
+    ? secondaryPaths
+    : workspace.files['demo/index.html'] ? ['demo/index.html'] : [];
+  const properties = documentation?.properties ?? [];
+
+  return paths.flatMap((path) => {
+    const source = workspace.files[path].content;
+    const markup = source.match(new RegExp(`<${tagName}\\b[\\s\\S]*?<\\/${tagName}>`, 'i'))?.[0];
+    if (!markup) return [];
+    const startTag = markup.match(new RegExp(`^<${tagName}\\b([^>]*)>`, 'i'))?.[1] ?? '';
+    const values: Record<string, string | number | boolean> = {};
+    for (const attribute of startTag.matchAll(/([A-Za-z_][\w:.-]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g)) {
+      const name = attribute[1];
+      if (name === 'data-cells-demo-subject' || name === 'class' || name === 'id') continue;
+      const propertyName = attributeToProperty(name, properties);
+      const property = properties.find((candidate) => candidate.name === propertyName);
+      values[propertyName] = coerceDemoValue(attribute[2] ?? attribute[3] ?? attribute[4] ?? true, property);
+    }
+    const id = path.split('/').at(-1)!.replace(/\.html$/, '');
+    const label = source.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim()
+      ?? id.replaceAll('-', ' ').replace(/^./, (letter) => letter.toUpperCase());
+    return [{ id, label, sourcePath: path, markup: ensureDemoSubject(markup, tagName), properties: values }];
+  });
 }
 
 export interface CellsPreviewOptions {
@@ -227,7 +394,7 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
   }
   const manifest = workspace.files['package.json'];
   if (!manifest) throw new Error('El proyecto necesita package.json para construir la vista previa.');
-  let packageData: { name?: string; exports?: Record<string, string> };
+  let packageData: { name?: string; version?: string; exports?: Record<string, string> };
   try {
     packageData = JSON.parse(manifest.content);
   } catch {
@@ -270,8 +437,14 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
   const componentSource = Object.values(workspace.files).find((file) => (
     /^src\/[^/]+\.js$/.test(file.path) && /WidgetMixin\s*\(/.test(file.content)
   ))?.content ?? source;
-  const componentMarkup = body.match(new RegExp(`<${definedTag}\\b[\\s\\S]*?<\\/${definedTag}>`, 'i'))?.[0]
-    ?? `<${definedTag} data-cells-demo-subject learner-name="Ada"></${definedTag}>`;
+  const componentDocumentation = isApplication ? undefined : readComponentDocumentation(workspace, definedTag);
+  const componentDemos = isApplication ? [] : readComponentDemos(workspace, definedTag, componentDocumentation);
+  // Extract the component tag from the demo HTML body, then strip hardcoded attributes
+  // so the component initializes with its own class defaults from the student's code
+  const rawMarkup = body.match(new RegExp(`<${definedTag}\\b[\\s\\S]*?<\\/${definedTag}>`, 'i'))?.[0];
+  const componentMarkup = rawMarkup
+    ? rawMarkup.replace(new RegExp(`^<${definedTag}\\b[^>]*>`, 'i'), `<${definedTag} data-cells-demo-subject>`)
+    : `<${definedTag} data-cells-demo-subject></${definedTag}>`;
   const renderedBody = isApplication ? body : componentMarkup;
   const componentContractHarness = `
   const results = [];
@@ -417,6 +590,99 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
         return Object.entries(values).reduce((text, [name, value]) => text.split('$' + '{' + name + '}').join(String(value)), template);
       },
     };
+
+    const forwardCustomEvent = (name, detail, bubbles = false, composed = false) => {
+      try {
+        window.parent.postMessage({
+          source: 'open-cells-preview',
+          type: 'component:event',
+          name: String(name),
+          detail: detail,
+          bubbles: Boolean(bubbles),
+          composed: Boolean(composed),
+          timestamp: Date.now(),
+        }, '*');
+      } catch {}
+    };
+
+    // Observe public events from the demo subject, without leaking internal child events.
+    const originalDispatch = EventTarget.prototype.dispatchEvent;
+    EventTarget.prototype.dispatchEvent = function(event) {
+      if (
+        event
+        && (event instanceof CustomEvent || event.detail !== undefined)
+        && this === document.querySelector('[data-cells-demo-subject]')
+      ) {
+        forwardCustomEvent(event.type, event.detail, event.bubbles, event.composed);
+      }
+      return originalDispatch.apply(this, arguments);
+    };
+
+    // Intercept console logs to forward to host playground
+    const originalLog = console.log;
+    const originalWarn = console.warn;
+    const originalErr = console.error;
+    console.log = (...args) => {
+      try {
+        window.parent.postMessage({
+          source: 'open-cells-preview',
+          type: 'console',
+          level: 'log',
+          args: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)),
+          timestamp: Date.now(),
+        }, '*');
+      } catch {}
+      originalLog.apply(console, args);
+    };
+    console.warn = (...args) => {
+      try {
+        window.parent.postMessage({
+          source: 'open-cells-preview',
+          type: 'console',
+          level: 'warn',
+          args: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)),
+          timestamp: Date.now(),
+        }, '*');
+      } catch {}
+      originalWarn.apply(console, args);
+    };
+    console.error = (...args) => {
+      try {
+        window.parent.postMessage({
+          source: 'open-cells-preview',
+          type: 'console',
+          level: 'error',
+          args: args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)),
+          timestamp: Date.now(),
+        }, '*');
+      } catch {}
+      originalErr.apply(console, args);
+    };
+
+    const markUnresolvedScopedElements = async (subject) => {
+      if (!subject) return;
+      await subject.updateComplete;
+      const root = subject.shadowRoot;
+      if (!root) return;
+      for (const node of root.querySelectorAll('[data-cells-unresolved-element]')) {
+        node.removeAttribute('data-cells-unresolved-element');
+        node.removeAttribute('aria-invalid');
+        node.removeAttribute('title');
+        node.style.removeProperty('outline');
+        node.style.removeProperty('outline-offset');
+        node.style.removeProperty('background');
+      }
+      for (const node of root.querySelectorAll('*')) {
+        if (!node.localName.includes('-') || node.constructor !== HTMLElement) continue;
+        node.setAttribute('data-cells-unresolved-element', node.localName);
+        node.setAttribute('aria-invalid', 'true');
+        node.setAttribute('title', 'Componente no registrado: <' + node.localName + '>');
+        node.style.setProperty('outline', '2px dashed #dc2626');
+        node.style.setProperty('outline-offset', '4px');
+        node.style.setProperty('background', 'rgba(220, 38, 38, 0.08)');
+      }
+    };
+
     const reportPreviewError = (message) => window.parent.postMessage({ source: 'open-cells-preview', type: 'error', message: String(message) }, '*');
     window.addEventListener('message', (event) => {
       if (event.source !== window.parent || event.data?.source !== 'open-cells-shell') return;
@@ -427,12 +693,29 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
         window.parent.postMessage({ source: 'open-cells-preview', type: 'locale:changed', locale: event.data.locale }, '*');
       }
       if (event.data.type === 'demo:set-case' && !globalThis.__OPEN_CELLS_CONTRACT_TESTS__) {
-        const subject = document.querySelector('[data-cells-demo-subject]');
-        for (const [property, value] of Object.entries(event.data.properties || {})) {
-          subject[property] = value;
-          subject.setAttribute(property.replace(/[A-Z]/g, (letter) => '-' + letter.toLowerCase()), String(value));
+        let subject = document.querySelector('[data-cells-demo-subject]');
+        if (subject && event.data.markup && subject.dataset.cellsDemoCase !== event.data.caseId) {
+          const template = document.createElement('template');
+          template.innerHTML = String(event.data.markup).trim();
+          const replacement = template.content.firstElementChild;
+          if (replacement && replacement.localName === subject.localName) {
+            replacement.setAttribute('data-cells-demo-subject', '');
+            replacement.dataset.cellsDemoCase = String(event.data.caseId || '');
+            subject.replaceWith(replacement);
+            subject = replacement;
+          }
         }
-        subject?.requestUpdate?.();
+        if (subject) {
+          for (const [property, value] of Object.entries(event.data.properties || {})) {
+            subject[property] = value;
+            const attribute = property.replace(/[A-Z]/g, (letter) => '-' + letter.toLowerCase());
+            if (typeof value === 'boolean') subject.toggleAttribute(attribute, value);
+            else if (value === null || value === undefined) subject.removeAttribute(attribute);
+            else subject.setAttribute(attribute, String(value));
+          }
+          subject.requestUpdate?.();
+          void markUnresolvedScopedElements(subject);
+        }
         window.parent.postMessage({ source: 'open-cells-preview', type: 'case:changed', caseId: event.data.caseId }, '*');
       }
     });
@@ -441,7 +724,7 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
   </script>
   <style>${isApplication
     ? 'body{margin:0;background:#f5f2eb;color:#171717;font-family:system-ui,sans-serif}'
-    : 'html,body{min-height:100%;margin:0}body{display:grid;place-items:center;padding:clamp(1rem,5vw,3rem);box-sizing:border-box;background:linear-gradient(180deg,#fff 0%,#faf8ec 100%)}[data-cells-demo-subject]{width:min(100%,34rem)}'}</style>
+    : 'html,body{min-height:100%;margin:0;box-sizing:border-box}body{display:grid;place-items:center;padding:clamp(1rem,4vw,2.5rem);background:linear-gradient(180deg,#fff 0%,#faf8ec 100%);font-family:system-ui,-apple-system,sans-serif}[data-cells-demo-subject]{width:min(100%,34rem);display:block}'}</style>
 </head>
 <body>
 ${renderedBody}
@@ -451,10 +734,15 @@ try {
   ${isApplication
     ? `await globalThis.__OPEN_CELLS_APP_READY__;`
     : `await customElements.whenDefined('${definedTag}');`}
-  ${isApplication ? '' : `document.addEventListener('${definedTag}-continue', (event) => {
-    window.parent.postMessage({ source: 'open-cells-preview', type: 'component:event', name: event.type, detail: event.detail }, '*');
-  });`}
-  window.parent.postMessage({ source: 'open-cells-preview', type: 'ready' }, '*');
+  const subject = document.querySelector('[data-cells-demo-subject]');
+  const initialProps = {};
+  if (subject) {
+    for (const key of Object.keys(subject.constructor.properties || {})) {
+      if (subject[key] !== undefined) initialProps[key] = subject[key];
+    }
+  }
+  await markUnresolvedScopedElements(subject);
+  window.parent.postMessage({ source: 'open-cells-preview', type: 'ready', initialProps }, '*');
   ${contractHarness}
 } catch (error) {
   reportPreviewError(error?.message || error);
@@ -462,6 +750,24 @@ try {
 </script>
 </body>
 </html>`;
+  const demoHtml = workspace.files['demo/index.html']?.content;
+  const scssFile = Object.values(workspace.files).find((f) => f.path.endsWith('.scss'))?.content;
+  const availableLocales = Object.keys(locales)
+    .filter((locale): locale is 'es' | 'en' => locale === 'es' || locale === 'en')
+    .sort();
+  const currentCodeCase: NonNullable<CellsPreviewBuild['componentDemo']>['cases'][number] = {
+    id: 'current-code',
+    label: 'Código actual',
+    sourcePath,
+    markup: `<${definedTag} data-cells-demo-subject></${definedTag}>`,
+    properties: {},
+  };
+  const demoCases = [currentCodeCase, ...componentDemos];
+  const documentation = componentDocumentation ? {
+    ...componentDocumentation,
+    examples: demoCases.map((demoCase) => ({ title: demoCase.label, code: demoCase.markup })),
+  } : undefined;
+
   return {
     html,
     warnings: [],
@@ -469,18 +775,22 @@ try {
       componentDemo: {
         tagName: definedTag,
         packageName: packageData.name ?? definedTag,
+        packageVersion: packageData.version,
+        locales: availableLocales,
         source: componentSource,
-        cases: [
-          { id: 'basic', label: 'Básico', properties: { learnerName: 'Ada' } },
-          { id: 'alternate', label: 'Nombre alternativo', properties: { learnerName: 'Lina' } },
-          { id: 'long', label: 'Texto largo', properties: { learnerName: 'Equipo de aprendizaje Cells' } },
-        ],
+        htmlSource: demoHtml,
+        cssSource: scssFile,
+        cases: demoCases,
         contract: [
           { term: 'Elemento', description: `<${definedTag}>` },
-          { term: 'Propiedad', description: 'learnerName / learner-name' },
-          { term: 'Evento', description: `${definedTag}-continue` },
-          { term: 'Estilos', description: 'SCSS fuente → css.js generado → static styles' },
+          ...(componentDocumentation?.properties ?? []).map((property) => ({
+            term: 'Propiedad',
+            description: property.attribute ? `${property.name} / ${property.attribute}` : property.name,
+          })),
+          ...(componentDocumentation?.events ?? []).map((event) => ({ term: 'Evento', description: event.name })),
+          ...(scssFile ? [{ term: 'Estilos', description: 'SCSS fuente → css.js generado → static styles' }] : []),
         ],
+        ...(documentation ? { documentation } : {}),
       },
     }),
   };

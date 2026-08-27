@@ -86,6 +86,20 @@ describe('createCellsComponentWorkspace', () => {
     expect(workspace.snapshot.files['demo/demo-build.js'].content).toContain("import './demo.js'");
   });
 
+  it('publica metadatos consumibles por el playground sin inventar la API', () => {
+    const metadata = JSON.parse(workspace.snapshot.files['custom-elements.json'].content);
+    const declaration = metadata.modules[0].declarations[0];
+
+    expect(declaration).toMatchObject({
+      tagName: 'academy-learning-card',
+      members: [expect.objectContaining({ name: 'learnerName', attribute: 'learner-name' })],
+      events: [expect.objectContaining({ name: 'academy-learning-card-continue' })],
+    });
+    expect(declaration.cssProperties).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: '--learning-card-background' }),
+    ]));
+  });
+
   it('declara solo las dependencias directas del componente', () => {
     const manifest = JSON.parse(workspace.snapshot.files['package.json'].content);
     expect(manifest.name).toBe('@open-cells-learning/academy-learning-card');

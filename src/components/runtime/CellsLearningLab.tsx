@@ -189,6 +189,17 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
           : 'Proyecto abierto en memoria. No se inició ningún servidor ni proceso Node.');
         setSessionHydrated(true);
         setStatus('ready');
+
+        // Auto-build preview immediately on load so the student sees the live component without clicking
+        try {
+          const previewRes = await ensureRuntime().buildPreview(initial.generation);
+          if (!cancelled && previewRes.type === 'preview:built') {
+            setPreviewHtml(previewRes.payload.html);
+            setPreviewDemo(previewRes.payload.componentDemo);
+          }
+        } catch {
+          // Non-blocking initial preview attempt
+        }
       } catch (caught) {
         if (!cancelled) { setError(messageFor(caught)); setStatus('error'); }
       }
@@ -204,6 +215,25 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
     // El runtime pertenece a esta única instancia del laboratorio.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Debounced auto-sync and live preview re-build when code is edited
+  useEffect(() => {
+    if (!sessionHydrated) return;
+    if (dirtyPathsRef.current.size === 0) return;
+    const timer = window.setTimeout(async () => {
+      try {
+        const currentGeneration = await syncDirtyFiles();
+        const result = await ensureRuntime().buildPreview(currentGeneration);
+        if (result.type === 'preview:built') {
+          setPreviewHtml(result.payload.html);
+          setPreviewDemo(result.payload.componentDemo);
+        }
+      } catch {
+        // Background live-reload non-blocking
+      }
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [workspace, sessionHydrated]);
 
   useEffect(() => {
     if (!sessionHydrated) return;
