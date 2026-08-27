@@ -181,6 +181,13 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
       setPreviewLocale('es');
       setTerminalOutput('Proyecto abierto en memoria. No se inició ningún servidor ni proceso Node.');
       setExpandedFolders([]);
+
+      const request = beginPreviewBuild();
+      const previewResult = await ensureRuntime().buildPreview(0);
+      if (previewResult.type !== 'preview:built') {
+        throw new Error('El runtime no pudo reconstruir la vista previa inicial.');
+      }
+      applyPreviewBuild(request, previewResult.payload);
       setStatus('ready');
     } catch (caught) {
       setError(messageFor(caught));
@@ -434,7 +441,13 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
           <h3>{variant === 'application' ? PROJECT_NAMES[project] : 'academy-learning-card'}</h3>
           <span className={`cells-lab__status-indicator is-${status}`}>
             <span className="cells-lab__status-dot" />
-            {status === 'running' ? 'Worker ocupado…' : status === 'loading' ? 'Preparando Worker…' : 'Todo ocurre en este navegador'}
+            {status === 'running'
+              ? 'Worker ocupado…'
+              : status === 'loading'
+                ? 'Preparando Worker…'
+                : status === 'error'
+                  ? 'El laboratorio necesita atención'
+                  : 'Todo ocurre en este navegador'}
           </span>
         </div>
         <div className="cells-lab__actions">

@@ -1,18 +1,19 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CellsLearningLab } from './CellsLearningLab';
 
 const runtime = vi.hoisted(() => {
   const builds: Array<{ resolve: (value: unknown) => void }> = [];
-  return { builds };
+  return { builds, failLoad: false };
 });
 
 vi.mock('../../engine/cells/cellsRuntimeClient', () => ({
   CellsRuntimeClientError: class CellsRuntimeClientError extends Error {},
   CellsRuntimeClient: class CellsRuntimeClient {
     async loadProject(snapshot: unknown, generation: number) {
+      if (runtime.failLoad) throw new Error('No se pudo preparar el proyecto.');
       return { type: 'workspace:updated', generation, payload: { workspace: snapshot } };
     }
     async writeFile(path: string, content: string, generation: number) {
@@ -63,9 +64,11 @@ vi.mock('./CellsPreviewWorkbench', () => ({
 describe('CellsLearningLab live preview', () => {
   beforeEach(() => {
     runtime.builds.length = 0;
+    runtime.failLoad = false;
   });
 
   afterEach(() => {
+    cleanup();
     vi.useRealTimers();
   });
 
@@ -98,5 +101,28 @@ describe('CellsLearningLab live preview', () => {
     });
     expect(screen.getByTestId('compiled-preview').textContent).toBe('PREVIEW NUEVA');
     expect(screen.getByText('Vista sincronizada con el proyecto')).toBeTruthy();
+  });
+
+  it('reconstruye la vista previa al reiniciar sin exigir otro clic', async () => {
+    render(<CellsLearningLab lessonId="cells-reset" componentStage="composition" />);
+
+    await waitFor(() => expect(runtime.builds).toHaveLength(1));
+    await act(async () => {
+      runtime.builds[0].resolve({
+        type: 'preview:built',
+        payload: { html: 'PREVIEW INICIAL', warnings: [], componentDemo: { cases: [] } },
+      });
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reiniciar práctica' }));
+    await waitFor(() => expect(runtime.builds).toHaveLength(2));
+  });
+
+  it('explica el estado de error en lugar de mostrar el mensaje de éxito', async () => {
+    runtime.failLoad = true;
+    render(<CellsLearningLab lessonId="cells-load-error" componentStage="composition" />);
+
+    expect(await screen.findByText('El laboratorio necesita atención')).toBeTruthy();
+    expect(screen.queryByText('Todo ocurre en este navegador')).toBeNull();
   });
 });

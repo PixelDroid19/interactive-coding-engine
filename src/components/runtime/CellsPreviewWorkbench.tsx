@@ -607,7 +607,7 @@ export const CellsPreviewWorkbench: React.FC<CellsPreviewWorkbenchProps> = ({
                     title={title}
                     sandbox="allow-scripts allow-modals allow-forms allow-same-origin"
                     srcDoc={html}
-                    onLoad={postState}
+                    onLoad={() => postState()}
                     className="cells-studio__iframe"
                   />
                 </div>

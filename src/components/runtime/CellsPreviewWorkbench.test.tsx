@@ -139,6 +139,20 @@ describe('CellsPreviewWorkbench', () => {
     );
   });
 
+  it('envía al iframe únicamente mensajes serializables cuando termina de cargar', () => {
+    const iframeRef = createRef<HTMLIFrameElement>();
+    render(<CellsPreviewWorkbench html="<main>componente</main>" demo={demo} iframeRef={iframeRef} />);
+    const postMessage = vi.fn();
+    Object.defineProperty(iframeRef.current, 'contentWindow', { configurable: true, value: { postMessage } });
+
+    fireEvent.load(screen.getByTitle('Vista previa del componente Cells'));
+
+    expect(postMessage).toHaveBeenCalled();
+    for (const [message] of postMessage.mock.calls) {
+      expect(() => structuredClone(message)).not.toThrow();
+    }
+  });
+
   it('permite cambiar de idioma sin recargar la página', () => {
     const iframeRef = createRef<HTMLIFrameElement>();
     render(<CellsPreviewWorkbench html="<main>componente</main>" demo={demo} iframeRef={iframeRef} />);
