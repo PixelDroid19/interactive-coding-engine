@@ -24,7 +24,11 @@ describe('preview de aplicación Cells', () => {
     expect(result.html).toContain("'app-cleanup'");
     expect(result.html).toContain("'app-data-states'");
     expect(result.html).toContain("'app-data-cleanup'");
+    expect(result.html).toContain("'app-native-invalid'");
+    expect(result.html).toContain("'app-native-lifecycle'");
+    expect(result.html).toContain("'app-native-deep-link'");
     expect(result.html).toContain("workspace:/app/data/academy-product-data-manager.js");
+    expect(result.html).toContain("workspace:/app/bridge/native-adapter.js");
     expect(result.html).toContain("academy:store:product:selected");
     expect(result.html).toContain("source: 'open-cells-tests'");
   });

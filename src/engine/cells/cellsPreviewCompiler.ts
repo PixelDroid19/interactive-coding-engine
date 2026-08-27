@@ -423,8 +423,12 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
     : sourcePath;
   if (!workspace.files[executionPath]) throw new Error(`La entrada ejecutable ${executionPath} no existe en el workspace.`);
   const locales = readWorkspaceLocales(workspace, isApplication);
-  const testEntries = options.runContractTests && isApplication && workspace.files['app/data/academy-product-data-manager.js']
-    ? [executionPath, 'app/data/academy-product-data-manager.js']
+  const testEntries = options.runContractTests && isApplication
+    ? [
+        executionPath,
+        ...(workspace.files['app/data/academy-product-data-manager.js'] ? ['app/data/academy-product-data-manager.js'] : []),
+        ...(workspace.files['app/bridge/native-adapter.js'] ? ['app/bridge/native-adapter.js'] : []),
+      ]
     : executionPath;
   const importMap = JSON.stringify({ imports: {
     ...IMPORT_MAP,
@@ -558,6 +562,21 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
     invokedMethods.push('load', 'disconnect');
     await pending;
     check('app-data-cleanup', 'disconnect cancela la petición activa', abortSignal?.aborted === true, 'El manager debe abortar el trabajo que todavía le pertenece.');
+
+    const { createNativeAdapter } = await import('workspace:/app/bridge/native-adapter.js');
+    const nativeCalls = [];
+    const adapter = createNativeAdapter({
+      publish: (channel, payload) => nativeCalls.push({ kind: 'publish', channel, payload }),
+      navigate: (route, params) => nativeCalls.push({ kind: 'navigate', route, params }),
+    });
+    const invalidAccepted = adapter.handle(null);
+    check('app-native-invalid', 'Rechaza mensajes externos incompletos', invalidAccepted === false && nativeCalls.length === 0, 'El Bridge no debe actuar cuando falta un type válido.');
+    const lifecycleAccepted = adapter.handle({ type: 'app:lifecycle', state: 'background' });
+    const lifecycleCall = nativeCalls.at(-1);
+    check('app-native-lifecycle', 'Traduce el ciclo externo a un canal interno', lifecycleAccepted === true && lifecycleCall?.kind === 'publish' && lifecycleCall.channel === 'academy:app:lifecycle' && lifecycleCall.payload?.state === 'background', 'El Bridge debe publicar solo el estado serializable en el canal de ciclo de vida.');
+    const deepLinkAccepted = adapter.handle({ type: 'app:deep-link', route: 'product-detail', params: { id: 'tea' } });
+    const navigationCall = nativeCalls.at(-1);
+    check('app-native-deep-link', 'Traduce un deep link a navegación por nombre', deepLinkAccepted === true && navigationCall?.kind === 'navigate' && navigationCall.route === 'product-detail' && navigationCall.params?.id === 'tea', 'El Bridge debe validar y normalizar ruta y parámetros antes de navegar.');
   } catch (error) {
     check('app-browser-runner', 'La aplicación puede probarse como historia vertical', false, error?.message || String(error));
   }

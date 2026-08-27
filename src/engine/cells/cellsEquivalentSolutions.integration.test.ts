@@ -51,6 +51,12 @@ describe('soluciones equivalentes de las prácticas Cells', () => {
       .replace("this.emitEvent('select', { ...this.product });", "const selected = { ...this.product }; this.emitEvent('select', selected);");
     workspace = writeCellsFile(workspace, cardPath, card);
 
+    const bridgePath = 'app/bridge/native-adapter.js';
+    const bridge = workspace.snapshot.files[bridgePath].content
+      .replace("if (!message || typeof message.type !== 'string') return false;", "if (typeof message?.type !== 'string') return false;")
+      .replace('publish(APP_LIFECYCLE_CHANNEL, { state: message.state });', 'const lifecycle = { state: message.state }; publish(APP_LIFECYCLE_CHANNEL, lifecycle);');
+    workspace = writeCellsFile(workspace, bridgePath, bridge);
+
     expect(auditCellsProject(workspace.snapshot).results.filter((result) => !result.passed)).toEqual([]);
   });
 });
