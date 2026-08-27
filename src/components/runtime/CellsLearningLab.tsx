@@ -30,6 +30,7 @@ interface CellsLearningLabProps {
   stage?: CellsAppPracticeStage;
   componentStage?: CellsComponentPracticeStage;
   project?: CellsAppProject;
+  lessonId?: string;
 }
 
 const APP_MISSIONS: Record<CellsAppPracticeStage, string> = {
@@ -62,7 +63,13 @@ function defaultCellsCommand(variant: 'component' | 'application'): string {
   return variant === 'application' ? 'cells app:test --coverage' : 'cells component:test --coverage';
 }
 
-export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'component', stage = 'lifecycle', componentStage = 'composition', project = 'store' }) => {
+export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
+  variant = 'component',
+  stage = 'lifecycle',
+  componentStage = 'composition',
+  project = 'store',
+  lessonId,
+}) => {
   const runtimeRef = useRef<CellsRuntimeClient | null>(null);
   const repositoryRef = useRef<CellsWorkspaceRepository | null>(null);
   const dirtyPathsRef = useRef(new Set<string>());
@@ -96,7 +103,8 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
   const [expandedFolders, setExpandedFolders] = useState<string[]>([]);
   const [previewLocale, setPreviewLocale] = useState<'es' | 'en'>('es');
   const [sessionHydrated, setSessionHydrated] = useState(false);
-  const draftKey = `course-open-cells:v2:${variant}:${variant === 'application' ? `${project}:${stage}` : componentStage}`;
+  const labIdentity = lessonId ?? (variant === 'application' ? `${project}:${stage}` : componentStage);
+  const draftKey = `course-open-cells:v2:${variant}:${labIdentity}`;
   const workspaceRef = useRef(workspace);
   const generationRef = useRef(generation);
   workspaceRef.current = workspace;
@@ -487,7 +495,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({ variant = 'c
               <CodeEditor
                 file={activeFile}
                 workspaceFiles={workspace.files}
-                lessonId={`open-cells-${variant}-${project}-${stage}`}
+                lessonId={lessonId ?? `open-cells-${variant}-${variant === 'application' ? `${project}-${stage}` : componentStage}`}
                 lineWrapping
                 onCodeChange={(content) => activeFile && setWorkspace((current) => {
                   const next = {

@@ -235,7 +235,11 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
                       <h2 id="reading-lab-title">{cellsComponentLab.title}</h2>
                     </div>
                   </div>
-                  <CellsLearningLab componentStage={cellsComponentLab.stage} />
+                  <CellsLearningLab
+                    key={reading.id}
+                    componentStage={cellsComponentLab.stage}
+                    lessonId={reading.relatedLessonId ?? reading.id.replace(/-lectura$/, '')}
+                  />
                 </section>
               )}
 
@@ -248,7 +252,13 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
                       <h2 id="reading-lab-title">{cellsAppLab.title}</h2>
                     </div>
                   </div>
-                  <CellsLearningLab variant="application" stage={cellsAppLab.stage} project={cellsAppLab.project} />
+                  <CellsLearningLab
+                    key={reading.id}
+                    variant="application"
+                    stage={cellsAppLab.stage}
+                    project={cellsAppLab.project}
+                    lessonId={reading.relatedLessonId ?? reading.id.replace(/-lectura$/, '')}
+                  />
                 </section>
               )}
 
