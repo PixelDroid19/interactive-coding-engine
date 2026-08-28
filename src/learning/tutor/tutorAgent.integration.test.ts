@@ -72,6 +72,22 @@ describe('agente pedagógico local', () => {
     expect(turn.changedFiles).toEqual(['app.js']);
   });
 
+  it('pide al modelo reparar el plan cuando una orden explícita de edición no incluyó escritura', async () => {
+    const current = workspace();
+    const replacement = 'function doble(valor) { return valor * 2; }';
+    const local = service(
+      JSON.stringify({ calls: [{ tool: 'read_workspace', args: { paths: ['app.js'] } }], replyStrategy: 'Explica el archivo.' }),
+      JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js', content: replacement } }, { tool: 'run_checks', args: {} }], replyStrategy: 'Explica la corrección aplicada.' }),
+      'Corregí app.js y ejecuté las comprobaciones.',
+    );
+
+    const turn = await runTutorTurn({ mode: 'auto', question: 'Corrige el ejercicio y déjalo funcionando.', attemptCount: 1, activity, conversation: [] }, local, current);
+
+    expect(current.actions.replaceFile).toHaveBeenCalledWith('app.js', replacement);
+    expect(turn.changedFiles).toEqual(['app.js']);
+    expect(local.generate).toHaveBeenCalledTimes(3);
+  });
+
   it('rechaza una escritura elegida por el modelo cuando la persona solo pidió explicación', async () => {
     const current = workspace();
     const local = service(

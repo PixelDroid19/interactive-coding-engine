@@ -476,10 +476,10 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const handleWorkspaceFileChange = (path: string, newContent: string) => {
     // A result only describes the exact workspace that was evaluated. As soon as
     // the learner edits again, require a fresh check instead of showing stale green tests.
+    engineRef.current?.pause();
     setValidationResult(null);
     const wasForked = isForkedRef.current;
     if (!wasForked) {
-      engineRef.current?.pause();
       const base = timeRef.current;
       forkLearnerBranch(base);
       setHasPendingEdits(true);

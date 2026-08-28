@@ -157,12 +157,12 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
       });
       setModelReady(true);
       setProgress(1);
-      setProgressLabel('Tutor listo');
+      setProgressLabel('Modelo listo');
       preferredModelRef.current = selectedModel;
       await saveTutorModelPreference(selectedModel, true);
     } catch (reason) {
       if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
-        setError(reason instanceof Error ? reason.message : 'No se pudo preparar el tutor local.');
+        setError(reason instanceof Error ? reason.message : 'No se pudo preparar el modelo local.');
       }
     } finally {
       prepareAbortRef.current = null;
@@ -215,7 +215,7 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
       });
     } catch (reason) {
       if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
-        setError(reason instanceof Error ? reason.message : 'El tutor local no pudo responder.');
+        setError(reason instanceof Error ? reason.message : 'La ayuda local no pudo responder.');
       }
       setMessages((current) => {
         const next = current.filter((message) => message.id !== assistantId || message.content.trim());
@@ -231,21 +231,21 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
   return (
     <div className={`socratic-tutor ${open ? 'is-open' : ''}`}>
       {!open && (
-        <button ref={launcherRef} type="button" className="socratic-tutor__launcher" onClick={() => setOpen(true)} aria-label="Abrir tutor de IA">
+        <button ref={launcherRef} type="button" className="socratic-tutor__launcher" onClick={() => setOpen(true)} aria-label="Abrir ayuda de IA">
           <Bot size={19} aria-hidden="true" />
-          <span>Tutor</span>
+          <span>Ayuda IA</span>
         </button>
       )}
 
       {open && (
-        <aside ref={panelRef} className="socratic-tutor__panel" role="dialog" aria-modal="true" aria-label="Tutor socrático local">
+        <aside ref={panelRef} className="socratic-tutor__panel" role="dialog" aria-modal="true" aria-label="Ayuda de la lección">
           <header className="socratic-tutor__header">
             <div>
               <span className="socratic-tutor__eyebrow">LOCAL · WEBGPU</span>
-              <h2>Tutor socrático</h2>
-              <p>{activity.itemTitle}</p>
+              <h2>{activity.itemTitle}</h2>
+              <p>{activity.courseTitle}</p>
             </div>
-            <button ref={closeRef} type="button" onClick={() => { setOpen(false); window.setTimeout(() => launcherRef.current?.focus(), 0); }} aria-label="Cerrar tutor"><X size={18} /></button>
+            <button ref={closeRef} type="button" onClick={() => { setOpen(false); window.setTimeout(() => launcherRef.current?.focus(), 0); }} aria-label="Cerrar ayuda"><X size={18} /></button>
           </header>
 
           {!modelReady ? (
@@ -283,7 +283,7 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
             </section>
           ) : (
             <>
-              <div className="socratic-tutor__ready" role="status"><span /> Tutor listo · trabaja en este dispositivo</div>
+              <div className="socratic-tutor__ready" role="status"><span /> Modelo listo · trabaja en este dispositivo</div>
               <div className="socratic-tutor__controls">
                 <label>Tipo de ayuda
                   <select aria-label="Tipo de ayuda" value={mode} onChange={(event) => setMode(event.target.value as TutorMode)}>
@@ -320,7 +320,7 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
                 )}
                 {messages.map((message) => (
                   <div key={message.id} className={`socratic-tutor__message is-${message.role}`}>
-                    <span>{message.role === 'user' ? 'Tú' : 'Tutor'}</span>
+                    <span>{message.role === 'user' ? 'Tú' : 'Ayuda'}</span>
                     <p>{message.content || 'Pensando…'}</p>
                   </div>
                 ))}
@@ -337,7 +337,7 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
                       void send();
                     }
                   }}
-                  aria-label="Pregunta para el tutor"
+                  aria-label="Pregunta para la ayuda de IA"
                   placeholder="Ejemplo: esperaba que devolviera 8, pero solo lo imprime…"
                   rows={3}
                 />

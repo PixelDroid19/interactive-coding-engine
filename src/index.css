@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Tutor socrático local: hoja de apoyo que comparte los tokens del producto. */
+/* Ayuda local de la lección: comparte los tokens del producto. */
 .socratic-tutor {
   position: fixed;
   inset: auto 1rem 1rem auto;
@@ -8147,8 +8147,8 @@ html.hud .cells-studio {
 .learning-center > header p { margin: 0; color: color-mix(in srgb, currentColor 62%, transparent); }
 .learning-center > header button { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 1px solid currentColor; border-radius: 10px; background: transparent; }
 .learning-center__summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; border-block: 1px solid color-mix(in srgb, currentColor 15%, transparent); background: color-mix(in srgb, currentColor 15%, transparent); }
-.learning-center__summary span { padding: .6rem .8rem; background: var(--bg-surface-light); color: color-mix(in srgb, currentColor 68%, transparent); font-size: .7rem; text-align: center; }
-.learning-center__summary strong { color: var(--color-text-main); font-size: .92rem; }
+.learning-center__summary span { padding: .6rem .8rem; background: #ebe7dc; color: #4c515b; font-size: .7rem; text-align: center; }
+.learning-center__summary strong { color: #111318; font-size: .92rem; }
 .learning-center > nav { display: grid; grid-template-columns: repeat(5, 1fr); gap: .45rem; padding: .65rem 1rem; background: color-mix(in srgb, currentColor 4%, transparent); }
 .learning-center > nav button { display: flex; justify-content: center; align-items: center; gap: .45rem; min-height: 2.65rem; border: 1px solid transparent; border-radius: 9px; background: transparent; font-weight: 700; }
 .learning-center > nav button > span { display: grid; gap: .08rem; text-align: left; line-height: 1.05; }
@@ -8241,7 +8241,8 @@ html.hud .learning-center {
   color: #eef5ff; background: #10141c; border-color: #00e7f1; border-radius: 3px;
   box-shadow: 8px 8px 0 #080a0f, 9px 9px 0 #d629ff;
 }
-html.hud .learning-center__summary span { background: #0b101a; }
+html.hud .learning-center__summary span { background: #0b101a; color: #b8c1d4; }
+html.hud .learning-center__summary strong { color: #f4f8ff; }
 html.hud .learning-center > header span, html.hud .exam-mode label > span { color: #ffe600; }
 html.hud .learning-center textarea, html.hud .learning-center select { background: #090c12; border-color: #39465a; }
 html.hud .learning-center > nav button.is-active { background: #00e7f1; }

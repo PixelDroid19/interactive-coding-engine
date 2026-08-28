@@ -2,7 +2,7 @@ import type { LocalChatMessage } from '../../engine/ai/localGenerationProtocol';
 import type { LocalGenerationOptions, LocalGenerationService } from '../../engine/ai/localGenerationService';
 import type { TutorActivityContext, TutorWorkspaceContext } from './tutorContext';
 import { buildTutorPlannerRequest, buildTutorResponseRequest, type TutorMode } from './tutorPrompt';
-import { executeTutorTool, parseTutorToolCall, type TutorReinforcementDraft, type TutorToolActivity, type TutorToolCall } from './tutorTools';
+import { allowsTutorWrite, executeTutorTool, parseTutorToolCall, type TutorReinforcementDraft, type TutorToolActivity, type TutorToolCall, type TutorToolExecution } from './tutorTools';
 
 export interface TutorTurnInput {
   mode: TutorMode;
@@ -29,10 +29,23 @@ function parsePlan(text: string): TutorPlan {
 export async function runTutorTurn(input: TutorTurnInput, service: LocalGenerationService, workspace: TutorWorkspaceContext | null): Promise<TutorTurnResult> {
   const promptInput = { ...input, workspace: workspace?.snapshot ?? null };
   const planning = await service.generate(buildTutorPlannerRequest(promptInput), { model: input.generationOptions?.model, signal: input.generationOptions?.signal });
-  const plan = parsePlan(planning.text);
-  const executions = [];
-  for (const call of plan.calls) executions.push(await executeTutorTool(call, input, workspace));
-  const observations = executions.map((entry) => `[${entry.activity.status}] ${entry.activity.label}: ${entry.observation}`).join('\n\n');
+  let plan = parsePlan(planning.text);
+  const executions: TutorToolExecution[] = [];
+  for (const call of plan.calls.slice(0, 3)) executions.push(await executeTutorTool(call, input, workspace));
+  let observations = executions.map((entry) => `[${entry.activity.status}] ${entry.activity.label}: ${entry.observation}`).join('\n\n');
+  const writeWasRequested = allowsTutorWrite(input.mode, input.question);
+  const changed = () => executions.some((entry) => Boolean(entry.changedFile));
+  if (writeWasRequested && !changed() && executions.length < 3) {
+    const continuation = await service.generate(buildTutorPlannerRequest(promptInput, {
+      observations,
+      requireWrite: true,
+      remainingTools: 3 - executions.length,
+    }), { model: input.generationOptions?.model, signal: input.generationOptions?.signal });
+    plan = parsePlan(continuation.text);
+    for (const call of plan.calls.slice(0, 3 - executions.length)) executions.push(await executeTutorTool(call, input, workspace));
+    observations = executions.map((entry) => `[${entry.activity.status}] ${entry.activity.label}: ${entry.observation}`).join('\n\n');
+    if (!changed()) throw new Error('El modelo entendió la petición, pero no produjo una edición aplicable. Prueba el modelo recomendado o concreta qué archivo debe modificar.');
+  }
   const response = await service.generate(buildTutorResponseRequest(promptInput, plan.replyStrategy, observations), input.generationOptions);
   return {
     response: response.text,

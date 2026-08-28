@@ -39,7 +39,7 @@ Errores frecuentes: ${cleanList(activity.commonMistakes)}
 ${activity.recentResult ? `Resultado reciente: ${activity.recentResult}\n` : ''}Intentos observados: ${attemptCount}`;
 }
 
-export function buildTutorPlannerRequest(input: TutorPromptInput): LocalGenerationRequest {
+export function buildTutorPlannerRequest(input: TutorPromptInput, options: { observations?: string; requireWrite?: boolean; remainingTools?: number } = {}): LocalGenerationRequest {
   const workspaceSummary = input.workspace
     ? `Archivo activo: ${input.workspace.activeFilePath}. Archivos: ${Object.keys(input.workspace.files).join(', ')}. Diagnóstico: ${input.workspace.diagnostics || 'no disponible'}. Comprobación: ${input.workspace.recentResult || 'no ejecutada'}.`
     : 'No hay un editor activo.';
@@ -50,10 +50,16 @@ export function buildTutorPlannerRequest(input: TutorPromptInput): LocalGenerati
 - run_checks args {}
 - write_file args {"path":"ruta existente","content":"contenido completo"}
 - save_reinforcement args {"skillId":"concepto curricular","note":"nota breve","evidence":"evidencia observada"}`;
+  const continuation = options.observations
+    ? `\nResultados de herramientas anteriores:\n${truncateTutorText(options.observations, 10_000)}`
+    : '';
+  const writeInstruction = options.requireWrite
+    ? 'La persona pidió modificar el ejercicio y ya autorizó la escritura. Usa write_file con el contenido completo de un archivo existente; si todavía necesitas conocerlo, usa read_workspace. No termines con calls vacío antes de aplicar el cambio solicitado.'
+    : 'Cuando la petición sea una edición, consulta primero el workspace. Después de recibir ese resultado podrás elegir write_file en el siguiente paso.';
   return {
     messages: [
-      { role: 'system', content: `Eres el planificador de herramientas de un tutor local para principiantes. Elige de cero a tres llamadas necesarias para responder con evidencia. No inventes herramientas ni argumentos. El modo y la pregunta limitan tu actuación. ${MODE_GUIDANCE[input.mode]} Devuelve únicamente JSON con las claves calls y replyStrategy. calls es un array de objetos {tool,args}; replyStrategy es una instrucción breve para el tutor final.` },
-      { role: 'user', content: truncateTutorText(`${activityContextText(input.activity, input.attemptCount)}\n${workspaceSummary}\nModo: ${input.mode}\n${tools}\nPregunta: ${input.question.trim()}`, 6_500) },
+      { role: 'system', content: `Eres el planificador de herramientas de un tutor local para principiantes. Elige solo las llamadas que se pueden ejecutar con la evidencia disponible. No inventes herramientas ni argumentos. El modo y la pregunta limitan tu actuación. ${MODE_GUIDANCE[input.mode]} ${writeInstruction} Puedes usar como máximo ${options.remainingTools ?? 3} herramientas en este paso. Devuelve únicamente JSON con las claves calls y replyStrategy. calls es un array de objetos {tool,args}; replyStrategy es una instrucción breve para el tutor final.` },
+      { role: 'user', content: truncateTutorText(`${activityContextText(input.activity, input.attemptCount)}\n${workspaceSummary}\nModo: ${input.mode}\n${tools}\nPregunta: ${input.question.trim()}${continuation}`, 13_000) },
     ],
     temperature: 0.05,
     topP: 0.8,

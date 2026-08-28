@@ -56,31 +56,33 @@ afterEach(() => { cleanup(); clearTutorWorkspace('test'); });
 describe('SocraticTutor', () => {
   it('no monta ninguna superficie cuando el curso lo desactiva', () => {
     render(<SocraticTutor enabled={false} activity={activity} service={serviceHarness()} />);
-    expect(screen.queryByRole('button', { name: /abrir tutor/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /abrir ayuda/i })).toBeNull();
   });
 
   it('inspecciona modelos sin descargarlos y exige un gesto para preparar WebLLM', async () => {
     const service = serviceHarness();
     render(<SocraticTutor enabled activity={activity} service={service} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /abrir tutor/i }));
+    fireEvent.click(screen.getByRole('button', { name: /abrir ayuda/i }));
     expect(await screen.findByRole('option', { name: /Qwen 2\.5 Coder · 1\.5B/ })).toBeTruthy();
     expect(service.listModels).toHaveBeenCalledTimes(1);
     expect(service.prepareModel).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: /preparar modelo/i }));
     await waitFor(() => expect(service.prepareModel).toHaveBeenCalledWith(model.id, expect.any(Object)));
-    expect(await screen.findByText(/Tutor listo/)).toBeTruthy();
+    expect(await screen.findByText(/Modelo listo/)).toBeTruthy();
   });
 
   it('genera por streaming, permite cancelar y mantiene la interfaz en español', async () => {
     const service = serviceHarness();
     render(<SocraticTutor enabled activity={activity} service={service} initialModelReady />);
 
-    fireEvent.click(screen.getByRole('button', { name: /abrir tutor/i }));
+    fireEvent.click(screen.getByRole('button', { name: /abrir ayuda/i }));
+    expect(screen.getByRole('dialog', { name: 'Ayuda de la lección' })).toBeTruthy();
+    expect(screen.queryByText('Tutor socrático')).toBeNull();
     expect((screen.getByRole('combobox', { name: 'Tipo de ayuda' }) as HTMLSelectElement).value).toBe('auto');
     expect(screen.getByRole('combobox', { name: 'Modelo local' })).toBeTruthy();
-    fireEvent.change(screen.getByRole('textbox', { name: /pregunta para el tutor/i }), { target: { value: 'No entiendo el return.' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /pregunta para la ayuda de IA/i }), { target: { value: 'No entiendo el return.' } });
     fireEvent.click(screen.getByRole('button', { name: /enviar pregunta/i }));
 
     expect(await screen.findByText(/¿Qué valor esperabas/)).toBeTruthy();
@@ -105,9 +107,9 @@ describe('SocraticTutor', () => {
     });
 
     render(<SocraticTutor enabled activity={activity} service={service} initialModelReady />);
-    fireEvent.click(screen.getByRole('button', { name: /abrir tutor/i }));
+    fireEvent.click(screen.getByRole('button', { name: /abrir ayuda/i }));
     fireEvent.change(screen.getByRole('combobox', { name: 'Tipo de ayuda' }), { target: { value: 'collaborate' } });
-    fireEvent.change(screen.getByRole('textbox', { name: /pregunta para el tutor/i }), { target: { value: 'Cambia el valor y explícame.' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /pregunta para la ayuda de IA/i }), { target: { value: 'Cambia el valor y explícame.' } });
     fireEvent.click(screen.getByRole('button', { name: /enviar pregunta/i }));
 
     expect(await screen.findByText('Modificó app.js')).toBeTruthy();

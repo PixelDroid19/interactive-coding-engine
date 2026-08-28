@@ -62,7 +62,7 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('group', { name: 'Lenguaje del ejercicio' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Python' })).toBeTruthy();
     expect(screen.getByText('Clase visual guiada')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Abrir tutor de IA' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Abrir ayuda de IA' })).toBeNull();
   });
 
   it('mantiene Open Cells como un curso independiente con su propio recorrido', () => {
@@ -78,7 +78,7 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('button', { name: /^6\. Crear tu primer componente Cells/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^46\. onPageLeave y cleanup/ })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /^1\. Qué añade Cells sobre Lit/ }));
-    expect(screen.getByRole('button', { name: 'Abrir tutor de IA' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Abrir ayuda de IA' })).toBeTruthy();
   });
 
   it('cambia el tema de forma declarativa sin dejar bordes cyber en el modo normal', async () => {

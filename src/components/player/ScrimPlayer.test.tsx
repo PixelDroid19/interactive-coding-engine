@@ -1,10 +1,12 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { describe, expect, it, beforeEach, afterEach } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ScrimPlayer } from './ScrimPlayer';
 import { FUNDAMENTOS_SCRIMS } from '../../curriculum/fundamentos/course';
 import { loadLastBranchForLesson } from '../../engine/persistence';
+import { PlaybackEngine } from '../../engine/playbackEngine';
+import { getTutorWorkspace } from '../../learning/tutor/tutorContext';
 
 describe('ScrimPlayer overlay coordination', () => {
   const lesson = FUNDAMENTOS_SCRIMS['fundamentos-01'];
@@ -66,6 +68,24 @@ describe('ScrimPlayer overlay coordination', () => {
     expect(screen.getByText('Clase con explicación')).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Empezar la clase' })).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Explicar lección' }).hasAttribute('disabled')).toBe(true);
+  });
+
+  it('pausa la clase antes de aplicar una edición solicitada a la ayuda', async () => {
+    const pause = vi.spyOn(PlaybackEngine.prototype, 'pause');
+    render(<ScrimPlayer lessonData={lesson} onBack={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Empezar la clase' }));
+    pause.mockClear();
+
+    await waitFor(() => expect(getTutorWorkspace()).not.toBeNull());
+    const current = getTutorWorkspace()!;
+    const path = current.snapshot.activeFilePath;
+    await act(async () => current.actions.replaceFile(path, `${current.snapshot.files[path]}\n// cambio solicitado`));
+    await waitFor(() => expect(loadLastBranchForLesson(lesson.id)).not.toBeNull());
+    const updated = getTutorWorkspace()!;
+    await act(async () => updated.actions.replaceFile(path, `${updated.snapshot.files[path]}\n// segundo cambio`));
+
+    expect(pause).toHaveBeenCalledTimes(2);
+    pause.mockRestore();
   });
 
   it('explica qué aprenderá el estudiante antes de iniciar la cinta', () => {
