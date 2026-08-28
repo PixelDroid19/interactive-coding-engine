@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, Route, Terminal, X } from 'lucide-react';
+import { BrainCircuit, ChevronRight, LockKeyhole, Route, Terminal, X } from 'lucide-react';
 import { ThemeToggle } from '../ThemeToggle';
 import { Course, CurriculumItem, UserProgressRecord } from '../../types/curriculum';
 import { ScrimLessonData } from '../../types/scrim';
@@ -9,25 +9,41 @@ import {
   findCourseItem,
   RoadmapNode,
 } from '../../curriculum/fundamentos/roadmap';
+import type { LearningProfile } from '../../learning/types';
+import { getItemReadiness, type ItemReadiness } from '../../learning/unlockPolicy';
+import { getCurriculumSkillIndex } from '../../learning/curriculumEvidence';
+import {
+  rateCurriculumReview,
+  saveExamEvaluation,
+  saveLeaderInterview,
+  saveNotebookEntry,
+} from '../../learning/curriculumEvidence';
+import { LearningCenter } from '../learning/LearningCenter';
 
 interface RoadmapHomeProps {
   course: Course;
   progress: UserProgressRecord;
+  learningProfile: LearningProfile;
   scrims: Record<string, ScrimLessonData>;
   onEnterLesson: (item: CurriculumItem, moduleId: string, timeMs?: number) => void;
   onPlayground: () => void;
   onBackToCourses: () => void;
+  onLearningProfileChange: (profile: LearningProfile) => void;
 }
 
 export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
   course,
   progress,
+  learningProfile,
   scrims,
   onEnterLesson,
   onPlayground,
   onBackToCourses,
+  onLearningProfileChange,
 }) => {
   const [openConcept, setOpenConcept] = useState<RoadmapNode | null>(null);
+  const [blockedItem, setBlockedItem] = useState<(ItemReadiness & { itemId: string }) | null>(null);
+  const [showLearningCenter, setShowLearningCenter] = useState(false);
   const phases = useMemo(() => buildRoadmap(course, scrims), [course, scrims]);
   const lessonCount = course.modules.reduce(
     (sum, mod) => sum + mod.items.filter((item) => item.type === 'scrim' || (item.type === 'reading' && !item.relatedLessonId)).length,
@@ -38,10 +54,31 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
     0
   );
   const hasReasoning = course.modules.some((mod) => mod.items.some((item) => item.type === 'reasoning'));
+  const dueReviewCount = learningProfile.reviews.filter((review) => review.courseId === course.id && review.dueAt <= Date.now()).length;
 
   const enterLesson = (lessonId: string) => {
     const found = findCourseItem(course, lessonId);
-    if (found) onEnterLesson(found.item, found.moduleId, 0);
+    if (!found) return;
+    const readiness = getItemReadiness(course, found.item.id, learningProfile, getCurriculumSkillIndex());
+    if (!readiness.unlocked) {
+      setBlockedItem({ ...readiness, itemId: found.item.id });
+      return;
+    }
+    onEnterLesson(found.item, found.moduleId, 0);
+  };
+
+  const isLocked = (lessonId: string) => {
+    const found = findCourseItem(course, lessonId);
+    return found ? !getItemReadiness(course, found.item.id, learningProfile, getCurriculumSkillIndex()).unlocked : false;
+  };
+
+  const openRecovery = () => {
+    const recoveryId = blockedItem?.recoveryItemId;
+    if (!recoveryId) return;
+    const found = findCourseItem(course, recoveryId);
+    if (!found) return;
+    setBlockedItem(null);
+    onEnterLesson(found.item, found.moduleId, 0);
   };
 
   const conceptCopy = openConcept
@@ -166,6 +203,10 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            <button type="button" className="rm-play-btn rm-learning-btn" onClick={() => setShowLearningCenter(true)}>
+              <BrainCircuit size={14} /> Mi aprendizaje
+              {dueReviewCount > 0 && <strong aria-label={`${dueReviewCount} repasos pendientes`}>{dueReviewCount}</strong>}
+            </button>
             <button type="button" className="rm-play-btn" onClick={onBackToCourses}>Cursos</button>
             <button type="button" className="rm-play-btn" onClick={onPlayground}>
               <Terminal size={13} /> Playground
@@ -222,11 +263,12 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
                           type="button"
                           className={`rm-node-cp is-reading ${isCurrent(row.reading.lessonId) ? 'is-current' : ''} ${
                             isDone(row.reading.lessonId) ? 'is-done' : ''
-                          }`}
+                          } ${isLocked(row.reading.lessonId) ? 'is-locked' : ''}`}
                           onClick={() => enterLesson(row.reading!.lessonId)}
                         >
                           <em className="rm-cp-tag">Lee</em>
                           <span>{row.reading.label}</span>
+                          {isLocked(row.reading.lessonId) && <LockKeyhole size={13} aria-hidden="true" />}
                         </button>
                       )}
                       {row.reasoning && (
@@ -235,11 +277,12 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
                           type="button"
                           className={`rm-node-cp is-reasoning ${isCurrent(row.reasoning.lessonId) ? 'is-current' : ''} ${
                             isDone(row.reasoning.lessonId) ? 'is-done' : ''
-                          }`}
+                          } ${isLocked(row.reasoning.lessonId) ? 'is-locked' : ''}`}
                           onClick={() => enterLesson(row.reasoning!.lessonId)}
                         >
                           <em className="rm-cp-tag">Piensa</em>
                           <span>{row.reasoning.label}</span>
+                          {isLocked(row.reasoning.lessonId) && <LockKeyhole size={13} aria-hidden="true" />}
                         </button>
                       )}
                       {row.checkpoint && (
@@ -248,11 +291,12 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
                           type="button"
                           className={`rm-node-cp ${isCurrent(row.checkpoint.lessonId) ? 'is-current' : ''} ${
                             isDone(row.checkpoint.lessonId) ? 'is-done' : ''
-                          } ${row.checkpoint.itemType === 'reading' ? 'is-reading' : ''}`}
+                          } ${row.checkpoint.itemType === 'reading' ? 'is-reading' : ''} ${isLocked(row.checkpoint.lessonId) ? 'is-locked' : ''}`}
                           onClick={() => enterLesson(row.checkpoint!.lessonId)}
                         >
                           <em className="rm-cp-tag">{row.checkpoint.itemType === 'reading' ? 'Lee' : 'Depura'}</em>
                           <span>{row.checkpoint.label}</span>
+                          {isLocked(row.checkpoint.lessonId) && <LockKeyhole size={13} aria-hidden="true" />}
                         </button>
                       )}
                     </div>
@@ -262,7 +306,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
                         type="button"
                         className={`rm-node-main ${isCurrent(row.main.lessonId) ? 'is-current' : ''} ${
                           isDone(row.main.lessonId) ? 'is-done' : ''
-                        } ${row.main.itemType === 'solo-project' ? 'is-project' : ''} ${row.main.itemType === 'reading' ? 'is-reading' : ''}`}
+                        } ${row.main.itemType === 'solo-project' ? 'is-project' : ''} ${row.main.itemType === 'reading' ? 'is-reading' : ''} ${isLocked(row.main.lessonId) ? 'is-locked' : ''}`}
                         onClick={() => enterLesson(row.main.lessonId)}
                       >
                         <span>{row.main.label}</span>
@@ -270,6 +314,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
                           ? <em className="rm-reto-flag">Proyecto</em>
                           : row.hasChallenge && <em className="rm-reto-flag">Reto</em>}
                         <ChevronRight size={14} />
+                        {isLocked(row.main.lessonId) && <LockKeyhole size={14} aria-hidden="true" />}
                       </button>
                     </div>
                     <div className="rm-col rm-col-right">
@@ -314,6 +359,41 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             </button>
           </aside>
         </div>
+      )}
+
+      {blockedItem && (
+        <div className="rm-concept-backdrop" onClick={() => setBlockedItem(null)}>
+          <aside className="rm-concept-pop rm-mastery-blocker" role="dialog" aria-modal="true" aria-label="Refuerzo necesario" onClick={(event) => event.stopPropagation()}>
+            <button type="button" className="rm-briefing-close" onClick={() => setBlockedItem(null)} aria-label="Cerrar">
+              <X size={14} />
+            </button>
+            <span className="rm-pill">Siguiente paso</span>
+            <h2>No es un castigo: detectamos un hueco</h2>
+            <p>{blockedItem.message}</p>
+            <ul>
+              {blockedItem.missing.slice(0, 3).map((gap) => (
+                <li key={`${gap.skillId}:${gap.capability}`}>
+                  {gap.skillId.replace(/-/g, ' ')} · {gap.capability === 'explain' ? 'explicarlo' : 'aplicarlo'}
+                </li>
+              ))}
+            </ul>
+            <button type="button" className="rm-enter-btn" onClick={openRecovery}>
+              Ir al refuerzo <ChevronRight size={14} />
+            </button>
+          </aside>
+        </div>
+      )}
+
+      {showLearningCenter && (
+        <LearningCenter
+          course={course}
+          profile={learningProfile}
+          onClose={() => setShowLearningCenter(false)}
+          onRateReview={async (reviewId, rating) => onLearningProfileChange(await rateCurriculumReview(reviewId, rating))}
+          onSaveNotebook={async (entry) => onLearningProfileChange(await saveNotebookEntry(entry))}
+          onCompleteExam={async (questions, result) => onLearningProfileChange(await saveExamEvaluation(course.id, questions, result))}
+          onCompleteLeader={async (skillId, answers) => onLearningProfileChange(await saveLeaderInterview(course.id, skillId, answers))}
+        />
       )}
     </div>
   );

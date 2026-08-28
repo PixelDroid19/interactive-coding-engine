@@ -25,6 +25,15 @@ export interface LocalModelInfo {
   contextWindowSize: number;
 }
 
+export type TutorModelProfile = 'light' | 'recommended' | 'deep' | 'custom';
+
+export interface LocalModelOption extends LocalModelInfo {
+  id: string;
+  label: string;
+  specialty: string;
+  profile: TutorModelProfile;
+}
+
 export interface LocalGenerationResult {
   text: string;
   warning?: string;

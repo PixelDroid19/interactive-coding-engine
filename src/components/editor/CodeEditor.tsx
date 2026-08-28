@@ -35,6 +35,7 @@ import { createSpanishCompletionSource, createSpanishHoverTooltip } from '../../
 import { spanishEditorPhrases } from '../../editor/spanishEditorPhrases';
 import { TypeScriptWorkerClient } from '../../editor/typeScriptWorkerClient';
 import type { WorkspaceFile } from '../../types/scrim';
+import { clearTutorWorkspace, publishTutorWorkspace } from '../../learning/tutor/tutorContext';
 import { InstructorCursor } from '../player/InstructorCursor';
 
 export interface EditorLanguageClient extends SemanticLanguageClient {
@@ -48,6 +49,7 @@ interface CodeEditorProps {
   workspaceFiles?: Record<string, WorkspaceFile>;
   readOnly?: boolean;
   onCodeChange?: (newContent: string, changes: { from: number; to: number; text: string }[]) => void;
+  onWorkspaceFileChange?: (path: string, content: string) => void;
   onCursorMove?: (position: { line: number; ch: number }) => void;
   onSelectionChange?: (from: number, to: number) => void;
   instructorCursor?: { line: number; ch: number };
@@ -208,6 +210,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   workspaceFiles,
   readOnly = false,
   onCodeChange,
+  onWorkspaceFileChange,
   onCursorMove,
   onSelectionChange,
   instructorCursor,
@@ -224,17 +227,58 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   const readOnlyRef = useRef(readOnly);
   const lessonIdRef = useRef(lessonId);
   const callbacksRef = useRef({ onCodeChange, onCursorMove, onSelectionChange });
+  const onWorkspaceFileChangeRef = useRef(onWorkspaceFileChange);
+  const tutorUndoRef = useRef<Array<{ path: string; content: string }>>([]);
   const providedClientRef = useRef(languageClient);
   const ownedClientRef = useRef<EditorLanguageClient | null>(null);
   const compartmentsRef = useRef<EditorCompartments | null>(null);
   const [diagnostics, setDiagnostics] = useState<DiagnosticDisplay>(initialDiagnostics);
+  const tutorSourceIdRef = useRef(`editor-${Math.random().toString(36).slice(2)}`);
 
   fileRef.current = file;
   workspaceFilesRef.current = workspaceFiles;
   readOnlyRef.current = readOnly;
   lessonIdRef.current = lessonId;
   callbacksRef.current = { onCodeChange, onCursorMove, onSelectionChange };
+  onWorkspaceFileChangeRef.current = onWorkspaceFileChange;
   providedClientRef.current = languageClient;
+
+  useEffect(() => {
+    if (!file) return;
+    const currentFiles = workspaceFiles ?? { [file.path]: file };
+    const replaceFile = (path: string, content: string) => {
+      const previous = currentFiles[path];
+      if (!previous || previous.content === content) return;
+      tutorUndoRef.current.push({ path, content: previous.content });
+      if (onWorkspaceFileChangeRef.current) {
+        onWorkspaceFileChangeRef.current(path, content);
+        return;
+      }
+      if (path === file.path) callbacksRef.current.onCodeChange?.(content, [{ from: 0, to: file.content.length, text: content }]);
+    };
+    publishTutorWorkspace({
+      snapshot: {
+        lessonId,
+        activeFilePath: file.path,
+        files: Object.fromEntries(Object.entries(currentFiles).map(([path, workspaceFile]) => [path, workspaceFile.content])),
+        diagnostics: diagnostics.state === 'ready'
+          ? diagnostics.errors || diagnostics.warnings
+            ? `${diagnostics.errors} errores y ${diagnostics.warnings} advertencias`
+            : 'Sin errores detectados'
+          : undefined,
+      },
+      actions: {
+        replaceFile,
+        undoLastChange: () => {
+          const previous = tutorUndoRef.current.pop();
+          if (!previous) return;
+          if (onWorkspaceFileChangeRef.current) onWorkspaceFileChangeRef.current(previous.path, previous.content);
+          else if (previous.path === file.path) callbacksRef.current.onCodeChange?.(previous.content, [{ from: 0, to: file.content.length, text: previous.content }]);
+        },
+      },
+    }, tutorSourceIdRef.current);
+    return () => clearTutorWorkspace(tutorSourceIdRef.current);
+  }, [diagnostics.errors, diagnostics.state, diagnostics.warnings, file, lessonId, workspaceFiles]);
 
   if (!compartmentsRef.current) {
     compartmentsRef.current = {

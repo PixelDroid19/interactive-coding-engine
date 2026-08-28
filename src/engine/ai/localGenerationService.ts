@@ -7,9 +7,11 @@ import {
   type LocalGenerationRequest,
   type LocalGenerationResult,
   type LocalModelInfo,
+  type LocalModelOption,
 } from './localGenerationProtocol';
 import { explainLocalGenerationError } from './localGenerationErrors';
 import { assessSpanishGeneration } from './localOutputQuality';
+import { buildTutorModelCatalog, curateTutorModelCatalog } from './localModelCatalog';
 
 interface StreamChunk {
   choices: Array<{ delta: { content?: string | null } }>;
@@ -39,6 +41,7 @@ interface LocalGenerationDependencies {
   ) => Promise<WebLlmEngineLike>;
   hasModelInCache: (model: string) => Promise<boolean>;
   getModelRecord: (model: string) => Promise<ModelRecord | undefined>;
+  getModelRecords: () => Promise<ModelRecord[]>;
 }
 
 export interface LocalGenerationOptions {
@@ -70,6 +73,10 @@ const defaultDependencies: LocalGenerationDependencies = {
   async getModelRecord(model) {
     const { prebuiltAppConfig } = await import('@mlc-ai/web-llm');
     return prebuiltAppConfig.model_list.find((record) => record.model_id === model);
+  },
+  async getModelRecords() {
+    const { prebuiltAppConfig } = await import('@mlc-ai/web-llm');
+    return prebuiltAppConfig.model_list;
   },
 };
 
@@ -131,6 +138,45 @@ export class LocalGenerationService {
   private loadingModel: string | null = null;
 
   constructor(private readonly dependencies: Partial<LocalGenerationDependencies> = {}) {}
+
+  async prepareModel(model = DEFAULT_LOCAL_GENERATION_MODEL, options: LocalGenerationOptions = {}): Promise<LocalModelInfo> {
+    if (!this.resolvedDependencies().hasWebGpu()) {
+      throw new Error('WebGPU no está disponible en este navegador o dispositivo. El tutor local no usa una ruta alternativa.');
+    }
+    try {
+      await withTimeoutAndAbort(
+        this.ensureEngine(model, options.onProgress),
+        { ...options, timeoutMs: options.timeoutMs ?? 300_000 },
+        'WebLLM tardó demasiado en preparar el modelo WebGPU.',
+        () => this.stopCurrentGeneration(true),
+      );
+      const info = await this.inspectModel(model, options);
+      return { ...info, cached: true };
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') throw error;
+      throw new Error(explainLocalGenerationError(error));
+    }
+  }
+
+  async listModels(maxVramMB = 2_100, options: LocalGenerationOptions = {}): Promise<LocalModelOption[]> {
+    const dependencies = this.resolvedDependencies();
+    const records = await withTimeoutAndAbort(
+      dependencies.getModelRecords(),
+      options,
+      'WebLLM tardó demasiado en consultar su catálogo de modelos.',
+    );
+    const candidates = curateTutorModelCatalog(buildTutorModelCatalog(records, maxVramMB));
+    const cachedEntries = await withTimeoutAndAbort(
+      Promise.all(candidates.map(async (candidate) => [candidate.id, await dependencies.hasModelInCache(candidate.id)] as const)),
+      options,
+      'La consulta de la caché de modelos tardó demasiado.',
+    );
+    return curateTutorModelCatalog(buildTutorModelCatalog(
+      records,
+      maxVramMB,
+      new Set(cachedEntries.filter(([, cached]) => cached).map(([id]) => id)),
+    ));
+  }
 
   async inspectModel(model = DEFAULT_LOCAL_GENERATION_MODEL, options: LocalGenerationOptions = {}): Promise<LocalModelInfo> {
     const dependencies = this.resolvedDependencies();

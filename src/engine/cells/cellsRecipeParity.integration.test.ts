@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 import { createCellsAppWorkspace } from './cellsAppRecipes';
 import { createCellsComponentWorkspace } from './cellsRecipes';
 
-const CLI_ROOT = process.env.CELLS_CLI_ROOT
-  ?? '/run/media/monasterios/Kioxia 256GB/cells/cells-academy/cli';
+const CLI_ROOT = process.env.CELLS_CLI_ROOT;
+const describeWithCli = CLI_ROOT ? describe : describe.skip;
 
 interface CliPlan {
   files: ReadonlyArray<{ path: string; content: string | Uint8Array }>;
@@ -16,6 +16,7 @@ async function cliRecipe(
   profile: 'component' | 'academy-app',
   options: Record<string, unknown>,
 ): Promise<Map<string, string>> {
+  if (!CLI_ROOT) throw new Error('Define CELLS_CLI_ROOT para ejecutar la comprobación de paridad.');
   const modulePath = path.join(CLI_ROOT, 'src/recipes/compose-recipe.js');
   if (!existsSync(modulePath)) throw new Error(`No se encontró la CLI Cells en ${CLI_ROOT}.`);
   const cli = await import(/* @vite-ignore */ pathToFileURL(modulePath).href) as {
@@ -32,7 +33,7 @@ function browserFiles(workspace: ReturnType<typeof createCellsComponentWorkspace
   return new Map(Object.values(workspace.snapshot.files).map((entry) => [entry.path, entry.content]));
 }
 
-describe('paridad estructural con Cells Academy CLI', () => {
+describeWithCli('paridad estructural con Cells Academy CLI', () => {
   it('usa el árbol y las versiones públicas del componente CLI vigente', async () => {
     const cli = await cliRecipe('component', {
       kind: 'component',

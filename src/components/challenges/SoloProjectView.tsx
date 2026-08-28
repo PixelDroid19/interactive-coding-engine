@@ -25,6 +25,8 @@ import confetti from 'canvas-confetti';
 import { NavigationState } from '../../engine/navigation';
 import { runChallengeValidation } from '../../engine/testRunner';
 import type { ChallengeValidationResult } from '../../types/runtime';
+import { PostSolveStudio } from '../learning/PostSolveStudio';
+import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
 
 interface SoloProjectViewProps {
   project: SoloProjectItem;
@@ -54,6 +56,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
   );
   const [checkedRequirements, setCheckedRequirements] = useState<Record<string, boolean>>({});
   const [isCompleted, setIsCompleted] = useState(false);
+  const [postSolveComplete, setPostSolveComplete] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [validationResult, setValidationResult] = useState<ChallengeValidationResult | null>(null);
   const [showFileTree, setShowFileTree] = useState(
@@ -79,7 +82,6 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
 
   const handleSubmitProject = () => {
     setIsCompleted(true);
-    markItemCompleted(project.id);
     confetti({
       particleCount: 120,
       spread: 80,
@@ -102,7 +104,6 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
       setValidationResult(result);
       if (result.allPassed && completedCount === totalCount) {
         setIsCompleted(true);
-        markItemCompleted(project.id);
         const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         if (!prefersReduced) confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
       }
@@ -115,6 +116,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
     setWorkspace(cloneWorkspace(project.initialWorkspace));
     setCheckedRequirements({});
     setIsCompleted(false);
+    setPostSolveComplete(false);
     setValidationResult(null);
   };
 
@@ -159,14 +161,14 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
             <LanguageSelector value={language} onChange={onLanguageChange} compact />
           )}
 
-          {isCompleted && (
+          {postSolveComplete && (
             <span className="flex items-center gap-1 rounded bg-emerald-950/80 border border-emerald-700 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
               <CheckCircle2 className="h-3.5 w-3.5" />
               <span>Completado</span>
             </span>
           )}
 
-          {onNext && (
+          {onNext && postSolveComplete && (
             navigationState?.isLast ? (
               <button
                 onClick={onBackToRoadmap || onBack}
@@ -309,6 +311,21 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
                   </p>
                 )}
               </div>
+            )}
+
+            {isCompleted && !postSolveComplete && (
+              <PostSolveStudio
+                itemId={project.id}
+                title={project.title}
+                instructions={project.brief}
+                kind="project"
+                continueLabel="Registrar dominio del proyecto"
+                onComplete={async (readingAnswer, variationAnswer) => {
+                  await recordPostSolveEvidence(project.id, readingAnswer, variationAnswer);
+                  markItemCompleted(project.id);
+                  setPostSolveComplete(true);
+                }}
+              />
             )}
 
             {project.tests?.length ? (

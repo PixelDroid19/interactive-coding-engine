@@ -11,6 +11,8 @@ import { ModuleDependencyDiagram } from './diagrams/ModuleDependencyDiagram';
 import { VectorRankingDiagram } from './diagrams/VectorRankingDiagram';
 import { ContextBudgetDiagram } from './diagrams/ContextBudgetDiagram';
 import { ThemeToggle } from '../ThemeToggle';
+import { PostSolveStudio } from '../learning/PostSolveStudio';
+import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
 
 interface Props {
   item: ReasoningExerciseItem;
@@ -32,9 +34,10 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
   const [attempt, setAttempt] = useState<ReasoningAttempt>(() => restored?.attempt ?? createInitialReasoningAttempt(item.activity));
   const [revealedHints, setRevealedHints] = useState(restored?.revealedHints ?? 0);
   const [result, setResult] = useState<ReturnType<typeof validateReasoningAttempt> | null>(null);
+  const [postSolveComplete, setPostSolveComplete] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
 
-  useEffect(() => { titleRef.current?.focus({ preventScroll: true }); }, [item.id]);
+  useEffect(() => { titleRef.current?.focus({ preventScroll: true }); setPostSolveComplete(false); }, [item.id]);
   useEffect(() => { saveReasoningDraft(item.id, { attempt, revealedHints, activityVersion: version }); }, [attempt, item.id, revealedHints, version]);
 
   const moveStep = (id: string, delta: number) => {
@@ -215,12 +218,25 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
             )}
           </aside>
         </section>
+        {result?.allPassed && !postSolveComplete && (
+          <PostSolveStudio
+            itemId={item.id}
+            title={item.title}
+            instructions={activity.prompt}
+            kind="reasoning"
+            continueLabel="Registrar comprensión"
+            onComplete={async (readingAnswer, variationAnswer) => {
+              await recordPostSolveEvidence(item.id, readingAnswer, variationAnswer);
+              setPostSolveComplete(true);
+            }}
+          />
+        )}
       </main>
 
       <footer className="reasoning-footer">
         <button type="button" onClick={onPrevious} disabled={!onPrevious}><ChevronLeft size={16} /> Anterior</button>
-        <span>{result?.allPassed ? '✓ Actividad completada' : 'Comprueba el modelo antes de continuar'}</span>
-        <button type="button" onClick={onNext} disabled={!onNext || !result?.allPassed}>Siguiente <ArrowRight size={16} /></button>
+        <span>{postSolveComplete ? '✓ Actividad comprendida' : result?.allPassed ? 'Explica el modelo antes de continuar' : 'Comprueba el modelo antes de continuar'}</span>
+        <button type="button" onClick={onNext} disabled={!onNext || !result?.allPassed || !postSolveComplete}>Siguiente <ArrowRight size={16} /></button>
       </footer>
     </div>
   );

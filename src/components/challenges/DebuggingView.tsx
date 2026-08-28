@@ -29,6 +29,8 @@ import { LogicRunnerPanel, LogicRunnerPanelRef } from '../preview/LogicRunnerPan
 import { NavigationState } from '../../engine/navigation';
 import { LanguageSelector } from '../runtime/LanguageSelector';
 import { ThemeToggle } from '../ThemeToggle';
+import { PostSolveStudio } from '../learning/PostSolveStudio';
+import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
 
 interface DebuggingViewProps {
   exercise: DebuggingExerciseItem;
@@ -96,6 +98,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   const [showResolution, setShowResolution] = useState(false);
   const [activeTab, setActiveTab] = useState<'reto' | 'resultado' | 'preview'>('reto');
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [postSolveComplete, setPostSolveComplete] = useState(false);
   const previewRef = useRef<PreviewPaneRef | null>(null);
   const logicRunnerRef = useRef<LogicRunnerPanelRef | null>(null);
   const resultSummaryRef = useRef<HTMLDivElement>(null);
@@ -186,7 +189,6 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
       setTimeout(() => resultSummaryRef.current?.focus(), 50);
 
       if (result.allPassed) {
-        markItemCompleted(exercise.id);
         const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         if (!prefersReduced) confetti({ particleCount: 90, spread: 68, origin: { y: 0.62 } });
       }
@@ -202,6 +204,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
     setValidationResult(null);
     setShowResolution(false);
     setActiveTab('reto');
+    setPostSolveComplete(false);
   };
 
   const handleStartFromScratch = () => {
@@ -211,12 +214,12 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
     setShowResolution(false);
     setActiveTab('reto');
     setShowDraftChoice(false);
+    setPostSolveComplete(false);
   };
 
   const handleSkipForNow = () => {
     markChallengeSkipped(exercise.id);
-    if (onNext) onNext();
-    else onBack();
+    handleRoadmap();
   };
 
   const handleViewSolution = () => {
@@ -351,7 +354,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                 Resuelto
               </span>
             )}
-            {onNext && (
+            {onNext && postSolveComplete && (
               navigationState?.isLast ? (
                 <button type="button" onClick={handleRoadmap} className="neu-pill-btn bg-emerald-100" aria-label="Finalizar">
                   <span>Finalizar</span>
@@ -697,10 +700,19 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                               <CheckCircle2 size={16} />
                               Resuelto
                             </div>
-                            <button type="button" onClick={handleNext} className="w-full mt-2 neu-pill-btn btn-brand justify-center" aria-label="Continuar">
-                              <span>Continuar</span>
-                              <ChevronRight size={14} />
-                            </button>
+                            <PostSolveStudio
+                              itemId={exercise.id}
+                              title={exercise.title}
+                              instructions={`${exercise.expectedBehavior} ${exercise.observedBehavior}`}
+                              kind="debugging"
+                              continueLabel="Registrar y continuar"
+                              onComplete={async (readingAnswer, variationAnswer) => {
+                                await recordPostSolveEvidence(exercise.id, readingAnswer, variationAnswer);
+                                markItemCompleted(exercise.id);
+                                setPostSolveComplete(true);
+                                handleNext();
+                              }}
+                            />
                           </div>
                         ) : (
                           <div className="flex gap-2 pt-2">

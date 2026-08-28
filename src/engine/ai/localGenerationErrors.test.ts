@@ -7,6 +7,7 @@ describe('explainLocalGenerationError', () => {
     expect(message).toMatch(/adaptador WebGPU/i);
     expect(message).toMatch(/aceleración gráfica|controlador/i);
     expect(message).not.toMatch(/no available backend/i);
+    expect(explainLocalGenerationError(new Error('Unable to find a compatible GPU. Please check WebGPU support.'))).toMatch(/adaptador WebGPU/i);
   });
 
   it('distingue memoria insuficiente y errores de red', () => {
@@ -16,5 +17,7 @@ describe('explainLocalGenerationError', () => {
 
   it('conserva un mensaje desconocido sin exponer una traza', () => {
     expect(explainLocalGenerationError(new Error('Fallo específico.\nstack interno'))).toBe('Fallo específico.');
+    expect(explainLocalGenerationError({ message: 'Fallo desde otro contexto.' })).toBe('Fallo desde otro contexto.');
+    expect(explainLocalGenerationError({ type: 'error' })).toMatch(/motor WebGPU/i);
   });
 });

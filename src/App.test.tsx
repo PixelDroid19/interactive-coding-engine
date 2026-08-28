@@ -7,6 +7,30 @@ import { loadAppNavigationState, loadUserProgress } from './engine/persistence';
 import { FUNDAMENTOS_COURSE } from './curriculum/fundamentos/course';
 import { AI_ENGINEER_COURSE } from './curriculum/ai-engineer/course';
 import { OPEN_CELLS_COURSE } from './curriculum/open-cells/course';
+import { ThemeProvider } from './themes/ThemeProvider';
+import { createEmptyLearningProfile, recordEvidence } from './learning/mastery';
+import { getCurriculumSkillIndex } from './learning/curriculumEvidence';
+import { LEARNING_PROFILE_STORAGE_KEY } from './learning/localLearningRepository';
+
+const renderApp = () => render(<ThemeProvider><App /></ThemeProvider>);
+
+function seedMastery(lessonIds: string[]) {
+  let profile = createEmptyLearningProfile(1);
+  const targets = Object.values(getCurriculumSkillIndex()).filter((target) => target.courseId === FUNDAMENTOS_COURSE.id && lessonIds.includes(target.lessonId));
+  for (const target of targets) for (const skillId of target.skillIds) {
+    profile = recordEvidence(profile, {
+      id: `seed:${target.itemId}:${skillId}:${target.capability}`,
+      courseId: target.courseId,
+      itemId: target.itemId,
+      skillId,
+      capability: target.capability,
+      result: 'success',
+      source: target.source,
+      timestamp: 1,
+    });
+  }
+  localStorage.setItem(LEARNING_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+}
 
 describe('App navigation persistence', () => {
   beforeEach(() => {
@@ -18,14 +42,14 @@ describe('App navigation persistence', () => {
   });
 
   it('inicia toda la experiencia en modo oscuro', () => {
-    render(<App />);
+    renderApp();
 
     expect(document.documentElement.classList.contains('dark')).toBe(true);
     expect(document.documentElement.style.colorScheme).toBe('dark');
   });
 
   it('registra el curso completo de AI Engineer y abre su primera clase', () => {
-    render(<App />);
+    renderApp();
 
     expect(screen.getByRole('button', { name: `Ver recorrido: ${AI_ENGINEER_COURSE.title}` })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: `Ver recorrido: ${AI_ENGINEER_COURSE.title}` }));
@@ -38,10 +62,11 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('group', { name: 'Lenguaje del ejercicio' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Python' })).toBeTruthy();
     expect(screen.getByText('Clase visual guiada')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Abrir tutor de IA' })).toBeNull();
   });
 
   it('mantiene Open Cells como un curso independiente con su propio recorrido', () => {
-    render(<App />);
+    renderApp();
     expect(screen.getByRole('button', { name: `Ver recorrido: ${OPEN_CELLS_COURSE.title}` })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: `Ver recorrido: ${OPEN_CELLS_COURSE.title}` }));
     expect(screen.getByRole('heading', { name: OPEN_CELLS_COURSE.title })).toBeTruthy();
@@ -52,31 +77,31 @@ describe('App navigation persistence', () => {
     expect(screen.getByText(new RegExp(`68 lecciones · ${practiceCount} prácticas`))).toBeTruthy();
     expect(screen.getByRole('button', { name: /^6\. Crear tu primer componente Cells/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^46\. onPageLeave y cleanup/ })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^1\. Qué añade Cells sobre Lit/ }));
+    expect(screen.getByRole('button', { name: 'Abrir tutor de IA' })).toBeTruthy();
   });
 
-  it('aplica los recortes augmented-ui solo mientras el tema Cyber está activo', async () => {
-    render(<App />);
+  it('cambia el tema de forma declarativa sin dejar bordes cyber en el modo normal', async () => {
+    renderApp();
 
     const icon = document.querySelector('.course-card__icon');
     expect(icon?.hasAttribute('data-augmented-ui')).toBe(false);
+    expect(document.documentElement.dataset.theme).toBe('normal');
 
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar a tema cyberpunk' }));
-    await vi.waitFor(() => expect(icon?.getAttribute('data-augmented-ui')).toContain('hud-icon'));
-
-    const detachedCyberBorder = document.createElement('div');
-    detachedCyberBorder.setAttribute('data-augmented-ui', 'hud-orphan border');
-    detachedCyberBorder.setAttribute('data-augmented-ui-reset', '');
-    document.body.append(detachedCyberBorder);
+    await vi.waitFor(() => expect(document.documentElement.dataset.theme).toBe('cyber'));
+    expect(document.documentElement.classList.contains('hud')).toBe(true);
+    expect(icon?.hasAttribute('data-augmented-ui')).toBe(false);
 
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar a tema por defecto' }));
-    await vi.waitFor(() => expect(icon?.hasAttribute('data-augmented-ui')).toBe(false));
-    expect(detachedCyberBorder.hasAttribute('data-augmented-ui')).toBe(false);
-    expect(detachedCyberBorder.hasAttribute('data-augmented-ui-reset')).toBe(false);
+    await vi.waitFor(() => expect(document.documentElement.dataset.theme).toBe('normal'));
+    expect(document.documentElement.classList.contains('hud')).toBe(false);
+    expect(document.querySelector('[data-augmented-ui]')).toBeNull();
   });
 
   it('abre un curso desde el inicio del roadmap aunque el catálogo estuviera desplazado', () => {
     const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
-    render(<App />);
+    renderApp();
 
     fireEvent.click(screen.getByRole('button', { name: `Ver recorrido: ${AI_ENGINEER_COURSE.title}` }));
 
@@ -84,28 +109,32 @@ describe('App navigation persistence', () => {
   });
 
   it('restaura el Playground después de recargar la aplicación', () => {
-    const firstRender = render(<App />);
+    const firstRender = renderApp();
 
     fireEvent.click(screen.getByRole('button', { name: 'Playground' }));
     expect(screen.getByText('Playground independiente')).toBeTruthy();
     expect(loadAppNavigationState()).toEqual({ view: 'playground' });
 
     firstRender.unmount();
-    render(<App />);
+    renderApp();
 
     expect(screen.getByText('Playground independiente')).toBeTruthy();
   });
 
-  it('mantiene una lección intermedia y permite recorrer clase, lectura, depuración y módulo siguiente', async () => {
+  it('mantiene una lección intermedia, recorre sus actividades y no salta la depuración', async () => {
     const lesson02 = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.id === 'fundamentos-03')!;
     const reading02 = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.id === 'fundamentos-03-lectura')!;
     const reasoning02 = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.id === 'fundamentos-03-reasoning')!;
     const debug02 = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.id === 'fundamentos-03-debug')!;
-    const lesson03 = FUNDAMENTOS_COURSE.modules[1].items.find((item) => item.id === 'fundamentos-04')!;
-    const firstRender = render(<App />);
-
-    fireEvent.click(screen.getByRole('button', { name: `Ver recorrido: ${FUNDAMENTOS_COURSE.title}` }));
-    fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${lesson02.title}`) }));
+    seedMastery(['fundamentos-01', 'fundamentos-02']);
+    localStorage.setItem('aula_app_navigation_v1', JSON.stringify({
+      view: 'scrim',
+      courseId: FUNDAMENTOS_COURSE.id,
+      moduleId: FUNDAMENTOS_COURSE.modules[0].id,
+      itemId: lesson02.id,
+      timestampMs: 0,
+    }));
+    const firstRender = renderApp();
     expect(screen.getByRole('heading', { name: lesson02.title })).toBeTruthy();
     expect(loadAppNavigationState()).toMatchObject({
       view: 'scrim',
@@ -114,32 +143,37 @@ describe('App navigation persistence', () => {
     });
 
     firstRender.unmount();
-    render(<App />);
+    renderApp();
     expect(screen.getByRole('heading', { name: lesson02.title })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
-    const readingHeading = screen.getByRole('heading', { name: reading02.title });
+    const readingHeading = await screen.findByRole('heading', { name: reading02.title });
     expect(readingHeading).toBeTruthy();
-    expect(document.activeElement).toBe(readingHeading);
+    await vi.waitFor(() => expect(document.activeElement).toBe(readingHeading));
     const readingContent = screen.getByRole('main', { name: 'Contenido de la lectura' });
     expect(readingContent.className).toContain('overflow-y-auto');
     expect(readingContent.className).toContain('select-text');
     expect(loadAppNavigationState()).toMatchObject({ view: 'reading', itemId: reading02.id });
 
     fireEvent.click(screen.getByRole('button', { name: 'Ir a la práctica' }));
-    expect(screen.getByRole('heading', { name: reasoning02.title })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: reasoning02.title })).toBeTruthy();
     expect(loadAppNavigationState()).toMatchObject({ view: 'reasoning', itemId: reasoning02.id });
     fireEvent.input(screen.getByRole('textbox', { name: 'let intentos = 0, intentos' }), { target: { value: '0' } });
     fireEvent.input(screen.getByRole('textbox', { name: 'intentos = 1, intentos' }), { target: { value: '1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Comprobar mi razonamiento' }));
     expect(screen.getByRole('heading', { name: 'Resuelto' })).toBeTruthy();
+    const firstReflections = Array.from(document.querySelectorAll<HTMLTextAreaElement>('.post-solve-studio textarea'));
+    fireEvent.input(firstReflections[0], { target: { value: 'Primero entra el valor, luego cambia el estado y al final puedo observar el nuevo resultado.' } });
+    fireEvent.input(firstReflections[1], { target: { value: 'Probaría el límite cero y conservaría el caso uno para comprobar que no hay regresión.' } });
+    fireEvent.click(screen.getByRole('button', { name: /Registrar comprensión/ }));
+    await vi.waitFor(() => expect((screen.getByRole('button', { name: /Siguiente/ }) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/ }));
-    expect(screen.getByText(debug02.title)).toBeTruthy();
+    expect(await screen.findByText(debug02.title)).toBeTruthy();
     expect(loadAppNavigationState()).toMatchObject({ view: 'debugging', itemId: debug02.id });
     expect(loadUserProgress().completedItemIds).toContain(reading02.id);
 
     cleanup();
-    render(<App />);
+    renderApp();
     expect(screen.getByText(debug02.title)).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Anterior' }));
@@ -148,35 +182,38 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('heading', { name: reading02.title })).toBeTruthy();
 
     fireEvent.click(screen.getByRole('button', { name: 'Ir a la práctica' }));
+    await screen.findByRole('heading', { name: reasoning02.title });
     fireEvent.input(screen.getByRole('textbox', { name: 'let intentos = 0, intentos' }), { target: { value: '0' } });
     fireEvent.input(screen.getByRole('textbox', { name: 'intentos = 1, intentos' }), { target: { value: '1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Comprobar mi razonamiento' }));
+    const reflections = Array.from(document.querySelectorAll<HTMLTextAreaElement>('.post-solve-studio textarea'));
+    fireEvent.input(reflections[0], { target: { value: 'Primero entra el valor, luego cambia el estado y al final puedo observar el nuevo resultado.' } });
+    fireEvent.input(reflections[1], { target: { value: 'Probaría el límite cero y conservaría el caso uno para comprobar que no hay regresión.' } });
+    fireEvent.click(screen.getByRole('button', { name: /Registrar comprensión/ }));
+    await vi.waitFor(() => expect((screen.getByRole('button', { name: /Siguiente/ }) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
-    expect(screen.getByRole('heading', { name: lesson03.title })).toBeTruthy();
-    expect(loadAppNavigationState()).toMatchObject({
-      view: 'scrim',
-      moduleId: FUNDAMENTOS_COURSE.modules[1].id,
-      itemId: lesson03.id,
-    });
+    await screen.findByText(debug02.title);
+    expect(screen.getByText(debug02.title)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Siguiente' })).toBeNull();
+    expect(loadAppNavigationState()).toMatchObject({ view: 'debugging', itemId: debug02.id });
   });
 
   it('al salir del estudio conserva el roadmap después de recargar', () => {
     localStorage.setItem('aula_app_navigation_v1', JSON.stringify({ view: 'studio' }));
-    const firstRender = render(<App />);
+    const firstRender = renderApp();
 
     fireEvent.click(screen.getByRole('button', { name: 'Salir del estudio' }));
     expect(loadAppNavigationState()).toEqual({ view: 'home', courseId: FUNDAMENTOS_COURSE.id });
 
     firstRender.unmount();
-    render(<App />);
+    renderApp();
 
     expect(screen.getByRole('heading', { name: 'Fundamentos de programación' })).toBeTruthy();
   });
 
   it('conserva en el roadmap una clase publicada después de recargar', async () => {
     localStorage.setItem('aula_app_navigation_v1', JSON.stringify({ view: 'studio' }));
-    const firstRender = render(<App />);
+    const firstRender = renderApp();
 
     fireEvent.click(screen.getByRole('button', { name: 'Usar plantilla HTML, CSS y JavaScript' }));
     fireEvent.click(screen.getByRole('button', { name: 'Desactivar micrófono' }));
@@ -186,13 +223,13 @@ describe('App navigation persistence', () => {
 
     expect(await screen.findByRole('button', { name: /Nueva lección/ })).toBeTruthy();
     firstRender.unmount();
-    render(<App />);
+    renderApp();
 
     fireEvent.click(await screen.findByRole('button', { name: /Nueva lección/ }));
     expect(await screen.findByRole('heading', { name: 'Nueva lección' })).toBeTruthy();
 
     cleanup();
-    render(<App />);
+    renderApp();
 
     expect(screen.queryByRole('heading', { name: '1. Tu primer programa' })).toBeNull();
     expect(screen.getByText('Cargando la clase guardada…')).toBeTruthy();
@@ -241,7 +278,7 @@ describe('App navigation persistence', () => {
       timestampMs: 0,
     }));
 
-    render(<App />);
+    renderApp();
 
     expect((await screen.findByRole('alert')).textContent).toContain('no se puede recuperar');
     expect(screen.queryByRole('button', { name: 'Empezar la clase' })).toBeNull();

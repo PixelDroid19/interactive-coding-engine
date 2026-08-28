@@ -1,5 +1,7 @@
+// @vitest-environment happy-dom
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { Timeline } from './Timeline';
 import type { ScrimChallenge } from '../../types/scrim';
@@ -60,6 +62,28 @@ describe('Timeline', () => {
 
     expect(markup).toContain('class="player-bar-hud-surface"');
     expect(markup).toContain('aria-hidden="true"');
+  });
+
+  it('eleva la barra mientras el menú de velocidad está abierto', () => {
+    render(
+      <Timeline
+        currentTimeMs={5000}
+        durationMs={120000}
+        isPlaying={false}
+        playbackRate={1}
+        onPlay={() => undefined}
+        onPause={() => undefined}
+        onSeek={() => undefined}
+        onRateChange={() => undefined}
+      />,
+    );
+
+    const speed = screen.getByRole('button', { name: 'Velocidad actual 1x, cambiar velocidad' });
+    fireEvent.click(speed);
+
+    expect(speed.getAttribute('aria-expanded')).toBe('true');
+    expect(speed.closest('footer')?.className).toContain('is-speed-menu-open');
+    expect(screen.getByRole('button', { name: 'Velocidad 1.5 por' })).toBeTruthy();
   });
 
   it('elige el reto más cercano al tiempo del cursor', async () => {

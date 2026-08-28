@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import React from 'react';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReasoningExerciseItem } from '../../types/curriculum';
 import { OPEN_CELLS_COURSE } from '../../curriculum/open-cells/course';
@@ -30,7 +30,7 @@ describe('ReasoningPracticeView', () => {
   beforeEach(() => localStorage.clear());
   afterEach(cleanup);
 
-  it('exige construir el modelo correcto antes de habilitar Siguiente', () => {
+  it('exige construir y explicar el modelo antes de habilitar Siguiente', async () => {
     const onNext = vi.fn();
     const onCompleted = vi.fn();
     render(<ReasoningPracticeView item={item} onBack={() => {}} onNext={onNext} onCompleted={onCompleted} />);
@@ -45,7 +45,12 @@ describe('ReasoningPracticeView', () => {
 
     expect(screen.getByRole('heading', { name: 'Resuelto' })).toBeTruthy();
     expect(onCompleted).toHaveBeenCalledOnce();
-    expect((screen.getByRole('button', { name: /Siguiente/ }) as HTMLButtonElement).disabled).toBe(false);
+    expect((screen.getByRole('button', { name: /Siguiente/ }) as HTMLButtonElement).disabled).toBe(true);
+    const reflections = screen.getAllByRole('textbox');
+    fireEvent.change(reflections[0], { target: { value: 'Primero entra el nombre, después se forma el saludo y finalmente se muestra la salida.' } });
+    fireEvent.change(reflections[1], { target: { value: 'Probaría con un nombre vacío y con Ada para conservar el caso anterior.' } });
+    fireEvent.click(screen.getByRole('button', { name: /Registrar comprensión/ }));
+    await waitFor(() => expect((screen.getByRole('button', { name: /Siguiente/ }) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/ }));
     expect(onNext).toHaveBeenCalledOnce();
   });

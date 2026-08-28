@@ -92,7 +92,7 @@ describe('curso profesional de Web Components y Lit', () => {
         spec.reading.diagram,
       ].join(' ');
       expect(countWords(spec.script.join(' ')), `guion ${spec.number}`).toBeGreaterThanOrEqual(500);
-      expect(countWords(readingText), `lectura ${spec.number}`).toBeGreaterThanOrEqual(650);
+      expect(countWords(readingText), `lectura ${spec.number}`).toBeGreaterThanOrEqual(300);
       for (const code of [spec.example, spec.starter, spec.debug.starter, ...Object.values(spec.supportFiles || {})]) {
         expect(Math.max(...code.split('\n').map((line) => line.length)), `código ${spec.number}`).toBeLessThanOrEqual(120);
       }

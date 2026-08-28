@@ -62,6 +62,12 @@ const READINGS: ReadingItem[] = [
         content: 'Una variable asocia un nombre con un valor para poder volver a usarlo. Usa nombres que describan el dato. const es la opción habitual cuando no reasignas el valor; let se reserva para aquello que sí cambia durante el programa.',
         example: 'const nombre = "Ana";\nlet intentos = 0;\nintentos = 1;',
         exampleCaption: 'nombre conserva su valor; intentos se reasigna y pasa de cero a uno.',
+        diagram: {
+          src: '/diagrams/variable.html',
+          alt: 'Relación entre el nombre de una variable y su valor administrado por JavaScript',
+          caption: 'Empieza en el nombre edad y sigue la asociación hacia el valor. La nota inferior separa este modelo útil de los detalles internos de memoria.',
+          readingQuestion: 'Si edad pasa de 25 a 26, ¿qué parte del modelo cambia y qué parte sigue siendo el nombre que usa el programa?',
+        },
       },
       {
         title: 'Texto, números y booleanos',
@@ -113,6 +119,12 @@ const READINGS: ReadingItem[] = [
         title: 'Una pregunta, dos caminos',
         content: 'if ejecuta su bloque cuando la condición es true. else cubre el caso contrario. Cada camino debe representar una respuesta completa.',
         example: 'if (edad >= 18) {\n  mensaje = "Puede entrar";\n} else {\n  mensaje = "Todavía no";\n}',
+        diagram: {
+          src: '/diagrams/conditional.html',
+          alt: 'Diagrama de una condición con caminos sí y no',
+          caption: 'Lee desde el dato de entrada hasta la pregunta. Solo continúa por la rama cuya etiqueta coincide con el resultado booleano.',
+          readingQuestion: '¿Qué camino recorre el valor 17 y qué resultado observable debería producir?',
+        },
       },
       {
         title: 'De lo específico a lo general',
@@ -157,6 +169,12 @@ const READINGS: ReadingItem[] = [
         title: 'Definir no es llamar',
         content: 'La definición explica qué hará la función. La llamada es el momento en que el trabajo ocurre.',
         example: 'function doble(numero) {\n  return numero * 2;\n}\n\ndoble(4);',
+        diagram: {
+          src: '/diagrams/function.html',
+          alt: 'Recorrido de una llamada de función desde el argumento hasta el valor devuelto',
+          caption: 'Sigue la llamada doble(4): el argumento ocupa el parámetro local, la función transforma ese dato y return entrega el resultado.',
+          readingQuestion: 'Si la llamada cambia a doble(7), ¿qué nodos cambian de valor y qué contrato permanece igual?',
+        },
       },
       {
         title: 'Parámetros y resultado',

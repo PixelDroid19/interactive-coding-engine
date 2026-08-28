@@ -62,8 +62,15 @@ describe('SoloProjectView', () => {
     expect(screen.getByText(/Falta revisar la lista de requisitos/i)).toBeTruthy();
     expect(screen.queryByText('Completado')).toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: /Contrato.*Devuelve el valor esperado/i }));
+    const requirement = screen.getByRole('button', { name: /Contrato.*Devuelve el valor esperado/i });
+    fireEvent.click(requirement);
+    await waitFor(() => expect(requirement.getAttribute('aria-pressed')).toBe('true'));
     fireEvent.click(screen.getByRole('button', { name: 'Comprobar proyecto' }));
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Comprueba tu dominio' })).toBeTruthy());
+    const reflections = Array.from(document.querySelectorAll<HTMLTextAreaElement>('.post-solve-studio textarea'));
+    fireEvent.input(reflections[0], { target: { value: 'La función recibe una entrada, lee su valor y devuelve el doble sin depender de un ejemplo concreto.' } });
+    fireEvent.input(reflections[1], { target: { value: 'Probaría un valor negativo y el cero para comprobar que la misma regla sigue funcionando.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Registrar dominio del proyecto' }));
     await waitFor(() => expect(screen.getByText('Completado')).toBeTruthy());
   });
 });

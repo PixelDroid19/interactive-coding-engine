@@ -4,6 +4,8 @@ import { ChallengeValidationResult } from '../../types/runtime';
 import { CheckCircle2, XCircle, Lightbulb, Play, RotateCcw, X, ChevronDown, ChevronUp, Eye, BookOpen, Undo2, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { markChallengeSolutionViewed, markChallengeSkipped } from '../../engine/persistence';
+import { PostSolveStudio } from '../learning/PostSolveStudio';
+import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
 
 interface ChallengeDrawerProps {
   challenge: ScrimChallenge;
@@ -510,14 +512,17 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
               {/* Footer Actions */}
               <div className="pt-2 border-t border-zinc-800 flex flex-col gap-2">
                 {validationResult?.allPassed ? (
-                  <button
-                    onClick={onContinue}
-                    className="w-full flex items-center justify-center gap-1.5 rounded bg-emerald-600 hover:bg-emerald-500 py-2 text-white font-bold text-xs shadow-sm transition-colors"
-                    aria-label="Seguir la lección"
-                  >
-                    <Check className="h-3.5 w-3.5" />
-                    <span>Seguir la lección</span>
-                  </button>
+                  <PostSolveStudio
+                    itemId={challenge.id}
+                    title={challenge.title}
+                    instructions={challenge.instructions}
+                    kind="challenge"
+                    continueLabel="Registrar y seguir la lección"
+                    onComplete={async (readingAnswer, variationAnswer) => {
+                      await recordPostSolveEvidence(challenge.id, readingAnswer, variationAnswer);
+                      onContinue();
+                    }}
+                  />
                 ) : (
                   <div className="flex items-center gap-2">
                     <button

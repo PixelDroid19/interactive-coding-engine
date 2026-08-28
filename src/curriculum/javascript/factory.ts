@@ -5,6 +5,22 @@ import { JavaScriptLessonSpec } from './types';
 import { JAVASCRIPT_AUDIO_BY_LESSON } from './audioManifest';
 import { withGuidedChallenges } from '../challengeGuidance';
 
+function readingDiagram(number: number) {
+  if (number === 18) return {
+    src: '/diagrams/eventloop.html',
+    alt: 'Secuencia entre tarea actual, temporizador y siguiente turno del bucle de eventos',
+    caption: 'Lee cada carril de izquierda a derecha. La tarea actual termina antes de que la callback del temporizador pase al siguiente turno.',
+    readingQuestion: '¿Por qué B aparece después de C aunque el retraso solicitado sea cero?',
+  };
+  if (number === 14) return {
+    src: '/diagrams/domevents.html',
+    alt: 'Flujo desde un evento del navegador hasta la actualización del DOM',
+    caption: 'Sigue el clic hasta el manejador; después separa la modificación del estado de la actualización visual.',
+    readingQuestion: '¿Qué problema aparece si lees el valor del input antes de que ocurra el evento?',
+  };
+  return undefined;
+}
+
 const BASE_HTML = (title: string, moduleScript = false) => `<!doctype html>
 <html lang="es">
   <head>
@@ -145,7 +161,7 @@ export function buildReading(spec: JavaScriptLessonSpec): ReadingItem {
     id: `${id}-lectura`, relatedLessonId: id, practiceItemId: `${id}-debug`, title: `Lectura: ${spec.title}`, type: 'reading', estimatedMinutes: 8,
     description: 'Refuerza el modelo, aprende a consultar documentación y prepárate para practicar.', summary: spec.summary,
     sections: [
-      { title: 'El concepto en palabras sencillas', content: spec.reading.definition },
+      { title: 'El concepto en palabras sencillas', content: spec.reading.definition, diagram: readingDiagram(spec.number) },
       { title: 'Otro ejemplo, paso a paso', content: spec.reading.walkthrough, example: spec.reading.secondExample, exampleCaption: 'Predice el resultado antes de ejecutarlo.' },
       { title: 'Cómo investigarlo por tu cuenta', content: spec.reading.investigation },
       { title: 'Errores comunes', content: spec.reading.commonErrors },

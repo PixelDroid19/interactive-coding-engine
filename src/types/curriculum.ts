@@ -31,6 +31,15 @@ export interface ReadingSection {
   example?: string;
   exampleCaption?: string;
   kind?: 'core' | 'curiosity';
+  diagram?: ReadingDiagram;
+}
+
+export interface ReadingDiagram {
+  src: string;
+  alt: string;
+  caption: string;
+  readingQuestion: string;
+  aspectRatio?: `${number}/${number}`;
 }
 
 export interface ReadingSource {

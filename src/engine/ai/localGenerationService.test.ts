@@ -32,6 +32,13 @@ function harness(options: { cached?: boolean; webGpu?: boolean; output?: string[
       vram_required_MB: 944.62,
       overrides: { context_window_size: 4096 },
     })),
+    getModelRecords: vi.fn(async () => [{
+      model: 'https://huggingface.co/mlc-ai/Qwen2.5-0.5B-Instruct-q4f16_1-MLC',
+      model_id: 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC',
+      model_lib: 'qwen.wasm',
+      vram_required_MB: 944.62,
+      overrides: { context_window_size: 4096 },
+    }]),
   });
   return { service, worker, engine, createEngine };
 }
@@ -48,6 +55,19 @@ describe('LocalGenerationService', () => {
       estimatedVramMB: 944.62,
       contextWindowSize: 4096,
     });
+    expect(createEngine).not.toHaveBeenCalled();
+  });
+
+  it('lista modelos compatibles y consulta su caché sin crear el motor', async () => {
+    const { service, createEngine } = harness({ cached: true });
+
+    await expect(service.listModels()).resolves.toEqual([
+      expect.objectContaining({
+        id: 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC',
+        cached: true,
+        estimatedVramMB: 944.62,
+      }),
+    ]);
     expect(createEngine).not.toHaveBeenCalled();
   });
 

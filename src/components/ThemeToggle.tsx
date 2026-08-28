@@ -1,41 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { Palette, Sparkles, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sparkles, Zap } from 'lucide-react';
+import { applyThemeToDocument, useOptionalTheme } from '../themes/ThemeProvider';
 
 export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
-  const [isHud, setIsHud] = useState(false);
+  const themeContext = useOptionalTheme();
+  const [standaloneTheme, setStandaloneTheme] = useState<'normal' | 'cyber'>(() => document.documentElement.classList.contains('hud') ? 'cyber' : 'normal');
+  const themeId = themeContext?.themeId ?? standaloneTheme;
+  const isHud = themeId === 'cyber';
   const [isGlitching, setIsGlitching] = useState(false);
-
-  useEffect(() => {
-    const check = () => setIsHud(document.documentElement.classList.contains('hud'));
-    check();
-    const obs = new MutationObserver(check);
-    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => obs.disconnect();
-  }, []);
-
-  // Periodic automatic glitch pulse every 3.2 seconds to draw immediate visual attention
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIsGlitching(true);
-      const timer = setTimeout(() => setIsGlitching(false), 450);
-      return () => clearTimeout(timer);
-    }, 3200);
-    return () => clearInterval(interval);
-  }, []);
 
   const toggle = () => {
     setIsGlitching(true);
     setTimeout(() => setIsGlitching(false), 550);
 
-    const next = !isHud;
-    if (next) {
-      document.documentElement.classList.add('hud');
-      try { localStorage.setItem('theme', 'hud'); } catch {}
-    } else {
-      document.documentElement.classList.remove('hud');
-      try { localStorage.setItem('theme', 'default'); } catch {}
+    if (themeContext) themeContext.toggleTheme();
+    else {
+      const next = isHud ? 'normal' : 'cyber';
+      applyThemeToDocument(next);
+      setStandaloneTheme(next);
     }
-    setIsHud(next);
   };
 
   const labelText = isHud ? 'CYBER ✓' : 'CYBER';
@@ -104,4 +87,3 @@ export const ThemeToggle: React.FC<{ compact?: boolean }> = ({ compact = false }
     </button>
   );
 };
-

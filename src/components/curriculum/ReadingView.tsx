@@ -9,6 +9,7 @@ import type { CellsAppPracticeStage, CellsAppProject } from '../../engine/cells/
 import type { CellsComponentPracticeStage } from '../../engine/cells/cellsRecipes';
 import { openCellsArtifactForLesson } from '../../curriculum/open-cells/lessonProjects';
 import { ThemeToggle } from '../ThemeToggle';
+import { LearningDiagram } from './LearningDiagram';
 
 interface ReadingViewProps {
   reading: ReadingItem;
@@ -192,6 +193,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
                             </span>
                           </div>
                           <p className="text-sm sm:text-[15px] leading-relaxed text-zinc-300">{section.content}</p>
+                          {section.diagram && <LearningDiagram diagram={section.diagram} />}
                           {section.example && (
                             <div className="mt-3 overflow-hidden rounded border border-zinc-700 bg-[#0c0e14]">
                               <pre className="whitespace-pre-wrap break-words p-3.5 font-mono text-xs leading-relaxed text-slate-200">{section.example}</pre>

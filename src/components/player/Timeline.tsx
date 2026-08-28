@@ -187,7 +187,7 @@ export const Timeline: React.FC<TimelineProps> = ({
   const availableSpeeds = [0.75, 1, 1.25, 1.5] as const;
 
   return (
-    <footer className="player-bar">
+    <footer className={`player-bar${speedOpen ? ' is-speed-menu-open' : ''}`}>
       <div className="player-bar-hud-surface" aria-hidden="true" />
       {/* LEFT: play + time + chapter (reservado para no saltar) */}
       <div className="player-left">

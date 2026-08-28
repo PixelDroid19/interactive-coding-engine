@@ -55,12 +55,8 @@ export function lesson(input: LessonInput): ComponentCourseLessonSpec {
     .map((step, index) => `${['Primero', 'Después', 'A continuación', 'Por último'][index]}, ${step.charAt(0).toLowerCase()}${step.slice(1)}.`)
     .join(' ');
   const mentalModel = `${input.model} En términos concretos, ${conceptExplanation}. La relación entre ambos conceptos importa más que memorizar sus nombres: uno explica la responsabilidad y el otro permite observar si esa responsabilidad se cumple. Antes de programar, identifica quién recibe la entrada, quién posee el dato, qué momento del ciclo puede cambiarlo y qué salida pública verá otra parte de la aplicación.`;
-  const walkthrough = `${baseWalkthrough} ${orderedSteps} Detente después de cada paso y predice el estado siguiente. Si tu predicción y la vista previa no coinciden, no cambies varias líneas a la vez: localiza la primera transición que dejó de cumplir el contrato. Repite el recorrido con una segunda entrada y con un caso límite; una explicación que solo funciona para el ejemplo feliz todavía está incompleta.`;
   const whenToUse = `${input.whenToUse} La señal más útil para decidir es la frontera: pregunta si ${conceptNames} reducen acoplamiento, hacen visible un ciclo o protegen un contrato que otra pieza realmente consumirá. No introduzcas la abstracción solo porque existe en Lit o en la plataforma. Si una función, una propiedad o HTML semántico resuelven el mismo problema con menos estado y menos ciclo de vida, esa opción más pequeña suele ser preferible. Documenta también el coste: dependencias, limpieza, accesibilidad y pruebas que la decisión añade.`;
   const bestPractices = `${input.bestPractices} Trabaja con una lista de control: define entradas y salidas públicas; asigna un único dueño al estado; conserva identidad estable; limpia listeners, timers y suscripciones; usa semántica nativa antes de ARIA; y prueba el comportamiento desde la API que usaría un consumidor. Incluye como mínimo un valor alternativo, un estado vacío o inválido y una reconexión cuando exista ciclo de vida. Una buena práctica no es estilo personal: debe reducir un fallo concreto o hacer más claro el contrato para otra persona.`;
-  const investigation = `${baseInvestigation} Para investigar ${input.appName}, abre primero la consola y la vista previa, reproduce el fallo sin editar y escribe la diferencia entre lo esperado y lo observado. Después sigue este flujo: ${input.reasoningSteps.join(' → ')}. Comprueba valores y referencias en la frontera, no cada línea interna. En la documentación oficial busca el receptor de la API, sus parámetros, el valor que devuelve, el momento del ciclo donde se permite y si exige limpieza. Formula una sola hipótesis, cambia una causa y vuelve a ejecutar el caso original más una variante.`;
-  const commonErrors = `${input.commonErrors} Estos errores suelen aparecer como síntomas distintos: una vista que no cambia, un evento que no cruza Shadow DOM, una suscripción duplicada o un test que solo acepta una línea exacta. Empieza por clasificar el síntoma como contrato, estado, ciclo, render o recurso externo. Luego busca la primera causa observable; no añadas requestUpdate, setTimeout, reflexión o acceso privado como parche hasta explicar por qué el modelo actual no avisó del cambio. La corrección debe conservar el comportamiento anterior y cubrir el caso que reveló el problema.`;
-  const diagramExplanation = `${diagram}. Lee el diagrama de izquierda a derecha como una secuencia causal, no como una lista de archivos. Cada flecha significa “este paso entrega información o control al siguiente”. Para depurar, marca la última flecha que sí ocurrió y la primera que no. Para diseñar otra aplicación, conserva las responsabilidades de los nodos aunque cambien nombres, datos y aspecto visual.`;
   const demoTransitions = [
     `Vamos con una aplicación distinta antes del reto. En ${input.appName}, sigue la entrada, el cambio y la salida; después señala dónde aparecen ${conceptNames}.`,
     `No leas el ejemplo como una receta. Pausa en cada paso de ${input.appName} y predice qué observará el navegador antes de continuar.`,
@@ -82,6 +78,27 @@ export function lesson(input: LessonInput): ComponentCourseLessonSpec {
     `Construye ${input.appName} sin perseguir líneas exactas. Cualquier solución que cumpla el contrato, los casos límite y la interacción observable es válida.`,
   ];
   const transitionIndex = (input.number - 1) % demoTransitions.length;
+  const readingPracticeNotes = [
+    'Prueba primero el contrato público con una entrada normal y otra incómoda. Si ambas funcionan, recién entonces mejora la implementación.',
+    'Haz el recorrido con teclado y con el componente reconectado. Esas dos pruebas descubren problemas que una captura bonita suele ocultar.',
+    'Deja por escrito quién posee el estado y quién solo lo representa. Esa frase evita muchas mutaciones compartidas.',
+    'Comprueba la salida que vería un consumidor. Un método privado puede cambiar; el contrato observable debe permanecer.',
+    'Antes de añadir una abstracción, intenta describir el problema sin nombrar una API. La solución debería responder a ese problema, no a una moda.',
+  ];
+  const readingDiagnosticNotes = [
+    'Busca la primera diferencia entre lo esperado y lo observado; cualquier línea posterior todavía puede ser una consecuencia.',
+    'Reproduce el fallo dos veces y cambia una sola causa. Si el síntoma cambia como predijiste, la hipótesis ganó evidencia.',
+    'Clasifica el fallo: entrada, estado, ciclo de vida, render o salida pública. Esa clasificación reduce el lugar donde mirar.',
+    'No añadas requestUpdate, setTimeout o acceso privado por reflejo. Primero explica qué notificación o frontera falta.',
+    'Después de corregir, repite el caso original y una variante. El segundo caso protege contra soluciones fijadas al ejemplo.',
+  ];
+  const readingMentalModel = `${input.model} ${conceptExplanation}. Antes de abrir el editor, señala quién recibe la entrada, quién conserva el dato y qué salida pública permitirá comprobar el resultado.`;
+  const readingWalkthrough = `${baseWalkthrough} ${orderedSteps} Pausa antes de ejecutar y predice el estado final. Luego cambia una entrada y recorre de nuevo solo las transiciones afectadas.`;
+  const readingWhenToUse = `${input.whenToUse} Úsalo cuando la frontera haga más claro el contrato o el ciclo de vida. Si HTML semántico, una propiedad o una función resuelven el problema con menos estado, elige la opción pequeña.`;
+  const readingBestPractices = `${input.bestPractices} ${readingPracticeNotes[(input.number - 1) % readingPracticeNotes.length]}`;
+  const readingInvestigation = `${baseInvestigation} Para este caso sigue ${input.reasoningSteps.join(' → ')} y anota el último paso correcto. Consulta en la fuente oficial el receptor, los parámetros, el retorno y el momento del ciclo.`;
+  const readingCommonErrors = `${input.commonErrors} ${readingDiagnosticNotes[(input.number - 1) % readingDiagnosticNotes.length]}`;
+  const readingDiagram = `${diagram}. Cada flecha significa que un paso entrega datos o control al siguiente. Marca la última flecha que sí ocurrió y la primera que no.`;
   return {
     ...input,
     script: [
@@ -93,18 +110,18 @@ export function lesson(input: LessonInput): ComponentCourseLessonSpec {
       `${practiceTransitions[transitionIndex]} Tu entrega debe cubrir el camino principal, un caso alternativo y una explicación breve del flujo. Si una prueba falla aunque la interfaz parezca correcta, compara el contrato y el dato recibido; no copies una línea para satisfacer el patrón.`,
     ],
     reading: {
-      definition: `${input.summary} Esta lectura conecta el concepto con decisiones de arquitectura, ciclo de vida, accesibilidad y pruebas para que puedas transferirlo a una aplicación distinta.`,
-      mentalModel,
+      definition: `${input.summary} La meta de esta lectura es que puedas reconocer la decisión en otro componente y justificarla sin depender del ejemplo de la clase.`,
+      mentalModel: readingMentalModel,
       secondExample: input.secondExample ?? input.example,
-      walkthrough,
-      whenToUse,
-      bestPractices,
-      investigation,
-      commonErrors,
+      walkthrough: readingWalkthrough,
+      whenToUse: readingWhenToUse,
+      bestPractices: readingBestPractices,
+      investigation: readingInvestigation,
+      commonErrors: readingCommonErrors,
       keyPoints,
       questions,
       transfer: input.transfer,
-      diagram: diagramExplanation,
+      diagram: readingDiagram,
       sources: input.sources,
     },
   };

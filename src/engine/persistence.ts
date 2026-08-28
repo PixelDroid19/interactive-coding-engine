@@ -411,6 +411,7 @@ export function markItemCompleted(itemId: string): UserProgressRecord {
   if (!current.completedItemIds.includes(itemId)) {
     current.completedItemIds.push(itemId);
     saveUserProgress(current);
+    void import('../learning/curriculumEvidence').then(({ curriculumEvidence }) => curriculumEvidence.record(itemId));
   }
   return current;
 }
@@ -423,6 +424,7 @@ export function markChallengeCompleted(challengeId: string): UserProgressRecord 
   if (!current.completedChallenges.includes(challengeId)) {
     current.completedChallenges.push(challengeId);
     saveUserProgress(current);
+    void import('../learning/curriculumEvidence').then(({ curriculumEvidence }) => curriculumEvidence.record(challengeId));
   }
   // Also update detailed state
   setChallengeState(challengeId, 'completed');
@@ -466,12 +468,14 @@ export function markChallengeSkipped(challengeId: string): void {
   const existing = getChallengeState(challengeId);
   if (existing?.status === 'completed') return;
   setChallengeState(challengeId, 'skipped');
+  void import('../learning/curriculumEvidence').then(({ curriculumEvidence }) => curriculumEvidence.record(challengeId, 'failure'));
 }
 
 export function markChallengeSolutionViewed(challengeId: string): void {
   const existing = getChallengeState(challengeId);
   if (existing?.status === 'completed') return;
   setChallengeState(challengeId, 'solutionViewed');
+  void import('../learning/curriculumEvidence').then(({ curriculumEvidence }) => curriculumEvidence.record(challengeId, 'failure'));
 }
 
 export function clearChallengeState(challengeId: string): void {

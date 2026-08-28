@@ -18,6 +18,13 @@ import { PlaygroundView } from './components/playground/PlaygroundView';
 import { CreatorStudio } from './components/studio/CreatorStudio';
 import { ReasoningPracticeView } from './components/reasoning/ReasoningPracticeView';
 import { CourseCatalog } from './components/curriculum/CourseCatalog';
+import { SocraticTutor } from './components/tutor/SocraticTutor';
+import type { TutorActivityContext } from './learning/tutor/tutorContext';
+import { createEmptyLearningProfile } from './learning/mastery';
+import type { LearningProfile } from './learning/types';
+import { getItemReadiness, type ItemReadiness } from './learning/unlockPolicy';
+import { getCurriculumSkillIndex, loadLearningProfile } from './learning/curriculumEvidence';
+import { X } from 'lucide-react';
 
 type AppView = 'catalog' | 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'reasoning' | 'playground' | 'studio';
 
@@ -127,6 +134,37 @@ function appendPublishedLesson(course: Course, lesson: ScrimLessonData): Course 
   return { ...course, modules };
 }
 
+function buildTutorActivity(
+  course: Course,
+  item: CurriculumItem | null,
+  scrims: Record<string, ScrimLessonData>,
+): TutorActivityContext | null {
+  if (!item) return null;
+  const relatedLessonId = item.type === 'scrim'
+    ? item.scrimDataId
+    : 'relatedLessonId' in item
+      ? item.relatedLessonId
+      : undefined;
+  const lesson = relatedLessonId ? scrims[relatedLessonId] : undefined;
+  const description = item.description
+    || (item.type === 'reading' ? item.summary : undefined)
+    || (item.type === 'debugging' ? `Esperado: ${item.expectedBehavior}. Ahora ocurre: ${item.observedBehavior}.` : undefined)
+    || (item.type === 'solo-project' ? item.brief : undefined)
+    || lesson?.description;
+  return {
+    courseId: course.id,
+    courseTitle: course.title,
+    itemId: item.id,
+    itemTitle: item.title,
+    itemType: item.type,
+    description,
+    mentalModel: lesson?.mentalModel,
+    skillsRequired: lesson?.skillsRequired,
+    skillsIntroduced: lesson?.skillsIntroduced,
+    commonMistakes: lesson?.commonMistakes,
+  };
+}
+
 export default function App() {
   const [initialCourses] = useState(getInitialCourses);
   const [initialCourse] = useState(() => chooseInitialCourse(initialCourses));
@@ -141,104 +179,21 @@ export default function App() {
   const [customScrimsStatus, setCustomScrimsStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [customScrimsError, setCustomScrimsError] = useState('');
   const [progress, setProgress] = useState<UserProgressRecord>(() => loadUserProgress());
+  const [learningProfile, setLearningProfile] = useState<LearningProfile>(() => createEmptyLearningProfile());
   const [scrimInitialTimeMs, setScrimInitialTimeMs] = useState(initialAppState.timestampMs);
   const [playgroundReturnView, setPlaygroundReturnView] = useState<'catalog' | 'home'>(initialAppState.view === 'playground' ? 'catalog' : 'home');
-
-  useEffect(() => {
-    document.documentElement.classList.add('dark');
-    document.documentElement.style.colorScheme = 'dark';
-    // HUD/Cyber theme — usa localStorage (default es tema estándar a menos que haya sido activado)
-    const params = new URLSearchParams(window.location.search);
-    const themeParam = params.get('theme');
-    const hudParam = themeParam === 'hud' || params.get('hud') === '1';
-    const defaultParam = themeParam === 'default' || themeParam === 'paper' || themeParam === 'classic';
-
-    if (hudParam) {
-      try { localStorage.setItem('theme', 'hud'); } catch {}
-    } else if (defaultParam) {
-      try { localStorage.setItem('theme', 'default'); } catch {}
-    }
-
-    const hudStored = (() => {
-      try {
-        return localStorage.getItem('theme') === 'hud';
-      } catch {
-        return false;
-      }
-    })();
-
-    const applyHudAugs = () => {
-      const isHud = document.documentElement.classList.contains('hud');
-      if (!isHud) {
-        document.querySelectorAll('[data-augmented-ui], [data-augmented-ui-reset]').forEach((el) => {
-          el.removeAttribute('data-augmented-ui');
-          el.removeAttribute('data-augmented-ui-reset');
-        });
-        return;
-      }
-      const map: Array<[string, string, boolean?]> = [
-        ['.editor-window-wrapper', 'hud-editor tl-clip tr-clip br-clip bl-clip border inlay'],
-        ['.browser-window', 'hud-browser tl-clip tr-clip br-clip bl-clip border inlay'],
-        ['.files-sidebar', 'hud-sidebar tl-clip br-clip bl-clip border inlay'],
-        ['.player-bar-hud-surface', 'hud-player tl-clip tr-clip border inlay'],
-        ['.caption-chip', 'hud-narration tl-clip tr-clip br-clip bl-clip border inlay', true],
-        ['.window-topbar .window-titlebar-left > button:first-child', 'hud-roadmap tr-clip bl-clip border inlay', true],
-        ['.window-topbar .window-titlebar-left > button:nth-child(2)', 'hud-prev tl-clip br-clip border inlay', true],
-        ['.window-topbar .btn-explain', 'hud-explain tr-clip bl-clip border inlay', true],
-        ['.window-topbar button[aria-label*="flotante" i], .window-topbar button[aria-label*="lado" i]', 'hud-floating tl-clip br-clip border inlay', true],
-        ['.window-topbar .btn-next-lesson, .window-topbar button[aria-label="Siguiente"]', 'hud-next tl-clip br-clip border inlay', true],
-        ['.window-topbar .neu-pill-btn:not(:first-child):not(.btn-explain):not(.btn-next-lesson)', 'hud-action tl-clip br-clip border inlay', true],
-        ['.file-item-btn', 'hud-file tl-clip br-clip border inlay', true],
-        ['.tab-btn', 'hud-tab tl-clip tr-clip border inlay', true],
-        ['.browser-url-box', 'hud-url tl-clip br-clip border inlay', true],
-        ['button[aria-label="Abrir conceptos"]', 'hud-concepts tl-clip tr-clip border inlay', true],
-        ['.console-trigger-btn', 'hud-console br-clip border inlay', true],
-        ['.editor-action-btn, .round-icon-btn', 'hud-control tl-clip br-clip border inlay', true],
-        ['.play-main-btn', 'hud-play tl-clip br-clip border inlay', true],
-        ['.logic-runner-panel, .modal-dialog, [role="dialog"] > div', 'hud-panel tl-clip tr-clip br-clip bl-clip border inlay'],
-        ['.modal-dialog button.btn-brand, [role="dialog"] button.btn-brand', 'hud-primary tl-clip br-clip border inlay', true],
-        ['.modal-dialog button.neu-pill-btn:not(.btn-brand), [role="dialog"] button.neu-pill-btn:not(.btn-brand)', 'hud-action tl-clip br-clip border inlay', true],
-        ['.course-card', 'hud-card tl-clip br-clip border inlay'],
-        ['.course-card__icon', 'hud-icon tr-clip bl-clip border inlay', true],
-        ['.course-card > button', 'hud-primary tl-clip br-clip border inlay', true],
-        ['.rm-hero', 'hud-hero tl-clip tr-clip br-clip bl-clip border inlay'],
-        ['.reasoning-card', 'hud-panel tl-clip tr-clip br-clip bl-clip border inlay'],
-        ['.reasoning-hints', 'hud-narration tl-clip tr-clip br-clip bl-clip border inlay'],
-        ['.cells-lab', 'tl-clip tr-clip br-clip bl-clip border inlay'],
-        ['.cells-lab__actions button, .cells-lab__tab-btn, .cells-lab__mode-tabs button', 'hud-action tl-clip br-clip border inlay', true],
-        ['.cells-lab__coverage, .cells-lab__terminal, .cells-lab__event-inspector', 'hud-panel tl-clip tr-clip br-clip bl-clip border inlay'],
-      ];
-      map.forEach(([sel, aug, reset]) => {
-        document.querySelectorAll(sel).forEach((el) => {
-          el.setAttribute('data-augmented-ui', aug);
-          if (reset) el.setAttribute('data-augmented-ui-reset', '');
-        });
-      });
-    };
-
-    if (hudParam || (!defaultParam && hudStored)) {
-      document.documentElement.classList.add('hud');
-    } else {
-      document.documentElement.classList.remove('hud');
-    }
-    applyHudAugs();
-    // Observar cambios de clase hud para aplicar/quitar augs
-    const mo = new MutationObserver(applyHudAugs);
-    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    // Aplicar augs también en mutaciones del DOM (navegación)
-    const domMo = new MutationObserver(applyHudAugs);
-    domMo.observe(document.body, { childList: true, subtree: true });
-    return () => {
-      mo.disconnect();
-      domMo.disconnect();
-    };
-  }, []);
+  const [navigationBlocker, setNavigationBlocker] = useState<ItemReadiness | null>(null);
 
   // Sync custom scrims and progress from storage on mount
   useEffect(() => {
     let isMounted = true;
     const savedProgress = loadUserProgress();
     setProgress(savedProgress);
+    void import('./learning/curriculumEvidence').then(async ({ curriculumEvidence }) => {
+      if (!isMounted) return;
+      const migrated = await curriculumEvidence.migrate(savedProgress);
+      if (isMounted) setLearningProfile(migrated);
+    });
 
     loadCustomScrims()
       .then((customScrims) => {
@@ -259,6 +214,9 @@ export default function App() {
 
   const refreshProgress = () => {
     setProgress(loadUserProgress());
+    void import('./learning/curriculumEvidence').then(async ({ loadLearningProfile }) => {
+      setLearningProfile(await loadLearningProfile());
+    });
   };
 
   const handleSelectItem = (item: CurriculumItem, moduleId: string, initialTimeMs = 0) => {
@@ -320,10 +278,11 @@ export default function App() {
     handleSelectItem(nav.previous.item, nav.previous.moduleId, 0);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (activeItem?.type === 'reading') {
       markItemCompleted(activeItem.id);
-      refreshProgress();
+      const { curriculumEvidence } = await import('./learning/curriculumEvidence');
+      await curriculumEvidence.record(activeItem.id);
     }
     const nav = getNav();
     if (!nav.hasNext || !nav.next) {
@@ -331,6 +290,13 @@ export default function App() {
       refreshProgress();
       saveRoute({ view: 'home', courseId: course.id });
       setCurrentView('home');
+      return;
+    }
+    const latestProfile = await loadLearningProfile();
+    setLearningProfile(latestProfile);
+    const readiness = getItemReadiness(course, nav.next.item.id, latestProfile, getCurriculumSkillIndex());
+    if (!readiness.unlocked) {
+      setNavigationBlocker(readiness);
       return;
     }
     if (activeItem) {
@@ -397,6 +363,15 @@ export default function App() {
   const activeScrimIsUnavailable = currentView === 'scrim' && activeItem?.type === 'scrim' && !activeScrimData;
   const activeScrimError = activeScrimData?.audioTrack?.audioError;
   const activeScrimCannotPlay = activeScrimIsUnavailable || Boolean(activeScrimError);
+  const tutorActivity = useMemo(
+    () => buildTutorActivity(course, activeItem, scrimsMap),
+    [activeItem, course, scrimsMap],
+  );
+  const tutorEnabled = Boolean(
+    tutorActivity
+    && course.id !== AI_ENGINEER_COURSE.id
+    && ['scrim', 'debugging', 'solo-project', 'reading', 'reasoning'].includes(currentView),
+  );
 
   return (
     <div className={currentView === 'scrim' ? 'app-screen' : undefined}>
@@ -416,6 +391,7 @@ export default function App() {
         <RoadmapHome
           course={course}
           progress={progress}
+          learningProfile={learningProfile}
           scrims={scrimsMap}
           onEnterLesson={(item, modId, timeMs) => handleSelectItem(item, modId, timeMs ?? 0)}
           onPlayground={() => {
@@ -424,7 +400,21 @@ export default function App() {
             setCurrentView('playground');
           }}
           onBackToCourses={handleBackToCourses}
+          onLearningProfileChange={setLearningProfile}
         />
+      )}
+
+      {navigationBlocker && (
+        <div className="rm-concept-backdrop app-mastery-gate" role="presentation" onClick={() => setNavigationBlocker(null)}>
+          <section className="rm-concept-pop rm-mastery-blocker" role="dialog" aria-modal="true" aria-label="Comprensión pendiente" onClick={(event) => event.stopPropagation()}>
+            <button type="button" className="rm-briefing-close" onClick={() => setNavigationBlocker(null)} aria-label="Cerrar"><X size={15} /></button>
+            <span className="rm-pill">Antes de avanzar</span>
+            <h2>Las pruebas no son el último paso</h2>
+            <p>{navigationBlocker.message ?? 'Explica y aplica el concepto actual para continuar.'}</p>
+            <ul>{navigationBlocker.missing.slice(0, 3).map((gap) => <li key={`${gap.skillId}:${gap.capability}`}>{gap.skillId.replace(/-/g, ' ')} · {gap.capability}</li>)}</ul>
+            <button type="button" className="rm-enter-btn" onClick={() => setNavigationBlocker(null)}>Volver a la actividad</button>
+          </section>
+        </div>
       )}
 
       {activeScrimCannotPlay && (
@@ -578,6 +568,10 @@ export default function App() {
           }}
           onLessonPublished={handleLessonPublished}
         />
+      )}
+
+      {tutorActivity && (
+        <SocraticTutor enabled={tutorEnabled} activity={tutorActivity} />
       )}
     </div>
   );

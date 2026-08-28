@@ -6,6 +6,22 @@ import { ComponentCourseLessonSpec } from './types';
 import { COMPONENT_AUDIO_BY_LESSON } from './audioManifest';
 import { withGuidedChallenges } from '../challengeGuidance';
 
+function readingDiagram(number: number) {
+  if (number === 4) return {
+    src: '/diagrams/shadow.html',
+    alt: 'Frontera entre la página consumidora y el Shadow DOM de un componente',
+    caption: 'La página usa la etiqueta y su API pública. La plantilla y los estilos internos viven detrás del shadow root; solo las puertas explícitas cruzan.',
+    readingQuestion: '¿Qué debería ser público si otra aplicación necesita cambiar el estado sin conocer la estructura interna?',
+  };
+  if (number === 23) return {
+    src: '/diagrams/litcycle.html',
+    alt: 'Ciclo reactivo de Lit desde una propiedad hasta updated',
+    caption: 'Un cambio reactivo programa trabajo. Lit vuelve a ejecutar render, actualiza el DOM y solo después llama updated.',
+    readingQuestion: '¿Por qué modificar sin condición otra propiedad dentro de updated puede crear un ciclo?',
+  };
+  return undefined;
+}
+
 function workspace(spec: ComponentCourseLessonSpec, content: string, html = spec.html): WorkspaceSnapshot {
   return workspaceOf('app.js', {
     'index.html': file('index.html', html),
@@ -117,7 +133,7 @@ export function buildReading(spec: ComponentCourseLessonSpec): ReadingItem {
     id: `${id}-lectura`, relatedLessonId: id, practiceItemId: `${id}-debug`, title: `Lectura: ${spec.title}`, type: 'reading', estimatedMinutes: 14,
     description: `Profundiza antes de construir ${spec.appName}.`, summary: spec.summary,
     sections: [
-      { title: 'Modelo mental y contrato', content: spec.reading.mentalModel },
+      { title: 'Modelo mental y contrato', content: spec.reading.mentalModel, diagram: readingDiagram(spec.number) },
       { title: 'Otro caso, paso a paso', content: spec.reading.walkthrough, example: spec.reading.secondExample, exampleCaption: 'Predice el flujo antes de ejecutar.' },
       { title: 'Cuándo usarlo y cuándo no', content: spec.reading.whenToUse },
       { title: 'Buenas prácticas de trabajo', content: spec.reading.bestPractices },

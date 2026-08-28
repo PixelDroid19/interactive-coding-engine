@@ -793,6 +793,26 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const handleDiscardBranchRecovery = () => {
     flushBranchSave(branchScopeId);
     clearBranchesForLesson(branchScopeId);
+    dispatch({ type: 'LESSON_CHANGE', lessonId: lessonData.id });
+    isForkedRef.current = false;
+    setLearnerBranch(null);
+    setActiveChallenge(null);
+    setIsChallengeDrawerOpen(false);
+    setIsChallengeMinimized(false);
+    setValidationResult(null);
+    setHasPendingEdits(false);
+    const initialWorkspace = cloneWorkspace(lessonData.initialWorkspace);
+    workspaceRef.current = initialWorkspace;
+    previewReloadAfterWorkspaceRef.current = true;
+    setWorkspace(initialWorkspace);
+    setCurrentTimeMs(0);
+    timeRef.current = 0;
+    setActiveSubtitle(null);
+    setClosureConfirmed(false);
+    setShowClosure(false);
+    setAwaitingStart(true);
+    engineRef.current?.seek(0);
+    engineRef.current?.pause();
     setShowBranchRecovery(false);
   };
 

@@ -5,9 +5,10 @@ import './index.css';
 import 'augmented-ui/augmented-ui.min.css';
 import './themes/hud.css';
 import './themes/hud-augmented.css';
+import {ThemeProvider} from './themes/ThemeProvider.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ThemeProvider><App /></ThemeProvider>
   </StrictMode>,
 );

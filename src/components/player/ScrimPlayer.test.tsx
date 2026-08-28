@@ -143,10 +143,12 @@ describe('ScrimPlayer overlay coordination', () => {
     };
     localStorage.setItem('aula_learner_branches_v1', JSON.stringify({ [branch.id]: branch }));
 
-    render(<ScrimPlayer lessonData={lesson} onBack={() => undefined} />);
+    render(<ScrimPlayer lessonData={lesson} initialTimeMs={3200} onBack={() => undefined} />);
     fireEvent.click(screen.getByRole('button', { name: 'Comenzar lección desde cero' }));
 
     expect(loadLastBranchForLesson(lesson.id)).toBeNull();
+    expect(screen.getByText('00:00')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Empezar la clase' })).toBeTruthy();
   });
 
   it('elimina la rama del reto al saltarlo y volver a la cinta', async () => {
