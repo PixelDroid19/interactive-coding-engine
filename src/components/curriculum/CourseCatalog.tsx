@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowRight, BookOpen, CheckCircle2, Code2, Route } from 'lucide-react';
 import { Course, UserProgressRecord } from '../../types/curriculum';
 import { ThemeToggle } from '../ThemeToggle';
+import { useTheme } from '../../themes/ThemeProvider';
 
 interface CourseCatalogProps {
   courses: Course[];
@@ -10,8 +11,10 @@ interface CourseCatalogProps {
   onPlayground: () => void;
 }
 
-export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress, onOpenCourse, onPlayground }) => (
-  <div className="course-catalog">
+export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress, onOpenCourse, onPlayground }) => {
+  const { themeId } = useTheme();
+  const isCyber = themeId === 'cyber';
+  return <div className="course-catalog">
     <header className="course-catalog__nav">
       <div className="course-catalog__brand"><Route size={18} /> Aprende<span>Código</span></div>
       <div className="flex items-center gap-2">
@@ -34,12 +37,12 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress,
           const variant = course.level === 'Beginner' ? 'green' : course.level === 'Intermediate' ? 'yellow' : course.level === 'Advanced' ? 'red' : 'yellow';
           const levelLabel = course.level === 'Beginner' ? 'Desde cero' : course.level === 'Intermediate' ? 'Intermedio' : course.level === 'Advanced' ? 'Avanzado' : course.level;
           return (
-            <article key={course.id} className={`course-card course-card--${variant}`}>
+            <article key={course.id} className={`course-card course-card--${variant}`} data-augmented-ui={isCyber ? 'hud-card tl-clip br-clip border' : undefined}>
               <div className="course-card__topline">
-                <span>{levelLabel}</span>
+                <span data-augmented-ui={isCyber ? 'hud-category tr-clip bl-clip border' : undefined}>{levelLabel}</span>
                 <span>{lessons} clases</span>
               </div>
-              <div className="course-card__icon"><BookOpen size={25} /></div>
+              <div className="course-card__icon" data-augmented-ui={isCyber ? 'hud-icon tr-clip bl-clip border' : undefined}><BookOpen size={25} /></div>
               <h2>{course.title}</h2>
               <p>{course.tagline}</p>
               <div className="course-card__tags">{course.tags.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}</div>
@@ -49,6 +52,7 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress,
               </div>
               <button
                 type="button"
+                data-augmented-ui={isCyber ? 'hud-primary tl-clip br-clip border' : undefined}
                 onClick={() => onOpenCourse(course.id)}
                 aria-label={`${completed > 0 ? 'Continuar curso' : 'Ver recorrido'}: ${course.title}`}
               >
@@ -59,5 +63,5 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress,
         })}
       </section>
     </main>
-  </div>
-);
+  </div>;
+};

@@ -32,12 +32,14 @@ describe('LearningCenter', () => {
         onRateReview={vi.fn(async () => undefined)}
         onSaveNotebook={vi.fn(async () => undefined)}
         onCompleteExam={vi.fn(async () => undefined)}
-        onCompleteLeader={vi.fn(async () => undefined)}
         onReviewReinforcement={onReviewReinforcement}
       />,
     );
 
     expect(screen.getByRole('dialog', { name: 'Centro de aprendizaje' })).toBeTruthy();
+    const summary = screen.getByLabelText('Resumen de aprendizaje');
+    expect(summary.textContent).toContain('1 por reforzar');
+    expect(summary.textContent).toContain('0 notas propias');
     expect(screen.getByRole('heading', { name: 'Conceptos para reforzar' })).toBeTruthy();
     expect(screen.getByText('Distingue mostrar un dato de devolverlo.')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Marcar return values como repasado' }));

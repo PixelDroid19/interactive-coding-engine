@@ -5,9 +5,10 @@ interface ReviewQueueProps {
   courseId: string;
   profile: LearningProfile;
   onRate: (reviewId: string, rating: ReviewRating) => Promise<void>;
+  onReviewReinforcement: (reinforcementId: string) => Promise<void>;
 }
 
-export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onRate }) => {
+export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onRate, onReviewReinforcement }) => {
   const due = useMemo(
     () => profile.reviews.filter((review) => review.courseId === courseId && review.dueAt <= Date.now()).sort((a, b) => a.dueAt - b.dueAt),
     [courseId, profile.reviews],
@@ -20,12 +21,30 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
   const [compare, setCompare] = useState(false);
   const [saving, setSaving] = useState(false);
   const active = due[0];
+  const reinforcements = profile.tutor.reinforcements.filter((entry) => entry.courseId === courseId && !entry.reviewed).sort((left, right) => right.updatedAt - left.updatedAt);
+
+  const reinforcementCards = reinforcements.length > 0 && (
+    <section className="tutor-reinforcements" aria-labelledby="tutor-reinforcements-title">
+      <div className="learning-section-heading"><div><span>FEEDBACK DEL AGENTE</span><h3 id="tutor-reinforcements-title">Conceptos para reforzar</h3></div><strong>{reinforcements.length}</strong></div>
+      <div className="tutor-reinforcements__grid">{reinforcements.map((entry) => (
+        <article key={entry.id}>
+          <div><strong>{entry.skillId.replace(/-/g, ' ')}</strong><span>{entry.occurrences} {entry.occurrences === 1 ? 'observación' : 'observaciones'}</span></div>
+          <p>{entry.note}</p>
+          <small>{entry.evidence}</small>
+          <button type="button" onClick={() => void onReviewReinforcement(entry.id)} aria-label={`Marcar ${entry.skillId.replace(/-/g, ' ')} como repasado`}>Ya lo repasé</button>
+        </article>
+      ))}</div>
+    </section>
+  );
 
   if (!active) {
     return (
-      <div className="learning-empty">
-        <strong>No tienes repasos vencidos.</strong>
-        <p>{upcoming ? `El próximo llega ${new Date(upcoming.dueAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}.` : 'Completa una lectura o práctica para crear tu primera tarjeta.'}</p>
+      <div className="review-overview">
+        {reinforcementCards}
+        <div className="learning-empty">
+          <strong>Tu repaso programado está al día.</strong>
+          <p>{upcoming ? `El próximo llega ${new Date(upcoming.dueAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}.` : 'Completa una lectura o práctica para crear tu primera tarjeta.'}</p>
+        </div>
       </div>
     );
   }
@@ -40,6 +59,7 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
 
   return (
     <section className="review-queue">
+      {reinforcementCards}
       <div className="learning-progress-line"><span>{due.length} por recuperar</span><span>{active.skillId.replace(/-/g, ' ')}</span></div>
       <h3>{active.prompt}</h3>
       <label>

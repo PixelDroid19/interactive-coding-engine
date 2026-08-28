@@ -50,6 +50,8 @@ interface CodeEditorProps {
   readOnly?: boolean;
   onCodeChange?: (newContent: string, changes: { from: number; to: number; text: string }[]) => void;
   onWorkspaceFileChange?: (path: string, content: string) => void;
+  onTutorRunChecks?: () => Promise<string>;
+  tutorRecentResult?: string;
   onCursorMove?: (position: { line: number; ch: number }) => void;
   onSelectionChange?: (from: number, to: number) => void;
   instructorCursor?: { line: number; ch: number };
@@ -211,6 +213,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   readOnly = false,
   onCodeChange,
   onWorkspaceFileChange,
+  onTutorRunChecks,
+  tutorRecentResult,
   onCursorMove,
   onSelectionChange,
   instructorCursor,
@@ -228,6 +232,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   const lessonIdRef = useRef(lessonId);
   const callbacksRef = useRef({ onCodeChange, onCursorMove, onSelectionChange });
   const onWorkspaceFileChangeRef = useRef(onWorkspaceFileChange);
+  const onTutorRunChecksRef = useRef(onTutorRunChecks);
   const tutorUndoRef = useRef<Array<{ path: string; content: string }>>([]);
   const providedClientRef = useRef(languageClient);
   const ownedClientRef = useRef<EditorLanguageClient | null>(null);
@@ -241,6 +246,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   lessonIdRef.current = lessonId;
   callbacksRef.current = { onCodeChange, onCursorMove, onSelectionChange };
   onWorkspaceFileChangeRef.current = onWorkspaceFileChange;
+  onTutorRunChecksRef.current = onTutorRunChecks;
   providedClientRef.current = languageClient;
 
   useEffect(() => {
@@ -266,9 +272,11 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             ? `${diagnostics.errors} errores y ${diagnostics.warnings} advertencias`
             : 'Sin errores detectados'
           : undefined,
+        recentResult: tutorRecentResult,
       },
       actions: {
         replaceFile,
+        runChecks: onTutorRunChecksRef.current,
         undoLastChange: () => {
           const previous = tutorUndoRef.current.pop();
           if (!previous) return;
@@ -278,7 +286,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       },
     }, tutorSourceIdRef.current);
     return () => clearTutorWorkspace(tutorSourceIdRef.current);
-  }, [diagnostics.errors, diagnostics.state, diagnostics.warnings, file, lessonId, workspaceFiles]);
+  }, [diagnostics.errors, diagnostics.state, diagnostics.warnings, file, lessonId, tutorRecentResult, workspaceFiles]);
 
   if (!compartmentsRef.current) {
     compartmentsRef.current = {

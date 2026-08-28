@@ -8146,8 +8146,14 @@ html.hud .cells-studio {
 .learning-center > header h2 { margin: .35rem 0 .15rem; font-size: clamp(1.55rem, 4vw, 2.25rem); line-height: 1; }
 .learning-center > header p { margin: 0; color: color-mix(in srgb, currentColor 62%, transparent); }
 .learning-center > header button { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 1px solid currentColor; border-radius: 10px; background: transparent; }
+.learning-center__summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; border-block: 1px solid color-mix(in srgb, currentColor 15%, transparent); background: color-mix(in srgb, currentColor 15%, transparent); }
+.learning-center__summary span { padding: .6rem .8rem; background: var(--bg-surface-light); color: color-mix(in srgb, currentColor 68%, transparent); font-size: .7rem; text-align: center; }
+.learning-center__summary strong { color: var(--color-text-main); font-size: .92rem; }
 .learning-center > nav { display: grid; grid-template-columns: repeat(5, 1fr); gap: .45rem; padding: .65rem 1rem; background: color-mix(in srgb, currentColor 4%, transparent); }
 .learning-center > nav button { display: flex; justify-content: center; align-items: center; gap: .45rem; min-height: 2.65rem; border: 1px solid transparent; border-radius: 9px; background: transparent; font-weight: 700; }
+.learning-center > nav button > span { display: grid; gap: .08rem; text-align: left; line-height: 1.05; }
+.learning-center > nav button small { color: color-mix(in srgb, currentColor 62%, transparent); font-size: .58rem; font-weight: 650; letter-spacing: .02em; }
+.learning-center > nav button:disabled { cursor: not-allowed; border-color: color-mix(in srgb, currentColor 15%, transparent); opacity: .58; }
 .learning-center > nav button.is-active { border-color: #111; background: #ffe600; color: #111; box-shadow: 3px 3px 0 #111; }
 .learning-center > main { min-height: 0; overflow: auto; padding: clamp(1rem, 3vw, 1.6rem); }
 .learning-center h3 { margin: 0; font-size: 1.2rem; }
@@ -8197,6 +8203,18 @@ html.hud .cells-studio {
 .technology-path > aside { margin-top: 1.2rem; padding: 1rem; border-left: 5px solid #ffe600; background: color-mix(in srgb, #ffe600 10%, transparent); }
 .technology-path > aside p { margin: .3rem 0 0; line-height: 1.5; }
 .learning-empty { min-height: 12rem; display: grid; place-content: center; text-align: center; padding: 2rem; border: 1px dashed currentColor; border-radius: 14px; }
+.review-overview { display: grid; gap: 1.25rem; }
+.learning-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: .75rem; }
+.learning-section-heading span { display: block; margin-bottom: .25rem; color: #785b00; font: 750 .65rem/1 var(--font-mono, monospace); letter-spacing: .11em; }
+.learning-section-heading > strong { display: grid; place-items: center; min-width: 2rem; height: 2rem; border: 1px solid currentColor; border-radius: 999px; }
+.tutor-reinforcements__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: .7rem; }
+.tutor-reinforcements__grid article { display: grid; align-content: start; gap: .55rem; border: 1.5px solid color-mix(in srgb, currentColor 35%, transparent); border-radius: 12px; padding: .9rem; background: color-mix(in srgb, #ffe600 8%, transparent); }
+.tutor-reinforcements__grid article > div { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+.tutor-reinforcements__grid article > div strong { text-transform: capitalize; }
+.tutor-reinforcements__grid article > div span { border-radius: 999px; padding: .2rem .45rem; background: color-mix(in srgb, #ffe600 24%, transparent); font-size: .65rem; font-weight: 750; }
+.tutor-reinforcements__grid p { margin: 0; line-height: 1.45; }
+.tutor-reinforcements__grid small { color: color-mix(in srgb, currentColor 62%, transparent); line-height: 1.4; }
+.tutor-reinforcements__grid button { justify-self: start; border: 1px solid currentColor; border-radius: 7px; padding: .4rem .6rem; background: transparent; font-size: .72rem; font-weight: 800; }
 .post-solve-studio { display: grid; gap: .9rem; margin-top: .8rem; padding: 1rem; border: 1.5px solid #16855c; border-radius: 12px; background: color-mix(in srgb, #26b978 8%, var(--paper, #f5f2eb)); color: inherit; }
 .post-solve-studio > header span { color: #08744c; font: 800 .65rem/1 var(--font-mono, monospace); letter-spacing: .12em; }
 .post-solve-studio > header h3 { margin: .3rem 0 .2rem; font-size: 1rem; }
@@ -8223,9 +8241,13 @@ html.hud .learning-center {
   color: #eef5ff; background: #10141c; border-color: #00e7f1; border-radius: 3px;
   box-shadow: 8px 8px 0 #080a0f, 9px 9px 0 #d629ff;
 }
+html.hud .learning-center__summary span { background: #0b101a; }
 html.hud .learning-center > header span, html.hud .exam-mode label > span { color: #ffe600; }
 html.hud .learning-center textarea, html.hud .learning-center select { background: #090c12; border-color: #39465a; }
 html.hud .learning-center > nav button.is-active { background: #00e7f1; }
+html.hud .learning-section-heading span { color: #00e7f1; }
+html.hud .tutor-reinforcements__grid article { border-color: #38465c; background: #0d1320; }
+html.hud .tutor-reinforcements__grid article > div span { background: #17243b; color: #7dffb2; }
 html.hud .technology-path > header > span, html.hud .technology-path__eyebrow, html.hud .technology-path article small { color: #00e7f1; }
 html.hud .technology-path__number { border-color: #00e7f1; background: #080c12; color: #eef5ff; border-radius: 2px; box-shadow: 3px 3px 0 #d629ff; }
 html.hud .technology-path article { border-color: #39465a; border-radius: 2px; background: #0b1018; }
@@ -8247,5 +8269,7 @@ html.hud .learning-diagram__question span { color: #00e7f1; }
   .learning-center-backdrop { padding: 0; align-items: end; }
   .learning-center { max-height: 92dvh; border-radius: 18px 18px 0 0; box-shadow: none; }
   .learning-center > nav { grid-template-columns: repeat(2, 1fr); }
+  .learning-center__summary { grid-template-columns: 1fr; }
+  .learning-center__summary span { padding: .42rem .7rem; text-align: left; }
   .review-rating { grid-template-columns: repeat(2, 1fr); }
 }

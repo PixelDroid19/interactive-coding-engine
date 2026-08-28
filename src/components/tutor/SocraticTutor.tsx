@@ -80,7 +80,8 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
       if (!active) return;
       preferredModelRef.current = profile.tutor.selectedModel;
       setSelectedModel(profile.tutor.selectedModel);
-      setMessages((profile.tutor.conversations[conversationKey] ?? []).map((message) => ({ ...message })));
+      const saved = (profile.tutor.conversations[conversationKey] ?? []).map((message) => ({ ...message }));
+      setMessages((current) => current.length > 0 ? current : saved);
     });
     return () => { active = false; };
   }, [conversationKey, enabled]);

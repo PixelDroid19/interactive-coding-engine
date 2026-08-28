@@ -90,7 +90,8 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
   };
 
   const handleValidateProject = async () => {
-    if (!project.tests?.length || isEvaluating) return;
+    if (!project.tests?.length) return 'Este proyecto no publica comprobaciones automáticas.';
+    if (isEvaluating) return 'Ya hay una comprobación en curso.';
     setIsEvaluating(true);
     try {
       const result = await runChallengeValidation({
@@ -107,6 +108,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
         const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         if (!prefersReduced) confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
       }
+      return `${result.passedCount} de ${result.totalCount} comprobaciones superadas. ${result.feedbackMessage}`;
     } finally {
       setIsEvaluating(false);
     }
@@ -431,6 +433,18 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
                     },
                   }));
                 }}
+                onWorkspaceFileChange={(path, content) => {
+                  setValidationResult(null);
+                  setIsCompleted(false);
+                  setWorkspace((prev) => prev.files[path] ? ({
+                    ...prev,
+                    files: { ...prev.files, [path]: { ...prev.files[path], content } },
+                  }) : prev);
+                }}
+                onTutorRunChecks={async () => {
+                  return await handleValidateProject();
+                }}
+                tutorRecentResult={validationResult ? `${validationResult.passedCount} de ${validationResult.totalCount} comprobaciones superadas. ${validationResult.feedbackMessage}` : undefined}
               />
             </div>
           </div>

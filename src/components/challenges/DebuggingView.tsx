@@ -109,7 +109,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   }, [draftKey, exerciseVersion, revealedHints, workspace]);
 
   const handleValidate = async () => {
-    if (isEvaluating) return;
+    if (isEvaluating) return 'Ya hay una comprobación en curso.';
     setIsEvaluating(true);
     const currentGen = ++generationRef.current;
     try {
@@ -130,7 +130,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
 
       // Ensure we are still on the same generation (no newer edit in between)
       if (generationRef.current !== currentGen) {
-        return;
+        return 'El código cambió durante la comprobación; vuelve a ejecutarla.';
       }
 
       const iframe = exercise.executionMode === 'browser' ? previewRef.current?.getIframeElement() : null;
@@ -159,7 +159,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
         });
         setActiveTab('resultado');
         setTimeout(() => resultSummaryRef.current?.focus(), 50);
-        return;
+        return `0 de ${tests.length} comprobaciones superadas. La vista previa no estaba lista.`;
       }
 
       const result = await runChallengeValidation(
@@ -181,7 +181,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
       );
 
       // Only apply if still current generation
-      if (generationRef.current !== currentGen) return;
+      if (generationRef.current !== currentGen) return 'El código cambió durante la comprobación; el resultado se descartó.';
 
       setValidationResult(result);
       setActiveTab('resultado');
@@ -192,6 +192,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
         const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         if (!prefersReduced) confetti({ particleCount: 90, spread: 68, origin: { y: 0.62 } });
       }
+      return `${result.passedCount} de ${result.totalCount} comprobaciones superadas. ${result.feedbackMessage}`;
     } finally {
       if (generationRef.current === currentGen) {
         setIsEvaluating(false);
@@ -434,6 +435,18 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                       },
                     }));
                   }}
+                  onWorkspaceFileChange={(path, content) => {
+                    generationRef.current++;
+                    setValidationResult(null);
+                    setWorkspace((prev) => prev.files[path] ? ({
+                      ...prev,
+                      files: { ...prev.files, [path]: { ...prev.files[path], content } },
+                    }) : prev);
+                  }}
+                  onTutorRunChecks={async () => {
+                    return await handleValidate();
+                  }}
+                  tutorRecentResult={validationResult ? `${validationResult.passedCount} de ${validationResult.totalCount} comprobaciones superadas. ${validationResult.feedbackMessage}` : undefined}
                 />
                 {/* File tree popover */}
                 {showFileTree && (

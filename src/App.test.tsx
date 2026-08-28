@@ -91,7 +91,12 @@ describe('App navigation persistence', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar a tema cyberpunk' }));
     await vi.waitFor(() => expect(document.documentElement.dataset.theme).toBe('cyber'));
     expect(document.documentElement.classList.contains('hud')).toBe(true);
-    expect(icon?.hasAttribute('data-augmented-ui')).toBe(false);
+    const card = document.querySelector('.course-card');
+    expect(card?.getAttribute('data-augmented-ui')).toContain('hud-card');
+    expect(card?.getAttribute('data-augmented-ui')).toContain('border');
+    expect(card?.getAttribute('data-augmented-ui')).toContain('tl-clip');
+    expect(icon?.getAttribute('data-augmented-ui')).toContain('hud-icon');
+    expect(icon?.getAttribute('data-augmented-ui')).toContain('border');
 
     fireEvent.click(screen.getByRole('button', { name: 'Cambiar a tema por defecto' }));
     await vi.waitFor(() => expect(document.documentElement.dataset.theme).toBe('normal'));

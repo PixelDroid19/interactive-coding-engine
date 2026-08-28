@@ -391,9 +391,12 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
         setTerminalOutput(`${passed} de ${combined.length} contratos superados. El iframe navegó por rutas reales, comprobó ausencia tras cleanup y ejecutó estados y cancelación del data manager.`);
       }
       setStatus('ready');
+      return `${passed} de ${combined.length} comprobaciones Cells superadas.`;
     } catch (caught) {
       setPreviewState('error');
-      setError(messageFor(caught)); setStatus('error');
+      const detail = messageFor(caught);
+      setError(detail); setStatus('error');
+      return `Las comprobaciones Cells fallaron: ${detail}`;
     }
   };
 
@@ -565,6 +568,20 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
                   void ensureRepository().save(draftKey, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
                   return next;
                 })}
+                onWorkspaceFileChange={(path, content) => setWorkspace((current) => {
+                  const target = current.files[path];
+                  if (!target) return current;
+                  const next = { ...current, files: { ...current.files, [path]: { ...target, content } } };
+                  dirtyPathsRef.current.add(path);
+                  previewRequestRef.current += 1;
+                  setPreviewState('stale');
+                  void ensureRepository().save(draftKey, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
+                  return next;
+                })}
+                onTutorRunChecks={async () => {
+                  return await runTests();
+                }}
+                tutorRecentResult={tests.length > 0 ? `${tests.filter((test) => test.passed).length} de ${tests.length} comprobaciones Cells superadas.` : undefined}
               />
             </div>
           </section>

@@ -14,8 +14,8 @@ import { getItemReadiness, type ItemReadiness } from '../../learning/unlockPolic
 import { getCurriculumSkillIndex } from '../../learning/curriculumEvidence';
 import {
   rateCurriculumReview,
+  markTutorReinforcementReviewed,
   saveExamEvaluation,
-  saveLeaderInterview,
   saveNotebookEntry,
 } from '../../learning/curriculumEvidence';
 import { LearningCenter } from '../learning/LearningCenter';
@@ -392,7 +392,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
           onRateReview={async (reviewId, rating) => onLearningProfileChange(await rateCurriculumReview(reviewId, rating))}
           onSaveNotebook={async (entry) => onLearningProfileChange(await saveNotebookEntry(entry))}
           onCompleteExam={async (questions, result) => onLearningProfileChange(await saveExamEvaluation(course.id, questions, result))}
-          onCompleteLeader={async (skillId, answers) => onLearningProfileChange(await saveLeaderInterview(course.id, skillId, answers))}
+          onReviewReinforcement={async (reinforcementId) => onLearningProfileChange(await markTutorReinforcementReviewed(reinforcementId))}
         />
       )}
     </div>

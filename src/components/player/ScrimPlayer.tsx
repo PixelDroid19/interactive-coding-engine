@@ -473,7 +473,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const cancelNavigation = () => setPendingNavigation(null);
 
   // Student edits code
-  const handleCodeChange = (newContent: string, changes: { from: number; to: number; text: string }[]) => {
+  const handleWorkspaceFileChange = (path: string, newContent: string) => {
     // A result only describes the exact workspace that was evaluated. As soon as
     // the learner edits again, require a fresh check instead of showing stale green tests.
     setValidationResult(null);
@@ -490,13 +490,12 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     }
 
     setWorkspace((prev) => {
-      const activePath = prev.activeFilePath;
-      if (!prev.files[activePath]) return prev;
+      if (!prev.files[path]) return prev;
 
       const updatedFiles = {
         ...prev.files,
-        [activePath]: {
-          ...prev.files[activePath],
+        [path]: {
+          ...prev.files[path],
           content: newContent,
         },
       };
@@ -541,6 +540,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     });
   };
 
+  const handleCodeChange = (newContent: string) => handleWorkspaceFileChange(workspaceRef.current.activeFilePath, newContent);
+
   const handleManualRun = () => {
     // Run must pause playback before creating branch
     if (!isForkedRef.current) {
@@ -561,7 +562,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
   // Validate active challenge
   const handleValidateChallenge = async () => {
-    if (!activeChallenge) return;
+    if (!activeChallenge) return 'No hay un reto activo para comprobar.';
     if (isLogicMode) {
       await logicRunnerRef.current?.run();
     } else {
@@ -576,6 +577,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       markChallengeCompleted(activeChallenge.id);
       // Do not auto mark lesson completed; wait for continue
     }
+    return `${result.passedCount} de ${result.totalCount} comprobaciones superadas. ${result.feedbackMessage}`;
   };
 
   const handleResetChallenge = () => {
@@ -1161,6 +1163,9 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
                 readOnly={!playerState.isForked && playbackStatus === 'playing'}
                 lessonId={lessonData.id}
                 onCodeChange={handleCodeChange}
+                onWorkspaceFileChange={handleWorkspaceFileChange}
+                onTutorRunChecks={handleValidateChallenge}
+                tutorRecentResult={validationResult ? `${validationResult.passedCount} de ${validationResult.totalCount} comprobaciones superadas. ${validationResult.feedbackMessage}` : undefined}
                 instructorCursor={workspace.cursorPosition}
               />
 
