@@ -2018,42 +2018,6 @@ html.hud .cells-lab__mobile-nav { border-color: #33204d; background: #080911; }
 html.hud .cells-lab__mobile-nav button.is-active { border-color: #d7ff00; background: #182000; color: #edff75; }
 
 @media (max-width: 1500px) {
-  .cells-lab__workbench {
-    grid-template-columns: 1fr;
-  }
-  .cells-lab__studio {
-    border-right: 0;
-    border-bottom: 1px solid #27272a;
-  }
-  .cells-lab__editor-canvas {
-    min-height: 540px;
-  }
-  .cells-lab__pane--preview iframe {
-    min-height: 600px;
-  }
-  .cells-lab__header {
-    flex-wrap: wrap;
-  }
-}
-
-@media (max-width: 720px) {
-  .reading-lab-zone--wide { width: 100%; }
-  .cells-lab { border-radius: 8px; box-shadow: none; }
-  .cells-lab__header {
-    align-items: stretch;
-    flex-direction: column;
-    min-height: 0;
-    padding: 1rem;
-  }
-  .cells-lab__actions {
-    display: grid;
-    width: 100%;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    justify-content: stretch;
-  }
-  .cells-lab__actions button { min-height: 2.75rem; padding-inline: 0.45rem; }
-  .cells-lab__brief { flex-direction: column; gap: 0.55rem; padding: 0.9rem 1rem; }
-  .cells-lab__brief-badge { align-self: flex-start; }
   .cells-lab__mobile-nav {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2080,19 +2044,22 @@ html.hud .cells-lab__mobile-nav button.is-active { border-color: #d7ff00; backgr
     background: #26210b;
     color: #fef08a;
   }
-  .cells-lab__workbench { display: block; min-height: 0; }
-  .cells-lab__studio { display: block; border: 0; }
-  .cells-lab__files {
-    min-height: 28rem;
-    max-height: none;
-    border: 0;
+  .cells-lab__workbench {
+    display: block;
+    min-height: 0;
   }
-  .cells-lab__editor { min-height: 0; }
-  .cells-lab__editor-canvas { min-height: 62vh; }
-  .cells-lab__inspector { min-height: 62vh; }
-  .cells-lab__inspector-tabs { overflow-x: auto; padding-inline: 0.35rem; }
-  .cells-lab__inspector-tabgroup { min-width: max-content; }
-  .cells-lab__pane--preview iframe { min-height: 62vh; }
+  .cells-lab__studio {
+    display: block;
+    border-right: 0;
+    border-bottom: 0;
+  }
+  .cells-lab__files,
+  .cells-lab__editor,
+  .cells-lab__inspector {
+    height: clamp(36rem, 72vh, 45rem);
+    min-height: 0;
+    overflow: hidden;
+  }
   .cells-lab__workbench[data-mobile-panel='files'] .cells-lab__editor,
   .cells-lab__workbench[data-mobile-panel='files'] .cells-lab__inspector,
   .cells-lab__workbench[data-mobile-panel='editor'] .cells-lab__files,
@@ -2100,6 +2067,66 @@ html.hud .cells-lab__mobile-nav button.is-active { border-color: #d7ff00; backgr
   .cells-lab__workbench[data-mobile-panel='results'] .cells-lab__studio {
     display: none;
   }
+  .cells-lab__editor-canvas {
+    min-height: 0;
+  }
+  .cells-lab__pane--preview iframe {
+    min-height: 0;
+  }
+  .cells-lab__header {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 720px) {
+  .reading-lab-zone--wide { width: 100%; }
+  .cells-lab { border-radius: 8px; box-shadow: none; }
+  .cells-lab__header {
+    align-items: stretch;
+    flex-direction: column;
+    min-height: 0;
+    padding: 1rem;
+  }
+  .cells-lab__actions {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+  }
+  .cells-lab__actions button { min-height: 2.75rem; padding-inline: 0.45rem; }
+  .cells-lab__brief { flex-direction: column; gap: 0.55rem; padding: 0.9rem 1rem; }
+  .cells-lab__brief-badge { align-self: flex-start; }
+  .cells-lab__studio { border: 0; }
+  .cells-lab__files {
+    height: max(32rem, 68vh);
+    min-height: 0;
+    max-height: none;
+    border: 0;
+  }
+  .cells-lab__editor { min-height: 0; }
+  .cells-lab__editor,
+  .cells-lab__inspector { height: max(32rem, 68vh); }
+  .cells-lab__editor-canvas { min-height: 0; }
+  .cells-lab__inspector { min-height: 0; }
+  .cells-lab__inspector-tabs {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    padding: 0.35rem;
+    overflow: visible;
+  }
+  .cells-lab__inspector-tabgroup {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .cells-lab__tab-btn {
+    min-width: 0;
+    justify-content: center;
+    padding-inline: 0.3rem;
+  }
+  .cells-lab__inspector-tabtools { margin-left: auto; }
+  .cells-lab__pane--preview iframe { min-height: 0; }
   .cells-lab__coverage dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -6307,8 +6334,44 @@ body.dark {
     gap: 8px;
     padding: 8px 10px;
   }
+  .window-topbar .window-titlebar-left {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+  .window-titlebar-actions {
+    width: 100%;
+    min-width: 0;
+    flex: 1 1 100%;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding: 1px 1px 4px;
+    scrollbar-width: none;
+  }
+  .window-titlebar-actions::-webkit-scrollbar { display: none; }
+  .window-titlebar-actions > * {
+    flex: 0 0 auto;
+  }
   .topbar-lesson-title {
-    max-width: 140px;
+    max-width: none;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .window-topbar .window-titlebar-left {
+    gap: 6px;
+  }
+  .window-topbar .window-titlebar-left .neu-pill-btn {
+    min-width: 40px;
+    min-height: 40px;
+    padding-inline: 10px;
+  }
+  .window-topbar .window-titlebar-left .neu-pill-btn span {
+    display: none;
+  }
+  .window-topbar .topbar-lesson-title {
+    font-size: 12px;
   }
 }
 

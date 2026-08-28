@@ -318,6 +318,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         }
         if (showReturnConfirm) {
           setShowReturnConfirm(false);
+          if (activeChallenge) setIsChallengeDrawerOpen(true);
           return;
         }
         if (pendingSeekMs !== null) {
@@ -343,10 +344,11 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isExplainOpen, showReturnConfirm, pendingSeekMs, showBranchRecovery]);
+  }, [activeChallenge, isExplainOpen, showReturnConfirm, pendingSeekMs, showBranchRecovery]);
 
   const startPlayback = () => {
     if (isForkedRef.current) {
+      setIsChallengeDrawerOpen(false);
       setShowReturnConfirm(true);
       return;
     }
@@ -859,7 +861,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           <span className="topbar-lesson-title truncate">{lessonData.title}</span>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+        <div className="window-titlebar-actions flex items-center gap-2 shrink-0 flex-wrap">
           {lessonData.languageVariants && onLanguageChange && (
             <LanguageSelector
               value={language}
@@ -1022,7 +1024,16 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             <p className="text-sm text-slate-300 mt-2">Al volver se descartarán los cambios que hiciste mientras practicabas.</p>
             <div className="flex gap-2 mt-4">
               <button onClick={() => doReturnToTape(learnerBranch?.baseTime ?? timeRef.current)} className="flex-1 neu-pill-btn btn-brand" aria-label="Volver y descartar cambios">Volver y descartar cambios</button>
-              <button onClick={() => setShowReturnConfirm(false)} className="flex-1 neu-pill-btn" aria-label="Seguir editando">Seguir editando</button>
+              <button
+                onClick={() => {
+                  setShowReturnConfirm(false);
+                  if (activeChallenge) setIsChallengeDrawerOpen(true);
+                }}
+                className="flex-1 neu-pill-btn"
+                aria-label="Seguir editando"
+              >
+                Seguir editando
+              </button>
             </div>
           </div>
         </div>

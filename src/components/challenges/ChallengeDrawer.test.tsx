@@ -1,7 +1,7 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
-import { ChallengeDrawer, getResolutionContent } from './ChallengeDrawer';
+import { ChallengeDrawer, getResolutionContent, splitChallengeInstructions } from './ChallengeDrawer';
 import { markChallengeCompleted, markChallengeSkipped, markChallengeSolutionViewed, getChallengeState, clearChallengeState } from '../../engine/persistence';
 
 const makeChallenge = () => ({
@@ -14,6 +14,23 @@ const makeChallenge = () => ({
 });
 
 describe('ChallengeDrawer', () => {
+  it('convierte instrucciones largas etiquetadas en pasos escaneables', () => {
+    const parts = splitChallengeInstructions(
+      'Antes de empezar: recuerda el contrato. Punto de partida: abre app.js. Cómo comprobarlo: ejecuta las pruebas. Si te atascas, abre una pista.',
+    );
+
+    expect(parts).toEqual([
+      { heading: 'Antes de empezar', body: 'recuerda el contrato.' },
+      { heading: 'Punto de partida', body: 'abre app.js.' },
+      { heading: 'Cómo comprobarlo', body: 'ejecuta las pruebas.' },
+      { heading: 'Si te atascas', body: 'abre una pista.' },
+    ]);
+  });
+
+  it('conserva como párrafo las instrucciones breves sin secciones', () => {
+    expect(splitChallengeInstructions('Cambia Alex')).toEqual([{ body: 'Cambia Alex' }]);
+  });
+
   it('respeta orden de hooks: no falla al cerrar y reabrir', () => {
     const challenge = makeChallenge();
     const closed = renderToStaticMarkup(

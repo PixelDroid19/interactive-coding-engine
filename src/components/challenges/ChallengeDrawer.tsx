@@ -24,6 +24,27 @@ interface ChallengeDrawerProps {
   afterCode?: string;
 }
 
+const INSTRUCTION_HEADINGS = ['Antes de empezar', 'Punto de partida', 'Cómo comprobarlo', 'Si te atascas'] as const;
+
+export function splitChallengeInstructions(instructions: string): Array<{ heading?: string; body: string }> {
+  const parts = instructions
+    .trim()
+    .split(new RegExp(`(?=(?:${INSTRUCTION_HEADINGS.join('|')})(?::|,))`, 'g'))
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length < 2) return [{ body: instructions.trim() }];
+
+  return parts.map((part) => {
+    const heading = INSTRUCTION_HEADINGS.find((candidate) => (
+      part.startsWith(`${candidate}:`) || part.startsWith(`${candidate},`)
+    ));
+    return heading
+      ? { heading, body: part.slice(heading.length + 1).trim() }
+      : { body: part };
+  });
+}
+
 export function getResolutionContent(challenge: ScrimChallenge, variant: 'scrim' | 'debug') {
   // Generic resolution based on challenge id
   const id = challenge.id;
@@ -135,6 +156,7 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const testsFunctionDirectly = challenge.tests.some((test) => test.validatorType === 'function-call');
+  const instructionParts = splitChallengeInstructions(challenge.instructions);
 
   const handleSkipForNow = onSkipForNow || onSkip;
   const effectiveOnViewSolution = onViewSolution || (() => {
@@ -349,8 +371,24 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
               {/* Instructions */}
               <div className="space-y-1.5">
                 <h4 className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Instrucciones</h4>
-                <div className="rounded-lg bg-zinc-900/90 p-3 border border-zinc-800 text-zinc-300 whitespace-pre-line leading-relaxed font-mono text-[12px]">
-                  {challenge.instructions}
+                <div className="rounded-lg bg-zinc-900/90 p-3 border border-zinc-800 text-zinc-300 leading-relaxed text-[12px]">
+                  {instructionParts.length > 1 ? (
+                    <ol className="grid gap-2.5" aria-label="Pasos del reto">
+                      {instructionParts.map((part, index) => (
+                        <li key={`${part.heading ?? 'paso'}-${index}`} className="grid grid-cols-[1.35rem_1fr] gap-2.5">
+                          <span className="flex h-5 w-5 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950 font-mono text-[10px] font-bold text-amber-300" aria-hidden="true">
+                            {index + 1}
+                          </span>
+                          <span>
+                            {part.heading && <strong className="mb-0.5 block text-[11px] font-bold text-zinc-100">{part.heading}</strong>}
+                            <span className="block text-zinc-300">{part.body}</span>
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="whitespace-pre-line font-mono">{instructionParts[0]?.body}</p>
+                  )}
                 </div>
               </div>
 

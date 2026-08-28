@@ -96,6 +96,7 @@ export const CellsPreviewWorkbench: React.FC<CellsPreviewWorkbenchProps> = ({
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedEventId, setCopiedEventId] = useState<string | null>(null);
   const eventCounterRef = useRef(0);
+  const initialPropsRef = useRef<Record<string, any>>({});
 
   const selectedCase = useMemo(
     () => demo.cases.find((candidate) => candidate.id === caseId) ?? demo.cases[0],
@@ -194,6 +195,7 @@ export const CellsPreviewWorkbench: React.FC<CellsPreviewWorkbenchProps> = ({
       if (event.data.type === 'ready') {
         // Populate PROPS panel with real values from the running component
         if (event.data.initialProps && typeof event.data.initialProps === 'object') {
+          initialPropsRef.current = event.data.initialProps;
           setLiveProps(event.data.initialProps);
           userModifiedPropsRef.current.clear();
         }
@@ -284,14 +286,20 @@ export const CellsPreviewWorkbench: React.FC<CellsPreviewWorkbenchProps> = ({
 
   const handleResetProps = () => {
     userModifiedPropsRef.current.clear();
-    // Re-read real component values by forcing iframe reload
-    const frame = iframeRef.current?.contentWindow;
-    if (frame) {
-      frame.postMessage({ source: 'open-cells-shell', type: 'locale:set', locale }, '*');
-    }
-    if (selectedCase?.properties && Object.keys(selectedCase.properties).length > 0) {
-      setLiveProps(selectedCase.properties);
-    }
+    const caseProps = selectedCase?.properties ?? {};
+    const resetProps = Object.fromEntries(
+      Object.entries(availableProps).map(([key, meta]) => [
+        key,
+        caseProps[key] !== undefined
+          ? caseProps[key]
+          : (initialPropsRef.current[key] !== undefined ? initialPropsRef.current[key] : meta.defaultValue),
+      ]),
+    );
+
+    // Restore the values reported by the running component through `ready`;
+    // case-specific values still take precedence over the component defaults.
+    setLiveProps(resetProps);
+    postState(resetProps);
   };
 
   const handleClearEvents = () => {

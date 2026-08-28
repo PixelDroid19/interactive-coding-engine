@@ -171,6 +171,35 @@ describe('ScrimPlayer overlay coordination', () => {
     expect(loadLastBranchForLesson(lesson.id)).toBeNull();
   });
 
+  it('muestra una sola decisión al volver desde un reto recuperado', async () => {
+    const challenge = lesson.challenges[0];
+    const branch = {
+      id: 'branch-single-dialog-test',
+      lessonId: lesson.id,
+      baseTime: challenge.timestamp,
+      baseSequence: 0,
+      workspace: lesson.initialWorkspace,
+      isForked: true,
+      activeChallengeId: challenge.id,
+      lastSavedAt: Date.now(),
+      executionCount: 0,
+    };
+    localStorage.setItem('aula_learner_branches_v1', JSON.stringify({ [branch.id]: branch }));
+
+    render(<ScrimPlayer lessonData={lesson} onBack={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar donde lo dejé' }));
+
+    expect(await screen.findByRole('button', { name: 'Comprobar reto' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Reproducir la clase' }));
+
+    expect(screen.getByRole('dialog', { name: 'Volver a la lección' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Comprobar reto' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Seguir editando' }));
+    expect(screen.queryByRole('dialog', { name: 'Volver a la lección' })).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Comprobar reto' })).toBeTruthy();
+  });
+
   it('abre el reto al pulsar su marcador en la línea de tiempo', async () => {
     const challenge = { ...lesson.challenges[0], timestamp: 50_000 };
     const markerLesson = {

@@ -197,6 +197,40 @@ describe('CellsPreviewWorkbench', () => {
     );
   });
 
+  it('restaura las propiedades reales del componente al pulsar Reset', () => {
+    const iframeRef = createRef<HTMLIFrameElement>();
+    render(<CellsPreviewWorkbench html="<main />" demo={demo} iframeRef={iframeRef} />);
+    const postMessage = vi.fn();
+    const frameWindow = { postMessage };
+    Object.defineProperty(iframeRef.current, 'contentWindow', { configurable: true, value: frameWindow });
+
+    const readyEvent = new MessageEvent('message', {
+      data: {
+        source: 'open-cells-preview',
+        type: 'ready',
+        initialProps: { learnerName: 'NombreDesdeElCódigo' },
+      },
+    });
+    Object.defineProperty(readyEvent, 'source', { value: frameWindow });
+    fireEvent(window, readyEvent);
+
+    const nameInput = screen.getByLabelText('learnerName');
+    expect(nameInput).toHaveProperty('value', 'NombreDesdeElCódigo');
+    fireEvent.change(nameInput, { target: { value: 'Carlos' } });
+    expect(nameInput).toHaveProperty('value', 'Carlos');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+
+    expect(nameInput).toHaveProperty('value', 'NombreDesdeElCódigo');
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'demo:set-case',
+        properties: expect.objectContaining({ learnerName: 'NombreDesdeElCódigo' }),
+      }),
+      '*',
+    );
+  });
+
   it('permite alternar entre las pestañas Visual, Código y Documentación', () => {
     const iframeRef = createRef<HTMLIFrameElement>();
     render(<CellsPreviewWorkbench html="<main />" demo={demo} iframeRef={iframeRef} />);
