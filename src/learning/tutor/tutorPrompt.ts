@@ -56,6 +56,39 @@ export function buildTutorPlannerRequest(input: TutorPromptInput, options: { obs
   const writeInstruction = options.requireWrite
     ? 'La persona pidió modificar el ejercicio y ya autorizó la escritura. Usa write_file indicando solo la ruta de un archivo existente; el sistema generará el contenido en un paso separado. Si todavía necesitas conocerlo, usa read_workspace. No termines con calls vacío antes de aplicar el cambio solicitado.'
     : 'Cuando la petición sea una edición, consulta primero el workspace. Después de recibir ese resultado podrás elegir write_file en el siguiente paso.';
+  const workspacePaths = Object.keys(input.workspace?.files ?? {});
+  const pathSchema = workspacePaths.length > 0 ? { type: 'string', enum: workspacePaths } : { type: 'string', minLength: 1, maxLength: 240 };
+  const planSchema = {
+    type: 'object',
+    properties: {
+      calls: {
+        type: 'array',
+        maxItems: Math.min(3, options.remainingTools ?? 3),
+        items: {
+          type: 'object',
+          properties: {
+            tool: { type: 'string', enum: ['read_lesson', 'read_workspace', 'read_diagnostics', 'run_checks', 'write_file', 'save_reinforcement'] },
+            args: {
+              type: 'object',
+              properties: {
+                paths: { type: 'array', maxItems: 12, items: pathSchema },
+                path: pathSchema,
+                skillId: { type: 'string', maxLength: 120 },
+                note: { type: 'string', maxLength: 240 },
+                evidence: { type: 'string', maxLength: 320 },
+              },
+              additionalProperties: false,
+            },
+          },
+          required: ['tool', 'args'],
+          additionalProperties: false,
+        },
+      },
+      replyStrategy: { type: 'string', maxLength: 240 },
+    },
+    required: ['calls', 'replyStrategy'],
+    additionalProperties: false,
+  };
   return {
     messages: [
       { role: 'system', content: `Eres el planificador de herramientas de una ayuda local para principiantes. Elige solo las llamadas que se pueden ejecutar con la evidencia disponible. No inventes herramientas ni argumentos. El modo y la pregunta limitan tu actuación. ${MODE_GUIDANCE[input.mode]} ${writeInstruction} Puedes usar como máximo ${options.remainingTools ?? 3} herramientas en este paso. Devuelve únicamente JSON con las claves calls y replyStrategy. calls es un array de objetos {tool,args}; replyStrategy es una instrucción breve para la respuesta final.` },
@@ -66,11 +99,13 @@ export function buildTutorPlannerRequest(input: TutorPromptInput, options: { obs
     maxNewTokens: 220,
     expectedFormat: 'json_object',
     expectedJsonKeys: ['calls', 'replyStrategy'],
+    expectedJsonSchema: planSchema,
     allowInvalidStructuredOutput: true,
   };
 }
 
 export function buildTutorPlanRepairRequest(input: TutorPromptInput, invalidOutput: string, validationError: string): LocalGenerationRequest {
+  const contract = buildTutorPlannerRequest(input);
   return {
     messages: [
       { role: 'system', content: 'Repara un plan de herramientas mal formado. Devuelve solo un objeto JSON válido con exactamente las claves calls y replyStrategy. calls contiene como máximo 3 objetos {"tool":"nombre","args":{...}}. Para write_file, args contiene únicamente path. No añadas Markdown, comentarios ni texto fuera del JSON.' },
@@ -81,15 +116,19 @@ export function buildTutorPlanRepairRequest(input: TutorPromptInput, invalidOutp
     maxNewTokens: 220,
     expectedFormat: 'json_object',
     expectedJsonKeys: ['calls', 'replyStrategy'],
+    expectedJsonSchema: contract.expectedJsonSchema,
     allowInvalidStructuredOutput: true,
   };
 }
 
-export function buildTutorFileEditRequest(input: TutorPromptInput, path: string, currentContent: string, observations: string): LocalGenerationRequest {
+export function buildTutorFileEditRequest(input: TutorPromptInput, path: string, currentContent: string, observations: string, validationFeedback = ''): LocalGenerationRequest {
+  const correction = validationFeedback
+    ? `\nLa propuesta anterior fue rechazada: ${validationFeedback}\nCorrígela; no repitas una salida que ignore la petición.`
+    : '';
   return {
     messages: [
-      { role: 'system', content: `Edita el archivo ${path} para cumplir la petición. Devuelve solo el contenido completo actualizado del archivo, sin cercas Markdown, sin explicación y sin JSON. Conserva lo que ya funciona. No inventes otros archivos ni dependencias.` },
-      { role: 'user', content: truncateTutorText(`${activityContextText(input.activity, input.attemptCount)}\nPetición autorizada: ${input.question.trim()}\nObservaciones verificadas:\n${observations || 'Sin observaciones previas.'}\n\nContenido actual de ${path}:\n${currentContent}`, 13_000) },
+      { role: 'system', content: `Eres el editor de código, no el instructor de la lección. Edita ${path} obedeciendo literalmente el REQUISITO PRINCIPAL del último renglón. El contexto pedagógico solo sirve para comprender el nivel; nunca sustituye la petición. Devuelve solo el contenido completo actualizado del archivo, sin cercas Markdown, sin explicación y sin JSON. Conserva lo que ya funciona cuando sea compatible. No inventes otros archivos ni dependencias.` },
+      { role: 'user', content: truncateTutorText(`${activityContextText(input.activity, input.attemptCount)}\nObservaciones verificadas:\n${observations || 'Sin observaciones previas.'}\n\nContenido actual de ${path}:\n${currentContent}${correction}\n\nREQUISITO PRINCIPAL: ${input.question.trim()}`, 13_000) },
     ],
     temperature: 0.08,
     topP: 0.8,

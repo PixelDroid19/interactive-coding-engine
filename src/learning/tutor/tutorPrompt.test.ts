@@ -66,6 +66,14 @@ describe('prompt del tutor socrático', () => {
     });
     expect(request.expectedFormat).toBe('json_object');
     expect(request.allowInvalidStructuredOutput).toBe(true);
+    expect(request.expectedJsonSchema).toMatchObject({
+      type: 'object',
+      properties: {
+        calls: { type: 'array', maxItems: 3 },
+        replyStrategy: { type: 'string', maxLength: 240 },
+      },
+    });
+    expect(JSON.stringify(request.expectedJsonSchema)).toContain('write_file');
     expect(request.messages.at(-1)?.content).toContain('write_file');
     expect(request.messages.at(-1)?.content).not.toContain('contenido completo');
   });
@@ -86,6 +94,7 @@ describe('prompt del tutor socrático', () => {
     expect(repair.messages.at(-1)?.content).toContain('Falta calls');
     expect(edit.expectedFormat).toBeUndefined();
     expect(edit.messages.at(-1)?.content).toContain('const x = 1;');
+    expect(edit.messages.at(-1)?.content.trim().endsWith('REQUISITO PRINCIPAL: Corrige app.js.')).toBe(true);
     expect(edit.messages[0].content).toMatch(/solo el contenido completo/i);
   });
 });

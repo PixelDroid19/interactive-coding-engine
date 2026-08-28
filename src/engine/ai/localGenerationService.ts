@@ -117,6 +117,9 @@ function withTimeoutAndAbort<T>(
 
 function responseFormatFor(request: LocalGenerationRequest) {
   if (request.expectedFormat !== 'json_object') return undefined;
+  if (request.expectedJsonSchema) {
+    return { type: 'json_object' as const, schema: JSON.stringify(request.expectedJsonSchema) };
+  }
   const keys = [...new Set(request.expectedJsonKeys ?? [])];
   if (keys.length === 0) return { type: 'json_object' as const };
   return {

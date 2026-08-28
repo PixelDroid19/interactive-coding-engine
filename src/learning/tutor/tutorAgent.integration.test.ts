@@ -110,6 +110,55 @@ describe('agente pedagógico local', () => {
     expect(turn.changedFiles).toEqual(['app.js']);
   });
 
+  it('aplica la edición solicitada si el segundo plan válido insiste en usar solo herramientas de lectura', async () => {
+    const current = workspace();
+    const fibonacci = 'function fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}';
+    const local = service(
+      JSON.stringify({ calls: [{ tool: 'read_diagnostics', args: {} }], replyStrategy: 'Consulta el estado.' }),
+      JSON.stringify({ calls: [{ tool: 'read_workspace', args: { paths: ['app.js'] } }], replyStrategy: 'Sigue revisando.' }),
+      fibonacci,
+      'Añadí fibonacci al archivo activo.',
+    );
+
+    const turn = await runTutorTurn({ mode: 'auto', question: 'crea una funcion fibonnaci en el editor', attemptCount: 1, activity, conversation: [] }, local, current);
+
+    expect(current.actions.replaceFile).toHaveBeenCalledWith('app.js', fibonacci);
+    expect(turn.changedFiles).toEqual(['app.js']);
+  });
+
+  it('rechaza una edición que ignora la función solicitada y la regenera antes de escribir', async () => {
+    const current = workspace();
+    const fibonacci = 'function fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}';
+    const local = service(
+      JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js' } }], replyStrategy: 'Explica la edición.' }),
+      'console.log("Hola, este es mi primer programa");',
+      fibonacci,
+      'Añadí fibonacci al archivo activo.',
+    );
+
+    const turn = await runTutorTurn({ mode: 'auto', question: 'crea una función fibonacci en el editor', attemptCount: 1, activity, conversation: [] }, local, current);
+
+    expect(current.actions.replaceFile).toHaveBeenCalledTimes(1);
+    expect(current.actions.replaceFile).toHaveBeenCalledWith('app.js', fibonacci);
+    expect(local.generate).toHaveBeenCalledTimes(4);
+    expect(turn.changedFiles).toEqual(['app.js']);
+  });
+
+  it('sustituye una respuesta final degenerada por un resumen verificable de la acción', async () => {
+    const current = workspace();
+    const fibonacci = 'function fibonacci(n) { return n <= 1 ? n : fibonacci(n - 1) + fibonacci(n - 2); }';
+    const local = service(
+      JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js' } }], replyStrategy: 'Resume el cambio.' }),
+      fibonacci,
+      '!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
+    );
+
+    const turn = await runTutorTurn({ mode: 'auto', question: 'crea una función fibonacci en el editor', attemptCount: 1, activity, conversation: [] }, local, current);
+
+    expect(turn.response).toContain('Actualicé app.js');
+    expect(turn.response).not.toContain('!!!!!!!!!!');
+  });
+
   it('reserva una escritura final aunque el primer plan haya consumido tres lecturas', async () => {
     const current = workspace();
     const replacement = 'function doble(valor) { return valor * 2; }';
@@ -191,16 +240,34 @@ describe('agente pedagógico local', () => {
     expect(turn.changedFiles).toEqual(['app.js']);
   });
 
-  it('limita la recuperación a un intento si el modelo insiste en devolver un plan inválido', async () => {
+  it('limita la reparación del plan a un intento antes de recuperar una edición explícita', async () => {
     const current = workspace();
-    const local = service('sin JSON', 'todavía sin JSON', 'no debería consumirse');
+    const replacement = 'function doble(valor) { return valor * 2; }';
+    const local = service('sin JSON', 'todavía sin JSON', replacement, 'Actualicé el archivo activo.');
 
-    await expect(runTutorTurn(
+    const turn = await runTutorTurn(
       { mode: 'collaborate', question: 'Corrige app.js.', attemptCount: 1, activity, conversation: [] },
       local,
       current,
-    )).rejects.toThrow(/no pudo reparar el plan/i);
-    expect(local.generate).toHaveBeenCalledTimes(2);
-    expect(current.actions.replaceFile).not.toHaveBeenCalled();
+    );
+    expect(local.generate).toHaveBeenCalledTimes(4);
+    expect(current.actions.replaceFile).toHaveBeenCalledWith('app.js', replacement);
+    expect(turn.changedFiles).toEqual(['app.js']);
+  });
+
+  it('recupera una edición explícita usando el archivo activo si el modelo pequeño no logra formar el plan', async () => {
+    const current = workspace();
+    const fibonacci = 'function fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}';
+    const local = service(
+      'Voy a escribir la función en el editor.',
+      'Claro, aquí está el código que necesitas.',
+      `\`\`\`javascript\n${fibonacci}\n\`\`\``,
+      'Añadí la función al archivo activo.',
+    );
+
+    const turn = await runTutorTurn({ mode: 'auto', question: 'crea una funcion fibonnaci en el editor', attemptCount: 1, activity, conversation: [] }, local, current);
+
+    expect(current.actions.replaceFile).toHaveBeenCalledWith('app.js', fibonacci);
+    expect(turn.changedFiles).toEqual(['app.js']);
   });
 });

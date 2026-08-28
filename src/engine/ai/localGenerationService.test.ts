@@ -121,6 +121,27 @@ describe('LocalGenerationService', () => {
     }));
   });
 
+  it('envía a WebLLM el esquema estructurado completo cuando la herramienta lo publica', async () => {
+    const schema = {
+      type: 'object',
+      properties: { calls: { type: 'array', maxItems: 3 } },
+      required: ['calls'],
+      additionalProperties: false,
+    };
+    const { service, engine } = harness({ output: ['{"calls":[]}'] });
+    await service.generate({
+      messages: [{ role: 'user', content: 'Elige herramientas.' }],
+      maxNewTokens: 48,
+      expectedFormat: 'json_object',
+      expectedJsonKeys: ['calls'],
+      expectedJsonSchema: schema,
+    });
+
+    expect(engine.chat.completions.create).toHaveBeenCalledWith(expect.objectContaining({
+      response_format: { type: 'json_object', schema: JSON.stringify(schema) },
+    }));
+  });
+
   it('recrea el motor cuando se solicita otro modelo en lugar de etiquetar mal la salida', async () => {
     const { service, createEngine, engine, worker } = harness();
     const request = { messages: [{ role: 'user' as const, content: 'Hola' }], maxNewTokens: 24 };

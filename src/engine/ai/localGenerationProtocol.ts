@@ -14,6 +14,7 @@ export interface LocalGenerationRequest {
   maxNewTokens: number;
   expectedFormat?: 'text' | 'json_object';
   expectedJsonKeys?: string[];
+  expectedJsonSchema?: Record<string, unknown>;
   allowInvalidStructuredOutput?: boolean;
 }
 
