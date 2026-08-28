@@ -77,7 +77,7 @@ function editValidationError(question: string, content: string): string | null {
   return identifiers.some(withinOneEdit) ? null : `La petición exige una función llamada ${requested}, pero el archivo generado no contiene ese identificador.`;
 }
 
-function usableTutorResponse(text: string): boolean {
+export function isTutorResponseUsable(text: string): boolean {
   const trimmed = text.trim();
   const meaningfulCharacters = trimmed.match(/[\p{L}\p{N}]/gu)?.length ?? 0;
   return meaningfulCharacters >= 4 && !/(.)\1{15}/u.test(trimmed);
@@ -180,7 +180,7 @@ export async function runTutorTurn(input: TutorTurnInput, service: LocalGenerati
   }
   const response = await service.generate(buildTutorResponseRequest(promptInput, plan.replyStrategy, observations), input.generationOptions);
   return {
-    response: usableTutorResponse(response.text) ? response.text : verifiedFallbackResponse(executions),
+    response: isTutorResponseUsable(response.text) ? response.text : verifiedFallbackResponse(executions),
     activities: executions.map((entry) => entry.activity),
     changedFiles: [...new Set(executions.flatMap((entry) => entry.changedFile ? [entry.changedFile] : []))],
     reinforcement: executions.find((entry) => entry.reinforcement)?.reinforcement,

@@ -3,7 +3,7 @@ import { Bot, CheckCircle2, Download, Send, Square, Undo2, X } from 'lucide-reac
 import type { LocalModelOption } from '../../engine/ai/localGenerationProtocol';
 import { LocalGenerationService } from '../../engine/ai/localGenerationService';
 import { getLocalGenerationSession } from '../../engine/ai/localGenerationSession';
-import { runTutorTurn } from '../../learning/tutor/tutorAgent';
+import { isTutorResponseUsable, runTutorTurn } from '../../learning/tutor/tutorAgent';
 import { type TutorMode } from '../../learning/tutor/tutorPrompt';
 import { type TutorActivityContext, useTutorWorkspace } from '../../learning/tutor/tutorContext';
 import type { TutorToolActivity } from '../../learning/tutor/tutorTools';
@@ -107,7 +107,11 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
       if (!active) return;
       preferredModelRef.current = profile.tutor.selectedModel;
       setSelectedModel(profile.tutor.selectedModel);
-      const saved = (profile.tutor.conversations[conversationKey] ?? []).map((message) => ({ ...message }));
+      const stored = profile.tutor.conversations[conversationKey] ?? [];
+      const saved = stored
+        .filter((message) => message.role === 'user' || isTutorResponseUsable(message.content))
+        .map((message) => ({ ...message }));
+      if (saved.length !== stored.length) void saveTutorConversation(conversationKey, saved);
       setMessages((current) => current.length > 0 ? current : saved);
     });
     return () => { active = false; };
@@ -209,7 +213,6 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
     setError('');
     const controller = new AbortController();
     abortRef.current = controller;
-    let streamed = '';
     try {
       const turn = await runTutorTurn({
         mode,
@@ -220,10 +223,6 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
         generationOptions: {
           model: selectedModel,
           signal: controller.signal,
-          onChunk: (chunk) => {
-            streamed += chunk;
-            setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, content: streamed } : message));
-          },
         },
       }, service, workspace);
       setToolActivities(turn.activities);

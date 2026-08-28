@@ -5,6 +5,8 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LocalModelOption } from '../../engine/ai/localGenerationProtocol';
 import type { LocalGenerationService } from '../../engine/ai/localGenerationService';
+import { createEmptyLearningProfile } from '../../learning/mastery';
+import { LEARNING_PROFILE_STORAGE_KEY } from '../../learning/localLearningRepository';
 import { clearTutorWorkspace, publishTutorWorkspace } from '../../learning/tutor/tutorContext';
 import { SocraticTutor } from './SocraticTutor';
 
@@ -51,7 +53,7 @@ const activity = {
   mentalModel: 'Una función transforma una entrada en una salida.',
 };
 
-afterEach(() => { cleanup(); clearTutorWorkspace('test'); });
+afterEach(() => { cleanup(); clearTutorWorkspace('test'); localStorage.clear(); });
 
 describe('SocraticTutor', () => {
   it('no monta ninguna superficie cuando el curso lo desactiva', () => {
@@ -73,7 +75,7 @@ describe('SocraticTutor', () => {
     expect(await screen.findByText(/Modelo listo/)).toBeTruthy();
   });
 
-  it('genera por streaming, permite cancelar y mantiene la interfaz en español', async () => {
+  it('genera una respuesta, permite cancelar y mantiene la interfaz en español', async () => {
     const service = serviceHarness();
     render(<SocraticTutor enabled activity={activity} service={service} initialModelReady />);
 
@@ -144,5 +146,42 @@ describe('SocraticTutor', () => {
     await waitFor(() => expect(container.querySelector('.socratic-tutor__message pre code')?.textContent).toContain('function fibonacci'));
     expect(container.textContent).not.toContain('```javascript');
     expect(container.querySelector('.socratic-tutor__message pre code')?.textContent).toContain('function fibonacci');
+  });
+
+  it('elimina del historial las respuestas locales degeneradas', async () => {
+    const profile = createEmptyLearningProfile();
+    profile.tutor.conversations['course-javascript:javascript-05'] = [
+      { id: 'user-old', role: 'user', content: 'Crea fibonacci.', createdAt: 1 },
+      { id: 'assistant-bad', role: 'assistant', content: 'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii', createdAt: 2 },
+      { id: 'assistant-good', role: 'assistant', content: 'Actualicé app.js correctamente.', createdAt: 3 },
+    ];
+    localStorage.setItem(LEARNING_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+
+    render(<SocraticTutor enabled activity={activity} service={serviceHarness()} initialModelReady />);
+    fireEvent.click(screen.getByRole('button', { name: /abrir ayuda/i }));
+
+    expect(await screen.findByText('Actualicé app.js correctamente.')).toBeTruthy();
+    expect(screen.queryByText(/iiiiiiiiiiiiiiii/)).toBeNull();
+  });
+
+  it('mantiene Pensando mientras valida la respuesta y no muestra fragmentos degenerados', async () => {
+    let finishResponse: ((value: { text: string; model: string; engine: 'WebLLM'; device: 'webgpu'; elapsedMs: number }) => void) | undefined;
+    const service = serviceHarness();
+    vi.mocked(service.generate)
+      .mockResolvedValueOnce({ text: JSON.stringify({ calls: [{ tool: 'read_lesson', args: {} }], replyStrategy: 'Explica.' }), model: model.id, engine: 'WebLLM', device: 'webgpu', elapsedMs: 1 })
+      .mockImplementationOnce(async (_request, options) => {
+        options?.onChunk?.('iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii');
+        return new Promise((resolve) => { finishResponse = resolve; });
+      });
+
+    render(<SocraticTutor enabled activity={activity} service={service} initialModelReady />);
+    fireEvent.click(screen.getByRole('button', { name: /abrir ayuda/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: /pregunta para la ayuda de IA/i }), { target: { value: 'Explícame fibonacci.' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar pregunta/i }));
+
+    expect(await screen.findByText('Pensando…')).toBeTruthy();
+    expect(screen.queryByText(/iiiiiiiiiiiiiiii/)).toBeNull();
+    finishResponse?.({ text: 'Revisé la actividad.', model: model.id, engine: 'WebLLM', device: 'webgpu', elapsedMs: 2 });
+    expect(await screen.findByText('Revisé la actividad.')).toBeTruthy();
   });
 });
