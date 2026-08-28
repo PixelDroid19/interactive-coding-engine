@@ -1,8 +1,11 @@
 // @vitest-environment happy-dom
 import React, { createRef } from 'react';
+import { readFileSync } from 'node:fs';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CellsPreviewWorkbench, type ComponentDemo } from './CellsPreviewWorkbench';
+
+const cellsStudioCss = readFileSync('src/index.css', 'utf8');
 
 const demo: ComponentDemo = {
   tagName: 'academy-learning-card',
@@ -50,6 +53,12 @@ export class AcademyLearningCard extends LitElement {
 
 describe('CellsPreviewWorkbench', () => {
   afterEach(() => cleanup());
+
+  it('mantiene legibles las opciones del selector nativo sobre su menú emergente', () => {
+    expect(cellsStudioCss).toMatch(
+      /\.cells-studio__select-wrapper\s+select\s+option\s*\{[^}]*background(?:-color)?\s*:[^;]+;[^}]*color\s*:[^;]+;/s,
+    );
+  });
 
   it('renderiza la interfaz nativa de la plataforma sin browser chrome ni /index.html', () => {
     const iframeRef = createRef<HTMLIFrameElement>();

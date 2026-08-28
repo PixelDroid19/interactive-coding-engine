@@ -673,6 +673,11 @@
   transition: all 0.15s ease;
 }
 
+.cells-studio__select-wrapper select option {
+  background-color: var(--cells-surface, #131722);
+  color: var(--cells-text, #f1f5f9);
+}
+
 .cells-studio__select-wrapper select:focus {
   border-color: #ffe600;
   box-shadow: 0 0 0 2px rgba(255, 230, 0, 0.2);
