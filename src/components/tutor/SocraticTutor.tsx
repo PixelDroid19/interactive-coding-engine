@@ -42,6 +42,33 @@ function messageId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function renderMessageContent(content: string): React.ReactNode {
+  const nodes: React.ReactNode[] = [];
+  const fence = /```([^\n`]*)\n([\s\S]*?)```/g;
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+  const addText = (text: string, key: string) => {
+    const clean = text.trim();
+    if (clean) nodes.push(<p key={key}>{clean}</p>);
+  };
+  while ((match = fence.exec(content)) !== null) {
+    addText(content.slice(cursor, match.index), `text-${cursor}`);
+    const language = match[1].trim();
+    nodes.push(<pre key={`code-${match.index}`} data-language={language || undefined}><code>{match[2].trim()}</code></pre>);
+    cursor = fence.lastIndex;
+  }
+  const tail = content.slice(cursor);
+  const openFence = tail.match(/```([^\n`]*)\n?/);
+  if (openFence?.index !== undefined) {
+    addText(tail.slice(0, openFence.index), `text-${cursor}`);
+    const code = tail.slice(openFence.index + openFence[0].length).replace(/```\s*$/, '').trim();
+    if (code) nodes.push(<pre key={`code-${cursor + openFence.index}`} data-language={openFence[1].trim() || undefined}><code>{code}</code></pre>);
+  } else {
+    addText(tail, `text-${cursor}`);
+  }
+  return nodes.length ? <div className="socratic-tutor__message-content">{nodes}</div> : <p>Pensando…</p>;
+}
+
 export const SocraticTutor: React.FC<SocraticTutorProps> = ({
   enabled,
   activity,
@@ -321,7 +348,7 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
                 {messages.map((message) => (
                   <div key={message.id} className={`socratic-tutor__message is-${message.role}`}>
                     <span>{message.role === 'user' ? 'Tú' : 'Ayuda'}</span>
-                    <p>{message.content || 'Pensando…'}</p>
+                    {renderMessageContent(message.content)}
                   </div>
                 ))}
               </div>

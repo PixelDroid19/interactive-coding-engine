@@ -10,7 +10,7 @@ export interface TutorReinforcementDraft { skillId: string; note: string; eviden
 export interface TutorToolExecution { activity: TutorToolActivity; observation: string; changedFile?: string; reinforcement?: TutorReinforcementDraft; }
 
 const TOOL_NAMES = new Set<TutorToolName>(['read_lesson', 'read_workspace', 'read_diagnostics', 'run_checks', 'write_file', 'save_reinforcement']);
-const WRITE_INTENT = /\b(corrige|corregir|arregla|arreglar|modifica|modificar|cambia|cambiar|implementa|implementar|completa|completar|escribe|escribir|apl[ií]calo|hazlo)\b/i;
+const WRITE_INTENT = /\b(corrige|corregir|arregla|arreglar|modifica|modificar|cambia|cambiar|implementa|implementar|completa|completar|escribe|escribir|crea|crear|genera|generar|a[nñ]ade|a[nñ]adir|agrega|agregar|inserta|insertar|reemplaza|reemplazar|pon|apl[ií]calo|hazlo)\b/i;
 
 export function parseTutorToolCall(value: unknown): TutorToolCall | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;

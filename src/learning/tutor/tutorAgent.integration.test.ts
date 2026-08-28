@@ -90,6 +90,46 @@ describe('agente pedagógico local', () => {
     expect(local.generate).toHaveBeenCalledTimes(4);
   });
 
+  it('interpreta crea como una orden de edición aunque el primer plan solo consulte diagnósticos', async () => {
+    const current = workspace();
+    const fibonacci = 'function fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n - 1) + fibonacci(n - 2);\n}';
+    const local = service(
+      JSON.stringify({ calls: [{ tool: 'read_diagnostics', args: {} }], replyStrategy: 'Revisa primero el estado.' }),
+      JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js' } }], replyStrategy: 'Explica la edición aplicada.' }),
+      fibonacci,
+      'Añadí fibonacci a app.js.',
+    );
+
+    const turn = await runTutorTurn({ mode: 'auto', question: 'crea una funcion fibonnaci', attemptCount: 1, activity, conversation: [] }, local, current);
+
+    expect(current.actions.replaceFile).toHaveBeenCalledWith('app.js', fibonacci);
+    expect(turn.activities).toEqual(expect.arrayContaining([
+      expect.objectContaining({ tool: 'read_diagnostics', status: 'completed' }),
+      expect.objectContaining({ tool: 'write_file', status: 'completed' }),
+    ]));
+    expect(turn.changedFiles).toEqual(['app.js']);
+  });
+
+  it('reserva una escritura final aunque el primer plan haya consumido tres lecturas', async () => {
+    const current = workspace();
+    const replacement = 'function doble(valor) { return valor * 2; }';
+    const local = service(
+      JSON.stringify({ calls: [
+        { tool: 'read_lesson', args: {} },
+        { tool: 'read_workspace', args: { paths: ['app.js'] } },
+        { tool: 'read_diagnostics', args: {} },
+      ], replyStrategy: 'Revisa antes de editar.' }),
+      JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js' } }], replyStrategy: 'Explica la edición.' }),
+      replacement,
+      'Actualicé app.js.',
+    );
+
+    const turn = await runTutorTurn({ mode: 'auto', question: 'Crea una versión correcta en el editor.', attemptCount: 1, activity, conversation: [] }, local, current);
+
+    expect(current.actions.replaceFile).toHaveBeenCalledWith('app.js', replacement);
+    expect(turn.changedFiles).toEqual(['app.js']);
+  });
+
   it('rechaza una escritura elegida por el modelo cuando la persona solo pidió explicación', async () => {
     const current = workspace();
     const local = service(

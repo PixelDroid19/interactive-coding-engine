@@ -106,13 +106,14 @@ export async function runTutorTurn(input: TutorTurnInput, service: LocalGenerati
   let observations = executions.map((entry) => `[${entry.activity.status}] ${entry.activity.label}: ${entry.observation}`).join('\n\n');
   const writeWasRequested = allowsTutorWrite(input.mode, input.question);
   const changed = () => executions.some((entry) => Boolean(entry.changedFile));
-  if (writeWasRequested && !changed() && executions.length < 3) {
+  if (writeWasRequested && !changed()) {
+    const remainingTools = Math.max(1, 4 - executions.length);
     plan = await generatePlan(input, promptInput, service, buildTutorPlannerRequest(promptInput, {
       observations,
       requireWrite: true,
-      remainingTools: 3 - executions.length,
+      remainingTools,
     }));
-    for (const call of plan.calls.slice(0, 3 - executions.length)) await execute(call);
+    for (const call of plan.calls.slice(0, remainingTools)) await execute(call);
     observations = executions.map((entry) => `[${entry.activity.status}] ${entry.activity.label}: ${entry.observation}`).join('\n\n');
     if (!changed()) throw new Error('El modelo entendió la petición, pero no produjo una edición aplicable. Prueba el modelo recomendado o concreta qué archivo debe modificar.');
   }

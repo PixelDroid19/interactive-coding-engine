@@ -129,4 +129,20 @@ describe('SocraticTutor', () => {
     expect(send.textContent?.trim()).toBe('');
     expect(send.getAttribute('title')).toBe('Enviar pregunta');
   });
+
+  it('presenta los bloques de código sin mostrar las cercas Markdown', async () => {
+    const service = serviceHarness();
+    vi.mocked(service.generate)
+      .mockResolvedValueOnce({ text: JSON.stringify({ calls: [{ tool: 'read_lesson', args: {} }], replyStrategy: 'Explica.' }), model: model.id, engine: 'WebLLM', device: 'webgpu', elapsedMs: 1 })
+      .mockResolvedValueOnce({ text: 'Aquí tienes:\n```javascript\nfunction fibonacci(n) {\n  return n;\n}\n```', model: model.id, engine: 'WebLLM', device: 'webgpu', elapsedMs: 1 });
+
+    const { container } = render(<SocraticTutor enabled activity={activity} service={service} initialModelReady />);
+    fireEvent.click(screen.getByRole('button', { name: /abrir ayuda/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: /pregunta para la ayuda de IA/i }), { target: { value: 'Explícame fibonacci.' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar pregunta/i }));
+
+    await waitFor(() => expect(container.querySelector('.socratic-tutor__message pre code')?.textContent).toContain('function fibonacci'));
+    expect(container.textContent).not.toContain('```javascript');
+    expect(container.querySelector('.socratic-tutor__message pre code')?.textContent).toContain('function fibonacci');
+  });
 });
