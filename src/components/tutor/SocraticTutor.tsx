@@ -342,9 +342,9 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
                   rows={3}
                 />
                 {generating ? (
-                  <button type="button" onClick={() => abortRef.current?.abort()} aria-label="Cancelar respuesta"><Square size={16} /> Detener</button>
+                  <button type="button" onClick={() => abortRef.current?.abort()} aria-label="Detener respuesta" title="Detener respuesta"><Square size={16} /></button>
                 ) : (
-                  <button type="button" onClick={() => void send()} disabled={!draft.trim()} aria-label="Enviar pregunta"><Send size={16} /> Enviar</button>
+                  <button type="button" onClick={() => void send()} disabled={!draft.trim()} aria-label="Enviar pregunta" title="Enviar pregunta"><Send size={16} /></button>
                 )}
               </div>
             </>

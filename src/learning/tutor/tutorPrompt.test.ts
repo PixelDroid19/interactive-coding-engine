@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTutorPlannerRequest, buildTutorResponseRequest } from './tutorPrompt';
+import { buildTutorFileEditRequest, buildTutorPlanRepairRequest, buildTutorPlannerRequest, buildTutorResponseRequest } from './tutorPrompt';
 
 describe('prompt del tutor socrático', () => {
   it('combina pedagogía, actividad y código sin entregar la solución inicialmente', () => {
@@ -57,7 +57,7 @@ describe('prompt del tutor socrático', () => {
     expect(request.messages.at(-1)?.content.length).toBeLessThan(7_500);
   });
 
-  it('exige un plan JSON con las herramientas publicadas', () => {
+  it('publica un contrato de herramientas sin incrustar el código completo en el JSON', () => {
     const request = buildTutorPlannerRequest({
       mode: 'auto', question: 'Revisa mi ejercicio.', attemptCount: 1,
       activity: { courseId: 'c', courseTitle: 'Curso', itemId: 'i', itemTitle: 'Actividad', itemType: 'debugging' },
@@ -65,7 +65,27 @@ describe('prompt del tutor socrático', () => {
       conversation: [],
     });
     expect(request.expectedFormat).toBe('json_object');
-    expect(request.expectedJsonKeys).toEqual(['calls', 'replyStrategy']);
+    expect(request.allowInvalidStructuredOutput).toBe(true);
     expect(request.messages.at(-1)?.content).toContain('write_file');
+    expect(request.messages.at(-1)?.content).not.toContain('contenido completo');
+  });
+
+  it('crea una reparación acotada del plan y una generación separada para el archivo', () => {
+    const input = {
+      mode: 'collaborate' as const,
+      question: 'Corrige app.js.',
+      attemptCount: 1,
+      activity: { courseId: 'c', courseTitle: 'Curso', itemId: 'i', itemTitle: 'Actividad', itemType: 'debugging' as const },
+      workspace: { activeFilePath: 'app.js', files: { 'app.js': 'const x = 1;' } },
+      conversation: [],
+    };
+    const repair = buildTutorPlanRepairRequest(input, 'texto inválido', 'Falta calls.');
+    const edit = buildTutorFileEditRequest(input, 'app.js', 'const x = 1;', 'Se leyó app.js.');
+
+    expect(repair.messages.at(-1)?.content).toContain('texto inválido');
+    expect(repair.messages.at(-1)?.content).toContain('Falta calls');
+    expect(edit.expectedFormat).toBeUndefined();
+    expect(edit.messages.at(-1)?.content).toContain('const x = 1;');
+    expect(edit.messages[0].content).toMatch(/solo el contenido completo/i);
   });
 });

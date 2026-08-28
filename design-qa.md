@@ -94,3 +94,35 @@ Correcciones: el Centro reserva cuatro filas reales; el contenido comienza debaj
 No quedan diferencias P0, P1 o P2 asociadas con las tres capturas reportadas.
 
 final result: passed
+
+---
+
+# QA visual — ayuda local y compositor compacto
+
+## Evidencia
+
+- Problema reportado: `/tmp/codex-clipboard-716b618c-2fbc-49ed-8d0d-079258ba720f.png`.
+- Referencia de composición: `/tmp/codex-clipboard-61872996-fad3-4ac9-a511-7af47cb40661.png`.
+- Estado de error reportado: `/tmp/codex-clipboard-ed7d19e8-75ab-4c80-b7d6-2895a8dd3a4f.png`.
+- Implementación cyber: `/tmp/exdev-tutor-cyber-setup.png`, 1280 × 720 px.
+- Implementación normal oscuro: `/tmp/exdev-tutor-normal-setup.png`, 1280 × 720 px.
+- Comparación conjunta de referencia e implementación cyber: `/tmp/exdev-tutor-comparison.png`.
+
+## Hallazgos y correcciones
+
+- P1: `write_file` exigía incrustar código multilínea dentro del JSON del plan. Las comillas y saltos de línea volvían frágil la salida y una respuesta inválida terminaba el turno sin editar.
+- P1: no existía recuperación estructurada ante un plan mal formado.
+- P2: Enviar y Detener ocupaban una columna completa junto al campo y competían visualmente con la pregunta.
+
+La decisión de herramienta ahora contiene únicamente la ruta existente. El contenido completo se genera en un turno separado, se limpia de una cerca Markdown exterior, se comprueba y solo entonces se entrega al ejecutor. Un plan inválido recibe una sola reparación acotada; si vuelve a fallar, no se escribe nada.
+
+El compositor usa una acción circular de 40 px dentro del campo, con nombre accesible y `title`; el texto reserva espacio a la derecha para no quedar debajo del control. El mismo contrato se aplica a Enviar y Detener y conserva foco visible en los temas normal y cyber.
+
+## Verificación visual y funcional
+
+- El panel conserva contraste, separación y encaje en 1280 × 720 en ambos temas.
+- No aparecieron errores de consola durante apertura, cambio de tema y navegación de la lección.
+- La vista lista para conversar se valida en el componente sin descargar un modelo durante QA; la descarga WebGPU sigue requiriendo el gesto explícito del estudiante.
+- Las pruebas cubren plan inválido, reparación única, JSON cercado, generación de archivo fuera del JSON, escritura real, deshacer y estructura del compositor.
+
+final result: passed

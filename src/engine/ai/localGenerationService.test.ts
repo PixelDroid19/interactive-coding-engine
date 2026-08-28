@@ -142,6 +142,20 @@ describe('LocalGenerationService', () => {
     })).rejects.toThrow(/no produjo el objeto JSON válido/i);
   });
 
+  it('entrega la salida JSON inválida al agente cuando este declara una recuperación validada', async () => {
+    const { service } = harness({ output: ['Esto no es JSON.'] });
+    await expect(service.generate({
+      messages: [{ role: 'user', content: 'Devuelve JSON.' }],
+      maxNewTokens: 48,
+      expectedFormat: 'json_object',
+      expectedJsonKeys: ['calls', 'replyStrategy'],
+      allowInvalidStructuredOutput: true,
+    })).resolves.toMatchObject({
+      text: 'Esto no es JSON.',
+      warning: expect.stringMatching(/no produjo el objeto JSON válido/i),
+    });
+  });
+
   it('rechaza campos JSON adicionales aunque la sintaxis sea válida', async () => {
     const { service } = harness({ output: ['{"problema":"pantalla","prioridad":"alta","equipo":"web","historia":"inventada"}'] });
     await expect(service.generate({

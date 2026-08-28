@@ -101,7 +101,8 @@ describe('SocraticTutor', () => {
     const service = serviceHarness();
     vi.mocked(service.generate).mockImplementation(async (_request, options) => {
       generation += 1;
-      if (generation === 1) return { text: JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js', content: 'const valor = 2;' } }], replyStrategy: 'Explica el cambio.' }), model: model.id, engine: 'WebLLM', device: 'webgpu', elapsedMs: 1 };
+      if (generation === 1) return { text: JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js' } }], replyStrategy: 'Explica el cambio.' }), model: model.id, engine: 'WebLLM', device: 'webgpu', elapsedMs: 1 };
+      if (generation === 2) return { text: 'const valor = 2;', model: model.id, engine: 'WebLLM', device: 'webgpu', elapsedMs: 1 };
       options?.onChunk?.('Actualicé el valor para trabajar contigo.');
       return { text: 'Actualicé el valor para trabajar contigo.', model: model.id, engine: 'WebLLM', device: 'webgpu', elapsedMs: 1 };
     });
@@ -116,5 +117,16 @@ describe('SocraticTutor', () => {
     expect(replaceFile).toHaveBeenCalledWith('app.js', 'const valor = 2;');
     fireEvent.click(screen.getByRole('button', { name: 'Deshacer cambios del agente' }));
     expect(undoLastChange).toHaveBeenCalledTimes(1);
+  });
+
+  it('integra una acción compacta dentro del campo de texto', () => {
+    render(<SocraticTutor enabled activity={activity} service={serviceHarness()} initialModelReady />);
+    fireEvent.click(screen.getByRole('button', { name: /abrir ayuda/i }));
+
+    const input = screen.getByRole('textbox', { name: /pregunta para la ayuda de IA/i });
+    const send = screen.getByRole('button', { name: /enviar pregunta/i });
+    expect(input.parentElement?.contains(send)).toBe(true);
+    expect(send.textContent?.trim()).toBe('');
+    expect(send.getAttribute('title')).toBe('Enviar pregunta');
   });
 });

@@ -36,4 +36,10 @@ describe('contratos visuales de superficies principales', () => {
       /\.course-card__icon\s*\{[^}]*background:\s*transparent\s*!important/s,
     );
   });
+
+  it('mantiene la acción de la ayuda local compacta y dentro del campo', () => {
+    expect(indexCss).toMatch(/\.socratic-tutor__composer\s*\{[^}]*position:\s*relative/s);
+    expect(indexCss).toMatch(/\.socratic-tutor__composer button\s*\{[^}]*position:\s*absolute[^}]*width:\s*2\.5rem/s);
+    expect(indexCss).toMatch(/\.socratic-tutor__composer textarea\s*\{[^}]*padding-right:\s*3\.5rem/s);
+  });
 });

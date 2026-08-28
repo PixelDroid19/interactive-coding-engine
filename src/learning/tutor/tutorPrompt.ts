@@ -48,17 +48,17 @@ export function buildTutorPlannerRequest(input: TutorPromptInput, options: { obs
 - read_workspace args {"paths":["ruta"]}; omite paths para leer todos
 - read_diagnostics args {}
 - run_checks args {}
-- write_file args {"path":"ruta existente","content":"contenido completo"}
+- write_file args {"path":"ruta existente"}; el contenido se genera después, fuera del JSON
 - save_reinforcement args {"skillId":"concepto curricular","note":"nota breve","evidence":"evidencia observada"}`;
   const continuation = options.observations
     ? `\nResultados de herramientas anteriores:\n${truncateTutorText(options.observations, 10_000)}`
     : '';
   const writeInstruction = options.requireWrite
-    ? 'La persona pidió modificar el ejercicio y ya autorizó la escritura. Usa write_file con el contenido completo de un archivo existente; si todavía necesitas conocerlo, usa read_workspace. No termines con calls vacío antes de aplicar el cambio solicitado.'
+    ? 'La persona pidió modificar el ejercicio y ya autorizó la escritura. Usa write_file indicando solo la ruta de un archivo existente; el sistema generará el contenido en un paso separado. Si todavía necesitas conocerlo, usa read_workspace. No termines con calls vacío antes de aplicar el cambio solicitado.'
     : 'Cuando la petición sea una edición, consulta primero el workspace. Después de recibir ese resultado podrás elegir write_file en el siguiente paso.';
   return {
     messages: [
-      { role: 'system', content: `Eres el planificador de herramientas de un tutor local para principiantes. Elige solo las llamadas que se pueden ejecutar con la evidencia disponible. No inventes herramientas ni argumentos. El modo y la pregunta limitan tu actuación. ${MODE_GUIDANCE[input.mode]} ${writeInstruction} Puedes usar como máximo ${options.remainingTools ?? 3} herramientas en este paso. Devuelve únicamente JSON con las claves calls y replyStrategy. calls es un array de objetos {tool,args}; replyStrategy es una instrucción breve para el tutor final.` },
+      { role: 'system', content: `Eres el planificador de herramientas de una ayuda local para principiantes. Elige solo las llamadas que se pueden ejecutar con la evidencia disponible. No inventes herramientas ni argumentos. El modo y la pregunta limitan tu actuación. ${MODE_GUIDANCE[input.mode]} ${writeInstruction} Puedes usar como máximo ${options.remainingTools ?? 3} herramientas en este paso. Devuelve únicamente JSON con las claves calls y replyStrategy. calls es un array de objetos {tool,args}; replyStrategy es una instrucción breve para la respuesta final.` },
       { role: 'user', content: truncateTutorText(`${activityContextText(input.activity, input.attemptCount)}\n${workspaceSummary}\nModo: ${input.mode}\n${tools}\nPregunta: ${input.question.trim()}${continuation}`, 13_000) },
     ],
     temperature: 0.05,
@@ -66,6 +66,34 @@ export function buildTutorPlannerRequest(input: TutorPromptInput, options: { obs
     maxNewTokens: 220,
     expectedFormat: 'json_object',
     expectedJsonKeys: ['calls', 'replyStrategy'],
+    allowInvalidStructuredOutput: true,
+  };
+}
+
+export function buildTutorPlanRepairRequest(input: TutorPromptInput, invalidOutput: string, validationError: string): LocalGenerationRequest {
+  return {
+    messages: [
+      { role: 'system', content: 'Repara un plan de herramientas mal formado. Devuelve solo un objeto JSON válido con exactamente las claves calls y replyStrategy. calls contiene como máximo 3 objetos {"tool":"nombre","args":{...}}. Para write_file, args contiene únicamente path. No añadas Markdown, comentarios ni texto fuera del JSON.' },
+      { role: 'user', content: truncateTutorText(`${activityContextText(input.activity, input.attemptCount)}\nPregunta: ${input.question.trim()}\nError de validación: ${validationError}\nSalida inválida:\n${invalidOutput}`, 7_000) },
+    ],
+    temperature: 0,
+    topP: 0.7,
+    maxNewTokens: 220,
+    expectedFormat: 'json_object',
+    expectedJsonKeys: ['calls', 'replyStrategy'],
+    allowInvalidStructuredOutput: true,
+  };
+}
+
+export function buildTutorFileEditRequest(input: TutorPromptInput, path: string, currentContent: string, observations: string): LocalGenerationRequest {
+  return {
+    messages: [
+      { role: 'system', content: `Edita el archivo ${path} para cumplir la petición. Devuelve solo el contenido completo actualizado del archivo, sin cercas Markdown, sin explicación y sin JSON. Conserva lo que ya funciona. No inventes otros archivos ni dependencias.` },
+      { role: 'user', content: truncateTutorText(`${activityContextText(input.activity, input.attemptCount)}\nPetición autorizada: ${input.question.trim()}\nObservaciones verificadas:\n${observations || 'Sin observaciones previas.'}\n\nContenido actual de ${path}:\n${currentContent}`, 13_000) },
+    ],
+    temperature: 0.08,
+    topP: 0.8,
+    maxNewTokens: 1_200,
   };
 }
 
@@ -73,7 +101,7 @@ export function buildTutorResponseRequest(input: TutorPromptInput, replyStrategy
   const previous = input.conversation.slice(-6).map((message) => ({ ...message, content: truncateTutorText(message.content, 800) }));
   return {
     messages: [
-      { role: 'system', content: `Eres el tutor socrático local de una plataforma para aprender programación desde cero. Responde en español claro y natural. Usa solo las observaciones de herramientas. No inventes resultados. Explica cualquier cambio aplicado y termina con una pregunta breve que compruebe comprensión. No entregues una solución completa en modo pista. Estrategia: ${truncateTutorText(replyStrategy, 600)}` },
+      { role: 'system', content: `Eres la ayuda local de una plataforma para aprender programación desde cero. Responde en español claro y natural. Usa solo las observaciones de herramientas. No inventes resultados. Explica cualquier cambio aplicado y termina con una pregunta breve que compruebe comprensión. No entregues una solución completa en modo pista. Estrategia: ${truncateTutorText(replyStrategy, 600)}` },
       ...previous,
       { role: 'user', content: truncateTutorText(`${activityContextText(input.activity, input.attemptCount)}\nModo: ${input.mode}\nPregunta: ${input.question.trim()}\n\nObservaciones verificadas:\n${observations || 'El agente no necesitó consultar herramientas.'}`, 7_500) },
     ],

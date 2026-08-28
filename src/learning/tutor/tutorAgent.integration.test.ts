@@ -61,7 +61,8 @@ describe('agente pedagógico local', () => {
     const current = workspace();
     const replacement = 'function doble(valor) { return valor * 2; }';
     const local = service(
-      JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js', content: replacement } }, { tool: 'run_checks', args: {} }], replyStrategy: 'Explica el cambio y la prueba.' }),
+      JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js' } }, { tool: 'run_checks', args: {} }], replyStrategy: 'Explica el cambio y la prueba.' }),
+      replacement,
       'Cambié app.js y ejecuté las comprobaciones. Revisa por qué return entrega el dato.',
     );
 
@@ -77,7 +78,8 @@ describe('agente pedagógico local', () => {
     const replacement = 'function doble(valor) { return valor * 2; }';
     const local = service(
       JSON.stringify({ calls: [{ tool: 'read_workspace', args: { paths: ['app.js'] } }], replyStrategy: 'Explica el archivo.' }),
-      JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js', content: replacement } }, { tool: 'run_checks', args: {} }], replyStrategy: 'Explica la corrección aplicada.' }),
+      JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js' } }, { tool: 'run_checks', args: {} }], replyStrategy: 'Explica la corrección aplicada.' }),
+      replacement,
       'Corregí app.js y ejecuté las comprobaciones.',
     );
 
@@ -85,7 +87,7 @@ describe('agente pedagógico local', () => {
 
     expect(current.actions.replaceFile).toHaveBeenCalledWith('app.js', replacement);
     expect(turn.changedFiles).toEqual(['app.js']);
-    expect(local.generate).toHaveBeenCalledTimes(3);
+    expect(local.generate).toHaveBeenCalledTimes(4);
   });
 
   it('rechaza una escritura elegida por el modelo cuando la persona solo pidió explicación', async () => {
@@ -114,8 +116,51 @@ describe('agente pedagógico local', () => {
   it('falla de forma explícita cuando el modelo no produce un plan válido', async () => {
     await expect(runTutorTurn(
       { mode: 'auto', question: 'Ayúdame.', attemptCount: 0, activity, conversation: [] },
-      service('esto no es JSON'),
+      service('esto no es JSON', 'tampoco es JSON'),
       workspace(),
-    )).rejects.toThrow(/plan de herramientas válido/i);
+    )).rejects.toThrow(/no pudo reparar el plan/i);
+  });
+
+  it('repara una salida mal formada antes de ejecutar herramientas y no escribe durante la reparación', async () => {
+    const current = workspace();
+    const local = service(
+      'Voy a ayudarte. {calls: [}',
+      JSON.stringify({ calls: [{ tool: 'read_workspace', args: { paths: ['app.js'] } }], replyStrategy: 'Explica con la evidencia.' }),
+      'La función imprime el valor en lugar de devolverlo.',
+    );
+
+    const turn = await runTutorTurn({ mode: 'auto', question: '¿Por qué falla?', attemptCount: 1, activity, conversation: [] }, local, current);
+
+    expect(turn.activities.map((entry) => entry.tool)).toEqual(['read_workspace']);
+    expect(current.actions.replaceFile).not.toHaveBeenCalled();
+    expect(local.generate).toHaveBeenCalledTimes(3);
+  });
+
+  it('acepta un plan JSON cercado y genera el archivo fuera del JSON de herramientas', async () => {
+    const current = workspace();
+    const replacement = 'function doble(valor) {\n  return valor * 2;\n}';
+    const local = service(
+      `Plan:\n\`\`\`json\n${JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js' } }], replyStrategy: 'Explica el cambio.' })}\n\`\`\``,
+      `\`\`\`js\n${replacement}\n\`\`\``,
+      'Corregí la función para que devuelva el resultado.',
+    );
+
+    const turn = await runTutorTurn({ mode: 'collaborate', question: 'Corrige la función.', attemptCount: 1, activity, conversation: [] }, local, current);
+
+    expect(current.actions.replaceFile).toHaveBeenCalledWith('app.js', replacement);
+    expect(turn.changedFiles).toEqual(['app.js']);
+  });
+
+  it('limita la recuperación a un intento si el modelo insiste en devolver un plan inválido', async () => {
+    const current = workspace();
+    const local = service('sin JSON', 'todavía sin JSON', 'no debería consumirse');
+
+    await expect(runTutorTurn(
+      { mode: 'collaborate', question: 'Corrige app.js.', attemptCount: 1, activity, conversation: [] },
+      local,
+      current,
+    )).rejects.toThrow(/no pudo reparar el plan/i);
+    expect(local.generate).toHaveBeenCalledTimes(2);
+    expect(current.actions.replaceFile).not.toHaveBeenCalled();
   });
 });

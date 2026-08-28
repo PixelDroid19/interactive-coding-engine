@@ -216,7 +216,7 @@ export class LocalGenerationService {
         messages: request.messages,
         temperature: Math.max(0, Math.min(2, request.temperature ?? 0.2)),
         top_p: Math.max(0.1, Math.min(1, request.topP ?? 0.9)),
-        max_tokens: Math.max(16, Math.min(256, request.maxNewTokens)),
+        max_tokens: Math.max(16, Math.min(1_536, request.maxNewTokens)),
         stream: true,
         ...(responseFormat ? { response_format: responseFormat } : {}),
       });
@@ -238,6 +238,7 @@ export class LocalGenerationService {
         () => this.stopCurrentGeneration(false),
       );
       if (!text) throw new Error('El modelo WebGPU terminó sin producir texto.');
+      let structuredWarning: string | undefined;
       if (request.expectedFormat === 'json_object') {
         try {
           const value: unknown = JSON.parse(text);
@@ -264,14 +265,16 @@ export class LocalGenerationService {
               return '';
             }
           })();
-          throw new Error(`El modelo generó texto, pero no produjo el objeto JSON válido que exigía la práctica.${detail}`);
+          const message = `El modelo generó texto, pero no produjo el objeto JSON válido que exigía la práctica.${detail}`;
+          if (!request.allowInvalidStructuredOutput) throw new Error(message);
+          structuredWarning = message;
         }
       }
       const qualityIssue = assessSpanishGeneration(text);
       if (qualityIssue?.severity === 'unsafe') throw new Error(qualityIssue.message);
       return {
         text,
-        warning: qualityIssue?.message,
+        warning: qualityIssue?.message ?? structuredWarning,
         model,
         engine: LOCAL_GENERATION_ENGINE,
         device: LOCAL_GENERATION_DEVICE,
