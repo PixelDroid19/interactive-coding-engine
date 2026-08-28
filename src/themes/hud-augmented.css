@@ -294,9 +294,9 @@
 /* Category/Chapter Tag */
 .hud [data-augmented-ui~="hud-category"] {
   --aug-border-all: 1.5px;
-  --aug-border-bg: #ff0055;
+  --aug-border-bg: var(--card-accent, #ffe600);
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: rgba(255, 0, 85, 0.15);
+  --aug-inlay-bg: #0a0a10;
   --aug-inlay-opacity: 1;
   --aug-tr: 6px;
   --aug-bl: 6px;
@@ -345,17 +345,17 @@
 }
 
 .hud [data-augmented-ui~="hud-card"].course-card--green {
-  --aug-border-bg: linear-gradient(135deg, #00ff66 0%, rgba(0, 255, 102, 0.5) 50%, #00f0ff 100%);
+  --aug-border-bg: #00ff66;
   filter: drop-shadow(0 0 14px rgba(0, 255, 102, 0.25));
 }
 
 .hud [data-augmented-ui~="hud-card"].course-card--yellow {
-  --aug-border-bg: linear-gradient(135deg, #ffe600 0%, rgba(255, 230, 0, 0.5) 50%, #ff8800 100%);
+  --aug-border-bg: #ffe600;
   filter: drop-shadow(0 0 14px rgba(255, 230, 0, 0.25));
 }
 
 .hud [data-augmented-ui~="hud-card"].course-card--red {
-  --aug-border-bg: linear-gradient(135deg, #ff0055 0%, rgba(255, 0, 85, 0.5) 50%, #b026ff 100%);
+  --aug-border-bg: #ff0055;
   filter: drop-shadow(0 0 14px rgba(255, 0, 85, 0.28));
 }
 
@@ -380,7 +380,7 @@
   --aug-border-all: 1.5px;
   --aug-border-bg: var(--card-accent, #ffe600);
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: rgba(14, 14, 22, 0.95);
+  --aug-inlay-bg: #0a0a10;
   --aug-inlay-opacity: 1;
   --aug-tr: 12px;
   --aug-bl: 12px;

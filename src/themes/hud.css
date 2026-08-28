@@ -965,19 +965,19 @@
 
 /* Card variant specific neon glows & borders */
 .hud .course-card--green {
-  --aug-border-bg: linear-gradient(135deg, #00ff66 0%, rgba(0, 255, 102, 0.45) 50%, #00f0ff 100%) !important;
+  --aug-border-bg: #00ff66 !important;
   --card-glow-color: rgba(0, 255, 102, 0.45);
   --card-accent: #00ff66;
 }
 
 .hud .course-card--yellow {
-  --aug-border-bg: linear-gradient(135deg, #ffe600 0%, rgba(255, 230, 0, 0.45) 50%, #ff8800 100%) !important;
+  --aug-border-bg: #ffe600 !important;
   --card-glow-color: rgba(255, 230, 0, 0.45);
   --card-accent: #ffe600;
 }
 
 .hud .course-card--red {
-  --aug-border-bg: linear-gradient(135deg, #ff0055 0%, rgba(255, 0, 85, 0.45) 50%, #b026ff 100%) !important;
+  --aug-border-bg: #ff0055 !important;
   --card-glow-color: rgba(255, 0, 85, 0.5);
   --card-accent: #ff0055;
 }
@@ -1072,6 +1072,7 @@
   z-index: 2;
   border: 0 !important;
   border-radius: 0 !important;
+  background: transparent !important;
   box-shadow: none !important;
 }
 

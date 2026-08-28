@@ -8134,7 +8134,7 @@ html.hud .cells-studio {
 }
 .learning-center {
   width: min(920px, 100%); max-height: min(820px, calc(100dvh - 2rem)); overflow: hidden;
-  display: grid; grid-template-rows: auto auto minmax(0, 1fr); color: var(--ink, #17191f);
+  display: grid; grid-template-rows: auto auto auto minmax(0, 1fr); color: var(--ink, #17191f);
   background: var(--paper, #f5f2eb); border: 2px solid #111; border-radius: 18px;
   box-shadow: 10px 10px 0 #111;
 }
