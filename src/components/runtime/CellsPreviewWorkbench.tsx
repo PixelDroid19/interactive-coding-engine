@@ -182,6 +182,15 @@ export const CellsPreviewWorkbench: React.FC<CellsPreviewWorkbenchProps> = ({
     postState();
   }, [caseId, html, locale]);
 
+  useEffect(() => {
+    // Cada HTML representa una compilación nueva. Los errores del documento
+    // anterior ya no describen el preview que el estudiante está viendo.
+    setConsoleLogs([]);
+    setEvents([]);
+    eventCounterRef.current = 0;
+    setConsoleTab('console');
+  }, [html]);
+
   // When liveProps change due to user interaction, send only user-modified props
   useEffect(() => {
     if (userModifiedPropsRef.current.size > 0) {

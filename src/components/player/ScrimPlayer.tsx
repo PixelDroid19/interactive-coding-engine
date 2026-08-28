@@ -267,10 +267,11 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         }
       },
       onRunTriggered: () => {
-        // During tape, execute the active output only when not forked.
+        // SyncEngine notifica run antes de que React confirme el workspace del
+        // mismo frame. Esperar al efecto evita compilar el archivo incompleto
+        // de la parada anterior y mostrar un preview vacío hasta recargar.
         if (!isForkedRef.current) {
-          if (lessonData.executionMode === 'logic') void logicRunnerRef.current?.run();
-          else void previewRef.current?.reloadPreview();
+          previewReloadAfterWorkspaceRef.current = true;
         }
       },
       onCompleted: () => {

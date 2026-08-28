@@ -7,6 +7,7 @@ import { AILearningLab } from '../runtime/AILearningLab';
 import { CellsLearningLab } from '../runtime/CellsLearningLab';
 import type { CellsAppPracticeStage, CellsAppProject } from '../../engine/cells/cellsAppRecipes';
 import type { CellsComponentPracticeStage } from '../../engine/cells/cellsRecipes';
+import { openCellsArtifactForLesson } from '../../curriculum/open-cells/lessonProjects';
 import { ThemeToggle } from '../ThemeToggle';
 
 interface ReadingViewProps {
@@ -36,6 +37,10 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
     'open-cells-component-tests-playground': { stage: 'tests', title: 'Proyecto · pruebas públicas' },
     'open-cells-component-delivery-playground': { stage: 'delivery', title: 'Proyecto · entrega del paquete' },
   } as const)[reading.handsOnLab as string] ?? null;
+  const openCellsLessonNumber = Number(reading.id.match(/^open-cells-(\d+)-lectura$/)?.[1]);
+  const componentArtifact = cellsComponentLab && Number.isInteger(openCellsLessonNumber)
+    ? openCellsArtifactForLesson(openCellsLessonNumber)
+    : null;
 
   useEffect(() => {
     titleRef.current?.focus({ preventScroll: true });
@@ -238,6 +243,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({ reading, onBack, onBac
                   <CellsLearningLab
                     key={reading.id}
                     componentStage={cellsComponentLab.stage}
+                    componentArtifactId={componentArtifact?.id}
                     lessonId={reading.relatedLessonId ?? reading.id.replace(/-lectura$/, '')}
                   />
                 </section>

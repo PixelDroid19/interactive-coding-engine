@@ -5,14 +5,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ReadingItem } from '../../types/curriculum';
 import { ReadingView } from './ReadingView';
 
-const mounts: string[] = [];
+const mounts: Array<{ lessonId: string; artifactId: string }> = [];
 
 vi.mock('../runtime/CellsLearningLab', () => ({
-  CellsLearningLab: ({ lessonId }: { lessonId?: string }) => {
+  CellsLearningLab: ({ lessonId, componentArtifactId }: { lessonId?: string; componentArtifactId?: string }) => {
     useEffect(() => {
-      mounts.push(lessonId ?? 'sin-leccion');
+      mounts.push({ lessonId: lessonId ?? 'sin-leccion', artifactId: componentArtifactId ?? 'sin-artefacto' });
     }, []);
-    return <div data-testid="cells-learning-lab" data-lesson-id={lessonId} />;
+    return <div data-testid="cells-learning-lab" data-lesson-id={lessonId} data-artifact-id={componentArtifactId} />;
   },
 }));
 
@@ -41,11 +41,16 @@ describe('ReadingView con laboratorios Cells', () => {
     const view = render(<ReadingView reading={cellsReading(18)} onBack={vi.fn()} />);
 
     expect(screen.getByTestId('cells-learning-lab').getAttribute('data-lesson-id')).toBe('open-cells-18');
-    expect(mounts).toEqual(['open-cells-18']);
+    expect(screen.getByTestId('cells-learning-lab').getAttribute('data-artifact-id')).toBe('product-card');
+    expect(mounts).toEqual([{ lessonId: 'open-cells-18', artifactId: 'product-card' }]);
 
     view.rerender(<ReadingView reading={cellsReading(19)} onBack={vi.fn()} />);
 
     expect(screen.getByTestId('cells-learning-lab').getAttribute('data-lesson-id')).toBe('open-cells-19');
-    expect(mounts).toEqual(['open-cells-18', 'open-cells-19']);
+    expect(screen.getByTestId('cells-learning-lab').getAttribute('data-artifact-id')).toBe('product-list');
+    expect(mounts).toEqual([
+      { lessonId: 'open-cells-18', artifactId: 'product-card' },
+      { lessonId: 'open-cells-19', artifactId: 'product-list' },
+    ]);
   });
 });

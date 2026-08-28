@@ -3,7 +3,9 @@ import { CheckCircle2, Code2, Download, Eye, FileCode2, FlaskConical, Play, Rota
 import type { WorkspaceFile, WorkspaceSnapshot } from '../../types/scrim';
 import { CellsRuntimeClient, CellsRuntimeClientError } from '../../engine/cells/cellsRuntimeClient';
 import type { CellsCoverageResult, CellsTestResult } from '../../engine/cells/cellsWorkerProtocol';
-import { createCellsPracticeWorkspace, type CellsComponentPracticeStage } from '../../engine/cells/cellsRecipes';
+import type { CellsComponentPracticeStage } from '../../engine/cells/cellsRecipes';
+import { createCellsCurriculumPracticeWorkspace } from '../../engine/cells/cellsCurriculumRecipes';
+import { OPEN_CELLS_ARTIFACTS, type OpenCellsArtifact } from '../../curriculum/open-cells/lessonProjects';
 import {
   createCellsProjectPracticeWorkspace,
   type CellsAppPracticeStage,
@@ -29,6 +31,7 @@ interface CellsLearningLabProps {
   variant?: 'component' | 'application';
   stage?: CellsAppPracticeStage;
   componentStage?: CellsComponentPracticeStage;
+  componentArtifactId?: string;
   project?: CellsAppProject;
   lessonId?: string;
 }
@@ -40,16 +43,19 @@ const APP_MISSIONS: Record<CellsAppPracticeStage, string> = {
   delivery: 'La aplicación funciona en desarrollo, pero la ruta desconocida y la configuración de producción están incompletas. Deja el proyecto listo para una entrega reproducible.',
 };
 
-const COMPONENT_MISSIONS: Record<CellsComponentPracticeStage, string> = {
-  scaffold: 'El proyecto todavía no expone su entrada pública ni el comando de documentación. Completa package.json y comprueba cómo lo consumirían la demo, las pruebas y otra aplicación.',
-  api: 'El componente perdió una propiedad pública y no comunica la acción. Reconstruye learnerName y el evento de negocio sin obligar al consumidor a llamar métodos internos.',
-  composition: 'El botón está importado pero no pertenece al registro scoped y la acción no sale del Shadow DOM. Repara ambas fronteras y compruébalas en la demo.',
-  styles: 'El componente consume css.js correctamente, pero el artefacto quedó desactualizado respecto al SCSS. Regenera el estilo runtime desde la fuente y comprueba que ambos vuelven a describir la misma interfaz.',
-  i18n: 'Los catálogos ya no tienen la misma API y el título perdió su placeholder. Restaura paridad EN/ES y conserva el nombre variable.',
-  demo: 'La demo está entrando por un archivo interno y dejó de conectar su control con la propiedad pública. Haz que vuelva a comportarse como un consumidor externo real.',
-  tests: 'La suite comprueba detail y bubbles, pero dejó de demostrar que el evento cruza Shadow DOM. Completa la prueba pública sin inspeccionar miembros privados.',
-  delivery: 'La metadata contradice el tag real y la documentación no explica cómo consumir ni verificar el paquete. Alinea el contrato antes de exportarlo.',
-};
+function componentMission(stage: CellsComponentPracticeStage, artifact: OpenCellsArtifact): string {
+  const subject = `${artifact.label} (${artifact.tagName})`;
+  return ({
+    scaffold: `${subject} todavía no expone su entrada pública ni el comando de documentación. Completa package.json y comprueba cómo lo consumirían la demo, las pruebas y otra aplicación.`,
+    api: `${subject} perdió parte de su API pública y dejó de comunicar su acción. Reconstruye el contrato descrito en custom-elements.json sin obligar al consumidor a llamar métodos internos.`,
+    composition: `${subject} importa una dependencia local que no está registrada y su acción no cruza el Shadow DOM. Repara ambas fronteras y compruébalas desde la demo.`,
+    styles: `${subject} consume su css.js, pero ese artefacto quedó desactualizado respecto al SCSS. Regenera el estilo runtime desde la fuente y comprueba que ambos describen la misma interfaz.`,
+    i18n: `Los catálogos de ${subject} ya no tienen la misma API ni los mismos placeholders. Restaura la paridad EN/ES sin esconder la clave que falla.`,
+    demo: `La demo de ${subject} entra por un archivo interno y dejó de conectar su control con la propiedad pública. Haz que vuelva a comportarse como un consumidor externo real.`,
+    tests: `La suite de ${subject} comprueba detail y bubbles, pero dejó de demostrar que el evento cruza Shadow DOM. Completa la prueba pública sin inspeccionar miembros privados.`,
+    delivery: `La metadata de ${subject} contradice el tag real y la documentación no explica cómo consumir ni verificar el paquete. Alinea el contrato antes de exportarlo.`,
+  } satisfies Record<CellsComponentPracticeStage, string>)[stage];
+}
 
 const PROJECT_NAMES: Record<CellsAppProject, string> = {
   store: 'academy-store-app',
@@ -67,9 +73,11 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
   variant = 'component',
   stage = 'lifecycle',
   componentStage = 'composition',
+  componentArtifactId = 'action-button',
   project = 'store',
   lessonId,
 }) => {
+  const componentArtifact = OPEN_CELLS_ARTIFACTS[componentArtifactId] ?? OPEN_CELLS_ARTIFACTS['action-button'];
   const runtimeRef = useRef<CellsRuntimeClient | null>(null);
   const repositoryRef = useRef<CellsWorkspaceRepository | null>(null);
   const dirtyPathsRef = useRef(new Set<string>());
@@ -84,8 +92,10 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
     return repositoryRef.current;
   };
   const starter = useMemo(
-    () => variant === 'application' ? createCellsProjectPracticeWorkspace(project, stage) : createCellsPracticeWorkspace(componentStage),
-    [componentStage, project, stage, variant],
+    () => variant === 'application'
+      ? createCellsProjectPracticeWorkspace(project, stage)
+      : createCellsCurriculumPracticeWorkspace(componentArtifact, componentStage),
+    [componentArtifact, componentStage, project, stage, variant],
   );
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(starter.snapshot);
   const [syncedWorkspace, setSyncedWorkspace] = useState<WorkspaceSnapshot>(starter.snapshot);
@@ -161,7 +171,9 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
     setTests([]);
     setCoverage(null);
     try {
-      const initial = variant === 'application' ? createCellsProjectPracticeWorkspace(project, stage) : createCellsPracticeWorkspace(componentStage);
+      const initial = variant === 'application'
+        ? createCellsProjectPracticeWorkspace(project, stage)
+        : createCellsCurriculumPracticeWorkspace(componentArtifact, componentStage);
       if (removeSaved) {
         await Promise.all([
           ensureRepository().remove(draftKey),
@@ -204,7 +216,9 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
           ensureRepository().load(draftKey),
           ensureRepository().loadSession(draftKey),
         ]);
-        const initial = saved ?? (variant === 'application' ? createCellsProjectPracticeWorkspace(project, stage) : createCellsPracticeWorkspace(componentStage));
+        const initial = saved ?? (variant === 'application'
+          ? createCellsProjectPracticeWorkspace(project, stage)
+          : createCellsCurriculumPracticeWorkspace(componentArtifact, componentStage));
         const result = await ensureRuntime().loadProject(initial.snapshot, initial.generation);
         if (cancelled || result.type !== 'workspace:updated') return;
         applyWorkspace(result.payload.workspace, initial.generation);
@@ -438,7 +452,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
       <header className="cells-lab__header">
         <div className="cells-lab__header-info">
           <p>PROYECTO · {variant === 'application' ? 'APLICACIÓN' : 'COMPONENTE'}</p>
-          <h3>{variant === 'application' ? PROJECT_NAMES[project] : 'academy-learning-card'}</h3>
+          <h3>{variant === 'application' ? PROJECT_NAMES[project] : componentArtifact.tagName}</h3>
           <span className={`cells-lab__status-indicator is-${status}`}>
             <span className="cells-lab__status-dot" />
             {status === 'running'
@@ -470,7 +484,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
         <span className="cells-lab__brief-badge">Tu misión</span>
         <p>{variant === 'application'
           ? APP_MISSIONS[stage]
-          : COMPONENT_MISSIONS[componentStage]}</p>
+          : componentMission(componentStage, componentArtifact)}</p>
       </div>
 
       <nav className="cells-lab__mobile-nav" role="tablist" aria-label="Área de trabajo en móvil">

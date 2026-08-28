@@ -98,6 +98,20 @@ describe('CellsPreviewWorkbench', () => {
     expect(secondFrame).toHaveProperty('srcdoc', '<main>segunda revisión</main>');
   });
 
+  it('retira errores de la compilación anterior cuando llega un preview nuevo', () => {
+    const iframeRef = createRef<HTMLIFrameElement>();
+    const view = render(<CellsPreviewWorkbench html="<main>incompleto</main>" demo={demo} iframeRef={iframeRef} />);
+    const errorMessage = new MessageEvent('message', {
+      data: { source: 'open-cells-preview', type: 'error', message: 'export temporal ausente' },
+    });
+    Object.defineProperty(errorMessage, 'source', { value: iframeRef.current?.contentWindow ?? null });
+    fireEvent(window, errorMessage);
+    expect(screen.getByRole('button', { name: 'Errores (1)' })).toBeTruthy();
+
+    view.rerender(<CellsPreviewWorkbench html="<main>completo</main>" demo={demo} iframeRef={iframeRef} />);
+    expect(screen.queryByRole('button', { name: 'Errores (1)' })).toBeNull();
+  });
+
   it('mantiene la vista flotante compacta y abre las herramientas completas', () => {
     const iframeRef = createRef<HTMLIFrameElement>();
     const onRequestExpand = vi.fn();
