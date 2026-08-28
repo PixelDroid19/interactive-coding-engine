@@ -1,9 +1,9 @@
 import { compileLesson, type LessonBeat } from '../../engine/lessonCompiler';
-import { createCellsAppWorkspace } from '../../engine/cells/cellsAppRecipes';
-import { createCellsComponentWorkspace } from '../../engine/cells/cellsRecipes';
 import type { ReadingItem } from '../../types/curriculum';
 import type { ChallengeTest, ScrimLessonData, WorkspaceSnapshot } from '../../types/scrim';
 import { createOpenCellsProjectJourney, type OpenCellsProjectJourney } from './projectJourneys';
+import { createOpenCellsLessonWorkspace } from './lessonWorkspaces';
+import { openCellsArtifactForLesson } from './lessonProjects';
 
 interface ContractPractice {
   path: string;
@@ -20,7 +20,8 @@ function suffix(number: number): string {
 }
 
 function sentence(text: string): string {
-  return `${text.charAt(0).toUpperCase()}${text.slice(1)}`;
+  const normalized = `${text.charAt(0).toUpperCase()}${text.slice(1)}`.trim();
+  return /[.!?]$/.test(normalized) ? normalized : `${normalized}.`;
 }
 
 function readNumber(reading: ReadingItem): number {
@@ -324,21 +325,35 @@ function practiceFor(number: number): ContractPractice {
 }
 
 function focusFile(number: number): string {
+  const artifact = openCellsArtifactForLesson(number);
+  const componentSource = `src/${artifact.tagName}.js`;
+  const componentTest = `test/unit/${artifact.tagName}.test.js`;
   if (number <= 5) return 'package.json';
-  if (number <= 14) return 'src/academy-learning-card.js';
-  if (number <= 22) return 'src/academy-learning-card.js';
+  if (number <= 14) return componentSource;
+  if (number <= 22) return componentSource;
   if (number <= 25) return 'locales/locales.json';
-  if (number <= 30) return 'src/academy-learning-card.js';
+  if (number <= 30) return componentSource;
   if (number === 31) return 'demo/demo.js';
   if (number === 35) return 'locales/locales.json';
   if (number === 36) return 'custom-elements.json';
   if (number === 37) return 'demo/demo-build.js';
   if (number === 38) return 'package.json';
-  if (number <= 38) return 'test/unit/academy-learning-card.test.js';
-  if (number <= 42) return 'app/scripts/app.js';
-  if (number <= 46) return 'app/pages/academy-home-page/academy-home-page.js';
-  if (number <= 54) return number <= 50 ? 'app/scripts/app-routes.js' : 'app/pages/academy-home-page/academy-home-page.js';
-  if (number <= 57) return 'app/pages/academy-home-page/academy-home-page.js';
+  if (number <= 38) return componentTest;
+  const applicationFocus: Record<string, string> = {
+    'catalog-app': 'app/scripts/app.js',
+    'home-page': 'app/pages/academy-home-page/academy-home-page.js',
+    'product-detail-page': 'app/pages/academy-product-detail-page/academy-product-detail-page.js',
+    'favorites-page': 'app/pages/academy-favorites-page/academy-favorites-page.js',
+    'cart-page': 'app/pages/academy-cart-page/academy-cart-page.js',
+    'not-found-page': 'app/pages/academy-not-found-page/academy-not-found-page.js',
+    'search-page': 'app/pages/academy-search-page/academy-search-page.js',
+    'native-adapter': 'app/bridge/native-adapter.js',
+    'product-data-manager': 'app/data/academy-product-data-manager.js',
+    'app-contract-tests': 'test/unit/app.test.js',
+    'app-locales': 'app/locales-app/locales.json',
+    'delivery-config': 'app/config/prod.js',
+  };
+  if (applicationFocus[artifact.id]) return applicationFocus[artifact.id];
   if (number <= 62) return 'app/data/academy-product-data-manager.js';
   if (number <= 65) return 'test/unit/app.test.js';
   if (number <= 67) return 'package.json';
@@ -360,9 +375,7 @@ interface PreparedJourney {
 }
 
 function prepareJourney(number: number): PreparedJourney {
-  const base = number <= 38
-    ? createCellsComponentWorkspace({ name: 'academy-learning-card' }).snapshot
-    : createCellsAppWorkspace({ name: 'academy-store-app' }).snapshot;
+  const base = createOpenCellsLessonWorkspace(number).snapshot;
   const focus = focusFile(number);
   const journey = createOpenCellsProjectJourney(number, focus, base);
   const completeFiles = Object.fromEntries(journey.stops
@@ -474,6 +487,47 @@ export function createOpenCellsGuidedLesson(reading: ReadingItem): ScrimLessonDa
   const mistakeAt = evidenceAt + spokenDuration(evidenceCue) + 600;
   const handoffAt = mistakeAt + spokenDuration(mistakeCue) + 600;
   const durationMs = handoffAt + spokenDuration(handoffCue) + 1_200;
+  const componentChallenge = number === 6 ? {
+    id: 'open-cells-06-reto-producto',
+    title: 'Conecta el producto sin romper su aislamiento',
+    instructions: 'Antes de empezar, recuerda que scopedElements mantiene las dependencias dentro del host y que un evento público atraviesa el Shadow DOM. Punto de partida: trabaja únicamente en src/academy-product-card.js; el botón ya está importado, pero falta conectarlo al registro local y comunicar la selección. Cómo comprobarlo: ejecuta las tres pruebas con nombres de producto distintos y confirma que no aparece ningún registro global. Abre las pistas una a la vez si necesitas orientación sin recibir el código terminado.',
+    starterCodeDiff: {
+      'src/academy-product-card.js': completeFiles['src/academy-product-card.js']
+        .replace("      'academy-action-button': AcademyActionButton,", '      // TODO: registra el botón importado dentro de este host.')
+        .replace("    this.emitEvent('select', { productName: this.productName });", '    // TODO: comunica la selección con el nombre actual del producto.'),
+    },
+    tests: [
+      {
+        id: 'cells06-product-scoped-button',
+        description: 'El registro scoped asocia el botón con su clase',
+        validatorType: 'source-regex' as const,
+        regexPattern: "static\\s+get\\s+scopedElements[\\s\\S]*['\"]academy-action-button['\"]\\s*:\\s*AcademyActionButton",
+        errorMessage: 'El botón todavía no se resuelve dentro del host del producto.',
+      },
+      {
+        id: 'cells06-product-event',
+        description: 'La selección emite el nombre variable del producto',
+        validatorType: 'source-regex' as const,
+        regexPattern: "emitEvent\\s*\\(\\s*['\"]select['\"]\\s*,\\s*\\{[\\s\\S]*productName\\s*:\\s*this\\.productName",
+        errorMessage: 'La acción todavía no publica un detail basado en el producto actual.',
+      },
+      {
+        id: 'cells06-product-no-global',
+        description: 'La dependencia permanece local al componente',
+        validatorType: 'source-regex' as const,
+        regexPattern: "^(?![\\s\\S]*customElements\\.define\\(\\s*['\"]academy-action-button)",
+        errorMessage: 'La dependencia scoped no debe registrarse globalmente.',
+      },
+    ],
+    hints: [
+      { level: 1 as const, title: 'Sigue el tag', text: 'Compara la etiqueta usada en render con la clase que ya aparece en los imports.' },
+      { level: 2 as const, title: 'Separa contratos', text: 'scopedElements resuelve la dependencia; handleAction comunica la intención pública.' },
+      { level: 3 as const, title: 'Usa datos variables', text: 'Las pruebas cambian productName: no fijes Café ni otro producto concreto.' },
+    ],
+    solutionExplanation: 'El host resuelve el botón mediante scopedElements y publica una selección serializable basada en su propiedad actual.',
+    autoPause: true,
+    allowSkip: true,
+  } : null;
 
   return compileLesson({
     id: `open-cells-${suffix(number)}`,
@@ -506,6 +560,7 @@ export function createOpenCellsGuidedLesson(reading: ReadingItem): ScrimLessonDa
     beats: [
       ...projectTape.beats,
       { at: runAt, type: 'run' },
+      ...(componentChallenge ? [{ at: runAt + 400, type: 'challenge' as const, challenge: componentChallenge }] : []),
       { at: evidenceAt, type: 'speak', text: evidenceCue },
       { at: mistakeAt, type: 'speak', text: mistakeCue },
       { at: handoffAt, type: 'speak', text: handoffCue },

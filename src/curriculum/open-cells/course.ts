@@ -2,7 +2,6 @@ import type { Course, ReadingItem, ScrimCurriculumItem } from '../../types/curri
 import type { ScrimLessonData } from '../../types/scrim';
 import { OPEN_CELLS_UNITS_07_TO_68 } from './units07to68';
 import { addOpenCellsReasoning } from './reasoning';
-import { OPEN_CELLS_LESSON_06 } from './lesson06';
 import { createOpenCellsGuidedLessons } from './guidedLessons';
 import { OPEN_CELLS_CORE_SOURCES } from './sources';
 
@@ -124,7 +123,7 @@ const ALL_OPEN_CELLS_READINGS = [...FIRST_COMPONENT_UNITS, ...OPEN_CELLS_UNITS_0
   return { ...source, handsOnLab, estimatedMinutes: handsOnLab ? 35 : 12 };
 });
 const OPEN_CELLS_READING_BY_ID = new Map(ALL_OPEN_CELLS_READINGS.map((source) => [source.id, source]));
-const OPEN_CELLS_GUIDED_BY_ID = createOpenCellsGuidedLessons(ALL_OPEN_CELLS_READINGS, OPEN_CELLS_LESSON_06);
+const OPEN_CELLS_GUIDED_BY_ID = createOpenCellsGuidedLessons(ALL_OPEN_CELLS_READINGS);
 
 function withReadingPractice(readings: ReadingItem[]) {
   return readings.flatMap((source) => {

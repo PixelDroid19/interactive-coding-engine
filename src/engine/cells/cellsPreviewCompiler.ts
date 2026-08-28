@@ -443,6 +443,16 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
   ))?.content ?? source;
   const componentDocumentation = isApplication ? undefined : readComponentDocumentation(workspace, definedTag);
   const componentDemos = isApplication ? [] : readComponentDemos(workspace, definedTag, componentDocumentation);
+  const contractProperty = componentDocumentation?.properties?.[0];
+  const contractPropertyName = contractProperty?.name ?? '';
+  const contractPropertyValue = contractProperty?.type.toLowerCase().includes('boolean')
+    ? true
+    : contractProperty?.type.toLowerCase().includes('number') ? 42 : 'Valor dinámico';
+  const contractEventName = componentDocumentation?.events?.[0]?.name ?? '';
+  const contractScopedTags = Array.from(
+    componentSource.matchAll(/import\s+\{\s*[A-Za-z_$][\w$]*\s*\}\s+from\s+['"]\.\/components\/([^'"]+)\.js['"]/g),
+    (match) => match[1],
+  );
   // Extract the component tag from the demo HTML body, then strip hardcoded attributes
   // so the component initializes with its own class defaults from the student's code
   const rawMarkup = body.match(new RegExp(`<${definedTag}\\b[\\s\\S]*?<\\/${definedTag}>`, 'i'))?.[0];
@@ -465,40 +475,34 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
     if (originalRender) {
       element.render = (...args) => { invokedMethods.push('render'); return originalRender(...args); };
     }
-    const originalContinue = element.handleContinue?.bind(element);
-    if (originalContinue) {
-      element.handleContinue = (...args) => { invokedMethods.push('handleContinue'); return originalContinue(...args); };
-    }
-
     globalThis.__OPEN_CELLS_LOCALE__ = 'es';
-    element.learnerName = 'Lina';
+    const propertyName = ${JSON.stringify(contractPropertyName)};
+    const propertyValue = ${JSON.stringify(contractPropertyValue)};
+    if (propertyName) element[propertyName] = propertyValue;
     element.requestUpdate?.();
     await element.updateComplete;
-    let titleHost = element.shadowRoot?.querySelector('academy-type-text');
-    await titleHost?.updateComplete;
-    const spanishText = (element.shadowRoot?.textContent || '') + ' ' + (titleHost?.textContent || '') + ' ' + (titleHost?.shadowRoot?.textContent || '');
-    check('browser-render-es', 'Renderiza propiedades y español', spanishText.includes('Lina') && spanishText.includes('Estás aprendiendo'), 'El DOM público debe reflejar learnerName y el catálogo español.');
+    const spanishText = element.shadowRoot?.textContent?.replace(/\\s+/g, ' ').trim() || '';
+    check('browser-render-es', 'Renderiza la propiedad y el catálogo español', Boolean(element.shadowRoot && spanishText && (!propertyName || element[propertyName] === propertyValue)), 'El host debe conservar la propiedad documentada y producir contenido visible en español.');
 
     const scoped = element.constructor.scopedElements || {};
+    const expectedScopedTags = ${JSON.stringify(contractScopedTags)};
     invokedMethods.push('scopedElements');
-    check('browser-scoped', 'Resuelve ambas dependencias scoped', Boolean(scoped['academy-type-text'] && scoped['academy-action-button']), 'El registro local debe exponer los dos componentes didácticos como clases.');
+    check('browser-scoped', 'Resuelve sus dependencias scoped', expectedScopedTags.length > 0 && expectedScopedTags.every((tag) => typeof scoped[tag] === 'function'), 'Cada dependencia importada desde components debe resolverse como clase dentro del registro local.');
 
     globalThis.__OPEN_CELLS_LOCALE__ = 'en';
     element.requestUpdate?.();
     await element.updateComplete;
-    titleHost = element.shadowRoot?.querySelector('academy-type-text');
-    await titleHost?.updateComplete;
-    const englishText = (element.shadowRoot?.textContent || '') + ' ' + (titleHost?.textContent || '') + ' ' + (titleHost?.shadowRoot?.textContent || '');
-    check('browser-render-en', 'Cambia el idioma sin recrear el host', englishText.includes('Lina') && englishText.includes('You are learning'), 'El mismo host debe actualizarse con el catálogo inglés.');
+    const englishText = element.shadowRoot?.textContent?.replace(/\\s+/g, ' ').trim() || '';
+    check('browser-render-en', 'Cambia el idioma sin recrear el host', Boolean(englishText && englishText !== spanishText), 'El mismo host debe producir otro texto al cambiar el catálogo a inglés.');
 
     let event = null;
-    element.addEventListener('${definedTag}-continue', (received) => { event = received; }, { once: true });
-    element.requestUpdate?.();
-    await element.updateComplete;
-    const buttonHost = element.shadowRoot?.querySelector('academy-action-button');
-    await buttonHost?.updateComplete;
-    buttonHost?.shadowRoot?.querySelector('button')?.click();
-    check('browser-event', 'El botón emite el evento público', event?.detail?.learnerName === 'Lina' && event.bubbles && event.composed, 'El click debe producir detail, bubbles y composed observables.');
+    const eventName = ${JSON.stringify(contractEventName)};
+    if (eventName) element.addEventListener(eventName, (received) => { event = received; }, { once: true });
+    const action = typeof element.handleAction === 'function'
+      ? element.handleAction.bind(element)
+      : typeof element.handleContinue === 'function' ? element.handleContinue.bind(element) : null;
+    if (action) { invokedMethods.push(element.handleAction ? 'handleAction' : 'handleContinue'); action(); }
+    check('browser-event', 'Emite el evento público documentado', Boolean(eventName && event && (!propertyName || event.detail?.[propertyName] === propertyValue) && event.bubbles && event.composed), 'La acción pública debe emitir el evento documentado con detail, bubbles y composed observables.');
   } catch (error) {
     check('browser-runner', 'El componente puede probarse en aislamiento', false, error?.message || String(error));
   }

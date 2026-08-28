@@ -54,14 +54,16 @@ describe('curso Open Cells', () => {
     expect(allItems.filter((item) => item.type === 'debugging')).toHaveLength(0);
   });
 
-  it('incluye una primera clase guiada que prepara el laboratorio real', () => {
+  it('incluye una primera clase guiada diversa que prepara el laboratorio real', () => {
     const lesson = OPEN_CELLS_SCRIMS['open-cells-06'];
     expect(lesson).toBeDefined();
     expect(lesson.templateId).toBe('cells-component');
     expect(lesson.narrationMode).toBe('silent');
     expect(lesson.audioTrack?.url).toBeUndefined();
     expect(lesson.challenges).toHaveLength(1);
-    expect(lesson.challenges[0].hints).toHaveLength(3);
+    expect(lesson.challenges[0].instructions).toContain('producto');
+    expect(lesson.initialWorkspace.files['src/academy-product-card.js']).toBeDefined();
+    expect(lesson.initialWorkspace.files['src/components/academy-action-button.js']).toBeDefined();
 
     const items = OPEN_CELLS_COURSE.modules[0].items;
     const lessonIndex = items.findIndex((item) => item.type === 'scrim' && item.id === lesson.id);

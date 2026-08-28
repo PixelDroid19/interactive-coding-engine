@@ -35,6 +35,10 @@ const APP_FILES = {
   nativeAdapter: 'app/bridge/native-adapter.js',
   home: 'app/pages/academy-home-page/academy-home-page.js',
   detail: 'app/pages/academy-product-detail-page/academy-product-detail-page.js',
+  favorites: 'app/pages/academy-favorites-page/academy-favorites-page.js',
+  cart: 'app/pages/academy-cart-page/academy-cart-page.js',
+  search: 'app/pages/academy-search-page/academy-search-page.js',
+  notFound: 'app/pages/academy-not-found-page/academy-not-found-page.js',
   card: 'app/components/academy-product-card/academy-product-card.js',
   manager: 'app/data/academy-product-data-manager.js',
   dev: 'app/config/dev.js',
@@ -64,6 +68,10 @@ const roles: Record<string, string> = {
   'app/bridge/native-adapter.js': 'valida mensajes del shell y los traduce a navegación o canales internos',
   'app/pages/academy-home-page/academy-home-page.js': 'coordina componentes, ciclo de página y navegación',
   'app/pages/academy-product-detail-page/academy-product-detail-page.js': 'recibe parámetros de una visita y renderiza el detalle',
+  'app/pages/academy-favorites-page/academy-favorites-page.js': 'compone productos guardados sin copiar la implementación de la tarjeta',
+  'app/pages/academy-cart-page/academy-cart-page.js': 'posee los elementos del carrito y deriva el total visible',
+  'app/pages/academy-search-page/academy-search-page.js': 'posee la consulta y deriva resultados sin mutar el catálogo original',
+  'app/pages/academy-not-found-page/academy-not-found-page.js': 'ofrece una recuperación visible cuando ninguna ruta coincide',
   'app/components/academy-product-card/academy-product-card.js': 'encapsula presentación y devuelve una intención mediante evento',
   'app/data/academy-product-data-manager.js': 'posee petición, estados, carreras y cancelación',
   'app/config/dev.js': 'declara valores observables del entorno de desarrollo',
@@ -93,6 +101,10 @@ const buildExplanations: Record<string, string> = {
   'app/bridge/native-adapter.js': 'la frontera acepta mensajes serializables, rechaza formas desconocidas y traduce ciclo de vida o deep links sin filtrar objetos nativos al árbol de componentes.',
   'app/pages/academy-home-page/academy-home-page.js': 'PageMixin aporta navegación y canales; ScopedElementsMixin resuelve la tarjeta. onPageEnter adquiere recursos, onPageLeave los libera y render conserva UI declarativa.',
   'app/pages/academy-product-detail-page/academy-product-detail-page.js': 'onPageEnter recibe params de la navegación y los convierte en estado de la visita; el botón vuelve usando el name home, no una URL copiada.',
+  'app/pages/academy-favorites-page/academy-favorites-page.js': 'la página registra la tarjeta como dependencia scoped y le entrega cada producto guardado mediante su propiedad pública.',
+  'app/pages/academy-cart-page/academy-cart-page.js': 'los items son estado de página y total es un dato derivado en render; ninguna tarjeta global conserva el carrito.',
+  'app/pages/academy-search-page/academy-search-page.js': 'query cambia con el input y results se deriva en cada render; la misma tarjeta reutilizable presenta cada coincidencia.',
+  'app/pages/academy-not-found-page/academy-not-found-page.js': 'la página no adivina una URL anterior: ofrece una acción explícita que navega al name estable home.',
   'app/components/academy-product-card/academy-product-card.js': 'la tarjeta recibe product por propiedad y emite select. No importa rutas ni canales porque esa coordinación pertenece a la página.',
   'app/data/academy-product-data-manager.js': 'requestId identifica la petición vigente, AbortController permite cancelarla y emit diferencia loading, success, empty y error.',
   'app/config/dev.js': 'desarrollo habilita diagnóstico y sourcemaps sin cambiar las reglas de negocio ni el código de páginas.',
@@ -175,9 +187,26 @@ export function createOpenCellsProjectJourney(
   focus: string,
   workspace: WorkspaceSnapshot,
 ): OpenCellsProjectJourney {
-  const requested = (number <= 38 ? COMPONENT_SPECIAL[number] : APP_SPECIAL[number]) ?? relatedFallback(number, focus);
+  const componentTag = number <= 38
+    ? Object.values(workspace.files).map((source) => source.content.match(/customElements\.define\(['"]([^'"]+)/)?.[1]).find(Boolean)
+    : undefined;
+  const componentFiles = componentTag ? {
+    ...COMPONENT_FILES,
+    publicRegister: `${componentTag}.js`,
+    source: `src/${componentTag}.js`,
+    tests: `test/unit/${componentTag}.test.js`,
+  } : COMPONENT_FILES;
+  const adaptComponentPath = (path: string) => {
+    if (path === COMPONENT_FILES.publicRegister) return componentFiles.publicRegister;
+    if (path === COMPONENT_FILES.source) return componentFiles.source;
+    if (path === COMPONENT_FILES.tests) return componentFiles.tests;
+    return path;
+  };
+  const special = (number <= 38 ? COMPONENT_SPECIAL[number] : APP_SPECIAL[number]) ?? relatedFallback(number, focus);
+  const requested = (number <= 38 ? special : [focus, ...special.filter((path) => path !== focus)])
+    .map((path) => number <= 38 ? adaptComponentPath(path) : path);
   const paths = [...new Set(requested)].filter((path) => Boolean(workspace.files[path]) && !path.includes('/checkpoints/'));
-  const fallbacks = number <= 38 ? Object.values(COMPONENT_FILES) : Object.values(APP_FILES);
+  const fallbacks = number <= 38 ? Object.values(componentFiles) : Object.values(APP_FILES);
   for (const path of fallbacks) {
     if (paths.length >= 4) break;
     if (workspace.files[path] && !paths.includes(path)) paths.push(path);
@@ -188,8 +217,10 @@ export function createOpenCellsProjectJourney(
   return {
     stops: paths.map((path) => ({
       path,
-      role: roles[path] ?? 'conecta esta responsabilidad con el resto del proyecto',
-      buildExplanation: buildExplanations[path] ?? 'leemos sus imports, su salida pública y la relación que mantiene con el siguiente archivo antes de ejecutarlo',
+      role: roles[path]
+        ?? (/^src\/[^/]+\.js$/.test(path) ? 'implementa la API, el render, las dependencias y el evento del artefacto protagonista' : 'conecta esta responsabilidad con el resto del proyecto'),
+      buildExplanation: buildExplanations[path]
+        ?? (/^src\/[^/]+\.js$/.test(path) ? 'conectamos propiedades, traducciones, composición scoped y una salida observable sin copiar las dependencias reutilizadas' : 'leemos sus imports, su salida pública y la relación que mantiene con el siguiente archivo antes de ejecutarlo'),
       write: writePaths.has(path),
     })),
   };

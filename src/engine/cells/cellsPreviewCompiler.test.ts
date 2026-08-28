@@ -170,13 +170,13 @@ describe('buildCellsPreviewDocument', () => {
 
     expect(result.html).toContain("source: 'open-cells-tests'");
     expect(result.html).toContain('await element.updateComplete');
-    expect(result.html).toContain("querySelector('academy-type-text')");
-    expect(result.html).toContain('titleHost?.shadowRoot?.textContent');
+    expect(result.html).toContain('const propertyName = "learnerName"');
+    expect(result.html).toContain('const expectedScopedTags = ["academy-type-text","academy-action-button"]');
     expect(result.html).toContain('constructor.scopedElements');
     expect(result.html).toContain("__OPEN_CELLS_LOCALE__ = 'es'");
     expect(result.html).toContain("__OPEN_CELLS_LOCALE__ = 'en'");
     expect(result.html).toContain('__OPEN_CELLS_CONTRACT_TESTS__ = true');
-    expect(result.html).toContain('.click()');
-    expect(result.html).toContain('event?.detail');
+    expect(result.html).toContain('element.handleAction');
+    expect(result.html).toContain('event.detail?.[propertyName]');
   });
 });

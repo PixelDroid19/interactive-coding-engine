@@ -65,7 +65,10 @@ export function createCellsAppWorkspace(scaffold: CellsAppScaffold): VersionedCe
     'index.html': file('index.html', `
 <!doctype html>
 <html lang="es">
-  <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+  <head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>html{background:#eef2f6;color:#102a43;font-family:Inter,system-ui,sans-serif}body{margin:0;min-height:100vh}button,input{font:inherit}</style>
+  </head>
   <body><main id="app" aria-live="polite"></main><script type="module" src="./app/scripts/app.js"></script></body>
 </html>
 `, 'html'),
@@ -95,6 +98,24 @@ export const ROUTES = [
     action: async () => import('../pages/academy-product-detail-page/academy-product-detail-page.js'),
   },
   {
+    path: '/favorites',
+    name: 'favorites',
+    component: 'academy-favorites-page',
+    action: async () => import('../pages/academy-favorites-page/academy-favorites-page.js'),
+  },
+  {
+    path: '/cart',
+    name: 'cart',
+    component: 'academy-cart-page',
+    action: async () => import('../pages/academy-cart-page/academy-cart-page.js'),
+  },
+  {
+    path: '/search',
+    name: 'search',
+    component: 'academy-search-page',
+    action: async () => import('../pages/academy-search-page/academy-search-page.js'),
+  },
+  {
     path: '/not-found',
     name: 'not-found',
     component: 'academy-not-found-page',
@@ -116,6 +137,24 @@ export const ROUTES = [
     name: 'product-detail',
     component: 'academy-product-detail-page',
     action: async () => import('../pages/academy-product-detail-page/academy-product-detail-page.js'),
+  },
+  {
+    path: '/favorites',
+    name: 'favorites',
+    component: 'academy-favorites-page',
+    action: async () => import('../pages/academy-favorites-page/academy-favorites-page.js'),
+  },
+  {
+    path: '/cart',
+    name: 'cart',
+    component: 'academy-cart-page',
+    action: async () => import('../pages/academy-cart-page/academy-cart-page.js'),
+  },
+  {
+    path: '/search',
+    name: 'search',
+    component: 'academy-search-page',
+    action: async () => import('../pages/academy-search-page/academy-search-page.js'),
   },
   {
     path: '/not-found',
@@ -164,9 +203,14 @@ export class AcademyHomePage extends PageMixin(ScopedElementsMixin(LitElement)) 
   static get scopedElements() { return { 'academy-product-card': AcademyProductCard }; }
   static properties = { products: { state: true }, lastSelection: { state: true } };
   static styles = css\`
-    :host { display: block; font-family: system-ui, sans-serif; }
-    main { max-width: 52rem; margin: auto; padding: 2rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(14rem,1fr)); gap: 1rem; }
+    :host { display: block; min-height: 100vh; background: #eef2f6; color: #102a43; font-family: Inter, system-ui, sans-serif; }
+    main { max-width: 64rem; margin: auto; padding: clamp(1.5rem,5vw,4rem); }
+    header { display: grid; gap: 1rem; margin-bottom: 2rem; }
+    .eyebrow { color: #067a6f; font-size: .72rem; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; }
+    h1 { margin: 0; max-width: 12ch; font-size: clamp(2.2rem,7vw,4.5rem); line-height: .95; }
+    nav { display: flex; gap: .65rem; flex-wrap: wrap; }
+    nav button { border: 1px solid #b8c6d4; border-radius: 999px; padding: .65rem 1rem; background: white; color: #102a43; cursor: pointer; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(15rem,1fr)); gap: 1rem; }
   \`;
 
   constructor() {
@@ -192,8 +236,16 @@ export class AcademyHomePage extends PageMixin(ScopedElementsMixin(LitElement)) 
   render() {
     return html\`
       <main>
-        <h1>${'${'}t('home.title')}</h1>
-        <p>${'${'}t('home.description')}</p>
+        <header>
+          <span class="eyebrow">Cells · aplicación</span>
+          <h1>${'${'}t('home.title')}</h1>
+          <p>${'${'}t('home.description')}</p>
+          <nav>
+            <button @click=${'${'}() => this.navigate('favorites')}>${'${'}t('home.favorites')}</button>
+            <button @click=${'${'}() => this.navigate('cart')}>${'${'}t('home.cart')}</button>
+            <button @click=${'${'}() => this.navigate('search')}>${'${'}t('home.search')}</button>
+          </nav>
+        </header>
         <div class="grid" @academy-product-card-select=${'${'}this.handleProductSelected}>
           ${'${'}this.products.map((product) => html\`<academy-product-card .product=${'${'}product}></academy-product-card>\`)}
         </div>
@@ -205,7 +257,7 @@ export class AcademyHomePage extends PageMixin(ScopedElementsMixin(LitElement)) 
 customElements.define(AcademyHomePage.is, AcademyHomePage);
 `, 'javascript'),
     'app/pages/academy-product-detail-page/academy-product-detail-page.js': file('app/pages/academy-product-detail-page/academy-product-detail-page.js', `
-import { LitElement, html } from 'lit';
+import { LitElement, css, html } from 'lit';
 import { PageMixin } from '@open-cells/page-mixin';
 
 const t = (key, values = {}) => globalThis.IntlMsg?.t?.(key, values) ?? '[' + key + ']';
@@ -213,23 +265,202 @@ const t = (key, values = {}) => globalThis.IntlMsg?.t?.(key, values) ?? '[' + ke
 export class AcademyProductDetailPage extends PageMixin(LitElement) {
   static get is() { return 'academy-product-detail-page'; }
   static properties = { productId: { state: true } };
-  constructor() { super(); this.productId = ''; }
-  onPageEnter(params = {}) { this.productId = params.id ?? ''; }
+  static styles = css\`
+    :host { display: grid; min-height: 100vh; place-items: center; background: #e6eff7; color: #102a43; font-family: Inter, system-ui, sans-serif; }
+    main { width: min(38rem, calc(100% - 2rem)); padding: 2.5rem; border-radius: 1.5rem; background: white; box-shadow: 0 1.2rem 3rem rgb(16 42 67 / 16%); }
+    .visual { display: grid; height: 12rem; place-items: center; border-radius: 1rem; background: linear-gradient(135deg, #ffe4a8, #f7b267); font-size: 4rem; }
+    button { margin-top: 1rem; border: 0; border-radius: 999px; padding: .75rem 1rem; background: #0b6e69; color: white; font-weight: 800; cursor: pointer; }
+  \`;
+
+  constructor() {
+    super();
+    this.productId = 'first';
+  }
+
+  onPageEnter(params = {}) {
+    this.productId = params.id ?? 'first';
+  }
+
   render() {
-    return html\`<main><button @click=${'${'}() => this.navigate('home')}>${'${'}t('detail.back')}</button><h1>${'${'}t('detail.title')} · ${'${'}this.productId}</h1></main>\`;
+    return html\`
+      <main>
+        <div class="visual" aria-hidden="true">◈</div>
+        <p>${'${'}t('detail.kicker')}</p>
+        <h1>${'${'}t('detail.title')} · ${'${'}this.productId}</h1>
+        <p>${'${'}t('detail.description')}</p>
+        <button @click=${'${'}() => this.navigate('home')}>${'${'}t('detail.back')}</button>
+      </main>
+    \`;
   }
 }
 customElements.define(AcademyProductDetailPage.is, AcademyProductDetailPage);
 `, 'javascript'),
     'app/pages/academy-not-found-page/academy-not-found-page.js': file('app/pages/academy-not-found-page/academy-not-found-page.js', `
-import { LitElement, html } from 'lit';
+import { LitElement, css, html } from 'lit';
 import { PageMixin } from '@open-cells/page-mixin';
 const t = (key) => globalThis.IntlMsg?.t?.(key) ?? '[' + key + ']';
 export class AcademyNotFoundPage extends PageMixin(LitElement) {
   static get is() { return 'academy-not-found-page'; }
-  render() { return html\`<main><h1>${'${'}t('notFound.title')}</h1><button @click=${'${'}() => this.navigate('home')}>${'${'}t('app.back')}</button></main>\`; }
+  static styles = css\`
+    :host { display: grid; min-height: 100vh; place-items: center; background: #102a43; color: white; font-family: Inter, system-ui, sans-serif; text-align: center; }
+    main { padding: 2rem; }
+    .code { color: #7ee0cf; font-size: clamp(5rem, 18vw, 10rem); font-weight: 950; line-height: 1; }
+    button { border: 1px solid #7ee0cf; border-radius: 999px; padding: .8rem 1.2rem; background: transparent; color: white; font-weight: 800; cursor: pointer; }
+  \`;
+
+  render() {
+    return html\`
+      <main>
+        <div class="code">404</div>
+        <h1>${'${'}t('notFound.title')}</h1>
+        <p>${'${'}t('notFound.description')}</p>
+        <button @click=${'${'}() => this.navigate('home')}>${'${'}t('app.back')}</button>
+      </main>
+    \`;
+  }
 }
 customElements.define(AcademyNotFoundPage.is, AcademyNotFoundPage);
+`, 'javascript'),
+    'app/pages/academy-favorites-page/academy-favorites-page.js': file('app/pages/academy-favorites-page/academy-favorites-page.js', `
+import { LitElement, css, html } from 'lit';
+import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
+import { PageMixin } from '@open-cells/page-mixin';
+import { AcademyProductCard } from '../../components/academy-product-card/academy-product-card.js';
+const t = (key) => globalThis.IntlMsg?.t?.(key) ?? '[' + key + ']';
+export class AcademyFavoritesPage extends PageMixin(ScopedElementsMixin(LitElement)) {
+  static get is() { return 'academy-favorites-page'; }
+  static get scopedElements() { return { 'academy-product-card': AcademyProductCard }; }
+  static properties = { favorites: { state: true } };
+  static styles = css\`
+    :host { display: block; min-height: 100vh; background: #fff2e2; color: #3f2d20; font-family: Inter, system-ui, sans-serif; }
+    main { max-width: 56rem; margin: auto; padding: 3rem 1.5rem; }
+    .shelf { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
+    button { border: 0; background: transparent; color: #8a3b12; font-weight: 800; cursor: pointer; }
+  \`;
+
+  constructor() {
+    super();
+    this.favorites = [{ id: 'first', name: 'Selección guardada', price: 4 }];
+  }
+
+  render() {
+    return html\`
+      <main>
+        <button @click=${'${'}() => this.navigate('home')}>← ${'${'}t('app.back')}</button>
+        <p>${'${'}t('favorites.kicker')}</p>
+        <h1>${'${'}t('favorites.title')}</h1>
+        <div class="shelf">
+          ${'${'}this.favorites.map((product) => html\`
+            <academy-product-card .product=${'${'}product}></academy-product-card>
+          \`)}
+        </div>
+      </main>
+    \`;
+  }
+}
+customElements.define(AcademyFavoritesPage.is, AcademyFavoritesPage);
+`, 'javascript'),
+    'app/pages/academy-cart-page/academy-cart-page.js': file('app/pages/academy-cart-page/academy-cart-page.js', `
+import { LitElement, css, html } from 'lit';
+import { PageMixin } from '@open-cells/page-mixin';
+const t = (key) => globalThis.IntlMsg?.t?.(key) ?? '[' + key + ']';
+export class AcademyCartPage extends PageMixin(LitElement) {
+  static get is() { return 'academy-cart-page'; }
+  static properties = { items: { state: true } };
+  static styles = css\`
+    :host { display: block; min-height: 100vh; background: #f3f8f4; color: #173b2c; font-family: Inter, system-ui, sans-serif; }
+    main { max-width: 46rem; margin: auto; padding: 3rem 1.5rem; }
+    .row, .total { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid #b8cfc1; }
+    .total { margin-top: 1rem; border: 0; font-size: 1.25rem; font-weight: 900; }
+    button { border: 0; border-radius: 999px; padding: .75rem 1rem; background: #176b4d; color: white; font-weight: 800; cursor: pointer; }
+  \`;
+
+  constructor() {
+    super();
+    this.items = [
+      { name: 'Té verde', price: 4 },
+      { name: 'Café de origen', price: 12 },
+    ];
+  }
+
+  onPageEnter(params = {}) {
+    if (Array.isArray(params.items)) this.items = params.items;
+  }
+
+  render() {
+    const total = this.items.reduce((sum, item) => sum + item.price, 0);
+    return html\`
+      <main>
+        <button @click=${'${'}() => this.navigate('home')}>← ${'${'}t('app.back')}</button>
+        <h1>${'${'}t('cart.title')}</h1>
+        ${'${'}this.items.map((item) => html\`
+          <div class="row"><span>${'${'}item.name}</span><strong>${'${'}item.price} €</strong></div>
+        \`)}
+        <div class="total"><span>${'${'}t('cart.total')}</span><span>${'${'}total} €</span></div>
+      </main>
+    \`;
+  }
+}
+customElements.define(AcademyCartPage.is, AcademyCartPage);
+`, 'javascript'),
+    'app/pages/academy-search-page/academy-search-page.js': file('app/pages/academy-search-page/academy-search-page.js', `
+import { LitElement, css, html } from 'lit';
+import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
+import { PageMixin } from '@open-cells/page-mixin';
+import { AcademyProductCard } from '../../components/academy-product-card/academy-product-card.js';
+const t = (key) => globalThis.IntlMsg?.t?.(key) ?? '[' + key + ']';
+export class AcademySearchPage extends PageMixin(ScopedElementsMixin(LitElement)) {
+  static get is() { return 'academy-search-page'; }
+  static get scopedElements() { return { 'academy-product-card': AcademyProductCard }; }
+  static properties = { query: { state: true }, products: { state: true } };
+  static styles = css\`
+    :host { display: block; min-height: 100vh; background: #eef1ff; color: #20234a; font-family: Inter, system-ui, sans-serif; }
+    main { max-width: 58rem; margin: auto; padding: 3rem 1.5rem; }
+    label { display: grid; gap: .5rem; font-weight: 800; }
+    input { min-height: 3.25rem; border: 2px solid #5962c8; border-radius: 1rem; padding: 0 1rem; background: white; }
+    .results { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    button { border: 0; background: transparent; color: #343b9b; font-weight: 800; cursor: pointer; }
+  \`;
+
+  constructor() {
+    super();
+    this.query = '';
+    this.products = [
+      { id: 'first', name: 'Té verde', price: 4 },
+      { id: 'second', name: 'Café de origen', price: 12 },
+    ];
+  }
+
+  get results() {
+    const query = this.query.trim().toLocaleLowerCase();
+    return query
+      ? this.products.filter((item) => item.name.toLocaleLowerCase().includes(query))
+      : this.products;
+  }
+
+  render() {
+    return html\`
+      <main>
+        <button @click=${'${'}() => this.navigate('home')}>← ${'${'}t('app.back')}</button>
+        <h1>${'${'}t('search.title')}</h1>
+        <label>
+          ${'${'}t('search.label')}
+          <input
+            .value=${'${'}this.query}
+            @input=${'${'}(event) => { this.query = event.target.value; }}
+          >
+        </label>
+        <p>${'${'}this.results.length} ${'${'}t('search.results')}</p>
+        <div class="results">
+          ${'${'}this.results.map((product) => html\`
+            <academy-product-card .product=${'${'}product}></academy-product-card>
+          \`)}
+        </div>
+      </main>
+    \`;
+  }
+}
+customElements.define(AcademySearchPage.is, AcademySearchPage);
 `, 'javascript'),
     'app/components/academy-product-card/academy-product-card.js': file('app/components/academy-product-card/academy-product-card.js', `
 import { LitElement, css, html } from 'lit';
@@ -238,11 +469,24 @@ import { WidgetMixin } from '../../runtime/widget-mixin.js';
 export class AcademyProductCard extends WidgetMixin(LitElement) {
   static get is() { return 'academy-product-card'; }
   static properties = { product: { type: Object } };
-  static styles = css\`:host{display:block}article{border:2px solid #111827;padding:1rem;background:white}button{padding:.6rem 1rem}\`;
+  static styles = css\`
+    :host { display: block; }
+    article { display: grid; gap: .8rem; min-height: 12rem; padding: 1.25rem; border: 1px solid #cbd6e2; border-radius: 1.25rem; background: white; box-shadow: 0 .7rem 1.8rem rgb(16 42 67 / 10%); }
+    h2, p { margin: 0; }
+    .price { color: #067a6f; font-size: 1.25rem; font-weight: 900; }
+    button { align-self: end; justify-self: start; border: 0; border-radius: 999px; padding: .7rem 1rem; background: #102a43; color: white; font-weight: 800; cursor: pointer; }
+  \`;
   constructor() { super(); this.product = { id: '', name: '', price: 0 }; }
   selectProduct() { this.emitEvent('select', { ...this.product }); }
   render() {
-    return html\`<article><h2>${'${'}this.product.name}</h2><p>${'${'}this.product.price} €</p><button @click=${'${'}this.selectProduct}>${'${'}this.t('home.viewDetail')}</button></article>\`;
+    return html\`
+      <article>
+        <span aria-hidden="true">◌ Producto</span>
+        <h2>${'${'}this.product.name}</h2>
+        <p class="price">${'${'}this.product.price} €</p>
+        <button @click=${'${'}this.selectProduct}>${'${'}this.t('home.viewDetail')}</button>
+      </article>
+    \`;
   }
 }
 customElements.define(AcademyProductCard.is, AcademyProductCard);
@@ -353,16 +597,28 @@ export default appConfig;
       es: { 'app.title': 'Catálogo Cells', 'app.back': 'Volver' },
     }, null, 2)}\n`, 'json'),
     'app/pages/academy-home-page/locales/locales.json': file('app/pages/academy-home-page/locales/locales.json', `${JSON.stringify({
-      en: { 'home.title': 'Cells catalog', 'home.description': 'Choose a product to see its details.', 'home.viewDetail': 'View details' },
-      es: { 'home.title': 'Catálogo Cells', 'home.description': 'Elige un producto para ver su detalle.', 'home.viewDetail': 'Ver detalle' },
+      en: { 'home.title': 'A catalog made from real boundaries', 'home.description': 'Choose a product or explore another page of the application.', 'home.viewDetail': 'View details', 'home.favorites': 'Favorites', 'home.cart': 'Cart', 'home.search': 'Search' },
+      es: { 'home.title': 'Un catálogo hecho de fronteras reales', 'home.description': 'Elige un producto o explora otra página de la aplicación.', 'home.viewDetail': 'Ver detalle', 'home.favorites': 'Favoritos', 'home.cart': 'Carrito', 'home.search': 'Buscar' },
     }, null, 2)}\n`, 'json'),
     'app/pages/academy-product-detail-page/locales/locales.json': file('app/pages/academy-product-detail-page/locales/locales.json', `${JSON.stringify({
-      en: { 'detail.title': 'Product detail', 'detail.back': 'Back to catalog' },
-      es: { 'detail.title': 'Detalle del producto', 'detail.back': 'Volver al catálogo' },
+      en: { 'detail.kicker': 'Selected product', 'detail.title': 'Product detail', 'detail.description': 'This page owns route parameters and visit state.', 'detail.back': 'Back to catalog' },
+      es: { 'detail.kicker': 'Producto seleccionado', 'detail.title': 'Detalle del producto', 'detail.description': 'Esta página posee los parámetros de ruta y el estado de la visita.', 'detail.back': 'Volver al catálogo' },
     }, null, 2)}\n`, 'json'),
     'app/pages/academy-not-found-page/locales/locales.json': file('app/pages/academy-not-found-page/locales/locales.json', `${JSON.stringify({
-      en: { 'notFound.title': 'Page not found' },
-      es: { 'notFound.title': 'Página no encontrada' },
+      en: { 'notFound.title': 'Page not found', 'notFound.description': 'The fallback route keeps the application recoverable.' },
+      es: { 'notFound.title': 'Página no encontrada', 'notFound.description': 'La ruta de respaldo mantiene la aplicación recuperable.' },
+    }, null, 2)}\n`, 'json'),
+    'app/pages/academy-favorites-page/locales/locales.json': file('app/pages/academy-favorites-page/locales/locales.json', `${JSON.stringify({
+      en: { 'favorites.kicker': 'Your collection', 'favorites.title': 'Saved favorites' },
+      es: { 'favorites.kicker': 'Tu colección', 'favorites.title': 'Favoritos guardados' },
+    }, null, 2)}\n`, 'json'),
+    'app/pages/academy-cart-page/locales/locales.json': file('app/pages/academy-cart-page/locales/locales.json', `${JSON.stringify({
+      en: { 'cart.title': 'Shopping cart', 'cart.total': 'Total' },
+      es: { 'cart.title': 'Carrito de compra', 'cart.total': 'Total' },
+    }, null, 2)}\n`, 'json'),
+    'app/pages/academy-search-page/locales/locales.json': file('app/pages/academy-search-page/locales/locales.json', `${JSON.stringify({
+      en: { 'search.title': 'Search the catalog', 'search.label': 'What are you looking for?', 'search.results': 'results' },
+      es: { 'search.title': 'Busca en el catálogo', 'search.label': '¿Qué estás buscando?', 'search.results': 'resultados' },
     }, null, 2)}\n`, 'json'),
     'vite.config.js': file('vite.config.js', `
 import { defineConfig } from 'vitest/config';
@@ -381,7 +637,7 @@ import { AcademyProductDataManager } from '../../app/data/academy-product-data-m
 
 describe('academy-store-app', () => {
   it('declara rutas lazy por nombre y una única salida desconocida', () => {
-    expect(ROUTES.map((route) => route.name)).toEqual(['home', 'product-detail', 'not-found']);
+    expect(ROUTES.map((route) => route.name)).toEqual(['home', 'product-detail', 'favorites', 'cart', 'search', 'not-found']);
     expect(ROUTES.filter((route) => route.notFound)).toHaveLength(1);
     expect(ROUTES.find((route) => route.name === 'product-detail')?.path).toBe('/product/:id');
   });
@@ -543,19 +799,14 @@ const PROJECT_COPY: Record<CellsAppProject, {
   },
 };
 
-/** Crea cuatro proyectos de dominio distintos sobre los mismos contratos públicos de Cells. */
-export function createCellsProjectPracticeWorkspace(
-  project: CellsAppProject,
-  stage: CellsAppPracticeStage,
-): VersionedCellsWorkspace {
+function applyProjectCopy(base: VersionedCellsWorkspace, project: CellsAppProject): VersionedCellsWorkspace {
   const copy = PROJECT_COPY[project];
-  const base = createCellsAppPracticeWorkspace(stage, { name: copy.name });
   const files = Object.fromEntries(Object.entries(base.snapshot.files).map(([path, source]) => {
     let content = source.content
       .replaceAll('academy-store-app', copy.name)
       .replaceAll('Catálogo Cells', copy.title)
       .replaceAll('Aplicación Cells educativa con páginas declarativas, rutas lazy, canales con último valor, cleanup y un data manager cancelable.', copy.description)
-      .replaceAll("academy:store:product:selected", copy.channel)
+      .replaceAll('academy:store:product:selected', copy.channel)
       .replaceAll("{ id: 'tea', name: 'Té', price: 4 }", `{ id: 'first', name: '${copy.firstItem}', price: 4 }`)
       .replaceAll("{ id: 'coffee', name: 'Café', price: 12 }", `{ id: 'second', name: '${copy.secondItem}', price: 12 }`);
     if (path === 'package.json') {
@@ -566,4 +817,41 @@ export function createCellsProjectPracticeWorkspace(
     return [path, { ...source, content }];
   }));
   return createVersionedCellsWorkspace({ ...base.snapshot, files }, base.generation);
+}
+
+const APP_ARTIFACT_FOCUS: Record<string, { route: string; path: string }> = {
+  'catalog-app': { route: 'home', path: 'app/scripts/app.js' },
+  'home-page': { route: 'home', path: 'app/pages/academy-home-page/academy-home-page.js' },
+  'product-detail-page': { route: 'product-detail', path: 'app/pages/academy-product-detail-page/academy-product-detail-page.js' },
+  'favorites-page': { route: 'favorites', path: 'app/pages/academy-favorites-page/academy-favorites-page.js' },
+  'cart-page': { route: 'cart', path: 'app/pages/academy-cart-page/academy-cart-page.js' },
+  'not-found-page': { route: 'not-found', path: 'app/pages/academy-not-found-page/academy-not-found-page.js' },
+  'search-page': { route: 'search', path: 'app/pages/academy-search-page/academy-search-page.js' },
+  'native-adapter': { route: 'home', path: 'app/bridge/native-adapter.js' },
+  'product-data-manager': { route: 'search', path: 'app/data/academy-product-data-manager.js' },
+  'app-contract-tests': { route: 'home', path: 'test/unit/app.test.js' },
+  'app-locales': { route: 'home', path: 'app/locales-app/locales.json' },
+  'delivery-config': { route: 'home', path: 'app/config/prod.js' },
+};
+
+/** Ensambla una aplicación completa y abre la superficie protagonista de la lección. */
+export function createCellsProjectWorkspace(project: CellsAppProject, focusArtifactId = 'catalog-app'): VersionedCellsWorkspace {
+  const copy = PROJECT_COPY[project];
+  const projectWorkspace = applyProjectCopy(createCellsAppWorkspace({ name: copy.name }), project);
+  const focus = APP_ARTIFACT_FOCUS[focusArtifactId] ?? APP_ARTIFACT_FOCUS['catalog-app'];
+  const appPath = 'app/scripts/app.js';
+  const appSource = projectWorkspace.snapshot.files[appPath].content
+    .replace("initialTemplate: 'home'", `initialTemplate: '${focus.route}'`);
+  const changed = writeCellsFile(projectWorkspace, appPath, appSource);
+  return createVersionedCellsWorkspace({ ...changed.snapshot, activeFilePath: focus.path }, 0);
+}
+
+/** Crea cuatro proyectos de dominio distintos sobre los mismos contratos públicos de Cells. */
+export function createCellsProjectPracticeWorkspace(
+  project: CellsAppProject,
+  stage: CellsAppPracticeStage,
+): VersionedCellsWorkspace {
+  const copy = PROJECT_COPY[project];
+  const base = createCellsAppPracticeWorkspace(stage, { name: copy.name });
+  return applyProjectCopy(base, project);
 }

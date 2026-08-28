@@ -51,11 +51,31 @@ export function auditCellsComponent(workspace: WorkspaceSnapshot): { results: Ce
     .map((file) => file.content.match(/customElements\.define\(['"]([^'"]+)/)?.[1])
     .find(Boolean);
   const componentTest = tagName ? workspace.files[`test/unit/${tagName}.test.js`]?.content ?? '' : '';
+  const metadataDeclarations = metadata.modules
+    ?.flatMap?.((module: any) => module.declarations ?? []) ?? [];
+  const declaration = metadataDeclarations.find?.((candidate: any) => candidate.tagName === tagName)
+    ?? metadataDeclarations[0];
+  const documentedProperties = (declaration?.members ?? []).filter((member: any) => member.kind === 'field' && member.name);
+  const documentedEvent = (declaration?.events ?? [])[0];
   const scopedRegistry = source.match(/static\s+get\s+scopedElements\s*\(\)\s*\{\s*return\s*\{([\s\S]*?)\}\s*;?\s*\}/)?.[1] ?? '';
   const publicProperties = source.match(/static\s+properties\s*=\s*\{([\s\S]*?)\n\s*\};/)?.[1] ?? '';
-  const learnerNameContract = publicProperties.match(/learnerName\s*:\s*\{([\s\S]*?)\}/)?.[1] ?? '';
+  const publicPropertyContracts = documentedProperties.map((property: any) => {
+    const contract = publicProperties.match(new RegExp(`${property.name}\\s*:\\s*\\{([\\s\\S]*?)\\}`))?.[1] ?? '';
+    return Boolean(
+      /\btype\s*:\s*(?:String|Number|Boolean|Object|Array)\b/.test(contract)
+      && (!property.attribute || new RegExp(`\\battribute\\s*:\\s*['"]${property.attribute}['"]`).test(contract)),
+    );
+  });
+  const localImports = Array.from(source.matchAll(/import\s+\{\s*([A-Za-z_$][\w$]*)\s*\}\s+from\s+['"]\.\/components\/([^'"]+)\.js['"]/g), (match) => ({ className: match[1], tagName: match[2] }));
+  const scopedImportsComplete = localImports.length > 0 && localImports.every((dependency) => (
+    new RegExp(`['"]${dependency.tagName}['"]\\s*:\\s*${dependency.className}\\b`).test(scopedRegistry)
+  ));
   const translationCalls = Array.from(source.matchAll(/this\.t\(['"]([^'"]+)['"]/g), (match) => match[1]);
   const uniqueCalls = [...new Set(translationCalls)];
+  const primaryProperty = documentedProperties[0];
+  const eventSuffix = tagName && documentedEvent?.name?.startsWith(`${tagName}-`)
+    ? documentedEvent.name.slice(tagName.length + 1)
+    : documentedEvent?.name;
   const scssPath = tagName ? `src/${tagName}.scss` : '';
   const cssModulePath = tagName ? `src/${tagName}.css.js` : '';
   const scssSource = scssPath ? workspace.files[scssPath]?.content.trim() ?? '' : '';
@@ -76,19 +96,19 @@ export function auditCellsComponent(workspace: WorkspaceSnapshot): { results: Ce
     test('package-contract', 'Declara entradas y comandos consumibles', manifest.exports?.['.'] === './index.js' && manifest.scripts?.documentation === 'cells component:documentation', 'package.json debe exponer index.js y conservar el comando Cells de documentación.', 'package.json'),
     test('source-entry', 'Existe una entrada pública', Boolean(sourcePath), sourcePath ? 'Se encontró el módulo principal.' : 'Falta un archivo principal dentro de src/.'),
     test('cells-mixins', 'Compone los mixins Cells', /WidgetMixin\(ScopedElementsMixin\(LitElement\)\)/.test(source), 'La clase debe componer WidgetMixin y ScopedElementsMixin.', sourcePath),
-    test('public-property', 'Declara la entrada pública learnerName', /\btype\s*:\s*String\b/.test(learnerNameContract) && /\battribute\s*:\s*['"]learner-name['"]/.test(learnerNameContract), 'learnerName debe ser una propiedad String configurable también mediante learner-name.', sourcePath),
-    test('scoped-components', 'Registra dependencias scoped', /['"]academy-type-text['"]\s*:\s*AcademyTypeText/.test(scopedRegistry) && /['"]academy-action-button['"]\s*:\s*AcademyActionButton/.test(scopedRegistry), 'Registra los componentes locales del ejercicio dentro de scopedElements.', sourcePath),
-    test('translated-copy', 'Traduce el texto visible', uniqueCalls.length >= 3 && !/this\.t\([^)]*\)\s*\|\|/.test(source), 'Usa this.t con claves reales y sin ocultar errores con un fallback vacío.', sourcePath),
+    test('public-property', 'Declara la API pública documentada', documentedProperties.length > 0 && publicPropertyContracts.every(Boolean), 'Cada propiedad de custom-elements.json debe existir con tipo y atributo coherentes en la clase.', sourcePath),
+    test('scoped-components', 'Registra dependencias scoped', scopedImportsComplete, 'Cada clase importada desde components debe quedar asociada a su tag dentro de scopedElements.', sourcePath),
+    test('translated-copy', 'Traduce el texto visible', uniqueCalls.length >= 2 && !/this\.t\([^)]*\)\s*\|\|/.test(source), 'Usa this.t con claves reales y sin ocultar errores con un fallback vacío.', sourcePath),
     test('locale-parity', 'Mantiene EN y ES sincronizados', enKeys.length > 0 && JSON.stringify(enKeys) === JSON.stringify(esKeys), 'El catálogo fuente debe contener exactamente las mismas claves en EN y ES.', 'locales/locales.json'),
     test('locale-placeholders', 'Conserva placeholders entre idiomas', esKeys.every((key) => JSON.stringify(placeholders(localeCatalog.es?.[key])) === JSON.stringify(placeholders(localeCatalog.en?.[key]))), 'Cada clave debe conservar los mismos nombres de placeholder en EN y ES.', 'locales/locales.json'),
-    test('public-event', 'Emite un evento público', /this\.emitEvent\(\s*['"]continue['"]\s*,\s*[^)\s][^)]*\)/s.test(source), 'Emite continue con un detail útil; el nombre público incluye el tag del componente.', sourcePath),
+    test('public-event', 'Emite el evento público documentado', Boolean(eventSuffix && new RegExp(`this\\.emitEvent\\(\\s*['"]${eventSuffix}['"]\\s*,\\s*[^)\\s][^)]*\\)`, 's').test(source)), 'El evento declarado en metadata debe salir mediante emitEvent con un detail útil.', sourcePath),
     test('demo-renders', 'La demo instancia el componente', Boolean(tagName && new RegExp(`<${tagName}(?:\\s|>)`).test(demo)), 'La demo debe incluir el tag definido por el componente.', 'demo/index.html'),
     test('demo-public-entry', 'La demo consume la entrada pública', Boolean(tagName && demoController.includes(`from '../${tagName}.js'`)), 'demo/demo.js debe importar la entrada pública que utilizará una aplicación consumidora.', 'demo/demo.js'),
-    test('demo-controls-property', 'La demo configura la propiedad pública', /[A-Za-z_$][\w$]*\.learnerName\s*=\s*[A-Za-z_$][\w$]*\.target\.value/.test(demoController), 'El control de nombre debe modificar learnerName en la instancia, no una copia interna.', 'demo/demo.js'),
+    test('demo-controls-property', 'La demo configura la propiedad pública', Boolean(primaryProperty && new RegExp(`[A-Za-z_$][\\w$]*\\.${primaryProperty.name}\\s*=\\s*[A-Za-z_$][\\w$]*\\.target\\.value`).test(demoController)), 'El control debe modificar la propiedad pública documentada en la instancia real.', 'demo/demo.js'),
     test('style-pair', 'Consume el css.js generado desde el SCSS', consumesGeneratedStyles, 'Conserva el SCSS como fuente, genera el css.js equivalente, impórtalo como styles y úsalo en static styles.', sourcePath),
     test('test-public-event', 'Prueba el evento desde la API pública', /expect\([^)]*\.detail\)\.toEqual\(/.test(componentTest) && /expect\([^)]*\.bubbles\)\.toBe\(true\)/.test(componentTest) && /expect\([^)]*\.composed\)\.toBe\(true\)/.test(componentTest), 'La suite debe comprobar detail, bubbles y composed a partir del evento recibido por un consumidor.', tagName ? `test/unit/${tagName}.test.js` : undefined),
     test('metadata-contract', 'Alinea metadata y tag público', Boolean(tagName && metadata.modules?.some?.((module: any) => module.declarations?.some?.((declaration: any) => declaration.tagName === tagName))), 'custom-elements.json debe describir el mismo tag que registra la entrada pública.', 'custom-elements.json'),
-    test('readme-consumer-path', 'Documenta consumo y evento público', Boolean(tagName && readme.includes(`${tagName}-continue`) && /cells component:(?:test|dev|documentation)/.test(readme)), 'README debe explicar el evento público y al menos un comando Cells para continuar el proyecto.', 'README.md'),
+    test('readme-consumer-path', 'Documenta consumo y evento público', Boolean(documentedEvent?.name && readme.includes(documentedEvent.name) && /cells component:(?:test|dev|documentation)/.test(readme)), 'README debe explicar el evento público documentado y al menos un comando Cells para continuar el proyecto.', 'README.md'),
   ];
   const covered = results.filter((result) => result.passed).length;
   const behaviorIds = new Set(['public-property', 'scoped-components', 'translated-copy', 'locale-placeholders', 'public-event', 'demo-renders', 'demo-public-entry', 'demo-controls-property', 'style-pair', 'test-public-event', 'metadata-contract']);

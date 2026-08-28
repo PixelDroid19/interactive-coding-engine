@@ -79,7 +79,7 @@ describe('recorrido guiado completo de Open Cells', () => {
       (event.type === 'file-switch' || event.type === 'code-change') ? [event.filePath] : []
     )));
     expect([...pathsFor('open-cells-03')]).toEqual(expect.arrayContaining([
-      'package.json', 'index.js', 'academy-learning-card.js', 'src/academy-learning-card.js',
+      'package.json', 'index.js', 'academy-state-panel.js', 'src/academy-state-panel.js',
     ]));
     expect([...pathsFor('open-cells-31')]).toEqual(expect.arrayContaining([
       'demo/index.html', 'demo/demo.js', 'demo/demo-build.js',
@@ -87,6 +87,19 @@ describe('recorrido guiado completo de Open Cells', () => {
     expect([...pathsFor('open-cells-39')]).toEqual(expect.arrayContaining([
       'index.html', 'app/scripts/app.js', 'app/scripts/app-routes.js', 'app/pages/academy-home-page/academy-home-page.js',
     ]));
+  });
+
+  it('cambia el artefacto visible y conserva dependencias construidas previamente', () => {
+    const componentIds = ['open-cells-01', 'open-cells-02', 'open-cells-03', 'open-cells-06', 'open-cells-10', 'open-cells-13', 'open-cells-16', 'open-cells-21', 'open-cells-23', 'open-cells-37'];
+    const tags = componentIds.map((id) => buildCellsPreviewDocument(
+      applyTape(OPEN_CELLS_SCRIMS[id].initialWorkspace, OPEN_CELLS_SCRIMS[id].events),
+    ).componentDemo?.tagName);
+    expect(new Set(tags).size).toBe(componentIds.length);
+
+    const productLesson = OPEN_CELLS_SCRIMS['open-cells-06'];
+    const productSource = applyTape(productLesson.initialWorkspace, productLesson.events).files['src/academy-product-card.js']?.content;
+    expect(productSource).toContain("from './components/academy-action-button.js'");
+    expect(productSource).toContain("from './components/academy-status-badge.js'");
   });
 
   it('mantiene 68 guiones hablados sincronizados con los subtítulos', () => {
