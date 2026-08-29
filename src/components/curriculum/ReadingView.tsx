@@ -113,6 +113,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
               type="button"
               onClick={onBackToRoadmap || onBack}
               className="neu-pill-btn shrink-0"
+              data-augmented-ui={isCyber ? "hud-roadmap tr-clip bl-clip border inlay" : undefined}
               aria-label="Volver al roadmap"
             >
               <ArrowLeft size={15} />
@@ -124,6 +125,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                 onClick={onPrevious}
                 disabled={!navigationState?.hasPrevious}
                 className="neu-pill-btn shrink-0 disabled:opacity-40"
+                data-augmented-ui={isCyber ? "hud-prev tl-clip br-clip border inlay" : undefined}
                 aria-label="Anterior"
               >
                 <ChevronLeft size={15} />

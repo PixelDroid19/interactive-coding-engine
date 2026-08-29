@@ -894,7 +894,12 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       <div className="studio-card">
       <header className="window-topbar">
         <div className="window-titlebar-left min-w-0">
-          <button onClick={handleRoadmapClick} className="neu-pill-btn shrink-0" aria-label="Volver al roadmap">
+          <button
+            onClick={handleRoadmapClick}
+            className="neu-pill-btn shrink-0"
+            data-augmented-ui={isCyber ? "hud-roadmap tr-clip bl-clip border inlay" : undefined}
+            aria-label="Volver al roadmap"
+          >
             <ArrowLeft size={15} />
             <span>Roadmap</span>
           </button>
@@ -903,6 +908,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
               onClick={handlePreviousClick}
               disabled={navigationState ? !navigationState.hasPrevious : !onPrevious}
               className="neu-pill-btn shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+              data-augmented-ui={isCyber ? "hud-prev tl-clip br-clip border inlay" : undefined}
               aria-label="Anterior"
               title={navigationState?.hasPrevious ? `Anterior: ${navigationState.previous?.item.title}` : 'No hay anterior'}
             >
@@ -928,6 +934,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             <button
               onClick={() => setIsFloatingBrowser(!isFloatingBrowser)}
               className="neu-pill-btn"
+              data-augmented-ui={isCyber ? "hud-floating tl-clip br-clip border inlay" : undefined}
               aria-label={isFloatingBrowser ? 'Fijar vista al lado' : 'Soltar vista flotante'}
               title={isFloatingBrowser ? 'Vista flotante' : 'Vista al lado'}
             >
@@ -939,6 +946,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             onClick={handleExplainOpen}
             disabled={awaitingStart || showBranchRecovery}
             className="btn-explain neu-pill-btn disabled:cursor-not-allowed disabled:opacity-50"
+            data-augmented-ui={isCyber ? "hud-explain tr-clip bl-clip border inlay" : undefined}
             aria-label="Explicar lección"
           >
             <Lightbulb size={14} />
@@ -951,7 +959,13 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
                 <GitBranch size={12} style={{ display: 'inline', marginRight: 4 }} />
                 Editando
               </span>
-              <button onClick={handleReturnToLesson} className="neu-pill-btn" aria-label="Volver al contenido de la lección" title="Volver al contenido de la lección">
+              <button
+                onClick={handleReturnToLesson}
+                className="neu-pill-btn"
+                data-augmented-ui={isCyber ? "hud-action tl-clip br-clip border inlay" : undefined}
+                aria-label="Volver al contenido de la lección"
+                title="Volver al contenido de la lección"
+              >
                 <RotateCcw size={13} />
                 Volver
               </button>
@@ -959,7 +973,13 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           )}
 
           {activeChallenge && !isChallengeDrawerOpen && (
-            <button onClick={handleReopenChallenge} className="neu-pill-btn" aria-label={`Reabrir reto ${activeChallenge.title}`} title="Reabrir reto">
+            <button
+              onClick={handleReopenChallenge}
+              className="neu-pill-btn"
+              data-augmented-ui={isCyber ? "hud-floating tl-clip br-clip border inlay" : undefined}
+              aria-label={`Reabrir reto ${activeChallenge.title}`}
+              title="Reabrir reto"
+            >
               <span>Reto</span>
               <ChevronRight size={14} />
             </button>
@@ -969,7 +989,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             navigationState?.hasNext ? (
               <button
                 onClick={handleNextClick}
-                className={`btn-next-lesson neu-pill-btn ${isCompleted ? '' : 'opacity-60'}`}
+                className={`btn-next-lesson neu-pill-btn ${isCompleted ? '' : 'opacity-80'}`}
+                data-augmented-ui={isCyber ? `hud-next tl-clip br-clip border inlay ${isCompleted ? 'is-completed' : 'is-dimmed'}` : undefined}
                 aria-label="Siguiente"
                 title={navigationState.next?.item.title || 'Siguiente'}
               >
@@ -980,6 +1001,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
               <button
                 onClick={handleRoadmapClick}
                 className="neu-pill-btn bg-emerald-100 border-emerald-700"
+                data-augmented-ui={isCyber ? "hud-roadmap tr-clip bl-clip border inlay" : undefined}
                 aria-label="Finalizar y volver al roadmap"
                 title="Finalizar"
               >
@@ -989,9 +1011,9 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             ) : onNextLesson ? (
               <button
                 onClick={handleNextClick}
-                className={`btn-next-lesson neu-pill-btn ${isCompleted ? '' : 'opacity-60'}`}
+                className={`btn-next-lesson neu-pill-btn ${isCompleted ? '' : 'opacity-80'}`}
+                data-augmented-ui={isCyber ? `hud-next tl-clip br-clip border inlay ${isCompleted ? 'is-completed' : 'is-dimmed'}` : undefined}
                 aria-label="Siguiente lección"
-                style={!isCompleted ? { filter: 'grayscale(0.5)' } : undefined}
                 title={isCompleted ? 'Siguiente lección' : 'Completa el cierre para continuar'}
               >
                 <span>Siguiente</span>

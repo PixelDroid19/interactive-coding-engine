@@ -325,7 +325,13 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
       <div className="studio-card" inert={showDraftChoice ? true : undefined} aria-hidden={showDraftChoice || undefined}>
         <header className="window-topbar">
           <div className="window-titlebar-left min-w-0">
-            <button type="button" onClick={handleRoadmap} className="neu-pill-btn shrink-0" aria-label="Volver al roadmap">
+            <button
+              type="button"
+              onClick={handleRoadmap}
+              className="neu-pill-btn shrink-0"
+              data-augmented-ui={isCyber ? "hud-roadmap tr-clip bl-clip border inlay" : undefined}
+              aria-label="Volver al roadmap"
+            >
               <ArrowLeft size={15} />
               <span>Roadmap</span>
             </button>
@@ -335,6 +341,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                 onClick={handlePrev}
                 disabled={navigationState ? !navigationState.hasPrevious : false}
                 className="neu-pill-btn shrink-0 disabled:opacity-40"
+                data-augmented-ui={isCyber ? "hud-prev tl-clip br-clip border inlay" : undefined}
                 aria-label="Anterior"
               >
                 <ChevronLeft size={15} />
@@ -362,12 +369,24 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
             )}
             {onNext && postSolveComplete && (
               navigationState?.isLast ? (
-                <button type="button" onClick={handleRoadmap} className="neu-pill-btn bg-emerald-100" aria-label="Finalizar">
+                <button
+                  type="button"
+                  onClick={handleRoadmap}
+                  className="neu-pill-btn bg-emerald-100"
+                  data-augmented-ui={isCyber ? "hud-roadmap tr-clip bl-clip border inlay" : undefined}
+                  aria-label="Finalizar"
+                >
                   <span>Finalizar</span>
                   <ChevronRight size={15} />
                 </button>
               ) : (
-                <button type="button" onClick={handleNext} className="btn-next-lesson neu-pill-btn" aria-label="Siguiente">
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="btn-next-lesson neu-pill-btn"
+                  data-augmented-ui={isCyber ? "hud-next tl-clip br-clip border inlay is-completed" : undefined}
+                  aria-label="Siguiente"
+                >
                   <span>Siguiente</span>
                   <ChevronRight size={15} />
                 </button>

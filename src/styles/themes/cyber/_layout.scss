@@ -64,10 +64,7 @@
 .hud .window-topbar button {
   min-height: 32px;
   height: 32px;
-  border: 0 !important;
   border-radius: 0 !important;
-  box-shadow: none !important;
-  color: #cbd5e1 !important;
   font-family: "Chakra Petch", sans-serif !important;
   font-size: 11px !important;
   font-weight: 700 !important;
@@ -75,22 +72,26 @@
   text-transform: uppercase;
   transform: none !important;
   padding: 0 12px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.18s ease;
 }
 
-.hud .window-topbar .window-titlebar-left > button:first-child {
-  color: #000 !important;
-  font-weight: 900 !important;
-  letter-spacing: .08em !important;
+/* Default cyber button when data-augmented-ui is not present */
+.hud .window-topbar button:not([data-augmented-ui]):not(.cyber-theme-toggle) {
+  border: 1px solid rgba(0, 240, 255, 0.4) !important;
+  background: rgba(12, 16, 26, 0.9) !important;
+  color: #e2e8f0 !important;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.15) !important;
 }
 
-.hud .window-topbar .window-titlebar-left > button:first-child svg {
-  color: #000 !important;
-}
-
-.hud .window-topbar .btn-explain {
-  color: #000 !important;
-  font-weight: 900 !important;
-  box-shadow: 0 0 12px var(--hud-yellow-glow) !important;
+.hud .window-topbar button:not([data-augmented-ui]):not(.cyber-theme-toggle):hover {
+  border-color: #00f0ff !important;
+  color: #00f0ff !important;
+  background: rgba(0, 240, 255, 0.18) !important;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.5) !important;
 }
 
 .hud .window-topbar .cyber-theme-toggle,
@@ -108,11 +109,6 @@
 .hud button.cyber-theme-toggle .cyber-glitch-content span {
   color: #000000;
   stroke: #000000;
-}
-
-.hud .window-topbar .btn-next-lesson,
-.hud .window-topbar button[aria-label="Siguiente"] {
-  color: var(--hud-cyan) !important;
 }
 
 .hud .window-topbar button:focus-visible,

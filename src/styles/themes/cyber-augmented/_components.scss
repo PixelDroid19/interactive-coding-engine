@@ -11,27 +11,61 @@
   --aug-inlay-opacity: 1;
   --aug-tr: 8px;
   --aug-bl: 8px;
-  filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.45));
+  color: #000000 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  filter: drop-shadow(0 0 10px rgba(255, 230, 0, 0.55));
+}
+.hud [data-augmented-ui~="hud-roadmap"] svg {
+  color: #000000 !important;
+  stroke: #000000 !important;
 }
 .hud [data-augmented-ui~="hud-roadmap"]:hover {
-  --aug-border-bg: #fff066;
-  --aug-inlay-bg: #fff066;
-  filter: drop-shadow(0 0 12px rgba(255, 230, 0, 0.75));
+  --aug-border-bg: #ffffff;
+  --aug-inlay-bg: #ffffff;
+  color: #000000 !important;
+  filter: drop-shadow(0 0 16px rgba(255, 230, 0, 0.9));
+}
+.hud [data-augmented-ui~="hud-roadmap"]:hover svg {
+  color: #000000 !important;
+  stroke: #000000 !important;
 }
 
 /* Previous Lesson Button */
 .hud [data-augmented-ui~="hud-prev"] {
-  --aug-border-all: 1px;
-  --aug-border-bg: rgba(255, 255, 255, 0.25);
+  --aug-border-all: 1.5px;
+  --aug-border-bg: rgba(0, 240, 255, 0.45);
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #0a0a0f;
+  --aug-inlay-bg: #0c101a;
   --aug-inlay-opacity: 1;
   --aug-tl: 8px;
   --aug-br: 8px;
+  color: #e2e8f0 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.25));
 }
-.hud [data-augmented-ui~="hud-prev"]:hover {
-  --aug-border-bg: rgba(255, 255, 255, 0.6);
-  --aug-inlay-bg: #14141e;
+.hud [data-augmented-ui~="hud-prev"] svg {
+  color: #00f0ff !important;
+}
+.hud [data-augmented-ui~="hud-prev"]:not(:disabled):hover {
+  --aug-border-bg: #00f0ff;
+  --aug-inlay-bg: rgba(0, 240, 255, 0.22);
+  color: #00f0ff !important;
+  filter: drop-shadow(0 0 14px rgba(0, 240, 255, 0.7));
+}
+.hud [data-augmented-ui~="hud-prev"]:disabled {
+  --aug-border-bg: rgba(255, 255, 255, 0.12);
+  --aug-inlay-bg: #080a0f;
+  color: #475569 !important;
+  opacity: 0.45 !important;
+  filter: none !important;
+  cursor: not-allowed;
+}
+.hud [data-augmented-ui~="hud-prev"]:disabled svg {
+  color: #475569 !important;
 }
 
 /* Explain Button */
@@ -43,62 +77,128 @@
   --aug-inlay-opacity: 1;
   --aug-tr: 8px;
   --aug-bl: 8px;
-  filter: drop-shadow(0 0 10px rgba(255, 230, 0, 0.6));
+  color: #000000 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  filter: drop-shadow(0 0 12px rgba(255, 230, 0, 0.6));
 }
-.hud [data-augmented-ui~="hud-explain"]:hover {
-  --aug-border-bg: #fff066;
-  --aug-inlay-bg: #fff066;
-  filter: drop-shadow(0 0 14px rgba(255, 230, 0, 0.85));
+.hud [data-augmented-ui~="hud-explain"] svg {
+  color: #000000 !important;
+  stroke: #000000 !important;
+}
+.hud [data-augmented-ui~="hud-explain"]:not(:disabled):hover {
+  --aug-border-bg: #ffffff;
+  --aug-inlay-bg: #ffffff;
+  color: #000000 !important;
+  filter: drop-shadow(0 0 18px rgba(255, 230, 0, 0.95));
+}
+.hud [data-augmented-ui~="hud-explain"]:not(:disabled):hover svg {
+  color: #000000 !important;
+  stroke: #000000 !important;
+}
+.hud [data-augmented-ui~="hud-explain"]:disabled {
+  --aug-border-bg: rgba(255, 230, 0, 0.3);
+  --aug-inlay-bg: rgba(255, 230, 0, 0.15);
+  color: rgba(255, 230, 0, 0.4) !important;
+  opacity: 0.5 !important;
+  filter: none !important;
+  cursor: not-allowed;
 }
 
 /* Floating Preview Toggle Button */
 .hud [data-augmented-ui~="hud-floating"] {
-  --aug-border-all: 1px;
+  --aug-border-all: 1.5px;
   --aug-border-bg: #ff007f;
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: rgba(255, 0, 127, 0.15);
+  --aug-inlay-bg: rgba(255, 0, 127, 0.14);
   --aug-inlay-opacity: 1;
-  --aug-tl: 6px;
-  --aug-br: 6px;
-  filter: drop-shadow(0 0 6px rgba(255, 0, 127, 0.35));
+  --aug-tl: 7px;
+  --aug-br: 7px;
+  color: #ff66b2 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+  filter: drop-shadow(0 0 8px rgba(255, 0, 127, 0.35));
+}
+.hud [data-augmented-ui~="hud-floating"] svg {
+  color: #ff007f !important;
 }
 .hud [data-augmented-ui~="hud-floating"]:hover {
   --aug-border-bg: #ff3399;
-  --aug-inlay-bg: rgba(255, 0, 127, 0.28);
-  filter: drop-shadow(0 0 10px rgba(255, 0, 127, 0.6));
+  --aug-inlay-bg: #ff007f;
+  color: #ffffff !important;
+  filter: drop-shadow(0 0 16px rgba(255, 0, 127, 0.7));
+}
+.hud [data-augmented-ui~="hud-floating"]:hover svg {
+  color: #ffffff !important;
 }
 
 /* Next Lesson Button */
 .hud [data-augmented-ui~="hud-next"] {
-  --aug-border-all: 1px;
+  --aug-border-all: 1.5px;
   --aug-border-bg: #00f0ff;
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: rgba(0, 240, 255, 0.12);
+  --aug-inlay-bg: rgba(0, 240, 255, 0.16);
   --aug-inlay-opacity: 1;
-  --aug-tl: 6px;
-  --aug-br: 6px;
-  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4));
+  --aug-tl: 7px;
+  --aug-br: 7px;
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.45));
+}
+.hud [data-augmented-ui~="hud-next"] svg {
+  color: #00f0ff !important;
 }
 .hud [data-augmented-ui~="hud-next"]:hover {
-  --aug-border-bg: #66f6ff;
-  --aug-inlay-bg: rgba(0, 240, 255, 0.25);
-  filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.7));
+  --aug-border-bg: #00f0ff;
+  --aug-inlay-bg: #00f0ff;
+  color: #000000 !important;
+  filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.9));
+}
+.hud [data-augmented-ui~="hud-next"]:hover svg {
+  color: #000000 !important;
+}
+.hud [data-augmented-ui~="hud-next"].is-completed,
+.hud [data-augmented-ui~="hud-next"]:not(.is-dimmed) {
+  --aug-border-bg: #00f0ff;
+  --aug-inlay-bg: #00f0ff;
+  color: #000000 !important;
+  filter: drop-shadow(0 0 14px rgba(0, 240, 255, 0.65));
+}
+.hud [data-augmented-ui~="hud-next"].is-completed svg,
+.hud [data-augmented-ui~="hud-next"]:not(.is-dimmed) svg {
+  color: #000000 !important;
 }
 
 /* Action Buttons (e.g. Volver, Reto) */
 .hud [data-augmented-ui~="hud-action"] {
-  --aug-border-all: 1px;
-  --aug-border-bg: #4a4a58;
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #ffe600;
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #0c0c12;
+  --aug-inlay-bg: rgba(255, 230, 0, 0.12);
   --aug-inlay-opacity: 1;
   --aug-tl: 7px;
   --aug-br: 7px;
+  color: #ffe600 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+  filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.35));
+}
+.hud [data-augmented-ui~="hud-action"] svg {
+  color: #ffe600 !important;
 }
 .hud [data-augmented-ui~="hud-action"]:hover {
-  --aug-border-bg: var(--hud-yellow);
-  --aug-inlay-bg: #14141e;
-  filter: drop-shadow(0 0 6px rgba(255, 230, 0, 0.3));
+  --aug-border-bg: #ffe600;
+  --aug-inlay-bg: #ffe600;
+  color: #000000 !important;
+  filter: drop-shadow(0 0 16px rgba(255, 230, 0, 0.8));
+}
+.hud [data-augmented-ui~="hud-action"]:hover svg {
+  color: #000000 !important;
 }
 
 /* File Tree Item */
