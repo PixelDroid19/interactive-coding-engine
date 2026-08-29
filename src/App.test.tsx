@@ -81,6 +81,14 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('button', { name: 'Abrir ayuda de IA' })).toBeTruthy();
   });
 
+  it('restaura el roadmap del curso activo al recargar la aplicación en vez de volver a fundamentos', () => {
+    localStorage.setItem('aula_app_navigation_v1', JSON.stringify({ view: 'home', courseId: OPEN_CELLS_COURSE.id }));
+    renderApp();
+
+    expect(screen.getByRole('heading', { name: OPEN_CELLS_COURSE.title })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: FUNDAMENTOS_COURSE.title })).toBeNull();
+  });
+
   it('cambia el tema de forma declarativa sin dejar bordes cyber en el modo normal', async () => {
     renderApp();
 

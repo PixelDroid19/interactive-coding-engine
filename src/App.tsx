@@ -51,9 +51,37 @@ function getInitialCourses(): Course[] {
   });
 }
 
+function findCourseByIdOrSlug(courses: Course[], identifier?: string): Course | undefined {
+  if (!identifier) return undefined;
+  const normalized = identifier.trim().toLowerCase();
+  const withoutPrefix = normalized.replace(/^course-/, '');
+  return courses.find((c) =>
+    c.id.toLowerCase() === normalized ||
+    c.slug.toLowerCase() === normalized ||
+    c.id.toLowerCase().replace(/^course-/, '') === withoutPrefix ||
+    c.slug.toLowerCase().replace(/^course-/, '') === withoutPrefix ||
+    c.title.toLowerCase() === normalized
+  );
+}
+
 function chooseInitialCourse(courses: Course[]): Course {
   const persisted = loadAppNavigationState();
-  return courses.find((course) => course.id === persisted?.courseId) ?? courses[0];
+  if (persisted?.courseId) {
+    const found = findCourseByIdOrSlug(courses, persisted.courseId);
+    if (found) return found;
+  }
+  const progress = loadUserProgress();
+  if (progress.lastAccessedCourseId) {
+    const found = findCourseByIdOrSlug(courses, progress.lastAccessedCourseId);
+    if (found) return found;
+  }
+  if (progress.recentActivity && progress.recentActivity.length > 0) {
+    for (const act of progress.recentActivity) {
+      const found = findCourseByIdOrSlug(courses, act.courseId);
+      if (found) return found;
+    }
+  }
+  return courses[0];
 }
 
 function getInitialAppState(course: Course): InitialAppState {
@@ -65,23 +93,41 @@ function getInitialAppState(course: Course): InitialAppState {
     timestampMs: 0,
   };
 
-  if (!persisted) return defaultState;
+  if (!persisted) {
+    const progress = loadUserProgress();
+    if (progress.lastAccessedCourseId) {
+      return {
+        ...defaultState,
+        view: 'home',
+      };
+    }
+    return defaultState;
+  }
   if (persisted.view === 'catalog' || persisted.view === 'playground' || persisted.view === 'studio') {
     return { ...defaultState, view: persisted.view };
   }
   if (persisted.view === 'home') {
-    return { ...defaultState, view: persisted.courseId === course.id ? 'home' : 'catalog' };
+    return { ...defaultState, view: 'home' };
   }
-  if (!persisted.itemId) return defaultState;
-  if (persisted.courseId && persisted.courseId !== course.id && persisted.courseId !== course.title) {
-    return defaultState;
+  if (!persisted.itemId) return { ...defaultState, view: 'home' };
+  if (persisted.courseId) {
+    const matchesCurrent =
+      persisted.courseId === course.id ||
+      persisted.courseId === course.slug ||
+      persisted.courseId === course.title ||
+      persisted.courseId.replace(/^course-/, '') === course.id.replace(/^course-/, '');
+    if (!matchesCurrent) {
+      return { ...defaultState, view: 'home' };
+    }
   }
 
   const module = course.modules.find((candidate) =>
     candidate.id === persisted.moduleId && candidate.items.some((item) => item.id === persisted.itemId)
   ) || course.modules.find((candidate) => candidate.items.some((item) => item.id === persisted.itemId));
   const item = module?.items.find((candidate) => candidate.id === persisted.itemId);
-  if (!module || !item || viewForItem(item) !== persisted.view) return defaultState;
+  if (!module || !item || viewForItem(item) !== persisted.view) {
+    return { ...defaultState, view: 'home' };
+  }
 
   return {
     view: persisted.view,
@@ -275,7 +321,7 @@ export default function App() {
   const handleBackToCourses = () => {
     refreshProgress();
     setActiveItem(null);
-    saveRoute({ view: 'catalog' });
+    saveRoute({ view: 'catalog', courseId: course.id });
     setCurrentView('catalog');
   };
 
@@ -614,7 +660,7 @@ export default function App() {
               saveRoute({ view: 'home', courseId: course.id });
               setCurrentView('home');
             } else {
-              saveRoute({ view: 'catalog' });
+              saveRoute({ view: 'catalog', courseId: course.id });
               setCurrentView('catalog');
             }
           }}
