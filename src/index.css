@@ -2792,6 +2792,26 @@ body.dark {
   scroll-margin-top: 88px;
 }
 
+/* Reading Telemetry Progress Track */
+.reading-progress-track {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.04);
+  z-index: 40;
+  overflow: hidden;
+}
+
+.reading-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #fde047;
+  transition: width 0.1s linear;
+}
+
 .reading-topbar__context {
   display: flex;
   min-width: 0;
@@ -2799,11 +2819,32 @@ body.dark {
   gap: 0.75rem;
 }
 
+.reading-time-pill {
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+
+.reading-time-icon {
+  color: #fde047;
+}
+
+.reading-time-divider {
+  opacity: 0.4;
+}
+
+.reading-progress-text {
+  color: #fef08a;
+  font-weight: 700;
+}
+
 .reading-page-grid {
   display: grid;
-  grid-template-columns: minmax(12rem, 14rem) minmax(0, 1fr);
-  gap: clamp(24px, 3vw, 52px);
-  width: min(100%, 118rem);
+  grid-template-columns: minmax(13.5rem, 16rem) minmax(0, 1fr);
+  gap: clamp(24px, 3.5vw, 56px);
+  width: min(100%, 116rem);
   margin: 0 auto;
 }
 
@@ -2811,7 +2852,7 @@ body.dark {
   display: grid;
   min-width: 0;
   gap: clamp(32px, 5vw, 72px);
-  padding-bottom: 40px;
+  padding-bottom: 80px;
 }
 
 .reading-rail {
@@ -2820,10 +2861,10 @@ body.dark {
 
 .reading-rail-inner {
   position: sticky;
-  top: 0;
+  top: 16px;
   display: grid;
-  gap: 4px;
-  padding: 18px 0;
+  gap: 6px;
+  padding: 16px 12px;
   border-top: 2px solid #fde047;
 }
 
@@ -2836,7 +2877,12 @@ body.dark {
   text-transform: uppercase;
 }
 
-.reading-rail a {
+.reading-rail-pill {
+  display: none;
+}
+
+.reading-rail a,
+.reading-rail-link {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -2855,7 +2901,8 @@ body.dark {
 }
 
 .reading-rail a:hover,
-.reading-rail a:focus-visible {
+.reading-rail a:focus-visible,
+.reading-rail-link:hover {
   border-left-color: #fde047;
   background: rgba(253, 224, 71, 0.06);
   color: #fef9c3;
@@ -2865,7 +2912,7 @@ body.dark {
 
 .reading-keypoints {
   margin-top: 20px;
-  padding: 18px 0 0;
+  padding: 16px 12px;
   border-top: 1px solid #52525b;
 }
 
@@ -2878,6 +2925,11 @@ body.dark {
   color: #fde047;
 }
 
+.reading-keypoints-eyebrow {
+  display: none;
+}
+
+.reading-keypoints-title,
 .reading-keypoints h2 {
   margin: 12px 0 0;
   color: #fef3c7;
@@ -2893,6 +2945,7 @@ body.dark {
   list-style: none;
 }
 
+.reading-keypoint-item,
 .reading-keypoints li {
   display: flex;
   gap: 8px;
@@ -2901,6 +2954,7 @@ body.dark {
   line-height: 1.45;
 }
 
+.reading-keypoint-check,
 .reading-keypoints li svg {
   flex: 0 0 auto;
   margin-top: 2px;
@@ -2912,6 +2966,20 @@ body.dark {
   grid-template-columns: minmax(0, 1.5fr) minmax(17rem, 0.5fr);
   align-items: end;
   gap: clamp(24px, 5vw, 84px);
+}
+
+.reading-pulse-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fde047;
+  box-shadow: 0 0 8px #fde047;
+  animation: cyber-dot-blink 1.6s infinite ease-in-out;
+}
+
+.reading-hero-sys-badge {
+  display: none;
 }
 
 .reading-hero h1:focus,
@@ -2929,7 +2997,8 @@ body.dark {
   background: rgba(9, 9, 11, 0.72);
 }
 
-.reading-hero-meta span {
+.reading-hero-meta span,
+.reading-meta-cell {
   flex: 1;
   display: flex;
   min-height: 76px;
@@ -2960,6 +3029,10 @@ body.dark {
 
 .reading-overview {
   min-width: 0;
+}
+
+.reading-zone-dot {
+  display: none;
 }
 
 .reading-concepts-zone {
@@ -2996,6 +3069,61 @@ body.dark {
   font-weight: 700;
 }
 
+/* Code Snippet Terminals in Reading Lessons */
+.reading-code-terminal {
+  margin-top: 12px;
+  border-radius: 6px;
+  border: 1px solid #3f3f46;
+  background: #0c0e14;
+  overflow: hidden;
+}
+
+.reading-code-terminal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.reading-code-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.reading-code-dots .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.reading-code-dots .dot--red { background: #ef4444; }
+.reading-code-dots .dot--yellow { background: #f59e0b; }
+.reading-code-dots .dot--green { background: #10b981; }
+
+.reading-code-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #71717a;
+  letter-spacing: 0.08em;
+}
+
+.reading-code-pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  padding: 12px 14px;
+  margin: 0;
+  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e2e8f0;
+}
+
 .reading-concept-block pre,
 .reading-curiosity pre {
   white-space: pre-wrap;
@@ -3003,11 +3131,59 @@ body.dark {
   overflow-wrap: break-word;
 }
 
+/* Syntax Highlighting Tokens */
+.syntax-token {
+  display: inline;
+}
+
+.syntax-comment {
+  color: #64748b;
+  font-style: italic;
+}
+
+.syntax-string {
+  color: #86efac;
+}
+
+.syntax-keyword {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.syntax-number {
+  color: #fca5a5;
+}
+
+.syntax-punct {
+  color: #cbd5e1;
+}
+
+.syntax-ident {
+  color: #f1f5f9;
+}
+
+.reading-caption-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+.reading-caption-arrow {
+  color: #fde047;
+}
+
 .reading-curiosity {
   grid-column: 1 / -1;
   border-right: 1px solid #155e75;
   border-bottom: 1px solid #155e75;
   background: rgba(8, 47, 73, 0.24);
+}
+
+.reading-cursive-heading {
+  font-family: 'Patrick Hand', cursive;
 }
 
 .reading-zone-heading {
@@ -3089,7 +3265,8 @@ body.dark {
   list-style: none;
 }
 
-.reading-source-grid li {
+.reading-source-grid li,
+.reading-source-card {
   display: flex;
   min-height: 11rem;
   flex-direction: column;
@@ -3102,7 +3279,8 @@ body.dark {
     transform 0.2s ease;
 }
 
-.reading-source-grid li:hover {
+.reading-source-grid li:hover,
+.reading-source-card:hover {
   background: rgba(39, 39, 42, 0.72);
   transform: translateY(-2px);
 }
@@ -3112,7 +3290,7 @@ body.dark {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 24px 0;
+  padding: 28px 0 64px;
   border-top: 1px solid #52525b;
 }
 

@@ -418,6 +418,138 @@
   --aug-bl: 6px;
 }
 
+/* ==========================================================================
+   augmented-ui v2 — Reading Lesson Cyberpunk Surfaces
+   Clean, geometric cyber-cuts with balanced contrast and crisp borders.
+   ========================================================================== */
+
+/* Reading Hero Header */
+.hud [data-augmented-ui~="reading-hero"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(135deg, #ffe600 0%, rgba(255, 230, 0, 0.4) 25%, #1e293b 60%, rgba(0, 240, 255, 0.45) 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #090c16;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 14px;
+  --aug-br: 14px;
+  --aug-tr: 6px;
+  --aug-bl: 6px;
+}
+
+/* Reading Protocol Deck ("Antes de practicar") */
+.hud [data-augmented-ui~="reading-keypoints"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(180deg, #ffe600 0%, rgba(255, 230, 0, 0.3) 30%, #1e293b 80%, rgba(0, 240, 255, 0.3) 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #080b14;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 12px;
+  --aug-br: 12px;
+  --aug-tr: 4px;
+  --aug-bl: 4px;
+}
+
+/* Reading Concept Block */
+.hud [data-augmented-ui~="reading-concept"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #1c263c;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #080b15;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 10px;
+  --aug-br: 10px;
+  --aug-tr: 4px;
+  --aug-bl: 4px;
+  transition: --aug-border-bg 0.2s ease, transform 0.2s ease;
+}
+
+.hud [data-augmented-ui~="reading-concept"]:hover {
+  --aug-border-bg: #00f0ff;
+  --aug-inlay-bg: #0b0f1c;
+}
+
+/* Reading Code Terminal */
+.hud [data-augmented-ui~="reading-terminal"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #1e283d;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #04060c;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 8px;
+  --aug-br: 8px;
+}
+
+.hud [data-augmented-ui~="reading-terminal"]:hover {
+  --aug-border-bg: rgba(0, 240, 255, 0.6);
+}
+
+/* Reading FAQ Card */
+.hud [data-augmented-ui~="reading-faq"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #1c263c;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #060810;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 8px;
+  --aug-br: 8px;
+  transition: --aug-border-bg 0.2s ease;
+}
+
+.hud [data-augmented-ui~="reading-faq"]:hover {
+  --aug-border-bg: #00f0ff;
+}
+
+.hud [data-augmented-ui~="reading-faq"][open] {
+  --aug-border-bg: #00f0ff;
+  --aug-inlay-bg: #080c18;
+}
+
+/* Reading Transfer Challenge Card */
+.hud [data-augmented-ui~="reading-transfer"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(135deg, #ffe600 0%, #b45309 60%, #ffe600 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #0d0c07;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 12px;
+  --aug-br: 12px;
+  --aug-tr: 6px;
+  --aug-bl: 6px;
+}
+
+/* Reading Source Card */
+.hud [data-augmented-ui~="reading-source"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #1c263c;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #080a14;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 8px;
+  --aug-br: 8px;
+  transition: --aug-border-bg 0.2s ease, transform 0.2s ease;
+}
+
+.hud [data-augmented-ui~="reading-source"]:hover {
+  --aug-border-bg: #00f0ff;
+  --aug-inlay-bg: #0c1020;
+}
+
+/* Reading CTA Button */
+.hud [data-augmented-ui~="reading-cta"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #ffe600;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #ffe600;
+  --aug-inlay-opacity: 1;
+  --aug-tr: 8px;
+  --aug-bl: 8px;
+}
+
+.hud [data-augmented-ui~="reading-cta"]:hover {
+  --aug-border-bg: #fff066;
+  --aug-inlay-bg: #fff066;
+}
+
 /* (Roadmap nodes use CSS borders, not augmented-ui clip-path) */
 
 /* Fallback for environments lacking full clip-path */
@@ -426,3 +558,4 @@
     border: 1px solid var(--hud-yellow) !important;
   }
 }
+
