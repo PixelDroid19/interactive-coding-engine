@@ -35,7 +35,14 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
   const noteCount = profile.notebook.filter((entry) => entry.courseId === course.id).length;
   return (
     <div className="learning-center-backdrop" onClick={onClose}>
-      <section className="learning-center" role="dialog" aria-modal="true" aria-label="Centro de aprendizaje" onClick={(event) => event.stopPropagation()}>
+      <section
+        className="learning-center"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Centro de aprendizaje"
+        onClick={(event) => event.stopPropagation()}
+        data-augmented-ui="learning-center-modal tl-clip tr-clip br-clip bl-clip border inlay"
+      >
         <header><div><span>TU PROGRESO</span><h2>Centro de aprendizaje</h2><p>Repasa, explica y organiza lo que estás aprendiendo en {course.title}.</p></div><button type="button" onClick={onClose} aria-label="Cerrar centro de aprendizaje"><X size={19} /></button></header>
         <div className="learning-center__summary" aria-label="Resumen de aprendizaje">
           <span><strong>{dueCount}</strong> {dueCount === 1 ? 'repaso pendiente' : 'repasos pendientes'}</span>

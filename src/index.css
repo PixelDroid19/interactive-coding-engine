@@ -5454,6 +5454,20 @@ body.dark {
   box-shadow: -8px 0px 0px #07080b;
 }
 
+.dark .scrim-completion-banner {
+  background: #0f172a;
+  border-color: #059669;
+  color: #f1f5f9;
+}
+
+.dark .scrim-completion-badge {
+  color: #34d399;
+}
+
+.dark .scrim-feedback-prompt {
+  color: #fef08a;
+}
+
 .dark .explain-modal-title { color: #f8fafc; }
 .dark .explain-modal-subtitle { color: #94a3b8; }
 .dark .explain-close-btn {

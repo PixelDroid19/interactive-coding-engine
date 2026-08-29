@@ -1043,7 +1043,10 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
       {showBranchRecovery && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Continuar lección">
-          <div className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
+          <div
+            className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]"
+            data-augmented-ui="scrim-confirm-modal tl-clip tr-clip br-clip bl-clip border inlay"
+          >
             <h3 className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Cómo quieres continuar?</h3>
             <p className="text-sm text-slate-300 mt-2">Puedes continuar desde donde lo dejaste la última vez o comenzar la lección desde cero.</p>
             <div className="flex flex-col gap-2 mt-4">
@@ -1056,11 +1059,14 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
       {pendingSeekMs !== null && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Cambiar de momento">
-          <div className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
+          <div
+            className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]"
+            data-augmented-ui="scrim-confirm-modal tl-clip tr-clip br-clip bl-clip border inlay"
+          >
             <h3 className="font-bold">¿Ir a otro momento de la lección?</h3>
             <p className="text-sm text-slate-300 mt-2">Tienes cambios sin guardar. Puedes descartarlos para cambiar de momento o seguir editando aquí.</p>
             <div className="flex gap-2 mt-4">
-              <button onClick={handleDiscardAndSeek} className="flex-1 neu-pill-btn bg-rose-100" aria-label="Descartar cambios e ir">Descartar cambios e ir</button>
+              <button onClick={handleDiscardAndSeek} className="flex-1 neu-pill-btn bg-rose-100 text-rose-900" aria-label="Descartar cambios e ir">Descartar cambios e ir</button>
               <button onClick={handleKeepEditing} className="flex-1 neu-pill-btn btn-brand" aria-label="Seguir editando">Seguir editando</button>
             </div>
           </div>
@@ -1069,7 +1075,10 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
       {showReturnConfirm && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Volver a la lección">
-          <div className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
+          <div
+            className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]"
+            data-augmented-ui="scrim-confirm-modal tl-clip tr-clip br-clip bl-clip border inlay"
+          >
             <h3 className="font-bold">¿Volver al contenido de la lección?</h3>
             <p className="text-sm text-slate-300 mt-2">Al volver se descartarán los cambios que hiciste mientras practicabas.</p>
             <div className="flex gap-2 mt-4">
@@ -1091,7 +1100,10 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
       {pendingNavigation && (
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Salir con cambios">
-          <div className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]">
+          <div
+            className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]"
+            data-augmented-ui="scrim-confirm-modal tl-clip tr-clip br-clip bl-clip border inlay"
+          >
             <h3 className="font-bold">¿Salir de esta pantalla?</h3>
             <p className="text-sm text-slate-300 mt-2">Tienes cambios sin guardar. Puedes guardarlos para continuar después o descartarlos antes de salir.</p>
             <div className="flex flex-col gap-2 mt-4">
@@ -1252,14 +1264,17 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
       {/* Closure pedagógico */}
       {showClosure && !closureConfirmed && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl shadow-[4px_4px_0_#000] p-4 max-w-lg w-[90%]">
-          <h4 className="font-bold text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Ejecutaste tus dos mensajes?</h4>
-          <p className="text-xs text-slate-300 mt-1">Abre la consola y comprueba que los dos textos aparecen en el mismo orden que tus instrucciones. Después confirma para completar la clase.</p>
-          <div className="flex gap-2 mt-3">
-            <button onClick={handleClosureConfirm} className="flex-1 neu-pill-btn btn-brand text-sm" aria-label="He ejecutado mi programa, completar clase">He ejecutado mi programa</button>
+        <div
+          className="scrim-closure-modal fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl shadow-[4px_4px_0_#000] p-4 max-w-lg w-[90%]"
+          data-augmented-ui="scrim-closure-modal tl-clip tr-clip br-clip bl-clip border inlay"
+        >
+          <h4 className="scrim-closure-title font-bold text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Ejecutaste tus dos mensajes?</h4>
+          <p className="scrim-closure-text text-xs text-slate-300 mt-1">Abre la consola y comprueba que los dos textos aparecen en el mismo orden que tus instrucciones. Después confirma para completar la clase.</p>
+          <div className="scrim-closure-actions flex gap-2 mt-3">
+            <button onClick={handleClosureConfirm} className="scrim-closure-confirm-btn flex-1 neu-pill-btn btn-brand text-sm" aria-label="He ejecutado mi programa, completar clase">He ejecutado mi programa</button>
             <button
               onClick={() => isLogicMode ? void logicRunnerRef.current?.run() : void previewRef.current?.reloadPreview()}
-              className="neu-pill-btn text-sm"
+              className="scrim-closure-reload-btn neu-pill-btn text-sm"
               aria-label={isLogicMode ? 'Ejecutar lógica de nuevo' : 'Recargar vista previa'}
             >
               {isLogicMode ? 'Ejecutar de nuevo' : 'Recargar'}
@@ -1269,20 +1284,23 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       )}
 
       {isCompleted && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-emerald-50 border-2 border-emerald-700 rounded-xl shadow-[4px_4px_0_#000] p-3 flex flex-wrap items-center gap-2 max-w-xl w-[90%]">
-          <span className="text-emerald-700 font-bold text-sm">✓ Clase completada</span>
+        <div
+          className="scrim-completion-banner fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-emerald-50 border-2 border-emerald-700 rounded-xl shadow-[4px_4px_0_#000] p-3 flex flex-wrap items-center gap-2 max-w-xl w-[90%]"
+          data-augmented-ui="scrim-completion-banner tl-clip tr-clip br-clip bl-clip border inlay"
+        >
+          <span className="scrim-completion-badge text-emerald-700 font-bold text-sm">✓ Clase completada</span>
           {onFeedback && feedbackState === 'idle' && (
-            <div className="flex items-center gap-1 text-xs" aria-label="Valorar la clase">
-              <span>¿Te ayudó?</span>
-              <button type="button" onClick={() => void handleFeedback('positive')} className="neu-pill-btn text-xs">Sí</button>
-              <button type="button" onClick={() => void handleFeedback('negative')} className="neu-pill-btn text-xs">Puede mejorar</button>
+            <div className="scrim-completion-feedback flex items-center gap-1.5 text-xs" aria-label="Valorar la clase">
+              <span className="scrim-feedback-prompt">¿Te ayudó?</span>
+              <button type="button" onClick={() => void handleFeedback('positive')} className="scrim-feedback-btn neu-pill-btn text-xs">Sí</button>
+              <button type="button" onClick={() => void handleFeedback('negative')} className="scrim-feedback-btn neu-pill-btn text-xs">Puede mejorar</button>
             </div>
           )}
-          {feedbackState === 'sending' && <span className="text-xs text-slate-600">Guardando opinión…</span>}
-          {feedbackState === 'sent' && <span className="text-xs text-emerald-800">Gracias por tu opinión.</span>}
-          {feedbackState === 'queued' && <span className="text-xs text-amber-800">Opinión guardada; se enviará al recuperar conexión.</span>}
-          <button onClick={handleRepeatFromEnd} className="ml-auto neu-pill-btn text-xs" aria-label="Repetir desde el inicio">Repetir</button>
-          {onNextLesson && <button onClick={onNextLesson} className="neu-pill-btn btn-brand text-xs" aria-label="Siguiente lección">Siguiente</button>}
+          {feedbackState === 'sending' && <span className="scrim-feedback-status text-xs text-slate-600">Guardando opinión…</span>}
+          {feedbackState === 'sent' && <span className="scrim-feedback-status scrim-feedback-status--sent text-xs text-emerald-800">Gracias por tu opinión.</span>}
+          {feedbackState === 'queued' && <span className="scrim-feedback-status scrim-feedback-status--queued text-xs text-amber-800">Opinión guardada; se enviará al recuperar conexión.</span>}
+          <button onClick={handleRepeatFromEnd} className="scrim-repeat-btn ml-auto neu-pill-btn text-xs" aria-label="Repetir desde el inicio">Repetir</button>
+          {onNextLesson && <button onClick={onNextLesson} className="scrim-next-btn neu-pill-btn btn-brand text-xs" aria-label="Siguiente lección">Siguiente</button>}
         </div>
       )}
 

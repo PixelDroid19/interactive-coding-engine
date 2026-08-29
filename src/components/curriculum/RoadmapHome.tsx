@@ -343,7 +343,14 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
 
       {openConcept && conceptCopy && (
         <div className="rm-concept-backdrop" onClick={() => setOpenConcept(null)}>
-          <aside className="rm-concept-pop" onClick={(event) => event.stopPropagation()}>
+          <aside
+            className="rm-concept-pop"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Detalle del concepto"
+            onClick={(event) => event.stopPropagation()}
+            data-augmented-ui="rm-concept-pop tl-clip tr-clip br-clip bl-clip border inlay"
+          >
             <button type="button" className="rm-briefing-close" onClick={() => setOpenConcept(null)} aria-label="Cerrar">
               <X size={14} />
             </button>
@@ -363,7 +370,14 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
 
       {blockedItem && (
         <div className="rm-concept-backdrop" onClick={() => setBlockedItem(null)}>
-          <aside className="rm-concept-pop rm-mastery-blocker" role="dialog" aria-modal="true" aria-label="Refuerzo necesario" onClick={(event) => event.stopPropagation()}>
+          <aside
+            className="rm-concept-pop rm-mastery-blocker"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Refuerzo necesario"
+            onClick={(event) => event.stopPropagation()}
+            data-augmented-ui="rm-concept-pop tl-clip tr-clip br-clip bl-clip border inlay"
+          >
             <button type="button" className="rm-briefing-close" onClick={() => setBlockedItem(null)} aria-label="Cerrar">
               <X size={14} />
             </button>
