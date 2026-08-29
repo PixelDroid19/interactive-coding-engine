@@ -74,7 +74,7 @@ describe('App navigation persistence', () => {
       (sum, module) => sum + module.items.filter((item) => item.type === 'reasoning' || item.type === 'debugging' || (item.type === 'reading' && Boolean(item.handsOnLab))).length,
       0,
     );
-    expect(screen.getByText(new RegExp(`68 lecciones · ${practiceCount} prácticas`))).toBeTruthy();
+    expect(screen.getByText(new RegExp(`84 lecciones · ${practiceCount} prácticas`))).toBeTruthy();
     expect(screen.getByRole('button', { name: /^6\. Crear tu primer componente Cells/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^46\. onPageLeave y cleanup/ })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /^1\. Qué añade Cells sobre Lit/ }));

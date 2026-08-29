@@ -27,6 +27,11 @@ const BLUEPRINTS: Record<string, ComponentBlueprint> = {
   'search-filter': blueprint('query', 'query', 'café', 'té', 'search', '#0f766e', 'Catalog search', 'Búsqueda del catálogo', 'The filter emits a query; it does not own the results.', 'El filtro emite una consulta; no es dueño de los resultados.', 'Search', 'Buscar'),
   'language-switcher': blueprint('locale', 'locale', 'es', 'en', 'change', '#9333ea', 'Language selector', 'Selector de idioma', 'The shell owns the locale and components consume it.', 'El shell posee el idioma y los componentes lo consumen.', 'Change language', 'Cambiar idioma'),
   'catalog-shell': blueprint('section', 'section', 'Destacados', 'Novedades', 'navigate', '#0f766e', 'Catalog composition', 'Composición del catálogo', 'Filter, list and notices collaborate through public contracts.', 'Filtro, lista y avisos colaboran mediante contratos públicos.', 'Open section', 'Abrir sección'),
+  'lifecycle-panel': blueprint('connectionState', 'connection-state', 'conectado', 'reconectado', 'inspect', '#0f766e', 'Lifecycle evidence', 'Evidencia del ciclo de vida', 'Subscriptions have a visible owner and cleanup.', 'Las suscripciones tienen propietario y limpieza visibles.', 'Reconnect', 'Reconectar'),
+  'context-panel': blueprint('density', 'density', 'cómoda', 'compacta', 'change', '#2563eb', 'Shared context', 'Contexto compartido', 'Two consumers observe one scoped provider.', 'Dos consumidores observan un proveedor con alcance.', 'Change context', 'Cambiar contexto'),
+  'media-tile': blueprint('imageLabel', 'image-label', 'Paisaje de ejemplo', 'Diagrama accesible', 'open', '#c2410c', 'Configurable media', 'Recurso configurable', 'The consumer owns the resource and its accessible description.', 'El consumidor controla el recurso y su descripción accesible.', 'Inspect media', 'Inspeccionar recurso'),
+  'theme-preview': blueprint('theme', 'theme', 'claro', 'oscuro', 'change', '#7c3aed', 'Theme contract', 'Contrato de tema', 'Tokens change the environment without duplicating the component.', 'Los tokens cambian el ambiente sin duplicar el componente.', 'Change theme', 'Cambiar tema'),
+  'component-workflow': blueprint('stage', 'stage', 'desarrollo', 'entrega', 'advance', '#047857', 'Component workflow', 'Flujo del componente', 'Source, demo, tests and package advance together.', 'Fuente, demo, pruebas y paquete avanzan juntos.', 'Advance', 'Avanzar'),
 };
 
 function blueprint(
@@ -185,7 +190,12 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
           <academy-product-list .category=\${this.section}></academy-product-list>
         </main>`;
     default:
-      return `<div><${dependency('type-text')}>${translated('title')}</${dependency('type-text')}></div>`;
+      return `<article class="state-grid">
+          <h2>${translated('title')}</h2>
+          <strong>${value}</strong>
+          <p>${translated('description')}</p>
+          <button class="primary-action" ${action}>${translated('action')}</button>
+        </article>`;
   }
 }
 

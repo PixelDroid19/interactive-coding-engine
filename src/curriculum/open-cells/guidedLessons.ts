@@ -3,7 +3,8 @@ import type { ReadingItem } from '../../types/curriculum';
 import type { ChallengeTest, ScrimLessonData, WorkspaceSnapshot } from '../../types/scrim';
 import { createOpenCellsProjectJourney, type OpenCellsProjectJourney } from './projectJourneys';
 import { createOpenCellsLessonWorkspace } from './lessonWorkspaces';
-import { openCellsArtifactForLesson } from './lessonProjects';
+import { openCellsArtifactForLesson, openCellsProjectForLesson } from './lessonProjects';
+import { advancedApplicationArtifactForLesson } from './advancedApplicationArtifacts';
 
 interface ContractPractice {
   path: string;
@@ -326,8 +327,12 @@ function practiceFor(number: number): ContractPractice {
 
 function focusFile(number: number): string {
   const artifact = openCellsArtifactForLesson(number);
+  const project = openCellsProjectForLesson(number);
   const componentSource = `src/${artifact.tagName}.js`;
   const componentTest = `test/unit/${artifact.tagName}.test.js`;
+  if (project.workspaceKind === 'component' && number >= 69) return componentSource;
+  const advanced = advancedApplicationArtifactForLesson(number);
+  if (advanced) return advanced.path;
   if (number <= 5) return 'package.json';
   if (number <= 14) return componentSource;
   if (number <= 22) return componentSource;
@@ -467,12 +472,16 @@ function skillGroup(number: number): { required: string[]; introduced: string[];
 
 export function createOpenCellsGuidedLesson(reading: ReadingItem): ScrimLessonData {
   const number = readNumber(reading);
+  const lessonId = `open-cells-${suffix(number)}`;
+  const project = openCellsProjectForLesson(number);
   const practice = practiceFor(number);
   const prepared = prepareJourney(number);
   const { workspace, journey, completeFiles } = prepared;
   const skills = skillGroup(number);
   const observable = reading.sections[1]?.content ?? reading.keyPoints[0];
-  const mistake = reading.sections.at(-1)?.content ?? reading.keyPoints.at(-1) ?? '';
+  const mistake = reading.sections.find((section) => /error|fallo|equivoc|confusi|cuidado|problema/i.test(section.title))?.content
+    ?? reading.keyPoints.at(-1)
+    ?? '';
   const projectTape = projectBeats(reading, journey, completeFiles);
   const spokenDuration = (text: string) => Math.max(4_800, Math.ceil(text.trim().split(/\s+/).length * 60_000 / 185) + 500);
   const evidenceOpeners = ['Ejecutamos el proyecto y buscamos una señal concreta:', 'Ya está conectado el recorrido. La comprobación importante es esta:', 'Con los archivos enlazados, observa este contrato:'];
@@ -530,10 +539,10 @@ export function createOpenCellsGuidedLesson(reading: ReadingItem): ScrimLessonDa
   } : null;
 
   return compileLesson({
-    id: `open-cells-${suffix(number)}`,
+    id: lessonId,
     title: `${number}. ${reading.title}`,
     description: reading.summary,
-    templateId: number <= 38 ? 'cells-component' : 'cells-application',
+    templateId: project.workspaceKind === 'component' ? 'cells-component' : 'cells-application',
     narrationMode: 'silent',
     initialWorkspace: workspace,
     teachingFilePaths: journey.stops.map((stop) => stop.path),

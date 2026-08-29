@@ -176,7 +176,7 @@ function relatedFallback(number: number, focus: string): string[] {
     return [focus, COMPONENT_FILES.mixin, COMPONENT_FILES.demoController, COMPONENT_FILES.tests];
   }
   if (focus.includes('data')) return [focus, APP_FILES.home, APP_FILES.tests, APP_FILES.card];
-  if (focus.includes('routes')) return [focus, APP_FILES.bootstrap, APP_FILES.home, APP_FILES.detail];
+  if (focus.includes('routes')) return [focus, APP_FILES.routes, APP_FILES.bootstrap, APP_FILES.home];
   if (focus.includes('locales')) return [focus, APP_FILES.home, APP_FILES.globalLocales, APP_FILES.pageLocales];
   if (focus.includes('test')) return [focus, APP_FILES.home, APP_FILES.manager, APP_FILES.routes];
   return [focus, APP_FILES.routes, APP_FILES.card, APP_FILES.channels];
@@ -187,7 +187,8 @@ export function createOpenCellsProjectJourney(
   focus: string,
   workspace: WorkspaceSnapshot,
 ): OpenCellsProjectJourney {
-  const componentTag = number <= 38
+  const isComponentJourney = number <= 38 || (number >= 69 && number <= 73);
+  const componentTag = isComponentJourney
     ? Object.values(workspace.files).map((source) => source.content.match(/customElements\.define\(['"]([^'"]+)/)?.[1]).find(Boolean)
     : undefined;
   const componentFiles = componentTag ? {
@@ -202,11 +203,11 @@ export function createOpenCellsProjectJourney(
     if (path === COMPONENT_FILES.tests) return componentFiles.tests;
     return path;
   };
-  const special = (number <= 38 ? COMPONENT_SPECIAL[number] : APP_SPECIAL[number]) ?? relatedFallback(number, focus);
-  const requested = (number <= 38 ? special : [focus, ...special.filter((path) => path !== focus)])
-    .map((path) => number <= 38 ? adaptComponentPath(path) : path);
+  const special = (isComponentJourney ? COMPONENT_SPECIAL[number] : APP_SPECIAL[number]) ?? relatedFallback(isComponentJourney ? 38 : number, focus);
+  const requested = (isComponentJourney ? special : [focus, ...special.filter((path) => path !== focus)])
+    .map((path) => isComponentJourney ? adaptComponentPath(path) : path);
   const paths = [...new Set(requested)].filter((path) => Boolean(workspace.files[path]) && !path.includes('/checkpoints/'));
-  const fallbacks = number <= 38 ? Object.values(componentFiles) : Object.values(APP_FILES);
+  const fallbacks = isComponentJourney ? Object.values(componentFiles) : Object.values(APP_FILES);
   for (const path of fallbacks) {
     if (paths.length >= 4) break;
     if (workspace.files[path] && !paths.includes(path)) paths.push(path);

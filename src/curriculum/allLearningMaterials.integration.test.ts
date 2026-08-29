@@ -98,7 +98,7 @@ describe('auditoría integrada del material de aprendizaje', () => {
 
   it('todas las lecturas explican, ejemplifican, anticipan errores y conectan con la práctica', () => {
     const readings = courses.flatMap((course) => itemsOf(course, 'reading')) as ReadingItem[];
-    expect(readings).toHaveLength(200);
+    expect(readings).toHaveLength(216);
     expect(new Set(readings.map((reading) => reading.id)).size).toBe(readings.length);
 
     for (const reading of readings) {
@@ -131,7 +131,7 @@ describe('auditoría integrada del material de aprendizaje', () => {
 
   it('todas las actividades Piensa son claras, guiadas y resolubles desde lo que muestran', () => {
     const activities = courses.flatMap((course) => itemsOf(course, 'reasoning')) as ReasoningExerciseItem[];
-    expect(activities).toHaveLength(195);
+    expect(activities).toHaveLength(211);
     expect(new Set(activities.map((item) => item.id)).size).toBe(activities.length);
 
     for (const item of activities) {

@@ -1,5 +1,5 @@
 import type { ReadingItem } from '../../types/curriculum';
-import { OPEN_CELLS_CORE_SOURCES } from './sources';
+import { enrichOpenCellsSections } from './lessonStructure';
 
 type UnitSpec = readonly [number, string, string, string, string];
 
@@ -10,7 +10,7 @@ function unit([number, title, mentalModel, contract, mistake]: UnitSpec): Readin
     title,
     summary: mentalModel,
     estimatedMinutes: 14,
-    sections: [
+    sections: enrichOpenCellsSections(number, title, mentalModel, [
       { title: 'Modelo mental', content: mentalModel },
       {
         title: 'Contrato observable',
@@ -19,14 +19,13 @@ function unit([number, title, mentalModel, contract, mistake]: UnitSpec): Readin
         exampleCaption: 'Mini caso trabajado: entrada, predicción y prueba que podría refutarla.',
       },
       { title: 'Error común y cómo investigarlo', content: mistake },
-    ],
+    ]),
     keyPoints: [contract, mistake, 'Explica la decisión con un ejemplo antes de memorizar la sintaxis.'],
     frequentQuestions: [
       { question: '¿Qué parte debo memorizar?', answer: 'Ninguna línea completa. Recuerda la responsabilidad, la entrada, la salida y cómo comprobar el contrato.' },
       { question: '¿Cómo practico sin copiar la respuesta?', answer: `Predice primero el resultado, cambia una sola causa y usa esta evidencia: ${contract}` },
     ],
     transferPrompt: `Aplica “${title}” a una aplicación de reservas: dibuja quién posee el dato, quién lo observa y qué evidencia confirmaría que el contrato funciona.`,
-    sources: OPEN_CELLS_CORE_SOURCES,
   };
 }
 

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { OPEN_CELLS_ARTIFACTS, OPEN_CELLS_LESSON_PROJECTS } from './lessonProjects';
 
 describe('matriz acumulativa de proyectos Open Cells', () => {
-  it('asigna las 68 clases a artefactos diversos sin repetir una única card', () => {
-    expect(OPEN_CELLS_LESSON_PROJECTS).toHaveLength(68);
+  it('asigna las 84 clases a artefactos diversos sin repetir una única card', () => {
+    expect(OPEN_CELLS_LESSON_PROJECTS).toHaveLength(84);
     expect(new Set(OPEN_CELLS_LESSON_PROJECTS.map((entry) => entry.artifactId)).size).toBeGreaterThanOrEqual(15);
 
     let repeated = 1;
@@ -27,10 +27,11 @@ describe('matriz acumulativa de proyectos Open Cells', () => {
     }
   });
 
-  it('mantiene componentes neutrales y cambia a workspaces de aplicación desde la lección 39', () => {
+  it('mantiene componentes neutrales y usa el workspace apropiado para cada artefacto', () => {
     for (const entry of OPEN_CELLS_LESSON_PROJECTS) {
       expect(entry.artifactId).not.toMatch(/private|internal|corporate/i);
-      expect(entry.workspaceKind).toBe(entry.lesson <= 38 ? 'component' : 'application');
+      const isComponentJourney = entry.lesson <= 38 || (entry.lesson >= 69 && entry.lesson <= 73);
+      expect(entry.workspaceKind).toBe(isComponentJourney ? 'component' : 'application');
     }
   });
 });

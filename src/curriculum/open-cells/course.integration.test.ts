@@ -10,15 +10,15 @@ describe('curso Open Cells', () => {
     expect(OPEN_CELLS_COURSE.modules.flatMap((module) => module.items).some((item) => litIds.has(item.id))).toBe(false);
   });
 
-  it('entrega 68 unidades progresivas y laboratorios de proyecto al cerrar cada bloque', () => {
+  it('entrega 84 unidades progresivas y laboratorios de proyecto al cerrar cada bloque', () => {
     const allItems = OPEN_CELLS_COURSE.modules.flatMap((module) => module.items);
     const items = allItems.filter((item) => item.type === 'reading');
-    expect(items).toHaveLength(68);
+    expect(items).toHaveLength(84);
     const practice = items[5];
     expect(practice?.type).toBe('reading');
     if (practice?.type === 'reading') {
       expect(practice.handsOnLab).toBe('open-cells-playground');
-      expect(practice.sections).toHaveLength(3);
+      expect(practice.sections.length).toBeGreaterThanOrEqual(5);
       expect(practice.frequentQuestions?.length).toBeGreaterThan(0);
     }
     const appPractice = items[45];
@@ -50,8 +50,22 @@ describe('curso Open Cells', () => {
     expect(items[53]?.type === 'reading' && items[53].handsOnLab).toBe('open-cells-channels-playground');
     expect(items[61]?.type === 'reading' && items[61].handsOnLab).toBe('open-cells-data-playground');
     expect(items[67]?.type === 'reading' && items[67].handsOnLab).toBe('open-cells-delivery-playground');
-    expect(allItems.filter((item) => item.type === 'reasoning')).toHaveLength(68);
+    expect(allItems.filter((item) => item.type === 'reasoning')).toHaveLength(84);
     expect(allItems.filter((item) => item.type === 'debugging')).toHaveLength(0);
+    for (const reading of items) {
+      if (reading.type !== 'reading') continue;
+      expect(reading.sections.some((section) => section.title === 'Recorrido de archivos'), reading.id).toBe(true);
+      expect(reading.sections.some((section) => section.title === 'Antes de editar'), reading.id).toBe(true);
+    }
+  });
+
+  it('cubre las capacidades de producción que completan componentes y aplicaciones Cells', () => {
+    const titles = OPEN_CELLS_COURSE.modules.flatMap((module) => module.items)
+      .filter((item) => item.type === 'reading')
+      .map((item) => item.title.toLocaleLowerCase('es'));
+    for (const topic of ['ciclo de vida', 'contexto', 'imágenes e iconos', 'tema', 'interceptores', 'rutas delegadas', 'service worker', 'feature flags', 'observabilidad', 'analítica', 'rendimiento', 'ci/cd', 'migración']) {
+      expect(titles.some((title) => title.includes(topic)), topic).toBe(true);
+    }
   });
 
   it('incluye una primera clase guiada diversa que prepara el laboratorio real', () => {

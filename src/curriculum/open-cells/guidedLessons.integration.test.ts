@@ -39,8 +39,8 @@ function applyTape(workspace: WorkspaceSnapshot, events: ScrimEvent[]): Workspac
 describe('recorrido guiado completo de Open Cells', () => {
   const lessons = Object.values(OPEN_CELLS_SCRIMS).sort((left, right) => left.id.localeCompare(right.id));
 
-  it('registra 68 clases separadas con lectura, razonamiento y cierres de proyecto', () => {
-    expect(lessons).toHaveLength(68);
+  it('registra 84 clases separadas con lectura, razonamiento y cierres de proyecto', () => {
+    expect(lessons).toHaveLength(84);
     for (const module of OPEN_CELLS_COURSE.modules) {
       for (let index = 0; index < module.items.length; index += 3) {
         const block = module.items.slice(index, index + 3);
@@ -87,6 +87,14 @@ describe('recorrido guiado completo de Open Cells', () => {
     expect([...pathsFor('open-cells-39')]).toEqual(expect.arrayContaining([
       'index.html', 'app/scripts/app.js', 'app/scripts/app-routes.js', 'app/pages/academy-home-page/academy-home-page.js',
     ]));
+    expect([...pathsFor('open-cells-69')]).toEqual(expect.arrayContaining([
+      'src/academy-lifecycle-panel.js', 'demo/demo.js', 'test/unit/academy-lifecycle-panel.test.js',
+    ]));
+    expect([...pathsFor('open-cells-76')]).toEqual(expect.arrayContaining([
+      'app/scripts/delegated-routes.js', 'app/scripts/app-routes.js', 'app/scripts/app.js',
+    ]));
+    expect([...pathsFor('open-cells-80')]).toContain('app/observability/trace.js');
+    expect([...pathsFor('open-cells-84')]).toContain('app/migrations/catalog-contract.js');
   });
 
   it('cambia el artefacto visible y conserva dependencias construidas previamente', () => {
@@ -102,7 +110,7 @@ describe('recorrido guiado completo de Open Cells', () => {
     expect(productSource).toContain("from './components/academy-status-badge.js'");
   });
 
-  it('mantiene 68 guiones hablados sincronizados con los subtítulos', () => {
+  it('mantiene 84 guiones hablados sincronizados con los subtítulos', () => {
     for (const lesson of lessons) {
       const number = lesson.id.replace('open-cells-', '');
       const script = readFileSync(`docs/guiones/open-cells/${number}.md`, 'utf8');

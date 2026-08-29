@@ -3,7 +3,8 @@ import type { ScrimLessonData } from '../../types/scrim';
 import { OPEN_CELLS_UNITS_07_TO_68 } from './units07to68';
 import { addOpenCellsReasoning } from './reasoning';
 import { createOpenCellsGuidedLessons } from './guidedLessons';
-import { OPEN_CELLS_CORE_SOURCES } from './sources';
+import { enrichOpenCellsSections } from './lessonStructure';
+import { OPEN_CELLS_ADVANCED_UNITS } from './advancedUnits';
 
 function reading(
   number: number,
@@ -11,7 +12,7 @@ function reading(
   summary: string,
   sections: ReadingItem['sections'],
   keyPoints: string[],
-  options: Partial<Pick<ReadingItem, 'handsOnLab' | 'frequentQuestions' | 'transferPrompt' | 'sources'>> = {},
+  options: Partial<Pick<ReadingItem, 'handsOnLab' | 'frequentQuestions' | 'transferPrompt'>> = {},
 ): ReadingItem {
   const defaultQuestions = [
     { question: '¿Qué debería poder explicar antes de escribir código?', answer: `Explica con tus palabras esta idea: ${summary}` },
@@ -23,7 +24,7 @@ function reading(
     title,
     summary,
     estimatedMinutes: options.handsOnLab ? 35 : 12,
-    sections: sections.map((section, index) => index === 1 && !section.example ? {
+    sections: enrichOpenCellsSections(number, title, summary, sections.map((section, index) => index === 1 && !section.example ? {
       ...section,
       example: `Situación: una persona cambia una entrada del proyecto.\nDecisión: ${section.content}\nComprobación: observa el contrato público antes y después del cambio.`,
       exampleCaption: 'Ejemplo razonado: causa, decisión y evidencia observable.',
@@ -31,9 +32,8 @@ function reading(
       ...section,
       title: `Errores frecuentes · ${section.title}`,
       content: `${section.content} Un error frecuente consiste en cambiar varias fronteras a la vez; conserva una predicción y comprueba una sola causa antes de continuar.`,
-    } : section),
+    } : section)),
     keyPoints,
-    sources: options.sources ?? OPEN_CELLS_CORE_SOURCES,
     ...options,
     transferPrompt: options.transferPrompt ?? `Transfiere “${title}” a una aplicación de reservas: identifica la entrada, el propietario del dato y la evidencia observable que confirmaría el contrato.`,
     frequentQuestions: [...(options.frequentQuestions ?? []), ...defaultQuestions]
@@ -83,7 +83,6 @@ const FIRST_COMPONENT_UNITS: ReadingItem[] = [
       { question: '¿Debo memorizar la línea exacta?', answer: 'No. Debes reconocer el mapa clase importada → etiqueta local y la intención acción → evento público. El autocompletado ayuda con la sintaxis.' },
     ],
     transferPrompt: 'Si añadieras un segundo botón para descartar la tarjeta, decide qué tag registrarías, qué clave de idioma crearías y qué detalle necesitaría el evento.',
-    sources: OPEN_CELLS_CORE_SOURCES,
   }),
 ];
 
@@ -117,7 +116,7 @@ function projectLabFor(number: number): ReadingItem['handsOnLab'] {
   } satisfies Record<number, NonNullable<ReadingItem['handsOnLab']>>)[number];
 }
 
-const ALL_OPEN_CELLS_READINGS = [...FIRST_COMPONENT_UNITS, ...OPEN_CELLS_UNITS_07_TO_68].map((source) => {
+const ALL_OPEN_CELLS_READINGS = [...FIRST_COMPONENT_UNITS, ...OPEN_CELLS_UNITS_07_TO_68, ...OPEN_CELLS_ADVANCED_UNITS].map((source) => {
   const number = Number(source.id.match(/open-cells-(\d+)-lectura/)?.[1]);
   const handsOnLab = projectLabFor(number);
   return { ...source, handsOnLab, estimatedMinutes: handsOnLab ? 35 : 12 };
@@ -174,6 +173,7 @@ export const OPEN_CELLS_COURSE: Course = {
     { id: 'open-cells-mod-7-rutas-canales', title: 'Rutas y comunicación', description: 'Navegación, parámetros, canales y estado retenido.', items: learningBlock(OPEN_CELLS_UNITS_07_TO_68.slice(40, 48)) },
     { id: 'open-cells-mod-8-bridge-datos', title: 'Bridge y datos', description: 'Mediación, data managers, estados, carreras y cleanup.', items: learningBlock(OPEN_CELLS_UNITS_07_TO_68.slice(48, 56)) },
     { id: 'open-cells-mod-9-produccion', title: 'Producción y compatibilidad', description: 'Tests integrados, seguridad, paridad y entrega.', items: learningBlock(OPEN_CELLS_UNITS_07_TO_68.slice(56, 62)) },
+    { id: 'open-cells-mod-10-operacion', title: 'Operación y evolución', description: 'Ciclo de vida, navegación avanzada, entrega, observabilidad y evolución segura.', items: learningBlock(OPEN_CELLS_ADVANCED_UNITS) },
   ],
 };
 

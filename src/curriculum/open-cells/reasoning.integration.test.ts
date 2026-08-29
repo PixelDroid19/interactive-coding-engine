@@ -21,7 +21,7 @@ describe('prácticas de razonamiento Open Cells', () => {
   const customIds = new Set(OPEN_CELLS_REASONING.map((item) => item.id));
 
   it('entrega una práctica resoluble y inicialmente no resuelta por cada lectura', () => {
-    expect(reasoning).toHaveLength(68);
+    expect(reasoning).toHaveLength(84);
     for (const exercise of reasoning) {
       const initial = createInitialReasoningAttempt(exercise.activity);
       expect(validateReasoningAttempt(exercise.activity, initial).allPassed, `${exercise.id} empieza resuelta`).toBe(false);
@@ -43,7 +43,7 @@ describe('prácticas de razonamiento Open Cells', () => {
   });
 
   it('mantiene ids únicos y tres pistas graduadas sin revelar código final', () => {
-    expect(new Set(reasoning.map((item) => item.id)).size).toBe(68);
+    expect(new Set(reasoning.map((item) => item.id)).size).toBe(84);
     for (const exercise of reasoning) {
       expect(exercise.hints.map((hint) => hint.level)).toEqual([1, 2, 3]);
       expect(exercise.hints.some((hint) => /return\s|customElements\.define|emitEvent\s*\(/.test(hint.text))).toBe(false);
