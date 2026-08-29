@@ -25,6 +25,18 @@ function isValidStructuredJson(text: string) {
   }
 }
 
+function hasLowInformationRun(text: string): boolean {
+  const visible = text
+    .normalize('NFKC')
+    .toLocaleLowerCase('es')
+    .replace(/[\p{Cc}\p{Cf}\p{Z}\p{P}\p{S}]/gu, '');
+  if (visible.length < 24) return false;
+  const counts = new Map<string, number>();
+  for (const character of visible) counts.set(character, (counts.get(character) ?? 0) + 1);
+  const dominant = Math.max(...counts.values());
+  return counts.size <= 2 || dominant / visible.length >= 0.82;
+}
+
 export interface LocalGenerationQualityIssue {
   severity: 'warning' | 'unsafe';
   message: string;
@@ -35,12 +47,13 @@ export function assessSpanishGeneration(text: string): LocalGenerationQualityIss
   const hasReplacementCharacter = normalized.includes('�');
   const hasPunctuationRun = /([!?$#*])\1{7,}/.test(normalized);
   const hasRepeatedChunk = /(\p{L}{2,})\1{2,}/iu.test(normalized);
+  const hasDegenerateRun = hasLowInformationRun(normalized);
   const hasUnexpectedScripts = /[\u3400-\u9fff]|[řœšž]/iu.test(normalized);
   const tokens = words(normalized);
   const spanishSignals = tokens.filter((token) => SPANISH_MARKERS.has(token)).length;
   const wrongLanguageForSpanishLab = normalized.length > 40 && spanishSignals < 2 && !isValidStructuredJson(normalized);
 
-  if (hasReplacementCharacter || hasPunctuationRun || hasRepeatedChunk || hasUnexpectedScripts) {
+  if (hasReplacementCharacter || hasPunctuationRun || hasRepeatedChunk || hasDegenerateRun || hasUnexpectedScripts) {
     return {
       severity: 'unsafe',
       message: 'La inferencia local produjo una salida numéricamente inestable en este equipo. No se mostrará como una respuesta válida. Revisa el controlador gráfico o prueba otro dispositivo compatible con WebGPU.',

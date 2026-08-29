@@ -153,6 +153,7 @@ describe('SocraticTutor', () => {
     profile.tutor.conversations['course-javascript:javascript-05'] = [
       { id: 'user-old', role: 'user', content: 'Crea fibonacci.', createdAt: 1 },
       { id: 'assistant-bad', role: 'assistant', content: 'iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii', createdAt: 2 },
+      { id: 'assistant-bad-hidden', role: 'assistant', content: Array.from({ length: 40 }, () => 'i').join('\u200b'), createdAt: 2.5 },
       { id: 'assistant-good', role: 'assistant', content: 'Actualicé app.js correctamente.', createdAt: 3 },
     ];
     localStorage.setItem(LEARNING_PROFILE_STORAGE_KEY, JSON.stringify(profile));
@@ -162,6 +163,7 @@ describe('SocraticTutor', () => {
 
     expect(await screen.findByText('Actualicé app.js correctamente.')).toBeTruthy();
     expect(screen.queryByText(/iiiiiiiiiiiiiiii/)).toBeNull();
+    expect(screen.queryByText(/i\u200bi\u200bi/)).toBeNull();
   });
 
   it('mantiene Pensando mientras valida la respuesta y no muestra fragmentos degenerados', async () => {

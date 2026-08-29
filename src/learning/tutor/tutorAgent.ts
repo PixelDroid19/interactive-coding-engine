@@ -1,5 +1,6 @@
 import type { LocalChatMessage } from '../../engine/ai/localGenerationProtocol';
 import type { LocalGenerationOptions, LocalGenerationService } from '../../engine/ai/localGenerationService';
+import { assessSpanishGeneration } from '../../engine/ai/localOutputQuality';
 import type { TutorActivityContext, TutorWorkspaceContext } from './tutorContext';
 import { buildTutorFileEditRequest, buildTutorPlanRepairRequest, buildTutorPlannerRequest, buildTutorResponseRequest, type TutorMode } from './tutorPrompt';
 import { allowsTutorWrite, executeTutorTool, parseTutorToolCall, type TutorReinforcementDraft, type TutorToolActivity, type TutorToolCall, type TutorToolExecution } from './tutorTools';
@@ -80,7 +81,9 @@ function editValidationError(question: string, content: string): string | null {
 export function isTutorResponseUsable(text: string): boolean {
   const trimmed = text.trim();
   const meaningfulCharacters = trimmed.match(/[\p{L}\p{N}]/gu)?.length ?? 0;
-  return meaningfulCharacters >= 4 && !/(.)\1{15}/u.test(trimmed);
+  return meaningfulCharacters >= 4
+    && !/(.)\1{15}/u.test(trimmed)
+    && assessSpanishGeneration(trimmed)?.severity !== 'unsafe';
 }
 
 function verifiedFallbackResponse(executions: TutorToolExecution[]): string {
@@ -178,9 +181,16 @@ export async function runTutorTurn(input: TutorTurnInput, service: LocalGenerati
     observations = executions.map((entry) => `[${entry.activity.status}] ${entry.activity.label}: ${entry.observation}`).join('\n\n');
     if (!changed()) throw new Error('El modelo entendió la petición, pero no produjo una edición aplicable. Prueba el modelo recomendado o concreta qué archivo debe modificar.');
   }
-  const response = await service.generate(buildTutorResponseRequest(promptInput, plan.replyStrategy, observations), input.generationOptions);
+  let responseText: string;
+  try {
+    const response = await service.generate(buildTutorResponseRequest(promptInput, plan.replyStrategy, observations), input.generationOptions);
+    responseText = response.text;
+  } catch (reason) {
+    if (!changed()) throw reason;
+    responseText = verifiedFallbackResponse(executions);
+  }
   return {
-    response: isTutorResponseUsable(response.text) ? response.text : verifiedFallbackResponse(executions),
+    response: isTutorResponseUsable(responseText) ? responseText : verifiedFallbackResponse(executions),
     activities: executions.map((entry) => entry.activity),
     changedFiles: [...new Set(executions.flatMap((entry) => entry.changedFile ? [entry.changedFile] : []))],
     reinforcement: executions.find((entry) => entry.reinforcement)?.reinforcement,

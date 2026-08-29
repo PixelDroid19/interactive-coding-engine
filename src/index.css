@@ -8238,8 +8238,9 @@ html.hud .cells-studio {
 .post-solve-studio textarea { width: 100%; min-height: 4.5rem; padding: .65rem; resize: vertical; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); border-radius: 7px; background: color-mix(in srgb, var(--paper, #f5f2eb) 90%, white); color: inherit; font: 500 .8rem/1.45 var(--font-body, sans-serif); }
 .post-solve-studio .learning-primary { display: flex; align-items: center; justify-content: center; gap: .4rem; width: 100%; font-size: .78rem; }
 .learning-diagram { margin: 1.25rem 0 .25rem; }
-.learning-diagram__frame { width: 100%; overflow: hidden; border: 1px solid #3f4654; border-radius: 12px; background: #f5f2eb; box-shadow: 5px 5px 0 #090a0d; }
+.learning-diagram__frame { position: relative; width: 100%; overflow: hidden; border: 1px solid #3f4654; border-radius: 12px; background: #f5f2eb; }
 .learning-diagram__frame iframe { display: block; width: 100%; height: 100%; border: 0; }
+.learning-diagram__loading { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; background: #f5f2eb; color: #303744; font: 700 .78rem/1.2 var(--font-mono, monospace); letter-spacing: .04em; }
 .learning-diagram figcaption { margin-top: .7rem; color: #b8c0cf; font-size: .78rem; line-height: 1.5; }
 .learning-diagram figcaption strong { color: #ffe600; }
 .learning-diagram__question { display: grid; gap: .3rem; margin: .75rem 0 0; padding: .75rem .9rem; border-left: 4px solid #ffe600; background: rgb(255 230 0 / .07); color: #e6e9ef; font-size: .82rem; line-height: 1.5; }
@@ -8272,7 +8273,8 @@ html.hud .technology-path > aside { border-color: #ffe600; background: rgb(255 2
 html.hud .post-solve-studio { border-color: #00e7f1; background: #07181a; color: #e6fdff; border-radius: 2px; }
 html.hud .post-solve-studio > header span { color: #00e7f1; }
 html.hud .post-solve-studio textarea { background: #070b10; border-color: #314b54; }
-html.hud .learning-diagram__frame { border-color: #00e7f1; border-radius: 2px; box-shadow: 5px 5px 0 #d629ff; }
+html.hud .learning-diagram__frame { border-color: #00e7f1; border-radius: 2px; }
+html.hud .learning-diagram__loading { background: #090b10; color: #00e7f1; }
 html.hud .learning-diagram__question { border-color: #00e7f1; background: rgb(0 231 241 / .07); }
 html.hud .learning-diagram__question span { color: #00e7f1; }
 

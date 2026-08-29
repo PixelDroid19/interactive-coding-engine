@@ -17,6 +17,8 @@ describe('validateSpanishGeneration', () => {
     expect(validateSpanishGeneration('Una funciónTable-fieldo Codřejáss Cyclcomed ect athletes Ripascoascoasco œaukoths Lymeoby')).toMatch(/inestable/i);
     expect(validateSpanishGeneration('texto !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! final')).toMatch(/inestable/i);
     expect(validateSpanishGeneration('respuesta � rota')).toMatch(/inestable/i);
+    expect(validateSpanishGeneration(Array.from({ length: 48 }, () => 'i').join('\u200b'))).toMatch(/inestable/i);
+    expect(validateSpanishGeneration('i i i i i i i i i i i i i i i i i i i i i i i i')).toMatch(/inestable/i);
   });
 
   it('distingue una respuesta en otro idioma de una salida numéricamente corrupta', () => {

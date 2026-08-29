@@ -159,6 +159,28 @@ describe('agente pedagógico local', () => {
     expect(turn.response).not.toContain('!!!!!!!!!!');
   });
 
+  it('confirma una edición ya aplicada aunque la explicación final falle por una salida degenerada', async () => {
+    const current = workspace();
+    const fibonacci = 'function fibonacci(n) { return n <= 1 ? n : fibonacci(n - 1) + fibonacci(n - 2); }';
+    const outputs = [
+      result(JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js' } }], replyStrategy: 'Resume el cambio.' })),
+      result(fibonacci),
+    ];
+    const local = {
+      generate: vi.fn(async () => {
+        const next = outputs.shift();
+        if (next) return next;
+        throw new Error('La inferencia local produjo una salida numéricamente inestable.');
+      }),
+    } as unknown as LocalGenerationService;
+
+    const turn = await runTutorTurn({ mode: 'auto', question: 'crea una función fibonacci en el editor', attemptCount: 1, activity, conversation: [] }, local, current);
+
+    expect(current.actions.replaceFile).toHaveBeenCalledWith('app.js', fibonacci);
+    expect(turn.changedFiles).toEqual(['app.js']);
+    expect(turn.response).toContain('Actualicé app.js');
+  });
+
   it('reserva una escritura final aunque el primer plan haya consumido tres lecturas', async () => {
     const current = workspace();
     const replacement = 'function doble(valor) { return valor * 2; }';
