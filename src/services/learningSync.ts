@@ -65,6 +65,7 @@ function saveQueue(queue: SyncQueue): void {
 }
 
 let flushTimer: ReturnType<typeof setTimeout> | undefined;
+let flushScheduledAt = 0;
 let activeFlush: Promise<boolean> | undefined;
 let retryAttempt = 0;
 
@@ -73,9 +74,13 @@ function notify(status: 'syncing' | 'synced' | 'queued'): void {
 }
 
 function scheduleFlush(delayMs = 900): void {
+  const scheduledAt = Date.now() + delayMs;
+  if (flushTimer !== undefined && flushScheduledAt <= scheduledAt) return;
   if (flushTimer !== undefined) clearTimeout(flushTimer);
+  flushScheduledAt = scheduledAt;
   flushTimer = setTimeout(() => {
     flushTimer = undefined;
+    flushScheduledAt = 0;
     void flushLearningQueue();
   }, delayMs);
 }
@@ -176,7 +181,7 @@ export function queueLessonProgress(courseSlug: string, lessonKey: string, statu
     ...(score !== undefined ? { score } : current?.score !== undefined ? { score: current.score } : {}),
   };
   saveQueue(queue);
-  scheduleFlush(status === 'completed' ? 100 : 1000);
+  scheduleFlush(status === 'completed' ? 100 : 15_000);
 }
 
 export async function submitLessonFeedback(courseSlug: string, lessonKey: string, kind: FeedbackKind, message?: string): Promise<'sent' | 'queued'> {

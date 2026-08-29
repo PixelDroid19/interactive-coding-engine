@@ -28,4 +28,17 @@ describe('learning sync', () => {
     expect(await sync.flushLearningQueue()).toBe(false);
     expect(localStorage.getItem('aula_learning_sync_v1')).toContain('lesson_opened');
   });
+
+  it('limita la sincronización de progreso durante una reproducción continua', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+    const sync = await import('./learningSync');
+    sync.queueLessonProgress('open-cells', 'open-cells-01', 'in_progress', 1000);
+    await vi.advanceTimersByTimeAsync(5000);
+    sync.queueLessonProgress('open-cells', 'open-cells-01', 'in_progress', 6000);
+    await vi.advanceTimersByTimeAsync(9999);
+    expect(fetchMock).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({ status: 'in_progress', playbackMs: 6000 });
+  });
 });
