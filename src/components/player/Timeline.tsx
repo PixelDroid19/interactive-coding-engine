@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Sparkles, ChevronDown } from 'lucide-react';
 import { ScrimChallenge } from '../../types/scrim';
+import { useTheme } from '../../themes/ThemeProvider';
 
 export interface Chapter {
   timestamp: number;
@@ -185,9 +186,14 @@ export const Timeline: React.FC<TimelineProps> = ({
   };
 
   const availableSpeeds = [0.75, 1, 1.25, 1.5] as const;
+  const { themeId } = useTheme();
+  const isCyber = themeId === 'cyber';
 
   return (
-    <footer className={`player-bar${speedOpen ? ' is-speed-menu-open' : ''}`}>
+    <footer
+      className={`player-bar${speedOpen ? ' is-speed-menu-open' : ''}`}
+      data-augmented-ui={isCyber ? "hud-player tl-clip tr-clip border inlay" : undefined}
+    >
       <div className="player-bar-hud-surface" aria-hidden="true" />
       {/* LEFT: play + time + chapter (reservado para no saltar) */}
       <div className="player-left">

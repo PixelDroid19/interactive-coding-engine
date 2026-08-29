@@ -18,6 +18,7 @@ import {
   PinOff, 
   Globe
 } from 'lucide-react';
+import { useTheme } from '../../themes/ThemeProvider';
 
 export interface FloatingBrowserRef {
   getIframeElement: () => HTMLIFrameElement | null;
@@ -59,6 +60,9 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
   const [isExecuting, setIsExecuting] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
+  const { themeId } = useTheme();
+  const isCyber = themeId === 'cyber';
+
   const cellsPreview = useMemo(
     () => previewRuntime === 'cells' ? tryBuildCellsPreview(workspace) : undefined,
     [previewRuntime, workspace],
@@ -363,7 +367,11 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
         : undefined;
 
   return (
-    <div className={containerClasses} style={containerStyle}>
+    <div
+      className={containerClasses}
+      style={containerStyle}
+      data-augmented-ui={isCyber ? "hud-browser tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
+    >
       {/* Top Browser Chrome Header */}
       <div
         onMouseDown={handleMouseDownHeader}

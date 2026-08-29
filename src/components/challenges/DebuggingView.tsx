@@ -31,6 +31,7 @@ import { LanguageSelector } from '../runtime/LanguageSelector';
 import { ThemeToggle } from '../ThemeToggle';
 import { PostSolveStudio } from '../learning/PostSolveStudio';
 import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
+import { useTheme } from '../../themes/ThemeProvider';
 
 interface DebuggingViewProps {
   exercise: DebuggingExerciseItem;
@@ -87,6 +88,8 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   onLanguageChange,
   onCompleted,
 }) => {
+  const { themeId } = useTheme();
+  const isCyber = themeId === 'cyber';
   const draftKey = exercise.languageVariants ? `${exercise.id}:${language}` : exercise.id;
   const exerciseVersion = createDebuggingDraftVersion(exercise.initialWorkspace, exercise.tests);
   const [initialDraft] = useState(() => loadDebuggingDraft(draftKey, exerciseVersion));
@@ -376,7 +379,11 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
         <div className="debug-new-layout">
           {/* Editor area - dominant */}
           <div className="debug-editor-area">
-            <div className="editor-window-wrapper" style={{ height: '100%' }}>
+            <div
+              className="editor-window-wrapper"
+              style={{ height: '100%' }}
+              data-augmented-ui={isCyber ? "hud-editor tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
+            >
               <div className="editor-tabs-bar">
                 <div className="editor-tabs-group">
                   <button
@@ -475,7 +482,10 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
           </div>
 
           {/* Contextual panel - single visible at a time */}
-          <div className="debug-panel">
+          <div
+            className="debug-panel"
+            data-augmented-ui={isCyber ? "hud-browser tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
+          >
             <div role="tablist" aria-label="Panel contextual" className="debug-panel-tabs" onKeyDown={(e) => {
               // Delegate to active tab's key handler via current activeTab
               onTabKeyDown(e, activeTab);

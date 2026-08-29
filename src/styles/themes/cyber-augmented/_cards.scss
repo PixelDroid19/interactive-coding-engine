@@ -103,3 +103,17 @@
   --aug-bl: 6px;
 }
 
+/* Cells Device Preview Canvas */
+.hud [data-augmented-ui~="cells-device-card"] {
+  --aug-border-all: 2px;
+  --aug-border-bg: linear-gradient(135deg, #00f0ff 0%, #ffe600 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #0a0e18;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 14px;
+  --aug-tr: 14px;
+  --aug-br: 14px;
+  --aug-bl: 14px;
+  filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.25));
+}
+

@@ -2,6 +2,7 @@ import React from 'react';
 import { CheckCircle2, CircleStop, Clock3, Play, RotateCw, TerminalSquare } from 'lucide-react';
 import type { RuntimeExecutionResult } from '../../types/runtime';
 import type { CourseLanguage } from '../../types/scrim';
+import { useTheme } from '../../themes/ThemeProvider';
 
 interface RuntimeOutputPanelProps {
   language: CourseLanguage;
@@ -11,9 +12,17 @@ interface RuntimeOutputPanelProps {
 }
 
 export function RuntimeOutputPanel({ language, result, isRunning, onRun }: RuntimeOutputPanelProps) {
+  const { themeId } = useTheme();
+  const isCyber = themeId === 'cyber';
   const label = language === 'python' ? 'Python' : 'JavaScript';
+
   return (
-    <section className="logic-runner-panel" role="region" aria-label={`Salida de ${label}`}>
+    <section
+      className="logic-runner-panel"
+      role="region"
+      aria-label={`Salida de ${label}`}
+      data-augmented-ui={isCyber ? "hud-browser tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
+    >
       <header className="logic-runner-header">
         <div>
           <span className="logic-runner-kicker"><TerminalSquare size={13} /> {label}</span>

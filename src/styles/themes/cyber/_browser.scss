@@ -7,7 +7,7 @@
   overflow: hidden !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: #07070b !important;
+  background: transparent !important;
   box-shadow: 0 0 24px rgb(0 0 0 / 75%) !important;
 }
 
@@ -59,47 +59,29 @@
   gap: 4px !important;
 }
 
-.hud .browser-btn {
-  width: 24px !important;
-  height: 24px !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  color: #94a3b8 !important;
-}
-
-.hud .browser-btn:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: var(--hud-yellow) !important;
-}
-
 .hud .browser-navbar {
-  min-height: 28px !important;
-  padding: 2px 8px !important;
+  min-height: 36px !important;
+  padding: 4px 8px !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-  background: #040407 !important;
+  background: #09090e !important;
+  gap: 6px !important;
 }
 
 .hud .browser-url-box {
-  min-height: 20px;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  color: #94a3b8 !important;
+  min-height: 24px !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 2px !important;
+  background: #050508 !important;
 }
 
 .hud .browser-url-text {
+  color: #94a3b8 !important;
   font-family: "Fira Code", monospace !important;
-  font-size: 11px !important;
-  color: #64748b !important;
+  font-size: 10px !important;
 }
 
 .hud .browser-viewport {
-  background:
-    radial-gradient(rgba(176, 38, 255, 0.08) 1px, transparent 0),
-    #040407 !important;
-  background-size: 14px 14px !important;
-  position: relative;
+  background: #ffffff !important;
 }
 
 .hud .browser-viewport::before {

@@ -15,6 +15,7 @@ import {
   Smartphone,
   Trash2,
 } from 'lucide-react';
+import { useTheme } from '../../themes/ThemeProvider';
 import type { CellsPreviewBuild } from '../../engine/cells/cellsPreviewCompiler';
 
 export type ComponentDemo = NonNullable<CellsPreviewBuild['componentDemo']>;
@@ -79,6 +80,8 @@ export const CellsPreviewWorkbench: React.FC<CellsPreviewWorkbenchProps> = ({
   onRequestExpand,
   fillContainer = false,
 }) => {
+  const { themeId } = useTheme();
+  const isCyber = themeId === 'cyber';
   const [tab, setTab] = useState<WorkbenchTab>('visual');
   const [caseId, setCaseId] = useState(demo.cases[0]?.id ?? 'basic');
   const [locale, setLocale] = useState<'es' | 'en'>(() => demo.locales.includes('es') ? 'es' : (demo.locales[0] ?? 'es'));
@@ -612,6 +615,7 @@ export const CellsPreviewWorkbench: React.FC<CellsPreviewWorkbenchProps> = ({
               <div className="cells-studio__canvas">
                 <div
                   className="cells-studio__device-card"
+                  data-augmented-ui={isCyber ? "cells-device-card tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
                   style={{
                     width: frameWidth ? `${frameWidth}px` : (viewport === 'fluid' ? '100%' : 'min(100%, 50rem)'),
                     height: frameHeight ? `${frameHeight}px` : undefined,

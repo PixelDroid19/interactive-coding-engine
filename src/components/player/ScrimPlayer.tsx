@@ -1124,7 +1124,10 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       {/* Main Workspace using CSS Grid System (allocating ≥80% viewport to editor & preview) */}
       <main className="workspace-container">
         {showFileTree && (
-          <aside className="files-sidebar">
+          <aside
+            className="files-sidebar"
+            data-augmented-ui={isCyber ? "hud-sidebar tl-clip br-clip bl-clip border inlay" : undefined}
+          >
             <FileTree
               files={visibleFiles}
               activeFilePath={workspace.activeFilePath}
@@ -1166,7 +1169,10 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         )}
 
         <section className={`lesson-stage ${isLogicMode ? 'logic-stage' : ''}`}>
-          <div className={`editor-window-wrapper ${!isLogicMode && isFloatingBrowser ? 'has-floating-preview' : ''}`}>
+          <div
+            className={`editor-window-wrapper ${!isLogicMode && isFloatingBrowser ? 'has-floating-preview' : ''}`}
+            data-augmented-ui={isCyber ? "hud-editor tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
+          >
             <div className="editor-tabs-bar">
               <div className="editor-tabs-group">
                 <button
