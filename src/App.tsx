@@ -25,6 +25,7 @@ import type { LearningProfile } from './learning/types';
 import { getItemReadiness, type ItemReadiness } from './learning/unlockPolicy';
 import { getCurriculumSkillIndex, loadLearningProfile } from './learning/curriculumEvidence';
 import { X } from 'lucide-react';
+import { fetchPublishedLesson } from './services/learningApi';
 
 type AppView = 'catalog' | 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'reasoning' | 'playground' | 'studio';
 
@@ -183,6 +184,7 @@ export default function App() {
   const [scrimInitialTimeMs, setScrimInitialTimeMs] = useState(initialAppState.timestampMs);
   const [playgroundReturnView, setPlaygroundReturnView] = useState<'catalog' | 'home'>(initialAppState.view === 'playground' ? 'catalog' : 'home');
   const [navigationBlocker, setNavigationBlocker] = useState<ItemReadiness | null>(null);
+  const [remoteLessonState, setRemoteLessonState] = useState<{ id: string; status: 'loading' | 'ready' | 'backup'; message?: string } | null>(null);
 
   // Sync custom scrims and progress from storage on mount
   useEffect(() => {
@@ -211,6 +213,28 @@ export default function App() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (currentView !== 'scrim' || course.slug !== OPEN_CELLS_COURSE.slug || activeItem?.type !== 'scrim') return;
+    const lessonId = activeItem.scrimDataId;
+    const controller = new AbortController();
+    setRemoteLessonState({ id: lessonId, status: 'loading' });
+    void fetchPublishedLesson(lessonId, controller.signal)
+      .then((lesson) => {
+        if (controller.signal.aborted) return;
+        setScrimsMap((current) => ({ ...current, [lessonId]: lesson }));
+        setRemoteLessonState({ id: lessonId, status: 'ready' });
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        setRemoteLessonState({
+          id: lessonId,
+          status: 'backup',
+          message: error instanceof Error ? error.message : 'No se pudo consultar el backend.',
+        });
+      });
+    return () => controller.abort();
+  }, [activeItem, course.slug, currentView]);
 
   const refreshProgress = () => {
     setProgress(loadUserProgress());
@@ -362,7 +386,11 @@ export default function App() {
   };
   const activeScrimIsUnavailable = currentView === 'scrim' && activeItem?.type === 'scrim' && !activeScrimData;
   const activeScrimError = activeScrimData?.audioTrack?.audioError;
-  const activeScrimCannotPlay = activeScrimIsUnavailable || Boolean(activeScrimError);
+  const remoteLessonIsLoading = course.slug === OPEN_CELLS_COURSE.slug
+    && activeItem?.type === 'scrim'
+    && remoteLessonState?.id === activeItem.scrimDataId
+    && remoteLessonState.status === 'loading';
+  const activeScrimCannotPlay = activeScrimIsUnavailable || Boolean(activeScrimError) || remoteLessonIsLoading;
   const tutorActivity = useMemo(
     () => buildTutorActivity(course, activeItem, scrimsMap),
     [activeItem, course, scrimsMap],
@@ -427,7 +455,9 @@ export default function App() {
             <h1 className="text-xl font-bold">{activeItem?.title ?? 'Clase'}</h1>
             <p className="mt-3 text-sm">
               {activeScrimError
-                || (customScrimsStatus === 'loading'
+                || (remoteLessonIsLoading
+                ? 'Cargando la revisión publicada de esta clase…'
+                : customScrimsStatus === 'loading'
                 ? 'Cargando la clase guardada…'
                 : customScrimsError || 'No se encontró el contenido de esta clase.')}
             </p>
@@ -441,6 +471,12 @@ export default function App() {
       )}
 
       {currentView === 'scrim' && activeItem && !activeScrimCannotPlay && (
+        <>
+        {remoteLessonState?.id === activeItem.id && remoteLessonState.status === 'backup' && (
+          <div className="fixed left-1/2 top-20 z-[110] -translate-x-1/2 border-2 border-amber-500 bg-amber-50 px-4 py-2 text-sm text-amber-950 shadow-[4px_4px_0_#111]" role="status">
+            Backend temporalmente no disponible. Estás usando la copia local verificada. {remoteLessonState.message}
+          </div>
+        )}
         <ScrimPlayer
           key={`${activeItem.id}:${courseLanguage}`}
           lessonData={
@@ -488,6 +524,7 @@ export default function App() {
             });
           }}
         />
+        </>
       )}
 
       {currentView === 'debugging' && resolvedDebuggingItem && (

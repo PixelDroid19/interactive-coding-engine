@@ -21,6 +21,7 @@
     "guiones:ai": "tsx scripts/export-ai-engineer-guiones.ts",
     "guiones:cells": "tsx scripts/sync-open-cells-guiones.ts",
     "cells:gate": "tsx scripts/verify-open-cells-cli-gate.ts",
+    "catalog:export": "tsx scripts/export-backend-catalog.ts",
     "format:component-course": "tsx scripts/format-component-course-code.ts"
   },
   "dependencies": {
