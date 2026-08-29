@@ -72,14 +72,14 @@
 /* Floating Narration / Captions Card */
 .hud [data-augmented-ui~="hud-narration"] {
   --aug-border-all: 1.5px;
-  --aug-border-bg: linear-gradient(135deg, var(--hud-purple) 0%, var(--hud-magenta) 65%, var(--hud-cyan) 100%);
+  --aug-border-bg: linear-gradient(135deg, #00f0ff 0%, #b026ff 50%, #ffe600 100%);
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #0e0618;
+  --aug-inlay-bg: #090514;
   --aug-inlay-opacity: 1;
-  --aug-tl: 12px;
-  --aug-tr: 12px;
-  --aug-br: 12px;
-  --aug-bl: 12px;
-  filter: drop-shadow(0 0 16px rgba(176, 38, 255, 0.4));
+  --aug-tl: 10px;
+  --aug-tr: 10px;
+  --aug-br: 10px;
+  --aug-bl: 10px;
+  filter: drop-shadow(0 0 16px rgba(176, 38, 255, 0.45));
 }
 

@@ -1241,7 +1241,10 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
               {activeSubtitle && showCaptions && (
                 <div className="caption-overlay absolute bottom-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[90%] pointer-events-none">
-                  <div className="caption-chip">
+                  <div
+                    className="caption-chip"
+                    data-augmented-ui={isCyber ? "hud-narration tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
+                  >
                     <Volume2 className="h-3.5 w-3.5 shrink-0" />
                     <p>{activeSubtitle}</p>
                   </div>

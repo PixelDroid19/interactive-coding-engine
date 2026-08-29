@@ -111,13 +111,13 @@
   position: relative;
   width: min(650px, 92%) !important;
   max-width: 100% !important;
-  min-height: 68px;
+  min-height: 56px;
   padding: 12px 24px 12px 42px !important;
   gap: 10px !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: #0f0718 !important;
-  box-shadow: 0 0 20px rgba(176, 38, 255, 0.25) !important;
+  background: transparent !important;
+  box-shadow: none !important;
   color: #f1f5f9 !important;
   font-family: "Chakra Petch", sans-serif !important;
   font-size: 12px !important;
@@ -133,7 +133,7 @@
   position: absolute;
   left: 14px;
   top: 14px;
-  color: #d8b4fe;
+  color: #00f0ff;
 }
 
 .hud .caption-chip > p::before {
@@ -141,7 +141,7 @@
   position: absolute;
   top: 5px;
   right: 8px;
-  color: var(--hud-purple);
+  color: var(--hud-magenta);
   font-family: monospace;
   font-size: 10px;
   opacity: 0.8;
@@ -154,7 +154,41 @@
   bottom: 5px;
   width: 44px;
   height: 4px;
-  background: repeating-linear-gradient(-45deg, rgba(176, 38, 255, 0.4) 0 4px, transparent 4px 8px);
+  background: repeating-linear-gradient(-45deg, rgba(0, 240, 255, 0.4) 0 4px, transparent 4px 8px);
+}
+
+/* Concept Inset Popover & Trigger in Cyberpunk HUD */
+.hud .concept-inset-trigger {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase;
+}
+
+.hud .concept-inset-card {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-family: "Chakra Petch", sans-serif !important;
+}
+
+.hud .concept-inset-card h4,
+.hud .concept-inset-card span {
+  font-family: "Chakra Petch", sans-serif !important;
+}
+
+.hud .concept-inset-chip {
+  border-radius: 2px !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 10px !important;
+  letter-spacing: 0.04em !important;
+  border-width: 1px !important;
 }
 
 .hud .instructor-pointer-tag {

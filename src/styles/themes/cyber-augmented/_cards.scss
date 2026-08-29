@@ -117,3 +117,38 @@
   filter: drop-shadow(0 0 16px rgba(0, 240, 255, 0.25));
 }
 
+/* Concept Inset Trigger Button */
+.hud [data-augmented-ui~="hud-concept-btn"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(135deg, #00f0ff 0%, #b026ff 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #0c101a;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 6px;
+  --aug-br: 6px;
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.05em !important;
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.3));
+}
+.hud [data-augmented-ui~="hud-concept-btn"]:hover {
+  --aug-border-bg: #00f0ff;
+  --aug-inlay-bg: rgba(0, 240, 255, 0.18);
+  filter: drop-shadow(0 0 14px rgba(0, 240, 255, 0.65));
+}
+
+/* Concept Inset Popover Card */
+.hud [data-augmented-ui~="hud-concept-card"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(135deg, #00f0ff 0%, #ffe600 45%, #b026ff 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #090b14;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 12px;
+  --aug-tr: 12px;
+  --aug-br: 12px;
+  --aug-bl: 12px;
+  filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.35));
+}
+

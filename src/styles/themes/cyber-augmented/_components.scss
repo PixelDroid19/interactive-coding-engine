@@ -5,27 +5,27 @@
 /* Roadmap Topbar Button */
 .hud [data-augmented-ui~="hud-roadmap"] {
   --aug-border-all: 1.5px;
-  --aug-border-bg: #ffe600;
+  --aug-border-bg: linear-gradient(135deg, #ffe600 0%, #00f0ff 100%);
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #ffe600;
+  --aug-inlay-bg: #0c1018;
   --aug-inlay-opacity: 1;
   --aug-tr: 8px;
   --aug-bl: 8px;
-  color: #000000 !important;
+  color: #fef08a !important;
   font-family: "Chakra Petch", sans-serif !important;
-  font-weight: 900 !important;
+  font-weight: 800 !important;
   letter-spacing: 0.08em !important;
-  filter: drop-shadow(0 0 10px rgba(255, 230, 0, 0.55));
+  filter: drop-shadow(0 0 10px rgba(255, 230, 0, 0.35));
 }
 .hud [data-augmented-ui~="hud-roadmap"] svg {
-  color: #000000 !important;
-  stroke: #000000 !important;
+  color: #ffe600 !important;
+  stroke: #ffe600 !important;
 }
 .hud [data-augmented-ui~="hud-roadmap"]:hover {
-  --aug-border-bg: #ffffff;
-  --aug-inlay-bg: #ffffff;
+  --aug-border-bg: #ffe600;
+  --aug-inlay-bg: #ffe600;
   color: #000000 !important;
-  filter: drop-shadow(0 0 16px rgba(255, 230, 0, 0.9));
+  filter: drop-shadow(0 0 16px rgba(255, 230, 0, 0.85));
 }
 .hud [data-augmented-ui~="hud-roadmap"]:hover svg {
   color: #000000 !important;
@@ -71,37 +71,37 @@
 /* Explain Button */
 .hud [data-augmented-ui~="hud-explain"] {
   --aug-border-all: 1.5px;
-  --aug-border-bg: #ffe600;
+  --aug-border-bg: linear-gradient(135deg, #b026ff 0%, #ff007f 60%, #00f0ff 100%);
   --aug-inlay-all: 1px;
-  --aug-inlay-bg: #ffe600;
+  --aug-inlay-bg: #140822;
   --aug-inlay-opacity: 1;
   --aug-tr: 8px;
   --aug-bl: 8px;
-  color: #000000 !important;
+  color: #f5d0fe !important;
   font-family: "Chakra Petch", sans-serif !important;
-  font-weight: 900 !important;
+  font-weight: 800 !important;
   letter-spacing: 0.08em !important;
-  filter: drop-shadow(0 0 12px rgba(255, 230, 0, 0.6));
+  filter: drop-shadow(0 0 10px rgba(176, 38, 255, 0.45));
 }
 .hud [data-augmented-ui~="hud-explain"] svg {
-  color: #000000 !important;
-  stroke: #000000 !important;
+  color: #ff007f !important;
+  stroke: #ff007f !important;
 }
 .hud [data-augmented-ui~="hud-explain"]:not(:disabled):hover {
-  --aug-border-bg: #ffffff;
-  --aug-inlay-bg: #ffffff;
-  color: #000000 !important;
-  filter: drop-shadow(0 0 18px rgba(255, 230, 0, 0.95));
+  --aug-border-bg: #ff007f;
+  --aug-inlay-bg: #ff007f;
+  color: #ffffff !important;
+  filter: drop-shadow(0 0 18px rgba(255, 0, 127, 0.85));
 }
 .hud [data-augmented-ui~="hud-explain"]:not(:disabled):hover svg {
-  color: #000000 !important;
-  stroke: #000000 !important;
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 .hud [data-augmented-ui~="hud-explain"]:disabled {
-  --aug-border-bg: rgba(255, 230, 0, 0.3);
-  --aug-inlay-bg: rgba(255, 230, 0, 0.15);
-  color: rgba(255, 230, 0, 0.4) !important;
-  opacity: 0.5 !important;
+  --aug-border-bg: rgba(176, 38, 255, 0.25);
+  --aug-inlay-bg: #0d0615;
+  color: rgba(245, 208, 254, 0.35) !important;
+  opacity: 0.45 !important;
   filter: none !important;
   cursor: not-allowed;
 }
