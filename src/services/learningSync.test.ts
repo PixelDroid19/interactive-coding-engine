@@ -48,7 +48,7 @@ describe('learning sync', () => {
     const sync = await import('./learningSync');
     const profile = recordEvidence(createEmptyLearningProfile(0), {
       id: 'local-evidence-01', courseId: 'course-open-cells', itemId: 'open-cells-01',
-      skillId: 'scoped-elements', capability: 'debug', result: 'partial', source: 'debugging', timestamp: 1000,
+      skillId: 'scoped-elements', capability: 'debug', result: 'partial', source: 'debugging', timestamp: Date.now(),
     });
     sync.queueLearningProfileEvidence(profile, { 'course-open-cells': 'open-cells' });
     expect(await sync.flushLearningQueue()).toBe(true);

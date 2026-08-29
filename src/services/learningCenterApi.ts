@@ -1,5 +1,5 @@
 import type { ReviewRating } from '../learning/types';
-import { learningApiRequest, readApiJson } from './learningHttp';
+import { getLearningActorId, learningApiRequest, readApiJson } from './learningHttp';
 
 const CACHE_PREFIX = 'aula_learning_center_cache_v1:';
 const CACHE_TTL_MS = 5 * 60_000;
@@ -76,7 +76,7 @@ export interface LearningCenterSnapshot {
 type CachedSnapshot = Readonly<{ cachedAt: number; snapshot: LearningCenterSnapshot }>;
 
 function cacheKey(courseSlug: string): string {
-  return `${CACHE_PREFIX}${courseSlug}`;
+  return `${CACHE_PREFIX}${getLearningActorId()}:${courseSlug}`;
 }
 
 function readCache(courseSlug: string): CachedSnapshot | null {

@@ -212,6 +212,7 @@ export function queueLearningProfileEvidence(profile: LearningProfile, courseSlu
   const known = new Set([...queue.syncedEvidence, ...queue.evidence.map((entry) => entry.fingerprint)]);
   for (const evidence of profile.evidence) {
     if (known.has(evidence.id)) continue;
+    if (evidence.timestamp < Date.now() - 365 * 86_400_000 || evidence.timestamp > Date.now() + 5 * 60_000) continue;
     const courseSlug = courseSlugById[evidence.courseId] ?? evidence.courseId.replace(/^course-/, '');
     queue.evidence.push({
       fingerprint: evidence.id,
