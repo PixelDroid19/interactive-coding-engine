@@ -49,6 +49,8 @@ interface ScrimPlayerProps {
   onPositionChange?: (timeMs: number) => void;
   language?: CourseLanguage;
   onLanguageChange?: (language: CourseLanguage) => void;
+  onCompleted?: () => void;
+  onFeedback?: (kind: 'positive' | 'negative') => Promise<'sent' | 'queued'>;
 }
 
 export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
@@ -65,6 +67,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   onPositionChange,
   language = 'javascript',
   onLanguageChange,
+  onCompleted,
+  onFeedback,
 }) => {
   const [playerState, dispatch] = useReducer(playerReducer, lessonData.id, createInitialState);
   // Playback & workspace state
@@ -78,6 +82,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const [volume, setVolume] = useState(() => loadVoiceVolume());
   const [showCaptions, setShowCaptions] = useState(true);
   const [syncTelemetry, setSyncTelemetry] = useState<SyncTelemetry | null>(null);
+  const [feedbackState, setFeedbackState] = useState<'idle' | 'sending' | 'sent' | 'queued'>('idle');
 
   // Learner branch state
   const [learnerBranch, setLearnerBranch] = useState<LearnerBranch | null>(null);
@@ -124,12 +129,21 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   closureConfirmedRef.current = closureConfirmed;
   const branchRecoveryFirstActionRef = useRef<HTMLButtonElement | null>(null);
   const onPositionChangeRef = useRef(onPositionChange);
+  const onCompletedRef = useRef(onCompleted);
+  const completionReportedRef = useRef(false);
   const previewReloadAfterWorkspaceRef = useRef(false);
 
   workspaceRef.current = workspace;
   isForkedRef.current = playerState.isForked;
   timeRef.current = currentTimeMs;
   onPositionChangeRef.current = onPositionChange;
+  onCompletedRef.current = onCompleted;
+
+  const reportCompletion = () => {
+    if (completionReportedRef.current) return;
+    completionReportedRef.current = true;
+    onCompletedRef.current?.();
+  };
 
   useEffect(() => {
     if (!previewReloadAfterWorkspaceRef.current) return;
@@ -201,6 +215,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     setShowReturnConfirm(false);
     setClosureConfirmed(false);
     setShowClosure(false);
+    setFeedbackState('idle');
+    completionReportedRef.current = false;
     setShowFileTree(typeof window !== 'undefined' && window.innerWidth >= 768);
 
     const engine = new PlaybackEngine({
@@ -281,6 +297,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           return;
         }
         markItemCompleted(lessonData.id);
+        reportCompletion();
         dispatch({ type: 'COMPLETE' });
       },
       onSubtitleChange: (subtitle) => {
@@ -822,10 +839,20 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     setClosureConfirmed(true);
     setShowClosure(false);
     markItemCompleted(lessonData.id);
+    reportCompletion();
     dispatch({ type: 'COMPLETE' });
   };
 
+  const handleFeedback = async (kind: 'positive' | 'negative') => {
+    if (!onFeedback || feedbackState === 'sending' || feedbackState === 'sent') return;
+    setFeedbackState('sending');
+    const result = await onFeedback(kind);
+    setFeedbackState(result);
+  };
+
   const handleRepeatFromEnd = () => {
+    completionReportedRef.current = false;
+    setFeedbackState('idle');
     setClosureConfirmed(false);
     setShowClosure(false);
     dispatch({ type: 'LESSON_CHANGE', lessonId: lessonData.id });
@@ -1242,8 +1269,18 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       )}
 
       {isCompleted && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-emerald-50 border-2 border-emerald-700 rounded-xl shadow-[4px_4px_0_#000] p-3 flex items-center gap-3 max-w-lg w-[90%]">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-emerald-50 border-2 border-emerald-700 rounded-xl shadow-[4px_4px_0_#000] p-3 flex flex-wrap items-center gap-2 max-w-xl w-[90%]">
           <span className="text-emerald-700 font-bold text-sm">✓ Clase completada</span>
+          {onFeedback && feedbackState === 'idle' && (
+            <div className="flex items-center gap-1 text-xs" aria-label="Valorar la clase">
+              <span>¿Te ayudó?</span>
+              <button type="button" onClick={() => void handleFeedback('positive')} className="neu-pill-btn text-xs">Sí</button>
+              <button type="button" onClick={() => void handleFeedback('negative')} className="neu-pill-btn text-xs">Puede mejorar</button>
+            </div>
+          )}
+          {feedbackState === 'sending' && <span className="text-xs text-slate-600">Guardando opinión…</span>}
+          {feedbackState === 'sent' && <span className="text-xs text-emerald-800">Gracias por tu opinión.</span>}
+          {feedbackState === 'queued' && <span className="text-xs text-amber-800">Opinión guardada; se enviará al recuperar conexión.</span>}
           <button onClick={handleRepeatFromEnd} className="ml-auto neu-pill-btn text-xs" aria-label="Repetir desde el inicio">Repetir</button>
           {onNextLesson && <button onClick={onNextLesson} className="neu-pill-btn btn-brand text-xs" aria-label="Siguiente lección">Siguiente</button>}
         </div>

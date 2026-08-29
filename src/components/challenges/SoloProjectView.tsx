@@ -38,6 +38,7 @@ interface SoloProjectViewProps {
   navigationState?: NavigationState;
   language?: CourseLanguage;
   onLanguageChange?: (language: CourseLanguage) => void;
+  onCompleted?: () => void;
 }
 
 export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
@@ -50,6 +51,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
   navigationState,
   language = 'javascript',
   onLanguageChange,
+  onCompleted,
 }) => {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() =>
     loadLanguageWorkspaceDraft(project.id, language) ?? cloneWorkspace(project.initialWorkspace),
@@ -325,6 +327,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
                 onComplete={async (readingAnswer, variationAnswer) => {
                   await recordPostSolveEvidence(project.id, readingAnswer, variationAnswer);
                   markItemCompleted(project.id);
+                  onCompleted?.();
                   setPostSolveComplete(true);
                 }}
               />

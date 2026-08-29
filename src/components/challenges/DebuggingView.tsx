@@ -42,6 +42,7 @@ interface DebuggingViewProps {
   navigationState?: NavigationState;
   language?: CourseLanguage;
   onLanguageChange?: (language: CourseLanguage) => void;
+  onCompleted?: () => void;
 }
 
 function inferValidator(test: ChallengeTest): ChallengeTest['validatorType'] {
@@ -84,6 +85,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   navigationState,
   language = 'javascript',
   onLanguageChange,
+  onCompleted,
 }) => {
   const draftKey = exercise.languageVariants ? `${exercise.id}:${language}` : exercise.id;
   const exerciseVersion = createDebuggingDraftVersion(exercise.initialWorkspace, exercise.tests);
@@ -722,6 +724,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                               onComplete={async (readingAnswer, variationAnswer) => {
                                 await recordPostSolveEvidence(exercise.id, readingAnswer, variationAnswer);
                                 markItemCompleted(exercise.id);
+                                onCompleted?.();
                                 setPostSolveComplete(true);
                                 handleNext();
                               }}

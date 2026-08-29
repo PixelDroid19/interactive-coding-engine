@@ -26,6 +26,7 @@ import { getItemReadiness, type ItemReadiness } from './learning/unlockPolicy';
 import { getCurriculumSkillIndex, loadLearningProfile } from './learning/curriculumEvidence';
 import { X } from 'lucide-react';
 import { fetchPublishedLesson } from './services/learningApi';
+import { flushLearningQueue, queueLearningEvent, queueLessonProgress, submitLessonFeedback } from './services/learningSync';
 
 type AppView = 'catalog' | 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'reasoning' | 'playground' | 'studio';
 
@@ -209,6 +210,8 @@ export default function App() {
         setCustomScrimsStatus('error');
       });
 
+    void flushLearningQueue();
+
     return () => {
       isMounted = false;
     };
@@ -258,6 +261,7 @@ export default function App() {
       timestampMs: initialTimeMs,
     });
     refreshProgress();
+    queueLearningEvent(course.slug, item.id, 'item_opened', { itemType: item.type, moduleId });
 
     setCurrentView(nextView);
   };
@@ -305,6 +309,7 @@ export default function App() {
   const handleNext = async () => {
     if (activeItem?.type === 'reading') {
       markItemCompleted(activeItem.id);
+      queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
       const { curriculumEvidence } = await import('./learning/curriculumEvidence');
       await curriculumEvidence.record(activeItem.id);
     }
@@ -522,7 +527,16 @@ export default function App() {
               itemId: activeItem.id,
               timestampMs: timeMs,
             });
+            if (activeItem.type === 'scrim') {
+              queueLessonProgress(course.slug, activeItem.id, 'in_progress', timeMs);
+            }
           }}
+          onCompleted={() => {
+            if (activeItem.type !== 'scrim') return;
+            queueLessonProgress(course.slug, activeItem.id, 'completed', resolvedScrimData?.durationMs ?? 0);
+            queueLearningEvent(course.slug, activeItem.id, 'lesson_completed', { durationMs: resolvedScrimData?.durationMs ?? 0 });
+          }}
+          onFeedback={(kind) => submitLessonFeedback(course.slug, activeItem.id, kind)}
         />
         </>
       )}
@@ -539,6 +553,10 @@ export default function App() {
           navigationState={navigationState}
           language={courseLanguage}
           onLanguageChange={handleCourseLanguageChange}
+          onCompleted={() => {
+            queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
+            refreshProgress();
+          }}
         />
       )}
 
@@ -562,7 +580,10 @@ export default function App() {
           onPrevious={navigationState.hasPrevious ? handlePrevious : undefined}
           onNext={navigationState.hasNext ? handleNext : handleBackToRoadmap}
           navigationState={navigationState}
-          onCompleted={refreshProgress}
+          onCompleted={() => {
+            queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
+            refreshProgress();
+          }}
         />
       )}
 
@@ -578,6 +599,10 @@ export default function App() {
           navigationState={navigationState}
           language={courseLanguage}
           onLanguageChange={handleCourseLanguageChange}
+          onCompleted={() => {
+            queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
+            refreshProgress();
+          }}
         />
       )}
 
