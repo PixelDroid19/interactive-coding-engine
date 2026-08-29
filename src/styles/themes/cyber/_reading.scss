@@ -1,0 +1,670 @@
+// Cyber — migrado desde src/themes/hud.css líneas 1868-2533
+// Mantiene .hud intacto; ahora usa mixins del sistema de temas.
+// ==========================================================================
+
+/* Explain Modal in HUD / Cyber mode */
+.hud .explain-modal-panel {
+  background: #090a10 !important;
+  border-left: 2px solid var(--hud-yellow) !important;
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.85) !important;
+}
+
+.hud .explain-modal-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: #050508 !important;
+}
+
+.hud .explain-modal-title {
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  color: #ffffff !important;
+}
+
+.hud .explain-modal-subtitle {
+  font-family: 'Space Grotesk', sans-serif !important;
+  color: #94a3b8 !important;
+}
+
+.hud .explain-close-btn {
+  width: 28px !important;
+  height: 28px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 4px !important;
+  color: #94a3b8 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.hud .explain-close-btn:hover {
+  background: rgba(255, 0, 85, 0.25) !important;
+  border-color: #ff0055 !important;
+  color: #ffffff !important;
+}
+
+.hud .explain-concept-tag {
+  font-family: 'Chakra Petch', monospace !important;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  border-radius: 3px !important;
+}
+.hud .explain-concept-tag--0 {
+  background: rgba(255, 230, 0, 0.15) !important;
+  color: #ffe600 !important;
+  border: 1px solid rgba(255, 230, 0, 0.4) !important;
+}
+.hud .explain-concept-tag--1 {
+  background: rgba(0, 240, 255, 0.15) !important;
+  color: #00f0ff !important;
+  border: 1px solid rgba(0, 240, 255, 0.4) !important;
+}
+.hud .explain-concept-tag--2 {
+  background: rgba(0, 255, 102, 0.15) !important;
+  color: #00ff66 !important;
+  border: 1px solid rgba(0, 255, 102, 0.4) !important;
+}
+
+.hud .explain-card {
+  background: #0d0f17 !important;
+  border: 1px solid #242938 !important;
+  border-radius: 6px !important;
+}
+
+.hud .explain-card--highlight {
+  background: #121008 !important;
+  border: 1px solid rgba(255, 230, 0, 0.4) !important;
+}
+
+.hud .explain-card-title {
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 13.5px !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  color: #f1f5f9 !important;
+}
+.hud .explain-card--highlight .explain-card-title {
+  color: #ffe600 !important;
+}
+
+.hud .explain-card-body {
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.6 !important;
+  color: #cbd5e1 !important;
+}
+
+.hud .explain-code-badge {
+  font-family: 'Fira Code', monospace !important;
+  font-size: 11px !important;
+  background: #061622 !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(0, 240, 255, 0.3) !important;
+  border-radius: 3px !important;
+}
+
+.hud .explain-modal-footer {
+  background: #050508 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.hud .explain-footer-btn {
+  background: #ffe600 !important;
+  color: #000000 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 13px !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  box-shadow: 0 0 12px rgba(255, 230, 0, 0.25) !important;
+}
+.hud .explain-footer-btn:hover {
+  background: #fff477 !important;
+  box-shadow: 0 0 18px rgba(255, 230, 0, 0.4) !important;
+}
+
+/* ==========================================================================
+   CYBERPUNK READING INTERFACE (HUD MODE)
+   High-contrast, immersive cyberpunk reading experience with glowing telemetry,
+   tactical HUD badges, chamfered data decks, and high-readability typography.
+   ========================================================================== */
+
+.hud .reading-screen {
+  background: #040509 !important;
+  color: #e2e8f0 !important;
+}
+
+.hud .reading-canvas {
+  background:
+    radial-gradient(ellipse 900px 500px at 85% 0%, rgba(0, 240, 255, 0.07), transparent 60%),
+    radial-gradient(ellipse 700px 400px at 15% 45%, rgba(255, 230, 0, 0.04), transparent 50%),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(0, 240, 255, 0.02) 1px, transparent 1px),
+    #05060a !important;
+  background-size: 100% 100%, 100% 100%, 64px 64px, 64px 64px, auto !important;
+}
+
+/* Top Progress Telemetry Bar */
+.hud .reading-progress-track {
+  height: 2px !important;
+  background: rgba(0, 240, 255, 0.15) !important;
+}
+
+.hud .reading-progress-fill {
+  background: linear-gradient(90deg, #00f0ff, #ffe600) !important;
+}
+
+/* Topbar Telemetry Badge */
+.hud .reading-time-pill {
+  border: 1px solid #00f0ff !important;
+  background: rgba(0, 240, 255, 0.08) !important;
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", monospace !important;
+  font-weight: 700 !important;
+  border-radius: 2px !important;
+}
+
+.hud .reading-time-icon {
+  color: #ffe600 !important;
+}
+
+.hud .reading-progress-text {
+  color: #ffe600 !important;
+  font-weight: 800 !important;
+}
+
+/* Hero Header & Telemetry (bordered by augmented-ui) */
+.hud .reading-hero {
+  border: none !important;
+  background: transparent !important;
+  position: relative !important;
+}
+
+.hud .reading-hero-accent-bar {
+  display: none !important;
+}
+
+.hud .reading-pulse-dot {
+  background: #ffe600 !important;
+  box-shadow: 0 0 6px #ffe600 !important;
+}
+
+.hud .reading-hero-eyebrow {
+  color: #ffe600 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  letter-spacing: 0.2em !important;
+}
+
+.hud .reading-hero-sys-badge {
+  display: inline-block !important;
+  border: 1px solid #00f0ff !important;
+  background: rgba(0, 240, 255, 0.08) !important;
+  color: #00f0ff !important;
+  padding: 1px 7px !important;
+  border-radius: 2px !important;
+  letter-spacing: 0.12em !important;
+  font-size: 10px !important;
+}
+
+.hud .reading-hero-title {
+  color: #ffffff !important;
+  font-family: "Chakra Petch", "Space Grotesk", sans-serif !important;
+  font-weight: 800 !important;
+}
+
+.hud .reading-hero-summary {
+  color: #cbd5e1 !important;
+  font-size: 16px !important;
+  line-height: 1.75 !important;
+}
+
+.hud .reading-hero-meta {
+  border: 1px solid #1e293b !important;
+  background: rgba(4, 6, 12, 0.9) !important;
+}
+
+.hud .reading-hero-meta span,
+.hud .reading-meta-cell {
+  border-left: 1px solid #1e293b !important;
+  color: #94a3b8 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+}
+
+.hud .reading-hero-meta span:first-child,
+.hud .reading-meta-cell:first-child {
+  border-left: 0 !important;
+}
+
+.hud .reading-hero-meta strong {
+  color: #ffe600 !important;
+  font-family: "Fira Code", monospace !important;
+  font-weight: 800 !important;
+}
+
+/* Left Rail Navigation & Protocol Deck */
+.hud .reading-rail-inner {
+  border-top: 2px solid #ffe600 !important;
+  background: rgba(8, 11, 20, 0.75) !important;
+  border-radius: 4px !important;
+  padding: 16px 12px !important;
+}
+
+.hud .reading-rail-label {
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  letter-spacing: 0.2em !important;
+}
+
+.hud .reading-rail-pill {
+  display: inline-block !important;
+  border: 1px solid #ffe600 !important;
+  background: rgba(255, 230, 0, 0.1) !important;
+  color: #ffe600 !important;
+  padding: 1px 5px !important;
+  border-radius: 2px !important;
+}
+
+.hud .reading-rail a,
+.hud .reading-rail-link {
+  border-left: 2px solid #1c2438 !important;
+  color: #cbd5e1 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 700 !important;
+  background: transparent !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.hud .reading-rail a:hover,
+.hud .reading-rail a:focus-visible,
+.hud .reading-rail-link:hover {
+  border-left-color: #00f0ff !important;
+  background: linear-gradient(90deg, rgba(0, 240, 255, 0.12), transparent) !important;
+  color: #00f0ff !important;
+  transform: translateX(3px) !important;
+}
+
+.hud .reading-keypoints {
+  border: none !important;
+  background: transparent !important;
+  padding: 16px 14px !important;
+  margin-top: 16px !important;
+}
+
+.hud .reading-keypoints-icon {
+  border: 1px solid #ffe600 !important;
+  background: rgba(255, 230, 0, 0.12) !important;
+  color: #ffe600 !important;
+  border-radius: 2px !important;
+}
+
+.hud .reading-keypoints-eyebrow {
+  display: block !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.2em !important;
+  color: #00f0ff !important;
+}
+
+.hud .reading-keypoints-title,
+.hud .reading-keypoints h2 {
+  font-family: "Chakra Petch", "Space Grotesk", sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: #fef08a !important;
+  margin: 0 !important;
+}
+
+.hud .reading-keypoint-item,
+.hud .reading-keypoints li {
+  color: #e2e8f0 !important;
+  font-size: 12.5px !important;
+  line-height: 1.55 !important;
+  padding: 4px 0 !important;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.06) !important;
+}
+
+.hud .reading-keypoint-check,
+.hud .reading-keypoints li svg {
+  color: #00ff88 !important;
+}
+
+/* Concept Cards & Code Terminals (bordered by augmented-ui) */
+.hud .reading-concepts-zone {
+  border-top: 1px solid #1e293b !important;
+}
+
+.hud .reading-zone-tag {
+  color: #ffe600 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  letter-spacing: 0.2em !important;
+}
+
+.hud .reading-zone-dot {
+  display: inline-block !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: #00f0ff !important;
+}
+
+.hud .reading-zone-title {
+  color: #ffffff !important;
+  font-family: "Chakra Petch", "Space Grotesk", sans-serif !important;
+  font-weight: 800 !important;
+}
+
+.hud .reading-blocks-badge {
+  border: 1px solid #1e293b !important;
+  background: rgba(0, 240, 255, 0.06) !important;
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", monospace !important;
+}
+
+.hud .reading-concept-grid {
+  border: none !important;
+  gap: 18px !important;
+  background: transparent !important;
+}
+
+.hud .reading-concept-block {
+  border: none !important;
+  background: transparent !important;
+  padding: 22px 24px !important;
+}
+
+.hud .reading-concept-title {
+  color: #f8fafc !important;
+  font-family: "Chakra Petch", "Space Grotesk", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 17px !important;
+}
+
+.hud .reading-concept-number {
+  color: #ffe600 !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  padding: 2px 6px !important;
+  border: 1px solid #ffe600 !important;
+  background: rgba(255, 230, 0, 0.08) !important;
+  border-radius: 2px !important;
+}
+
+.hud .reading-concept-text {
+  color: #cbd5e1 !important;
+  font-size: 15px !important;
+  line-height: 1.75 !important;
+}
+
+/* Cyber Terminal Code Snippet Block (bordered by augmented-ui) */
+.hud .reading-code-terminal {
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+.hud .reading-code-terminal__header {
+  border-bottom: 1px solid #161e30 !important;
+  background: rgba(8, 12, 22, 0.9) !important;
+  padding: 6px 12px !important;
+}
+
+.hud .reading-code-label {
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", monospace !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
+}
+
+.hud .reading-code-pre {
+  background: transparent !important;
+  color: #f1f5f9 !important;
+  font-family: "Fira Code", "JetBrains Mono", monospace !important;
+  font-size: 13.5px !important;
+  line-height: 1.65 !important;
+  padding: 12px 14px !important;
+}
+
+/* Syntax Highlighting in HUD Cyber Mode (Balanced & Crisp) */
+.hud .syntax-comment {
+  color: #64748b !important;
+  font-style: italic !important;
+}
+
+.hud .syntax-string {
+  color: #4ade80 !important;
+  font-weight: 500 !important;
+}
+
+.hud .syntax-keyword {
+  color: #f472b6 !important;
+  font-weight: 700 !important;
+}
+
+.hud .syntax-number {
+  color: #facc15 !important;
+  font-weight: 700 !important;
+}
+
+.hud .syntax-punct {
+  color: #38bdf8 !important;
+}
+
+.hud .syntax-ident {
+  color: #f8fafc !important;
+}
+
+.hud .reading-caption-row {
+  color: #38bdf8 !important;
+  font-family: "Chakra Petch", monospace !important;
+  font-size: 12px !important;
+}
+
+.hud .reading-caption-arrow {
+  color: #ffe600 !important;
+  font-weight: 800 !important;
+}
+
+/* Curiosity Block */
+.hud .reading-curiosity {
+  border: none !important;
+  background: transparent !important;
+}
+
+.hud .reading-curiosity-title {
+  color: #e0f2fe !important;
+  font-family: "Chakra Petch", "Space Grotesk", sans-serif !important;
+}
+
+.hud .reading-curiosity-badge {
+  border: 1px solid #00f0ff !important;
+  background: rgba(0, 240, 255, 0.1) !important;
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+}
+
+.hud .reading-curiosity-note {
+  color: #38bdf8 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 700 !important;
+}
+
+/* Aclara y Aplica (FAQ & Mental Transfer Zone) */
+.hud .reading-apply-zone {
+  border-top: 1px solid #1e293b !important;
+}
+
+.hud .reading-faq-zone {
+  border: none !important;
+  background: transparent !important;
+}
+
+.hud .reading-faq-eyebrow {
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  letter-spacing: 0.2em !important;
+}
+
+.hud .reading-faq-card {
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+.hud .reading-faq-summary {
+  color: #f1f5f9 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+}
+
+.hud .reading-faq-chevron {
+  color: #00f0ff !important;
+}
+
+.hud .reading-faq-answer {
+  color: #cbd5e1 !important;
+  border-top-color: #1a253c !important;
+  font-size: 14px !important;
+  line-height: 1.7 !important;
+}
+
+.hud .reading-transfer-zone {
+  border: none !important;
+  background: transparent !important;
+  padding: 22px 24px !important;
+}
+
+.hud .reading-transfer-eyebrow {
+  color: #ffe600 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  letter-spacing: 0.2em !important;
+}
+
+.hud .reading-transfer-prompt {
+  color: #fef08a !important;
+  font-size: 15px !important;
+  line-height: 1.75 !important;
+}
+
+.hud .reading-transfer-footer {
+  border-top-color: rgba(255, 230, 0, 0.2) !important;
+  color: #cbd5e1 !important;
+}
+
+.hud .reading-transfer-icon {
+  color: #ffe600 !important;
+  font-weight: 800 !important;
+}
+
+/* Biblioteca de campo (Resources) */
+.hud .reading-library-zone {
+  border-top: 1px solid #1e293b !important;
+  border-bottom: 1px solid #1e293b !important;
+  background: transparent !important;
+  padding: 28px 0 !important;
+}
+
+.hud .reading-sources-eyebrow {
+  color: #ffe600 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  letter-spacing: 0.2em !important;
+}
+
+.hud .reading-source-grid {
+  border: none !important;
+  gap: 16px !important;
+}
+
+.hud .reading-source-card {
+  border: none !important;
+  background: transparent !important;
+  padding: 20px 22px !important;
+}
+
+.hud .reading-source-publisher {
+  color: #ffe600 !important;
+  font-family: "Chakra Petch", monospace !important;
+  letter-spacing: 0.16em !important;
+}
+
+.hud .reading-source-number {
+  color: #00f0ff !important;
+  font-family: "Fira Code", monospace !important;
+  font-weight: 700 !important;
+}
+
+.hud .reading-source-link {
+  color: #ffffff !important;
+  text-decoration-color: #ffe600 !important;
+}
+
+.hud .reading-source-link:hover {
+  color: #00f0ff !important;
+}
+
+.hud .reading-source-arrow {
+  color: #00f0ff !important;
+  transition: transform 0.2s ease !important;
+}
+
+.hud .reading-source-card:hover .reading-source-arrow {
+  transform: translate(2px, -2px) !important;
+}
+
+.hud .reading-source-purpose {
+  color: #94a3b8 !important;
+}
+
+/* Footer & Action CTA Button (bordered by augmented-ui) */
+.hud .reading-footer {
+  border-top: 1px solid #1e293b !important;
+  padding: 28px 0 68px !important;
+  margin-bottom: 24px !important;
+}
+
+.hud .reading-footer-text {
+  color: #94a3b8 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+}
+
+.hud .reading-cta-btn {
+  color: #000000 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  border-radius: 0 !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.hud .reading-cta-btn:hover {
+  transform: translateY(-2px) !important;
+}
+
+.hud .reading-cta-arrow {
+  color: #000000 !important;
+  transition: transform 0.2s ease !important;
+}
+
+.hud .reading-cta-btn:hover .reading-cta-arrow {
+  transform: translateX(3px) !important;
+}
+
+/* Override all cursive titles in HUD cyber mode */
+.hud .reading-cursive-heading {
+  font-family: "Chakra Petch", "Space Grotesk", sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.02em !important;
+}
+

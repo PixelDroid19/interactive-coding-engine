@@ -24,6 +24,7 @@ import type { CellsAppPracticeStage, CellsAppProject } from '../../engine/cells/
 import type { CellsComponentPracticeStage } from '../../engine/cells/cellsRecipes';
 import { openCellsArtifactForLesson } from '../../curriculum/open-cells/lessonProjects';
 import { ThemeToggle } from '../ThemeToggle';
+import { useTheme } from '../../themes/ThemeProvider';
 import { LearningDiagram } from './LearningDiagram';
 import { highlightReadingCode } from './readingCodeHighlight';
 
@@ -47,6 +48,8 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
   const titleRef = useRef<HTMLHeadingElement>(null);
   const mainRef = useRef<HTMLElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const { themeId } = useTheme();
+  const isCyber = themeId === 'cyber';
 
   const cellsAppLab: { stage: CellsAppPracticeStage; project: CellsAppProject; title: string } | null =
     ({
@@ -185,7 +188,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
 
                 <aside
                   className="reading-keypoints"
-                  data-augmented-ui="reading-keypoints tl-clip br-clip border inlay"
+                  data-augmented-ui={isCyber ? "reading-keypoints tl-clip br-clip border inlay" : undefined}
                 >
                   <div className="reading-keypoints-header flex items-center gap-2.5">
                     <div className="reading-keypoints-icon">
@@ -211,7 +214,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
             <div className="reading-content-flow">
               <header
                 className="reading-hero relative overflow-hidden border border-zinc-700 bg-[#101218] px-6 py-7 sm:px-9 sm:py-9"
-                data-augmented-ui="reading-hero tl-clip tr-clip br-clip bl-clip border inlay"
+                data-augmented-ui={isCyber ? "reading-hero tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
               >
                 <div className="reading-hero-accent-bar absolute inset-y-0 left-0 w-1.5 bg-yellow-300" aria-hidden="true" />
                 <div className="reading-hero-copy">
@@ -292,7 +295,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                         <details
                           key={section.title}
                           className="reading-curiosity group open:border-cyan-500"
-                          data-augmented-ui="reading-concept tl-clip br-clip border inlay"
+                          data-augmented-ui={isCyber ? "reading-concept tl-clip br-clip border inlay" : undefined}
                         >
                           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4 text-zinc-100 marker:content-none">
                             <span
@@ -310,7 +313,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                             {section.example && (
                               <div
                                 className="reading-code-terminal mt-3 overflow-hidden rounded border border-zinc-700 bg-[#0c0e14]"
-                                data-augmented-ui="reading-terminal tl-clip br-clip border inlay"
+                                data-augmented-ui={isCyber ? "reading-terminal tl-clip br-clip border inlay" : undefined}
                               >
                                 <div className="reading-code-terminal__header" aria-hidden="true">
                                   <div className="reading-code-dots">
@@ -340,7 +343,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                         <article
                           key={section.title}
                           className="reading-concept-block"
-                          data-augmented-ui="reading-concept tl-clip br-clip border inlay"
+                          data-augmented-ui={isCyber ? "reading-concept tl-clip br-clip border inlay" : undefined}
                         >
                           <div className="reading-concept-header flex items-center justify-between gap-3 mb-2">
                             <h2
@@ -363,7 +366,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                           {section.example && (
                             <div
                               className="reading-code-terminal mt-3 overflow-hidden rounded border border-zinc-700 bg-[#0c0e14]"
-                              data-augmented-ui="reading-terminal tl-clip br-clip border inlay"
+                              data-augmented-ui={isCyber ? "reading-terminal tl-clip br-clip border inlay" : undefined}
                             >
                               <div className="reading-code-terminal__header" aria-hidden="true">
                                 <div className="reading-code-dots">
@@ -480,7 +483,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                             <details
                               key={entry.question}
                               className="reading-faq-card group rounded-lg border border-sky-900 bg-zinc-950 px-4 py-3"
-                              data-augmented-ui="reading-faq tl-clip br-clip border inlay"
+                              data-augmented-ui={isCyber ? "reading-faq tl-clip br-clip border inlay" : undefined}
                             >
                               <summary className="reading-faq-summary flex items-center justify-between cursor-pointer font-bold text-zinc-100">
                                 <span>{entry.question}</span>
@@ -497,7 +500,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                     {reading.transferPrompt && (
                       <aside
                         className="reading-transfer-zone"
-                        data-augmented-ui="reading-transfer tl-clip tr-clip br-clip bl-clip border inlay"
+                        data-augmented-ui={isCyber ? "reading-transfer tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
                       >
                         <p className="reading-transfer-eyebrow text-[10px] font-black uppercase tracking-[0.18em] text-yellow-300">
                           Transfiere lo aprendido
@@ -541,7 +544,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                       <li
                         key={source.url}
                         className="reading-source-card group"
-                        data-augmented-ui="reading-source tl-clip br-clip border inlay"
+                        data-augmented-ui={isCyber ? "reading-source tl-clip br-clip border inlay" : undefined}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <p className="reading-source-publisher text-[10px] font-black uppercase tracking-[0.14em] text-yellow-500">
@@ -579,7 +582,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                   disabled={!navigationState?.hasNext}
                   className="reading-cta-btn neu-pill-btn btn-brand justify-center px-5 py-2.5 text-sm font-bold disabled:opacity-40"
                   aria-label="Ir a la práctica"
-                  data-augmented-ui="reading-cta tr-clip bl-clip border inlay"
+                  data-augmented-ui={isCyber ? "reading-cta tr-clip bl-clip border inlay" : undefined}
                 >
                   <span>Ir a la práctica</span>
                   <ArrowRight size={14} className="reading-cta-arrow" />

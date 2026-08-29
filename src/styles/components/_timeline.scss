@@ -1,0 +1,254 @@
+// Auto-migrated from src/index.css lines 5302-5550
+// Se mantiene 100% compatible — ahora en SCSS modular.
+// Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
+// ==========================================================================
+
+/* ==========================================================================
+   Dark Mode Adjustments
+   ========================================================================== */
+.dark .window-topbar {
+  background: #151821;
+  border-bottom: 2px solid #374151;
+  box-shadow: 0 2px 0px #07080b;
+}
+
+.dark .topbar-divider {
+  background: #475569;
+}
+
+.dark .category-tag {
+  background: #854d0e;
+  border: 1.5px solid #ca8a04;
+  color: var(--color-highlighter-yellow);
+  box-shadow: 2px 2px 0px #07080b;
+}
+
+.dark .icon-rail {
+  border-right: 2px dashed #374151;
+}
+
+.dark .rail-btn {
+  background: #1c202d;
+  border: 2px solid #374151;
+  color: #cbd5e1;
+  box-shadow: 2px 2px 0px #07080b;
+}
+
+.dark .rail-btn:hover {
+  background: var(--color-primary-hover);
+  color: var(--color-white);
+  border-color: #38bdf8;
+  box-shadow: 3px 3px 0px #07080b;
+}
+
+.dark .rail-btn-active {
+  background: #854d0e;
+  border-color: #fde047;
+  color: var(--color-highlighter-yellow);
+}
+
+.dark .file-item-btn {
+  background: #1c202d;
+  border: 1.5px solid #374151;
+  color: #cbd5e1;
+  box-shadow: 2px 2px 0px #07080b;
+}
+
+.dark .file-item-btn:hover {
+  background: #242a3a;
+  color: #38bdf8;
+  border-color: #38bdf8;
+  box-shadow: 3px 3px 0px #07080b;
+}
+
+.dark .file-item-btn-active {
+  background: #075985;
+  border-color: #38bdf8;
+  color: #f0f9ff;
+}
+
+.dark .reset-code-btn {
+  background: #1c202d;
+  border: 2px solid #374151;
+  color: #cbd5e1;
+  box-shadow: 2px 2px 0px #07080b;
+}
+
+.dark .reset-code-btn:hover {
+  background: #881337;
+  border-color: #f43f5e;
+  color: #ffe4e6;
+}
+
+.dark .player-bar {
+  background: #151821;
+  background-image: radial-gradient(rgba(148,163,184,0.06) 1px, transparent 1px);
+  background-size: 16px 16px;
+  border-top: 2px solid #334155;
+  box-shadow: 0 -3px 0 var(--color-sketch-shadow);
+}
+
+.dark .neu-pill-btn {
+  background: #1c202d;
+  border: 2px solid #374151;
+  color: #cbd5e1;
+  box-shadow: 2px 2px 0px #07080b;
+}
+
+.dark .neu-pill-btn:hover {
+  background: var(--color-primary-hover);
+  color: var(--color-white);
+  border-color: #38bdf8;
+  box-shadow: 3px 3px 0px #07080b;
+}
+
+.dark .round-icon-btn {
+  background: #1c202d;
+  border: 2px solid #374151;
+  color: #cbd5e1;
+  box-shadow: 2px 2px 0px #07080b;
+}
+
+.dark .round-icon-btn:hover {
+  background: #854d0e;
+  border-color: #fde047;
+  color: var(--color-highlighter-yellow);
+  box-shadow: 3px 3px 0px #07080b;
+}
+
+.dark .play-main-btn {
+  background: var(--color-brand);
+  border: 2px solid var(--color-black);
+  color: var(--color-black);
+  box-shadow: 3px 3px 0px #07080b;
+}
+
+.dark .play-main-btn:hover {
+  background: var(--color-brand-hover);
+  box-shadow: 4px 4px 0px #07080b;
+}
+
+.dark .btn-explain {
+  background: #854d0e;
+  border: 2px solid #ca8a04;
+  color: var(--color-highlighter-yellow);
+}
+
+.dark .btn-next-lesson {
+  background: #1e293b;
+  border: 2px solid #475569;
+  color: var(--color-white);
+}
+
+.dark .modal-dialog {
+  background: #171a24;
+  border: 2px solid #374151;
+  box-shadow: 8px 8px 0px #07080b;
+}
+
+.dark .modal-header,
+.dark .drawer-header {
+  background: #12141c;
+  border-bottom: 2px solid #374151;
+}
+
+.dark .drawer-panel {
+  background: #171a24;
+  border-left: 2px solid #374151;
+  box-shadow: -8px 0px 0px #07080b;
+}
+
+.dark .scrim-completion-banner {
+  background: #0f172a;
+  border-color: #059669;
+  color: #f1f5f9;
+}
+
+.dark .scrim-completion-badge {
+  color: #34d399;
+}
+
+.dark .scrim-feedback-prompt {
+  color: #fef08a;
+}
+
+.dark .explain-modal-title { color: #f8fafc; }
+.dark .explain-modal-subtitle { color: #94a3b8; }
+.dark .explain-close-btn {
+  background: #1e293b;
+  border-color: #475569;
+  color: #e2e8f0;
+}
+.dark .explain-close-btn:hover {
+  background: #334155;
+  color: #ffffff;
+}
+.dark .explain-concept-tag--0 { background: rgba(255, 230, 0, 0.2); color: #fde047; border-color: rgba(255, 230, 0, 0.4); }
+.dark .explain-concept-tag--1 { background: rgba(0, 240, 255, 0.2); color: #7dd3fc; border-color: rgba(0, 240, 255, 0.4); }
+.dark .explain-concept-tag--2 { background: rgba(34, 197, 94, 0.2); color: #86efac; border-color: rgba(34, 197, 94, 0.4); }
+.dark .explain-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+.dark .explain-card--highlight {
+  background: #242938;
+  border-color: #64748b;
+}
+.dark .explain-card-title { color: #f8fafc; }
+.dark .explain-card-body { color: #cbd5e1; }
+.dark .explain-code-badge {
+  background: #0c4a6e;
+  color: #7dd3fc;
+  border-color: #0284c7;
+}
+.dark .explain-modal-footer {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+.dark .roadmap-card,
+.dark .concept-card {
+  background: #1c202d;
+  border: 2px solid #374151;
+  box-shadow: 2px 2px 0px #07080b;
+}
+
+.dark .roadmap-card:hover,
+.dark .concept-card:hover {
+  background: #232838;
+  border-color: #38bdf8;
+  box-shadow: 3px 3px 0px #07080b;
+}
+
+.dark .roadmap-card-active {
+  background: #075985;
+  border-color: #38bdf8;
+}
+
+.dark .lesson-num-badge {
+  background: #1c202d;
+  border: 1.5px solid #374151;
+  color: var(--color-inverse);
+  box-shadow: 2px 2px 0px #07080b;
+}
+
+.dark .quiz-option-btn {
+  background: #1c202d;
+  border: 1.5px solid #374151;
+  color: #cbd5e1;
+  box-shadow: 2px 2px 0px #07080b;
+}
+
+.dark .quiz-option-btn:hover {
+  background: #854d0e;
+  border-color: #ca8a04;
+  color: var(--color-highlighter-yellow);
+}
+
+.dark .console-trigger-btn {
+  background: #854d0e;
+  border: 2px solid #ca8a04;
+  color: var(--color-highlighter-yellow);
+  box-shadow: 3px 3px 0px #07080b;
+}
+

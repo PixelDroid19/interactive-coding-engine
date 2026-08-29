@@ -1,0 +1,319 @@
+// Auto-migrated from src/index.css lines 4207-4520
+// Se mantiene 100% compatible — ahora en SCSS modular.
+// Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
+// ==========================================================================
+
+/* ==========================================================================
+   Live Browser Preview (Sketched Floating Window)
+   ========================================================================== */
+.floating-browser-wrapper {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  max-width: calc(100% - 64px);
+  max-height: calc(100% - 20px);
+  z-index: 25;
+  display: flex;
+  flex-direction: row;
+  transition: opacity 0.2s ease;
+}
+
+.floating-browser-expanded {
+  top: 48px !important;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 56px !important;
+  width: auto !important;
+  height: auto !important;
+  max-height: none !important;
+  transform: none !important;
+  z-index: 85 !important;
+}
+
+.browser-window {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-browser);
+  border: var(--border-pencil);
+  box-shadow: var(--shadow-sketch-lg);
+  border-radius: var(--radius-clean-box);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.browser-window.fixed {
+  position: fixed;
+}
+
+.browser-resize-handle-edge {
+  width: 10px;
+  cursor: ew-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-right: 2px;
+  user-select: none;
+}
+
+.resize-handle-pill {
+  width: 4px;
+  height: 38px;
+  background: var(--color-pencil-soft);
+  border-radius: 9999px;
+  border: 1px solid var(--bg-surface);
+  transition: all 0.15s ease;
+}
+
+.browser-resize-handle-edge:hover .resize-handle-pill,
+.browser-resize-handle-active .resize-handle-pill {
+  background: var(--color-primary);
+  height: 54px;
+  width: 5px;
+}
+
+.browser-resize-handle-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.browser-resize-handle-bottom:hover::after,
+.browser-resize-handle-bottom-active::after {
+  content: '';
+  width: 40px;
+  height: 3px;
+  background: var(--color-primary);
+  border-radius: 9999px;
+}
+
+.browser-resize-handle-corner {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nesw-resize;
+  z-index: 25;
+}
+
+.browser-resize-handle-corner::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  left: 3px;
+  width: 6px;
+  height: 6px;
+  border-left: 2px solid var(--color-pencil);
+  border-bottom: 2px solid var(--color-pencil);
+  border-bottom-left-radius: 2px;
+  transition: all 0.15s ease;
+}
+
+.browser-resize-handle-corner:hover::after {
+  border-color: var(--color-primary);
+  width: 8px;
+  height: 8px;
+}
+
+.browser-header-clean {
+  background: var(--bg-browser-header);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: var(--border-pencil-thin);
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.browser-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-main);
+}
+
+.drag-handle-grip {
+  cursor: grab;
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+}
+
+.browser-preview-badge {
+  background: var(--color-highlighter-mint);
+  border: 1px solid var(--color-text-main);
+  color: #14532d;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: var(--radius-doodle-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.browser-dim-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  background: var(--bg-surface);
+  border: 1px solid var(--color-pencil-light);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.browser-window-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.browser-navbar {
+  background: var(--bg-surface-light);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: var(--border-pencil-thin);
+  flex-shrink: 0;
+}
+
+.browser-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-doodle-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--color-pencil);
+  background: var(--bg-surface-light);
+  box-shadow: 1px 1px 0px var(--color-sketch-shadow);
+  color: var(--color-text-main);
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+
+.browser-btn:hover {
+  background: var(--color-highlighter-yellow);
+  color: var(--color-black);
+  transform: translateY(-1px);
+  box-shadow: 2px 2px 0px var(--color-sketch-shadow);
+}
+
+.browser-btn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 0px 0px 0px;
+}
+
+.browser-url-box {
+  flex: 1;
+  background: var(--bg-surface);
+  border: 1.5px solid var(--color-pencil);
+  box-shadow: inset 1px 1px 0px rgba(0,0,0,0.1);
+  border-radius: var(--radius-doodle-sm);
+  padding: 3px 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.browser-url-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--color-text-main);
+}
+
+.browser-viewport {
+  flex: 1;
+  background: var(--color-white);
+  position: relative;
+  overflow: hidden;
+}
+
+.browser-viewport--cells {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  background: #0b1018;
+}
+
+.browser-viewport--cells > .cells-studio {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.browser-viewport-mobile {
+  max-width: 375px;
+  margin: 0 auto;
+  border-left: var(--border-pencil-dashed);
+  border-right: var(--border-pencil-dashed);
+}
+
+.browser-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.floating-preview-trigger {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--bg-surface-light);
+  border: var(--border-pencil);
+  box-shadow: var(--shadow-sketch);
+  border-radius: var(--radius-doodle-sm);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  cursor: pointer;
+  z-index: 25;
+  transition: all 0.15s ease;
+}
+
+.floating-preview-trigger:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sketch-lg);
+  background: var(--color-highlighter-cyan);
+}
+
+.floating-minimized-pill {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--bg-surface-light);
+  border: var(--border-pencil);
+  box-shadow: var(--shadow-sketch);
+  border-radius: var(--radius-doodle-sm);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 30;
+  font-family: 'Patrick Hand', cursive;
+}
+

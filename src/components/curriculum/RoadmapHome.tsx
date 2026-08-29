@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BrainCircuit, ChevronRight, LockKeyhole, Route, Terminal, X } from 'lucide-react';
 import { ThemeToggle } from '../ThemeToggle';
+import { useTheme } from '../../themes/ThemeProvider';
 import { Course, CurriculumItem, UserProgressRecord } from '../../types/curriculum';
 import { ScrimLessonData } from '../../types/scrim';
 import {
@@ -43,6 +44,8 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
 }) => {
   const [openConcept, setOpenConcept] = useState<RoadmapNode | null>(null);
   const [blockedItem, setBlockedItem] = useState<(ItemReadiness & { itemId: string }) | null>(null);
+  const { themeId } = useTheme();
+  const isCyber = themeId === 'cyber';
   const [showLearningCenter, setShowLearningCenter] = useState(false);
   const phases = useMemo(() => buildRoadmap(course, scrims), [course, scrims]);
   const lessonCount = course.modules.reduce(
@@ -349,7 +352,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             aria-modal="true"
             aria-label="Detalle del concepto"
             onClick={(event) => event.stopPropagation()}
-            data-augmented-ui="rm-concept-pop tl-clip tr-clip br-clip bl-clip border inlay"
+            data-augmented-ui={isCyber ? "rm-concept-pop tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
           >
             <button type="button" className="rm-briefing-close" onClick={() => setOpenConcept(null)} aria-label="Cerrar">
               <X size={14} />
@@ -376,7 +379,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             aria-modal="true"
             aria-label="Refuerzo necesario"
             onClick={(event) => event.stopPropagation()}
-            data-augmented-ui="rm-concept-pop tl-clip tr-clip br-clip bl-clip border inlay"
+            data-augmented-ui={isCyber ? "rm-concept-pop tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
           >
             <button type="button" className="rm-briefing-close" onClick={() => setBlockedItem(null)} aria-label="Cerrar">
               <X size={14} />

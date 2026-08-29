@@ -1,0 +1,57 @@
+// Auto-migrated from src/index.css lines 2389-2440
+// Se mantiene 100% compatible — ahora en SCSS modular.
+// Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
+// ==========================================================================
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-main);
+  background-image: radial-gradient(rgba(35, 39, 51, 0.08) 1.2px, transparent 1.2px);
+  background-size: 22px 22px;
+  color: var(--color-text-main);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.dark body,
+body.dark {
+  background-image: radial-gradient(rgba(203, 213, 225, 0.05) 1.2px, transparent 1.2px);
+}
+
+.font-doodle {
+  font-family: 'Patrick Hand', cursive, sans-serif;
+}
+
+.font-hand {
+  font-family: 'Architects Daughter', cursive, sans-serif;
+}
+
+.font-code {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-pencil-light);
+  border-radius: 9999px;
+  border: 1.5px solid var(--bg-surface);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-pencil-soft);
+}
+

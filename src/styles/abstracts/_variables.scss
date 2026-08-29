@@ -1,0 +1,54 @@
+// ==========================================================================
+// Abstracts — Variables
+// Central SCSS variables + CSS-custom-property bridges.
+// No output: only definitions for the rest of the system.
+// ==========================================================================
+
+// --- Breakpoints (single source of truth for @media) ---
+$bp-sm: 680px;
+$bp-md: 720px;
+$bp-lg: 980px;
+$bp-xl: 1200px;
+$bp-2xl: 1500px;
+
+// --- Z-index scale ---
+$z-lesson-gate: 90;
+$z-header: 100;
+$z-floating-browser: 85;
+$z-socratic: 220;
+$z-modal: 200;
+
+// --- Spacing scale (for reference, not yet replacing CSS vars) ---
+$space-xs: 0.25rem;
+$space-sm: 0.5rem;
+$space-md: 1rem;
+$space-lg: 1.5rem;
+$space-xl: 2rem;
+
+// --- CodeSilk brand — canonical SCSS vars (mirror CSS vars) ---
+$brand-yellow: #ffe600;
+$brand-yellow-hover: #fff04d;
+$brand-yellow-soft: #fef08a;
+$ink-pencil: #232733;
+
+// --- Cyber palette (SCSS source, emitted as CSS vars in themes/cyber) ---
+$cyber-bg: #040406;
+$cyber-panel: #0a0a0f;
+$cyber-yellow: #ffe600;
+$cyber-yellow-glow: rgba(255, 230, 0, 0.4);
+$cyber-magenta: #ff007f;
+$cyber-cyan: #00f0ff;
+$cyber-purple: #b026ff;
+$cyber-green: #00ff66;
+$cyber-danger: #ff0055;
+
+// --- Augmented-ui clip tokens (reuse) ---
+$clip-tl: 14px;
+$clip-br: 14px;
+
+// --- Typography ---
+$font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+$font-display: 'Space Grotesk', sans-serif;
+$font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+$font-hand: 'Patrick Hand', cursive;
+$font-doodle: 'Architects Daughter', cursive;

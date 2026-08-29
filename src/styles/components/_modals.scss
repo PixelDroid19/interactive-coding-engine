@@ -1,0 +1,293 @@
+// Auto-migrated from src/index.css lines 4851-5138
+// Se mantiene 100% compatible — ahora en SCSS modular.
+// Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
+// ==========================================================================
+
+/* ==========================================================================
+   Modals, Drawers & Popups (Sketched Notebook Cards)
+   ========================================================================== */
+.modal-backdrop,
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 36, 51, 0.28);
+  z-index: 150;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.modal-backdrop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drawer-backdrop {
+  display: block;
+}
+
+.modal-dialog {
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
+  background: var(--bg-surface-light);
+  border: var(--border-pencil);
+  border-radius: var(--radius-doodle-md);
+  box-shadow: 8px 8px 0px var(--color-text-main);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+}
+
+.modal-header,
+.drawer-header {
+  background: var(--bg-surface);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: var(--border-pencil);
+}
+
+.modal-body,
+.drawer-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.drawer-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 440px;
+  max-width: 95vw;
+  background: var(--bg-surface-light);
+  border-left: var(--border-pencil);
+  box-shadow: -8px 0px 0px var(--color-text-main);
+  display: flex;
+  flex-direction: column;
+  z-index: 155;
+  animation: slideInRight 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ExplainModal Component Styles */
+.explain-modal-title {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Patrick Hand', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-main);
+  line-height: 1.1;
+}
+
+.explain-modal-subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.explain-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1.5px solid var(--color-pencil);
+  background: var(--bg-surface);
+  color: var(--color-text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+}
+
+.explain-close-btn:hover {
+  background: var(--bg-surface-light);
+  transform: translateY(-1px);
+}
+
+.explain-concept-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 4px;
+  border: 1.5px solid var(--color-pencil);
+  color: #0f172a;
+}
+.explain-concept-tag--0 { background: #fef08a; }
+.explain-concept-tag--1 { background: #bae6fd; }
+.explain-concept-tag--2 { background: #bbf7d0; }
+
+.explain-card {
+  background: var(--bg-surface);
+  border: var(--border-pencil);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.explain-card--highlight {
+  background: #fef9c3;
+  border-color: #ca8a04;
+}
+
+.explain-card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.explain-card-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.explain-code-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  background: #e0f2fe;
+  color: #0369a1;
+  padding: 1px 5px;
+  border: 1px solid #7dd3fc;
+  border-radius: 4px;
+}
+
+.explain-modal-footer {
+  padding: 12px 16px 16px;
+  border-top: var(--border-pencil);
+  background: var(--bg-surface);
+}
+
+.explain-footer-btn {
+  width: 100%;
+  padding: 10px 16px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--color-brand);
+  color: var(--color-black);
+  border: 2px solid var(--color-black);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 var(--color-black);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.explain-footer-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 3px 3px 0 var(--color-black);
+}
+
+.roadmap-card,
+.concept-card {
+  background: var(--bg-surface);
+  border: var(--border-pencil);
+  border-radius: var(--radius-doodle-sm);
+  box-shadow: var(--shadow-sketch-sm);
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.roadmap-card:hover,
+.concept-card:hover {
+  transform: translateY(-2px) rotate(-0.5deg);
+  box-shadow: var(--shadow-sketch);
+  background: var(--bg-surface-light);
+}
+
+.roadmap-card-active {
+  background: var(--color-highlighter-cyan);
+  border: var(--border-pencil);
+  box-shadow: var(--shadow-sketch);
+  transform: rotate(0.5deg);
+}
+
+.lesson-num-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-doodle-sm);
+  background: var(--bg-surface-light);
+  border: var(--border-pencil-thin);
+  box-shadow: var(--shadow-sketch-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Patrick Hand', cursive;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-text-main);
+  flex-shrink: 0;
+}
+
+.lesson-num-badge-active {
+  background: var(--color-highlighter-yellow);
+  color: var(--color-text-main);
+  transform: rotate(-3deg);
+}
+
+.lesson-num-badge-completed {
+  background: var(--color-highlighter-mint);
+  color: #14532d;
+}
+
+.quiz-option-btn {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: var(--border-pencil-thin);
+  border-radius: var(--radius-doodle-sm);
+  box-shadow: var(--shadow-sketch-sm);
+  color: var(--color-text-main);
+  font-family: 'Patrick Hand', cursive;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.quiz-option-btn:hover {
+  background: var(--color-highlighter-yellow);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sketch);
+}
+
+.quiz-correct {
+  background: var(--color-highlighter-mint) !important;
+  border: var(--border-pencil) !important;
+  color: #14532d !important;
+  font-weight: 700 !important;
+}
+
+.quiz-wrong {
+  background: #fecdd3 !important;
+  border: var(--border-pencil) !important;
+  color: #9f1239 !important;
+  font-weight: 700 !important;
+}
+

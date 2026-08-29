@@ -1,0 +1,55 @@
+// Cyber — migrado desde src/themes/hud.css líneas 2855-2905
+// Mantiene .hud intacto; ahora usa mixins del sistema de temas.
+// ==========================================================================
+
+/* Responsive behavior: keep functionality usable, then approximate the desktop reference. */
+@media (max-width: 980px) {
+  .hud .course-catalog__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hud .files-sidebar {
+    width: 160px !important;
+    flex-basis: 160px !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .hud .window-topbar {
+    height: auto !important;
+    min-height: 44px !important;
+    padding: 4px 6px !important;
+  }
+
+  .hud .topbar-lesson-title {
+    max-width: 42vw;
+    font-size: 11px !important;
+  }
+
+  .hud .workspace-container {
+    gap: 6px !important;
+    padding: 6px !important;
+  }
+
+  .hud .files-sidebar {
+    width: 100% !important;
+    flex-basis: auto !important;
+    max-height: 140px !important;
+  }
+
+  .hud .editor-window-wrapper.has-floating-preview {
+    margin-right: 0;
+  }
+
+  .hud .logic-runner-panel {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .hud .caption-chip {
+    width: min(94vw, 620px) !important;
+    min-height: 58px;
+    padding: 10px 14px 10px 38px !important;
+    font-size: 11px !important;
+  }
+}

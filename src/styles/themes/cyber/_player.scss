@@ -1,0 +1,182 @@
+// Cyber — migrado desde src/themes/hud.css líneas 712-889
+// Mantiene .hud intacto; ahora usa mixins del sistema de temas.
+// ==========================================================================
+
+/* Timeline */
+.hud .player-bar {
+  min-height: 50px !important;
+  height: 50px !important;
+  max-height: 50px !important;
+  padding: 0 12px !important;
+  gap: 10px !important;
+  border: 0 !important;
+  background: #06060a !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.hud .player-bar-hud-surface {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  pointer-events: none;
+}
+
+.hud .player-bar > :not(.player-bar-hud-surface) {
+  position: relative;
+  z-index: 1;
+}
+
+.hud .play-main-btn {
+  width: 34px !important;
+  height: 34px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--hud-yellow) !important;
+  box-shadow: 0 0 12px var(--hud-yellow-glow) !important;
+  color: #000 !important;
+}
+
+.hud .timestamp-text {
+  color: #e2e8f0 !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 11px !important;
+  letter-spacing: 0.05em !important;
+}
+
+.hud .category-tag {
+  border: 1px solid rgba(255, 0, 127, 0.5) !important;
+  border-radius: 0 !important;
+  background: repeating-linear-gradient(-45deg, rgba(255, 0, 80, 0.25), rgba(255, 0, 80, 0.25) 5px, transparent 5px, transparent 10px) !important;
+  box-shadow: none !important;
+  color: #ff007f !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 10px !important;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  transform: none !important;
+}
+
+.hud .player-center [role="slider"] > div:first-child {
+  background: #111118 !important;
+  border: 1px solid #232334 !important;
+  height: 6px !important;
+  border-radius: 9999px !important;
+  box-shadow: none !important;
+}
+
+.hud .player-center [role="slider"] > div:first-child > div:first-child {
+  background: var(--hud-cyan) !important;
+  box-shadow: 0 0 8px var(--hud-cyan) !important;
+  border-radius: 9999px !important;
+}
+
+.hud .player-center [role="slider"] > div:nth-child(2) {
+  width: 12px !important;
+  height: 12px !important;
+  background: var(--hud-cyan) !important;
+  border: 1px solid #fff !important;
+  box-shadow: 0 0 8px var(--hud-cyan) !important;
+  border-radius: 1px !important;
+}
+
+.hud .player-center [role="slider"] button.rotate-45 {
+  background: var(--hud-yellow) !important;
+  border: 1px solid #000 !important;
+  box-shadow: 0 0 6px var(--hud-yellow-glow) !important;
+}
+
+.hud .player-right {
+  color: #94a3b8 !important;
+}
+
+.hud .player-right button {
+  border-radius: 0 !important;
+  color: #94a3b8 !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 11px !important;
+}
+
+.hud .player-right button:hover {
+  color: #fff !important;
+}
+
+.hud .player-right button[aria-label*="subtítulos"] {
+  background: var(--hud-yellow) !important;
+  color: #000 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 10px !important;
+  border: 0 !important;
+  border-radius: 2px !important;
+}
+
+.hud .player-right input[type="range"] {
+  accent-color: var(--hud-purple) !important;
+  background: #1e1e2d !important;
+}
+
+/* Challenge and explanation overlays & Modals */
+.hud [role="dialog"] > div,
+.hud .modal-dialog {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #08080d !important;
+  box-shadow: 0 0 32px rgba(0, 0, 0, 0.9), 0 0 12px rgba(255, 230, 0, 0.2) !important;
+  color: var(--hud-text) !important;
+  font-family: "Chakra Petch", -apple-system, sans-serif !important;
+}
+
+.hud .modal-dialog h3,
+.hud [role="dialog"] h3 {
+  color: var(--hud-yellow) !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 800 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  text-shadow: 0 0 10px var(--hud-yellow-glow) !important;
+}
+
+.hud .modal-dialog p,
+.hud [role="dialog"] p {
+  color: #cbd5e1 !important;
+  font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+
+.hud .modal-dialog .neu-pill-btn,
+.hud [role="dialog"] .neu-pill-btn {
+  min-height: 38px !important;
+  height: 38px !important;
+  border-radius: 0 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  box-shadow: none !important;
+}
+
+.hud .modal-dialog .btn-brand,
+.hud [role="dialog"] .btn-brand {
+  color: #000000 !important;
+  background: var(--hud-yellow) !important;
+  font-weight: 900 !important;
+}
+
+.hud .modal-header {
+  border-bottom: 1px solid #2b2b35 !important;
+  background: #0b0b10 !important;
+}
+
+.hud .neu-pill-btn,
+.hud .rm-play-btn,
+.hud .rm-enter-btn {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+

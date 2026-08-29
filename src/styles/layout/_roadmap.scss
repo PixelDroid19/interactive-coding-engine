@@ -1,0 +1,298 @@
+// Auto-migrated from src/index.css lines 2779-3071
+// Se mantiene 100% compatible — ahora en SCSS modular.
+// Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
+// ==========================================================================
+
+/* ==========================================================================
+   Reading canvas — Open Cells & AI Engineer Reading Layout
+   ========================================================================== */
+.reading-canvas {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px), #101218;
+  background-size: 88px 100%;
+  scroll-padding-top: 88px;
+}
+
+#reading-concepts-title,
+#reading-lab-title,
+#reading-apply-title,
+#reading-sources-title {
+  scroll-margin-top: 88px;
+}
+
+/* Reading Telemetry Progress Track */
+.reading-progress-track {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.04);
+  z-index: 40;
+  overflow: hidden;
+}
+
+.reading-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #fde047;
+  transition: width 0.1s linear;
+}
+
+.reading-topbar__context {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.reading-time-pill {
+  padding: 3px 9px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+
+.reading-time-icon {
+  color: #fde047;
+}
+
+.reading-time-divider {
+  opacity: 0.4;
+}
+
+.reading-progress-text {
+  color: #fef08a;
+  font-weight: 700;
+}
+
+.reading-page-grid {
+  display: grid;
+  grid-template-columns: minmax(13.5rem, 16rem) minmax(0, 1fr);
+  gap: clamp(24px, 3.5vw, 56px);
+  width: min(100%, 116rem);
+  margin: 0 auto;
+}
+
+.reading-content-flow {
+  display: grid;
+  min-width: 0;
+  gap: clamp(32px, 5vw, 72px);
+  padding-bottom: 80px;
+}
+
+.reading-rail {
+  min-width: 0;
+}
+
+.reading-rail-inner {
+  position: sticky;
+  top: 16px;
+  display: grid;
+  gap: 6px;
+  padding: 16px 12px;
+  border-top: 2px solid #fde047;
+}
+
+.reading-rail-label {
+  margin: 0 0 8px;
+  color: #a1a1aa;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.reading-rail-pill {
+  display: none;
+}
+
+.reading-rail a,
+.reading-rail-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 8px 10px;
+  border-left: 2px solid #3f3f46;
+  color: #d4d4d8;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.reading-rail a:hover,
+.reading-rail a:focus-visible,
+.reading-rail-link:hover {
+  border-left-color: #fde047;
+  background: rgba(253, 224, 71, 0.06);
+  color: #fef9c3;
+  outline: none;
+  transform: translateX(3px);
+}
+
+.reading-keypoints {
+  margin-top: 20px;
+  padding: 16px 12px;
+  border-top: 1px solid #52525b;
+}
+
+.reading-keypoints-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid #fde047;
+  color: #fde047;
+}
+
+.reading-keypoints-eyebrow {
+  display: none;
+}
+
+.reading-keypoints-title,
+.reading-keypoints h2 {
+  margin: 12px 0 0;
+  color: #fef3c7;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 20px;
+}
+
+.reading-keypoints ul {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reading-keypoint-item,
+.reading-keypoints li {
+  display: flex;
+  gap: 8px;
+  color: #d4d4d8;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.reading-keypoint-check,
+.reading-keypoints li svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #fde047;
+}
+
+.reading-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(17rem, 0.5fr);
+  align-items: end;
+  gap: clamp(24px, 5vw, 84px);
+}
+
+.reading-pulse-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fde047;
+  box-shadow: 0 0 8px #fde047;
+  animation: cyber-dot-blink 1.6s infinite ease-in-out;
+}
+
+.reading-hero-sys-badge {
+  display: none;
+}
+
+.reading-hero h1:focus,
+.reading-hero h1:focus-visible {
+  outline: none;
+}
+
+.reading-hero-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-self: stretch;
+  min-width: min(100%, 320px);
+  overflow: hidden;
+  border: 1px solid #3f3f46;
+  background: rgba(9, 9, 11, 0.72);
+}
+
+.reading-hero-meta span,
+.reading-meta-cell {
+  flex: 1;
+  display: flex;
+  min-height: 76px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 12px 14px;
+  border-left: 1px solid #3f3f46;
+  color: #a1a1aa;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.reading-hero-meta span:first-child {
+  border-left: 0;
+}
+
+.reading-hero-meta strong {
+  color: #fef08a;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 24px;
+  line-height: 1.1;
+  margin-bottom: 2px;
+}
+
+.reading-overview {
+  min-width: 0;
+}
+
+.reading-zone-dot {
+  display: none;
+}
+
+.reading-concepts-zone {
+  padding: clamp(24px, 3vw, 42px) 0 0;
+  border-top: 1px solid #52525b;
+}
+
+.reading-concept-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 20px;
+  border-top: 1px solid #3f3f46;
+  border-left: 1px solid #3f3f46;
+}
+
+.reading-concept-block {
+  position: relative;
+  overflow: hidden;
+  padding: 22px 26px;
+  border-right: 1px solid #3f3f46;
+  border-bottom: 1px solid #3f3f46;
+  background: rgba(21, 23, 29, 0.86);
+}
+
+.reading-concept-block:nth-child(4n + 2),
+.reading-concept-block:nth-child(4n + 3) {
+  background: rgba(12, 14, 19, 0.8);
+}
+
+.reading-concept-number {
+  color: #71717a;
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  font-weight: 700;
+}
+

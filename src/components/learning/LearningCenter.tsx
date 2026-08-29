@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BookOpenText, Brain, ClipboardCheck, LockKeyhole, MessagesSquare, Route, X } from 'lucide-react';
+import { useTheme } from '../../themes/ThemeProvider';
 import type { Course } from '../../types/curriculum';
 import type { ExamEvaluation, ExamQuestion } from '../../learning/exam';
 import type { LearningProfile, NotebookEntry, ReviewRating } from '../../learning/types';
@@ -30,6 +31,8 @@ const TABS: Array<{ id: LearningTab; label: string; icon: React.ReactNode; disab
 
 export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile, onClose, onRateReview, onSaveNotebook, onCompleteExam, onReviewReinforcement }) => {
   const [tab, setTab] = useState<LearningTab>('review');
+  const { themeId } = useTheme();
+  const isCyber = themeId === 'cyber';
   const dueCount = profile.reviews.filter((entry) => entry.courseId === course.id && entry.dueAt <= Date.now()).length;
   const reinforcementCount = profile.tutor.reinforcements.filter((entry) => entry.courseId === course.id && !entry.reviewed).length;
   const noteCount = profile.notebook.filter((entry) => entry.courseId === course.id).length;
@@ -41,7 +44,7 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
         aria-modal="true"
         aria-label="Centro de aprendizaje"
         onClick={(event) => event.stopPropagation()}
-        data-augmented-ui="learning-center-modal tl-clip tr-clip br-clip bl-clip border inlay"
+        data-augmented-ui={isCyber ? "learning-center-modal tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
       >
         <header><div><span>TU PROGRESO</span><h2>Centro de aprendizaje</h2><p>Repasa, explica y organiza lo que estás aprendiendo en {course.title}.</p></div><button type="button" onClick={onClose} aria-label="Cerrar centro de aprendizaje"><X size={19} /></button></header>
         <div className="learning-center__summary" aria-label="Resumen de aprendizaje">

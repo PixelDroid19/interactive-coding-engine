@@ -5,7 +5,24 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CellsPreviewWorkbench, type ComponentDemo } from './CellsPreviewWorkbench';
 
-const cellsStudioCss = readFileSync('src/index.css', 'utf8');
+import { readFileSync as readFileSyncNode } from 'node:fs';
+function readCellsStudioCss(): string {
+  // 100% SCSS modular — sin legacy. Lee agregado SCSS.
+  const { readdirSync, statSync } = require('node:fs');
+  const { join } = require('node:path');
+  const files: string[] = [];
+  function walk(dir: string) {
+    for (const e of readdirSync(dir)) {
+      const full = join(dir, e);
+      const st = statSync(full);
+      if (st.isDirectory()) walk(full);
+      else if (e.endsWith('.scss')) files.push(full);
+    }
+  }
+  walk('src/styles');
+  return files.map((f) => readFileSyncNode(f, 'utf8')).join('\n');
+}
+const cellsStudioCss = readCellsStudioCss();
 
 const demo: ComponentDemo = {
   tagName: 'academy-learning-card',

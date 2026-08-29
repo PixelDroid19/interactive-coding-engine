@@ -40,10 +40,16 @@ export const ThemeProvider: React.FC<React.PropsWithChildren> = ({ children }) =
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
 
+const DEFAULT_THEME_VALUE: ThemeContextValue = {
+  themeId: 'normal',
+  theme: THEMES.normal,
+  setTheme: () => {},
+  toggleTheme: () => {},
+};
+
 export function useTheme(): ThemeContextValue {
   const value = useContext(ThemeContext);
-  if (!value) throw new Error('useTheme debe usarse dentro de ThemeProvider');
-  return value;
+  return value ?? DEFAULT_THEME_VALUE;
 }
 
 export function useOptionalTheme(): ThemeContextValue | null {

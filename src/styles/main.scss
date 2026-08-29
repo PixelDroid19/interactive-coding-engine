@@ -1,0 +1,70 @@
+// ==========================================================================
+// CodeSilk Studio — main entry (SCSS)
+// Reemplaza src/index.css + src/themes/hud.css + hud-augmented.css
+// Tailwind primero, luego tokens/base, luego dominios, luego temas cyber.
+// Cada parcial es SCSS válido; el sistema de temas usa mixins centralizados.
+// ==========================================================================
+
+// --- Abstracts: sin output, solo variables/mixins/mapas de tema ---
+@use "abstracts/variables" as *;
+@use "abstracts/mixins" as *;
+@use "abstracts/themes" as *;
+
+// --- Base: tokens, reset, tipografía, scrollbars, global ---
+@use "base/tokens" as *;
+@use "base/reset" as *;
+
+// --- Células / Lab (mantiene orden original) ---
+@use "cells/shell" as *;
+@use "cells/lab" as *;
+@use "cells/studio" as *;
+@use "cells/extras" as *;
+@use "cells/workbench" as *;
+
+// --- Layout / Shell ---
+@use "layout/app-shell" as *;
+@use "layout/catalog" as *;
+@use "layout/roadmap" as *;
+@use "layout/responsive" as *;
+@use "layout/debug-layout" as *;
+
+// --- Componentes (orden original de index.css) ---
+@use "components/socratic-tutor" as *;
+@use "components/code" as *;
+@use "components/player" as *;
+@use "components/sidebar" as *;
+@use "components/editor" as *;
+@use "components/browser" as *;
+@use "components/challenges" as *;
+@use "components/modals" as *;
+@use "components/console" as *;
+@use "components/timeline" as *;
+@use "components/debug-legacy" as *;
+@use "components/learning" as *;
+@use "components/reasoning" as *;
+@use "components/cyber-toggle" as *;
+@use "components/learning-center" as *;
+
+// --- Temas: Dark (CodeSilk oscuro) ---
+@use "themes/dark" as *;
+
+// --- Tema Cyber (HUD): tokens + superficies + páginas ---
+// El orden replica hud.css original para no romper la cascada.
+@use "themes/cyber/tokens" as *;
+@use "themes/cyber/layout" as *;
+@use "themes/cyber/sidebar" as *;
+@use "themes/cyber/editor" as *;
+@use "themes/cyber/browser" as *;
+@use "themes/cyber/player" as *;
+@use "themes/cyber/catalog" as *;
+@use "themes/cyber/roadmap" as *;
+@use "themes/cyber/reading" as *;
+@use "themes/cyber/modals" as *;
+@use "themes/cyber/responsive" as *;
+
+// --- Tema Cyber Augmented (augmented-ui) ---
+@use "themes/cyber-augmented/core" as *;
+@use "themes/cyber-augmented/components" as *;
+@use "themes/cyber-augmented/cards" as *;
+@use "themes/cyber-augmented/reading" as *;
+@use "themes/cyber-augmented/modals" as *;

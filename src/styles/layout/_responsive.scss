@@ -1,0 +1,167 @@
+// Auto-migrated from src/index.css lines 6602-6763
+// Se mantiene 100% compatible — ahora en SCSS modular.
+// Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
+// ==========================================================================
+
+/* Responsive player and workspace */
+.playground-files {
+  width: 12rem;
+  min-width: 12rem;
+}
+
+.playground-editor {
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .playground-header {
+    height: auto;
+    min-height: 44px;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .playground-controls {
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .playground-actions {
+    width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .playground-templates {
+    flex: 0 0 auto;
+  }
+  .playground-layout {
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  .playground-files {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    max-height: 180px;
+    border-right: 0;
+    border-bottom: 1px solid rgb(39 39 42 / 0.8);
+  }
+  .playground-editor {
+    width: 100%;
+    min-height: 52vh;
+    flex: 0 0 auto;
+    border-right: 0;
+    border-bottom: 1px solid rgb(39 39 42 / 0.8);
+  }
+  .playground-preview {
+    width: 100%;
+    min-height: 44vh;
+    flex: 0 0 auto;
+  }
+  .workspace-container {
+    flex-direction: column;
+    padding: 6px;
+    gap: 6px;
+  }
+  .files-sidebar {
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: 40%;
+  }
+  .lesson-stage {
+    flex-direction: column;
+  }
+  .logic-stage .editor-window-wrapper {
+    height: auto;
+    min-height: 0;
+    flex: 3 1 0;
+  }
+  .logic-runner-panel {
+    width: 100%;
+    min-width: 0;
+    min-height: 180px;
+    max-height: none;
+    flex: 2 1 0;
+  }
+  .editor-window-wrapper {
+    min-height: 320px;
+  }
+  .player-bar {
+    height: 52px;
+    min-height: 52px;
+    max-height: 52px;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 0 8px;
+    overflow: visible;
+  }
+  .player-center {
+    margin: 0 4px;
+    min-width: 0;
+  }
+  .player-left {
+    gap: 6px;
+  }
+  .player-right {
+    gap: 4px;
+  }
+  .browser-window.fixed {
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    min-width: 0;
+    max-width: calc(100vw - 16px);
+  }
+  .floating-browser-wrapper {
+    max-width: calc(100vw - 16px);
+  }
+  .window-topbar {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .window-topbar .window-titlebar-left {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+  .window-titlebar-actions {
+    width: 100%;
+    min-width: 0;
+    flex: 1 1 100%;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    padding: 1px 1px 4px;
+    scrollbar-width: none;
+  }
+  .window-titlebar-actions::-webkit-scrollbar { display: none; }
+  .window-titlebar-actions > * {
+    flex: 0 0 auto;
+  }
+  .topbar-lesson-title {
+    max-width: none;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .window-topbar .window-titlebar-left {
+    gap: 6px;
+  }
+  .window-topbar .window-titlebar-left .neu-pill-btn {
+    min-width: 40px;
+    min-height: 40px;
+    padding-inline: 10px;
+  }
+  .window-topbar .window-titlebar-left .neu-pill-btn span {
+    display: none;
+  }
+  .window-topbar .topbar-lesson-title {
+    font-size: 12px;
+  }
+}
+

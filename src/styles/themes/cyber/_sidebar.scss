@@ -1,0 +1,188 @@
+// Cyber — migrado desde src/themes/hud.css líneas 202-385
+// Mantiene .hud intacto; ahora usa mixins del sistema de temas.
+// ==========================================================================
+
+/* File explorer */
+.hud .files-sidebar {
+  width: 185px !important;
+  flex: 0 0 185px !important;
+  border: 0 !important;
+  background: #0a0a0f !important;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 0) !important;
+  background-size: 14px 14px !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.hud .files-tree-panel {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  overflow: hidden !important;
+}
+
+.hud .tree-header {
+  min-height: 38px;
+  margin: 0 !important;
+  padding: 8px 12px !important;
+  border-bottom: 1px solid rgba(255, 230, 0, 0.25) !important;
+  background: transparent !important;
+  position: relative;
+  z-index: 2;
+  overflow: visible !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+  width: auto !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  align-self: stretch !important;
+}
+
+.hud .tree-header .round-icon-btn {
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+  position: relative;
+  z-index: 3;
+  min-width: 26px !important;
+  min-height: 26px !important;
+  width: 26px !important;
+  height: 26px !important;
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  display: grid !important;
+  place-items: center !important;
+}
+
+.hud .files-list {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 8px 6px !important;
+  align-self: stretch !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.hud .files-list > div {
+  width: auto !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  align-self: stretch !important;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hud .tree-title {
+  color: var(--hud-yellow) !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase;
+}
+
+.hud .tree-title::before {
+  content: "// ";
+}
+
+.hud .file-item-btn {
+  min-height: 38px;
+  margin: 0 !important;
+  padding: 6px 8px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #111118 !important;
+  box-shadow: none !important;
+  color: #cbd5e1 !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 12px !important;
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  align-self: stretch !important;
+  overflow: hidden !important;
+}
+
+.hud .file-item-btn:hover {
+  background: #181822 !important;
+  color: #fff !important;
+  transform: none !important;
+}
+
+.hud .file-item-btn-active {
+  background: #171705 !important;
+  color: var(--hud-yellow) !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+.hud .file-item-btn-active > button::after {
+  content: "▶";
+  margin-left: auto;
+  color: var(--hud-yellow);
+  font-size: 9px;
+}
+
+.hud .badge-html,
+.hud .badge-css,
+.hud .badge-js {
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 2px !important;
+  transform: none !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+.hud .badge-html {
+  background: rgba(234, 88, 12, 0.35) !important;
+  color: #fb923c !important;
+  border: 1px solid rgba(251, 146, 60, 0.4) !important;
+}
+
+.hud .badge-css {
+  background: rgba(8, 189, 221, 0.35) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.4) !important;
+}
+
+.hud .badge-js {
+  background: var(--hud-yellow) !important;
+  color: #000 !important;
+  border: 0 !important;
+  font-weight: 900 !important;
+}
+
+.hud button[aria-label="Abrir conceptos"] {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #120817 !important;
+  color: var(--hud-magenta) !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 11px !important;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+

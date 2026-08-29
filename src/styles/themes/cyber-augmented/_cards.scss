@@ -1,0 +1,105 @@
+// Cyber Augmented — desde src/themes/hud-augmented.css líneas 320-420
+// augmented-ui HUD, modularizado.
+// ==========================================================================
+
+/* Panels, Modals, Dialogs */
+.hud [data-augmented-ui~="hud-panel"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(135deg, var(--hud-yellow), var(--hud-purple));
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #08080d;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 14px;
+  --aug-tr: 8px;
+  --aug-br: 14px;
+  --aug-bl: 8px;
+  filter: drop-shadow(0 0 16px rgba(255, 230, 0, 0.18));
+}
+
+/* Course Cards */
+.hud [data-augmented-ui~="hud-card"] {
+  --aug-border-all: 2px;
+  --aug-border-bg: linear-gradient(135deg, rgba(255, 230, 0, 0.7), rgba(0, 240, 255, 0.5));
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #08080f;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 14px;
+  --aug-br: 14px;
+  filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.2));
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hud [data-augmented-ui~="hud-card"].course-card--green {
+  --aug-border-bg: #00ff66;
+  filter: drop-shadow(0 0 14px rgba(0, 255, 102, 0.25));
+}
+
+.hud [data-augmented-ui~="hud-card"].course-card--yellow {
+  --aug-border-bg: #ffe600;
+  filter: drop-shadow(0 0 14px rgba(255, 230, 0, 0.25));
+}
+
+.hud [data-augmented-ui~="hud-card"].course-card--red {
+  --aug-border-bg: #ff0055;
+  filter: drop-shadow(0 0 14px rgba(255, 0, 85, 0.28));
+}
+
+.hud [data-augmented-ui~="hud-card"]:hover {
+  transform: translateY(-5px) scale(1.01);
+}
+
+.hud [data-augmented-ui~="hud-card"].course-card--green:hover {
+  filter: drop-shadow(0 0 24px rgba(0, 255, 102, 0.5));
+}
+
+.hud [data-augmented-ui~="hud-card"].course-card--yellow:hover {
+  filter: drop-shadow(0 0 24px rgba(255, 230, 0, 0.55));
+}
+
+.hud [data-augmented-ui~="hud-card"].course-card--red:hover {
+  filter: drop-shadow(0 0 24px rgba(255, 0, 85, 0.55));
+}
+
+/* Course Card Icon Box (augmented-ui tr-clip bl-clip border inlay) */
+.hud [data-augmented-ui~="hud-icon"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: var(--card-accent, #ffe600);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #0a0a10;
+  --aug-inlay-opacity: 1;
+  --aug-tr: 12px;
+  --aug-bl: 12px;
+  filter: drop-shadow(0 0 10px var(--card-glow-color, rgba(255, 230, 0, 0.4)));
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), filter 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hud .course-card:hover [data-augmented-ui~="hud-icon"] {
+  transform: scale(1.08) rotate(-2deg);
+  filter: drop-shadow(0 0 18px var(--card-accent, #ffe600));
+}
+
+/* Primary Button in Cards */
+.hud [data-augmented-ui~="hud-primary"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #ffe600;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #ffe600;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 8px;
+  --aug-br: 8px;
+  filter: drop-shadow(0 0 12px rgba(255, 230, 0, 0.6));
+}
+
+/* Roadmap Hero Briefing Box */
+.hud [data-augmented-ui~="hud-hero"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: var(--hud-yellow);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #07080e;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 12px;
+  --aug-tr: 6px;
+  --aug-br: 12px;
+  --aug-bl: 6px;
+}
+

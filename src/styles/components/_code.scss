@@ -1,0 +1,438 @@
+// Auto-migrated from src/index.css lines 3072-3504
+// Se mantiene 100% compatible — ahora en SCSS modular.
+// Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
+// ==========================================================================
+
+/* Code Snippet Terminals in Reading Lessons */
+.reading-code-terminal {
+  margin-top: 12px;
+  border-radius: 6px;
+  border: 1px solid #3f3f46;
+  background: #0c0e14;
+  overflow: hidden;
+}
+
+.reading-code-terminal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.reading-code-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.reading-code-dots .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.reading-code-dots .dot--red { background: #ef4444; }
+.reading-code-dots .dot--yellow { background: #f59e0b; }
+.reading-code-dots .dot--green { background: #10b981; }
+
+.reading-code-label {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #71717a;
+  letter-spacing: 0.08em;
+}
+
+.reading-code-pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  padding: 12px 14px;
+  margin: 0;
+  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e2e8f0;
+}
+
+.reading-concept-block pre,
+.reading-curiosity pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Syntax Highlighting Tokens */
+.syntax-token {
+  display: inline;
+}
+
+.syntax-comment {
+  color: #64748b;
+  font-style: italic;
+}
+
+.syntax-string {
+  color: #86efac;
+}
+
+.syntax-keyword {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+.syntax-number {
+  color: #fca5a5;
+}
+
+.syntax-punct {
+  color: #cbd5e1;
+}
+
+.syntax-ident {
+  color: #f1f5f9;
+}
+
+.reading-caption-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #a1a1aa;
+}
+
+.reading-caption-arrow {
+  color: #fde047;
+}
+
+.reading-curiosity {
+  grid-column: 1 / -1;
+  border-right: 1px solid #155e75;
+  border-bottom: 1px solid #155e75;
+  background: rgba(8, 47, 73, 0.24);
+}
+
+.reading-cursive-heading {
+  font-family: 'Patrick Hand', cursive;
+}
+
+.reading-zone-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.reading-zone-heading > span {
+  color: #fde047;
+  font-family: 'Fira Code', monospace;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.reading-zone-heading p {
+  margin: 0;
+  color: #fde047;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.reading-zone-heading h2 {
+  margin: 2px 0 0;
+  color: #f4f4f5;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(20px, 2vw, 28px);
+}
+
+.reading-lab-zone {
+  min-width: 0;
+  padding: clamp(28px, 4vw, 54px);
+  border-top: 1px solid #713f12;
+  border-bottom: 1px solid #713f12;
+  background: #0b0d14;
+}
+
+.reading-apply-zone {
+  padding-top: clamp(24px, 3vw, 40px);
+  border-top: 1px solid #52525b;
+}
+
+.reading-apply-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(18rem, 0.75fr);
+  gap: clamp(20px, 3vw, 40px);
+}
+
+.reading-faq-zone,
+.reading-transfer-zone {
+  padding: clamp(22px, 3vw, 34px);
+  border: 1px solid #3f3f46;
+  background: rgba(9, 9, 11, 0.72);
+}
+
+.reading-transfer-zone {
+  border-top-color: #fde047;
+}
+
+.reading-library-zone {
+  padding: clamp(24px, 3vw, 42px);
+  border-top: 2px solid #fde047;
+  border-bottom: 1px solid #52525b;
+  background: linear-gradient(90deg, rgba(113, 63, 18, 0.2), transparent 44%), rgba(9, 9, 11, 0.68);
+}
+
+.reading-source-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 0;
+  margin: 24px 0 0;
+  padding: 0;
+  border-top: 1px solid #3f3f46;
+  border-left: 1px solid #3f3f46;
+  list-style: none;
+}
+
+.reading-source-grid li,
+.reading-source-card {
+  display: flex;
+  min-height: 11rem;
+  flex-direction: column;
+  padding: clamp(20px, 2vw, 28px);
+  border-right: 1px solid #3f3f46;
+  border-bottom: 1px solid #3f3f46;
+  background: rgba(16, 18, 18, 0.72);
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.reading-source-grid li:hover,
+.reading-source-card:hover {
+  background: rgba(39, 39, 42, 0.72);
+  transform: translateY(-2px);
+}
+
+.reading-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 28px 0 64px;
+  border-top: 1px solid #52525b;
+}
+
+.ai-lab-shell {
+  container-name: ai-lab;
+  container-type: inline-size;
+}
+
+@container ai-lab (min-width: 70rem) {
+  .ai-lab-workflow {
+    display: grid;
+    grid-template-columns: minmax(0, 1.18fr) minmax(25rem, 0.82fr);
+    align-items: start;
+    gap: 24px;
+  }
+
+  .ai-lab-runtime {
+    position: sticky;
+    top: 16px;
+    display: block !important;
+  }
+
+  .ai-lab-runtime > div + div {
+    margin-top: 24px !important;
+  }
+}
+
+@media (max-width: 1199px) {
+  .reading-page-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reading-rail-inner {
+    position: static;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .reading-rail-label {
+    grid-column: 1 / -1;
+  }
+
+  .reading-keypoints {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1023px) {
+  .reading-hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .reading-apply-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reading-hero-meta {
+    width: 100%;
+  }
+}
+
+@media (max-width: 639px) {
+  .reading-topbar {
+    min-height: 3.5rem;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    padding: 0.45rem 0.6rem;
+  }
+
+  .reading-topbar .window-titlebar-left {
+    min-width: 0;
+    flex: 1;
+    gap: 0.45rem;
+  }
+
+  .reading-topbar .neu-pill-btn {
+    min-width: 2.55rem;
+    min-height: 2.55rem;
+    padding-inline: 0.65rem;
+  }
+
+  .reading-topbar .neu-pill-btn span {
+    display: none;
+  }
+
+  .reading-topbar__context {
+    flex: 1;
+    gap: 0.45rem;
+    overflow: hidden;
+  }
+
+  .reading-topbar .category-tag {
+    flex: none;
+    min-height: 2.4rem;
+    display: inline-flex;
+    align-items: center;
+    padding-inline: 0.65rem;
+    font-size: 0.76rem;
+    transform: none;
+  }
+
+  .reading-topbar .topbar-lesson-title {
+    max-width: none;
+    min-width: 0;
+    font-size: 0.78rem;
+  }
+
+  .reading-canvas {
+    background-size: 44px 100%;
+    padding: 0.75rem !important;
+  }
+
+  .reading-rail-inner {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding: 0.5rem;
+    border: 1px solid #343842;
+    background: rgb(12 14 19 / 96%);
+    box-shadow: 0 8px 22px rgb(0 0 0 / 30%);
+  }
+
+  .reading-rail-label,
+  .reading-keypoints {
+    display: none;
+  }
+
+  .reading-rail a {
+    flex: none;
+    min-height: 2.5rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid #2f3440;
+    border-left-width: 1px;
+    background: #12151c;
+    font-size: 0.76rem;
+  }
+
+  .reading-concept-grid {
+    grid-template-columns: 1fr;
+    margin-top: 14px;
+  }
+
+  .reading-concept-block { padding: 20px; }
+
+  .reading-curiosity {
+    grid-column: auto;
+  }
+
+  .reading-lab-zone,
+  .reading-library-zone {
+    padding: 24px 12px;
+  }
+
+  .reading-hero-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .reading-hero-meta span {
+    min-height: 54px;
+    border-top: 1px solid #3f3f46;
+    border-left: 0;
+  }
+
+  .reading-hero-meta span:first-child {
+    border-top: 0;
+  }
+
+  .reading-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .reading-zone-heading {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .reading-zone-heading h2 {
+    font-size: 1.25rem;
+  }
+}
+
+.topbar-lesson-title {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.category-tag {
+  background: var(--color-highlighter-yellow);
+  border: var(--border-pencil-thin);
+  box-shadow: var(--shadow-sketch-sm);
+  color: var(--color-text-main);
+  font-family: 'Patrick Hand', cursive;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 3px 12px;
+  border-radius: var(--radius-doodle-sm);
+  letter-spacing: 0.02em;
+  transform: rotate(-1deg);
+  transition: all 0.15s ease;
+}
+
+.category-tag:hover {
+  transform: rotate(1deg) scale(1.03);
+}
+

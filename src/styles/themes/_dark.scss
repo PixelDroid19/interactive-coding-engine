@@ -1,0 +1,72 @@
+// Auto-migrated from src/index.css lines 2322-2388
+// Se mantiene 100% compatible — ahora en SCSS modular.
+// Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
+// ==========================================================================
+
+/* ==========================================================================
+   Dark Theme: Blackboard, Blueprint & Charcoal Studio
+   ========================================================================== */
+.dark,
+html.dark,
+body.dark {
+  --bg-main: #0d0f15;
+  --bg-surface: #131720;
+  --bg-surface-light: #1b202c;
+  --bg-surface-dark: #0a0c10;
+  --bg-surface-pressed: #151924;
+
+  --bg-editor: #0c0e14;
+  --bg-editor-tabs: #08090d;
+  --bg-editor-gutter: #0a0c11;
+  --bg-browser: #141722;
+  --bg-browser-header: #10131c;
+  --bg-browser-bar: #191c28;
+  --bg-console: #0a0c10;
+  --bg-console-log: #07080a;
+
+  --color-pencil: #475569;
+  --color-pencil-soft: #94a3b8;
+  --color-pencil-light: #64748b;
+  --color-sketch-shadow: #050608;
+
+  --color-highlighter-yellow: #ca8a04;
+  --color-highlighter-cyan: #0284c7;
+  --color-highlighter-pink: #be185d;
+  --color-highlighter-mint: #15803d;
+
+  --color-primary: #38bdf8;
+  --color-primary-hover: #7dd3fc;
+  --color-accent: #fb7185;
+  --color-text-main: #f8fafc;
+  --color-text-muted: #94a3b8;
+  --color-text-subtle: #64748b;
+
+  /* Brand stays same yellow in dark, contrast stays dark for legibility */
+  --color-brand: #ffe600;
+  --color-brand-hover: #fff04d;
+  --color-brand-contrast: #0f172a;
+  --color-brand-contrast-soft: #111;
+  --color-inverse: #f8fafc;
+  --color-inverse-muted: #cbd5e1;
+  --bg-nav: rgba(11, 13, 18, 0.94);
+  --border-nav: #475569;
+  --color-black: #000;
+  --color-white: #fff;
+
+  /* Semáforo niveles — mismos en dark para legibilidad */
+  --course-beginner: #86efac;
+  --course-beginner-soft: #bbf7d0;
+  --course-intermediate: #ffe600;
+  --course-advanced: #fca5a5;
+  --course-advanced-soft: #fecdd3;
+
+  --border-pencil: 2px solid #374151;
+  --border-pencil-thin: 1.5px solid #374151;
+  --border-pencil-dashed: 2px dashed var(--color-pencil-soft);
+  --shadow-sketch: 3px 3px 0px var(--color-sketch-shadow);
+  --shadow-sketch-sm: 2px 2px 0px var(--color-sketch-shadow);
+  --shadow-sketch-lg: 5px 5px 0px var(--color-sketch-shadow);
+  --shadow-sketch-hover: 4px 5px 0px var(--color-sketch-shadow);
+  --shadow-sketch-pressed: 1px 1px 0px var(--color-sketch-shadow);
+}
+

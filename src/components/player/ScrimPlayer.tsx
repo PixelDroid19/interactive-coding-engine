@@ -33,6 +33,7 @@ import {
 
 import { NavigationState } from '../../engine/navigation';
 import { ThemeToggle } from '../ThemeToggle';
+import { useTheme } from '../../themes/ThemeProvider';
 import { LanguageSelector } from '../runtime/LanguageSelector';
 
 interface ScrimPlayerProps {
@@ -70,6 +71,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   onCompleted,
   onFeedback,
 }) => {
+  const { themeId } = useTheme();
+  const isCyber = themeId === 'cyber';
   const [playerState, dispatch] = useReducer(playerReducer, lessonData.id, createInitialState);
   // Playback & workspace state
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() => cloneWorkspace(lessonData.initialWorkspace));
@@ -1045,7 +1048,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Continuar lección">
           <div
             className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]"
-            data-augmented-ui="scrim-confirm-modal tl-clip tr-clip br-clip bl-clip border inlay"
+            data-augmented-ui={isCyber ? "scrim-confirm-modal tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
           >
             <h3 className="font-bold text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Cómo quieres continuar?</h3>
             <p className="text-sm text-slate-300 mt-2">Puedes continuar desde donde lo dejaste la última vez o comenzar la lección desde cero.</p>
@@ -1061,7 +1064,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Cambiar de momento">
           <div
             className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]"
-            data-augmented-ui="scrim-confirm-modal tl-clip tr-clip br-clip bl-clip border inlay"
+            data-augmented-ui={isCyber ? "scrim-confirm-modal tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
           >
             <h3 className="font-bold">¿Ir a otro momento de la lección?</h3>
             <p className="text-sm text-slate-300 mt-2">Tienes cambios sin guardar. Puedes descartarlos para cambiar de momento o seguir editando aquí.</p>
@@ -1077,7 +1080,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Volver a la lección">
           <div
             className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]"
-            data-augmented-ui="scrim-confirm-modal tl-clip tr-clip br-clip bl-clip border inlay"
+            data-augmented-ui={isCyber ? "scrim-confirm-modal tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
           >
             <h3 className="font-bold">¿Volver al contenido de la lección?</h3>
             <p className="text-sm text-slate-300 mt-2">Al volver se descartarán los cambios que hiciste mientras practicabas.</p>
@@ -1102,7 +1105,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         <div className="fixed inset-0 z-[140] flex items-center justify-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label="Salir con cambios">
           <div
             className="modal-dialog bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl p-5 max-w-md w-full shadow-[4px_4px_0_#000]"
-            data-augmented-ui="scrim-confirm-modal tl-clip tr-clip br-clip bl-clip border inlay"
+            data-augmented-ui={isCyber ? "scrim-confirm-modal tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
           >
             <h3 className="font-bold">¿Salir de esta pantalla?</h3>
             <p className="text-sm text-slate-300 mt-2">Tienes cambios sin guardar. Puedes guardarlos para continuar después o descartarlos antes de salir.</p>
@@ -1266,7 +1269,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       {showClosure && !closureConfirmed && (
         <div
           className="scrim-closure-modal fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl shadow-[4px_4px_0_#000] p-4 max-w-lg w-[90%]"
-          data-augmented-ui="scrim-closure-modal tl-clip tr-clip br-clip bl-clip border inlay"
+          data-augmented-ui={isCyber ? "scrim-closure-modal tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
         >
           <h4 className="scrim-closure-title font-bold text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Ejecutaste tus dos mensajes?</h4>
           <p className="scrim-closure-text text-xs text-slate-300 mt-1">Abre la consola y comprueba que los dos textos aparecen en el mismo orden que tus instrucciones. Después confirma para completar la clase.</p>
@@ -1286,7 +1289,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       {isCompleted && (
         <div
           className="scrim-completion-banner fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-emerald-50 border-2 border-emerald-700 rounded-xl shadow-[4px_4px_0_#000] p-3 flex flex-wrap items-center gap-2 max-w-xl w-[90%]"
-          data-augmented-ui="scrim-completion-banner tl-clip tr-clip br-clip bl-clip border inlay"
+          data-augmented-ui={isCyber ? "scrim-completion-banner tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
         >
           <span className="scrim-completion-badge text-emerald-700 font-bold text-sm">✓ Clase completada</span>
           {onFeedback && feedbackState === 'idle' && (

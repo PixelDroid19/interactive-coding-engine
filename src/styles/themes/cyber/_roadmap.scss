@@ -1,0 +1,680 @@
+// Cyber — migrado desde src/themes/hud.css líneas 1192-1867
+// Mantiene .hud intacto; ahora usa mixins del sistema de temas.
+// ==========================================================================
+
+/* Roadmap */
+.hud .roadmap-home {
+  background: #020204 !important;
+  color: #f8fafc !important;
+}
+
+.hud .rm-nav {
+  height: 48px !important;
+  border-bottom: 2px solid var(--hud-yellow) !important;
+  background: #040407 !important;
+  box-shadow: 0 0 16px rgba(255, 230, 0, 0.25) !important;
+}
+
+.hud .rm-brand .rm-logo {
+  border: 1.5px solid var(--hud-yellow) !important;
+  background: #0a0a0f !important;
+  color: var(--hud-yellow) !important;
+  border-radius: 4px !important;
+}
+
+.hud .rm-wordmark {
+  color: #ffffff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 15px !important;
+  letter-spacing: .08em !important;
+  text-transform: uppercase !important;
+}
+
+.hud .rm-wordmark span {
+  background: #ffe600 !important;
+  color: #000000 !important;
+  border: 0 !important;
+  border-radius: 3px !important;
+  padding: 1px 6px !important;
+  font-weight: 900 !important;
+  text-shadow: none !important;
+}
+
+.hud .rm-play-btn {
+  border: 1.5px solid #272733 !important;
+  background: #0d0d14 !important;
+  color: #e2e8f0 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 11px !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  border-radius: 4px !important;
+  padding: 5px 12px !important;
+  transition: all 0.15s ease;
+}
+
+.hud .rm-play-btn:hover {
+  border-color: var(--hud-yellow) !important;
+  color: var(--hud-yellow) !important;
+  box-shadow: 0 0 10px var(--hud-yellow-glow) !important;
+}
+
+.hud .rm-main {
+  background:
+    linear-gradient(rgba(255, 230, 0, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 230, 0, 0.02) 1px, transparent 1px),
+    #020204 !important;
+  background-size: 28px 28px !important;
+}
+
+.hud .rm-hero,
+.hud .rm-empty {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #06060a !important;
+  box-shadow: none !important;
+  color: #fff !important;
+  padding: 24px 28px !important;
+}
+
+.hud .rm-concept-backdrop {
+  background: rgba(2, 2, 4, 0.8) !important;
+  backdrop-filter: blur(4px);
+}
+
+.hud .rm-concept-pop {
+  background: #0b0d16 !important;
+  border: 1px solid rgba(0, 240, 255, 0.4) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85) !important;
+  padding: 22px 22px 18px !important;
+  color: #fff !important;
+  position: relative !important;
+}
+
+.hud .rm-concept-pop h2 {
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 20px !important;
+  color: #ffffff !important;
+  margin: 10px 0 8px !important;
+}
+
+.hud .rm-concept-pop p {
+  font-family: "Space Grotesk", sans-serif !important;
+  font-size: 13.5px !important;
+  color: #94a3b8 !important;
+  line-height: 1.6 !important;
+  margin-bottom: 16px !important;
+}
+
+.hud .rm-concept-pop .rm-pill {
+  background: rgba(0, 240, 255, 0.12) !important;
+  border: 1px solid #00f0ff !important;
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  padding: 2px 7px !important;
+  border-radius: 2px !important;
+  text-transform: uppercase !important;
+}
+
+.hud .rm-briefing-close {
+  position: absolute !important;
+  top: 14px !important;
+  right: 14px !important;
+  width: 28px !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 4px !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  transition: all 0.15s ease !important;
+  box-shadow: none !important;
+}
+
+.hud .rm-briefing-close:hover {
+  background: rgba(255, 0, 85, 0.25) !important;
+  border-color: #ff0055 !important;
+  color: #ffffff !important;
+}
+
+.hud .rm-concept-pop .rm-enter-btn {
+  background: #ffe600 !important;
+  color: #000000 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 12.5px !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  padding: 10px 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 0 10px rgba(255, 230, 0, 0.25) !important;
+}
+
+.hud .rm-concept-pop .rm-enter-btn:hover {
+  background: #fff477 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 16px rgba(255, 230, 0, 0.4) !important;
+}
+
+.hud .rm-hero h1 {
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 24px !important;
+  letter-spacing: .04em !important;
+  text-transform: uppercase !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 20px rgba(255, 230, 0, 0.35);
+  margin-top: 8px !important;
+}
+
+.hud .rm-hero p {
+  color: #94a3b8 !important;
+  font-family: "Space Grotesk", sans-serif !important;
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+  max-width: 680px;
+}
+
+.hud .rm-hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hud .rm-hero-meta .rm-pill {
+  border: 1px solid var(--hud-yellow) !important;
+  background: rgba(255, 230, 0, 0.15) !important;
+  color: var(--hud-yellow) !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 900 !important;
+  font-size: 11px !important;
+  letter-spacing: .1em !important;
+  text-transform: uppercase !important;
+  padding: 2px 8px !important;
+  border-radius: 2px !important;
+}
+
+.hud .rm-hero-meta .rm-time {
+  color: var(--hud-cyan) !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+}
+
+.hud .rm-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hud .rm-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  color: #cbd5e1 !important;
+}
+
+.hud .rm-swatch {
+  width: 9px !important;
+  height: 9px !important;
+  border-radius: 2px !important;
+  display: inline-block;
+}
+
+.hud .rm-swatch-yellow {
+  background: var(--hud-yellow) !important;
+  box-shadow: 0 0 8px var(--hud-yellow-glow) !important;
+}
+
+.hud .rm-swatch-dark {
+  background: #ff9900 !important;
+  box-shadow: 0 0 8px rgba(255, 153, 0, 0.6) !important;
+}
+
+.hud .rm-swatch-reading {
+  background: var(--hud-cyan) !important;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.6) !important;
+}
+
+.hud .rm-swatch-reasoning {
+  background: var(--hud-magenta) !important;
+  box-shadow: 0 0 8px rgba(255, 0, 127, 0.6) !important;
+}
+
+.hud .rm-swatch-white {
+  background: #ffffff !important;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6) !important;
+}
+
+.hud .rm-phase-badge {
+  border: 1px solid rgba(255, 230, 0, 0.25) !important;
+  border-radius: 6px !important;
+  background: rgba(255, 230, 0, 0.06) !important;
+  color: #ffe600 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+  padding: 6px 20px !important;
+  box-shadow: none !important;
+}
+
+.hud .rm-line {
+  stroke: #ffe600 !important;
+  stroke-width: 2px !important;
+  opacity: 0.75 !important;
+  stroke-linecap: round !important;
+  filter: none !important;
+}
+
+.hud .rm-line-dot {
+  stroke: #38bdf8 !important;
+  stroke-width: 1.5px !important;
+  stroke-dasharray: 4 4 !important;
+  opacity: 0.65 !important;
+  stroke-linecap: round !important;
+  filter: none !important;
+}
+
+/* ── All roadmap nodes: reset base styles ── */
+.hud .rm-node-main,
+.hud .rm-node-cp,
+.hud .rm-node-tag {
+  box-shadow: none !important;
+  border-radius: 8px !important;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+/* ── Main lesson node (yellow accent) ── */
+.hud .rm-node-main {
+  border: 1px solid rgba(255, 230, 0, 0.45) !important;
+  background: #0c0e16 !important;
+  color: #f1f5f9 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: .01em !important;
+}
+
+.hud .rm-node-main:hover {
+  border-color: #ffe600 !important;
+  background: #131622 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 12px rgba(255, 230, 0, 0.12) !important;
+}
+
+.hud .rm-node-main.is-done {
+  border-color: rgba(0, 255, 102, 0.4) !important;
+  background: #071210 !important;
+  color: #d1fae5 !important;
+}
+
+.hud .rm-node-main.is-current {
+  border-color: rgba(255, 0, 127, 0.5) !important;
+  background: #120610 !important;
+  color: #ffffff !important;
+  outline: none !important;
+}
+
+.hud .rm-node-main.is-project {
+  border-color: rgba(56, 189, 248, 0.58) !important;
+  background: #08111a !important;
+}
+
+.hud .rm-node-main.is-project:hover {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 2px 12px rgba(56, 189, 248, 0.14) !important;
+}
+
+.hud .rm-node-main .rm-reto-flag {
+  background: #ffe600 !important;
+  color: #000000 !important;
+  border: 0 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 900 !important;
+  letter-spacing: .06em !important;
+  padding: 2px 6px !important;
+  border-radius: 3px !important;
+  box-shadow: none !important;
+}
+
+.hud .rm-node-main svg {
+  color: rgba(255, 230, 0, 0.7) !important;
+}
+
+.hud .rm-node-main:hover svg {
+  color: #ffe600 !important;
+  transform: translateX(2px);
+}
+
+/* ── Checkpoint nodes (left column) ── */
+.hud .rm-node-cp {
+  border: 1px solid #2a2e3d !important;
+  background: #0a0c14 !important;
+  color: #c8cdd8 !important;
+  font-family: "Space Grotesk", sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+}
+
+.hud .rm-node-cp:hover {
+  border-color: #4a5068 !important;
+  background: #10132a !important;
+  transform: translateY(-1px) !important;
+  box-shadow: none !important;
+}
+
+.hud .rm-cp-tag {
+  border-radius: 3px !important;
+  padding: 2px 6px !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  border: 0 !important;
+  flex-shrink: 0;
+}
+
+/* Reading (cyan) */
+.hud .rm-node-cp.is-reading {
+  border-color: rgba(0, 240, 255, 0.25) !important;
+  background: #060d14 !important;
+  color: #a5d8e6 !important;
+}
+.hud .rm-node-cp.is-reading:hover {
+  border-color: rgba(0, 240, 255, 0.5) !important;
+  background: #091620 !important;
+}
+.hud .rm-node-cp.is-reading .rm-cp-tag {
+  background: #00f0ff !important;
+  color: #000000 !important;
+}
+
+/* Reasoning (magenta) */
+.hud .rm-node-cp.is-reasoning {
+  border-color: rgba(255, 0, 127, 0.25) !important;
+  background: #100610 !important;
+  color: #e8b4d0 !important;
+}
+.hud .rm-node-cp.is-reasoning:hover {
+  border-color: rgba(255, 0, 127, 0.5) !important;
+  background: #180a18 !important;
+}
+.hud .rm-node-cp.is-reasoning .rm-cp-tag {
+  background: #ff007f !important;
+  color: #ffffff !important;
+}
+
+/* Debugging (amber) */
+.hud .rm-node-cp:not(.is-reading):not(.is-reasoning) {
+  border-color: rgba(255, 153, 0, 0.25) !important;
+  background: #100c06 !important;
+  color: #e0c8a0 !important;
+}
+.hud .rm-node-cp:not(.is-reading):not(.is-reasoning):hover {
+  border-color: rgba(255, 153, 0, 0.5) !important;
+  background: #181208 !important;
+}
+.hud .rm-node-cp:not(.is-reading):not(.is-reasoning) .rm-cp-tag {
+  background: #ff9900 !important;
+  color: #000000 !important;
+}
+
+/* ── Concept tags (right column) ── */
+.hud .rm-node-tag {
+  border: 1px solid #1e293b !important;
+  background: #080c14 !important;
+  color: #7dd3fc !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: .02em !important;
+}
+
+.hud .rm-node-tag:hover {
+  border-color: rgba(0, 240, 255, 0.4) !important;
+  background: #0c1420 !important;
+  color: #e0f2fe !important;
+  transform: translateY(-1px) !important;
+  box-shadow: none !important;
+}
+
+.hud .rm-node-tag.is-open {
+  border-color: #00f0ff !important;
+  background: #0a1822 !important;
+  color: #ffffff !important;
+}
+
+/* Reading, reasoning, debugging and playground surfaces */
+.hud .reading-shell,
+.hud .reading-card,
+.hud .reasoning-card,
+.hud .debug-panel,
+.hud .debug-context-panel,
+.hud .playground-shell,
+.hud .playground-panel {
+  border-color: #34343e !important;
+  border-radius: 0 !important;
+  background: #08080c !important;
+  box-shadow: none !important;
+  color: #f0f0f2 !important;
+}
+
+.hud .reasoning-card > header,
+.hud .reasoning-header,
+.hud .reasoning-workspace {
+  border-color: #1e2638 !important;
+  background: #080a12 !important;
+}
+
+.hud .reasoning-badge {
+  border-color: #00f0ff !important;
+  background: rgba(0, 240, 255, 0.12) !important;
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.35) !important;
+}
+
+.hud .reasoning-card h1,
+.hud .reasoning-title {
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.hud .reasoning-decision-card {
+  background: #0c101d !important;
+  border-color: #1a2236 !important;
+  border-radius: 0 !important;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) !important;
+}
+
+.hud .reasoning-decision-card:hover {
+  border-color: #00f0ff !important;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.3) !important;
+}
+
+.hud .reasoning-decision-card.is-answered {
+  border-color: #ffe600 !important;
+  background: #111628 !important;
+  box-shadow: inset 3px 0 0 #ffe600, 0 0 16px rgba(255, 230, 0, 0.25) !important;
+}
+
+.hud .reasoning-decision-badge {
+  background: rgba(0, 240, 255, 0.15) !important;
+  border-color: #00f0ff !important;
+  color: #00f0ff !important;
+  border-radius: 0 !important;
+}
+
+.hud .reasoning-decision-card.is-answered .reasoning-decision-badge {
+  background: #ffe600 !important;
+  border-color: #ffe600 !important;
+  color: #000000 !important;
+}
+
+.hud .reasoning-decision-select-wrapper select {
+  background: #060810 !important;
+  border-color: #1e283d !important;
+  border-radius: 0 !important;
+  color: #ffffff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+}
+
+.hud .reasoning-decision-select-wrapper select:hover {
+  border-color: #00f0ff !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.4) !important;
+}
+
+.hud .reasoning-decision-select-wrapper select:focus {
+  border-color: #ffe600 !important;
+  box-shadow: 0 0 14px rgba(255, 230, 0, 0.5) !important;
+}
+
+.hud .reasoning-actions {
+  background: #090c14 !important;
+  border-color: #1e283d !important;
+}
+
+.hud .reasoning-actions .reasoning-check {
+  height: 42px !important;
+  min-height: 42px !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 0 20px !important;
+  background: #00f0ff !important;
+  border: 1.5px solid #00f0ff !important;
+  border-radius: 0 !important;
+  color: #000000 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.5) !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)) !important;
+  transition: all 0.2s ease !important;
+}
+
+.hud .reasoning-actions .reasoning-check:hover {
+  background: #4df4ff !important;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.8) !important;
+  transform: translateY(-1px);
+}
+
+.hud .reasoning-actions .reasoning-reset-btn {
+  height: 42px !important;
+  min-height: 42px !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 0 18px !important;
+  background: #0c101d !important;
+  border: 1.5px solid #202b44 !important;
+  border-radius: 0 !important;
+  color: #00f0ff !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.4) !important;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)) !important;
+  transition: all 0.2s ease !important;
+}
+
+.hud .reasoning-actions .reasoning-reset-btn:hover {
+  border-color: #00f0ff !important;
+  background: #111728 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+.hud .reasoning-hints {
+  background: #100b03 !important;
+  border-color: #f59e0b !important;
+  border-radius: 0 !important;
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.25) !important;
+}
+
+.hud .reasoning-hints-header h2 {
+  font-family: "Chakra Petch", sans-serif !important;
+  text-transform: uppercase !important;
+}
+
+.hud .reasoning-hint-btn {
+  background: #f59e0b !important;
+  border: 1.5px solid #fbbf24 !important;
+  border-radius: 0 !important;
+  color: #000000 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.4) !important;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)) !important;
+}
+
+.hud .reasoning-table-wrap {
+  border-color: #1e2638 !important;
+  border-radius: 0 !important;
+}
+
+.hud .reasoning-table input {
+  background: #05070e !important;
+  border-color: #1a2236 !important;
+  border-radius: 0 !important;
+}
+
+.hud .reasoning-table input:focus {
+  border-color: #00f0ff !important;
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.3) !important;
+}
+
+.hud .debug-test,
+.hud .concept-card {
+  border-radius: 0 !important;
+}
+

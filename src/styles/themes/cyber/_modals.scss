@@ -1,0 +1,325 @@
+// Cyber — migrado desde src/themes/hud.css líneas 2534-2854
+// Mantiene .hud intacto; ahora usa mixins del sistema de temas.
+// ==========================================================================
+
+/* ==========================================================================
+   Modals, Popovers and Completion Banners in Cyberpunk HUD Mode
+   ========================================================================== */
+
+/* Scrim Completion Banner */
+.hud .scrim-completion-banner {
+  border: none !important;
+  background: transparent !important;
+  color: #f1f5f9 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.hud .scrim-completion-badge {
+  color: #00ff88 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
+  text-shadow: 0 0 8px rgba(0, 255, 136, 0.5) !important;
+}
+
+.hud .scrim-feedback-prompt {
+  color: #fef08a !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-weight: 700 !important;
+}
+
+.hud .scrim-feedback-btn {
+  background: #111422 !important;
+  border: 1px solid #24304d !important;
+  color: #e2e8f0 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 700 !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+  transition: all 0.15s ease !important;
+}
+
+.hud .scrim-feedback-btn:hover {
+  border-color: #00f0ff !important;
+  color: #00f0ff !important;
+  background: #172036 !important;
+}
+
+.hud .scrim-feedback-status {
+  color: #cbd5e1 !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+}
+
+.hud .scrim-feedback-status--sent {
+  color: #00ff88 !important;
+}
+
+.hud .scrim-feedback-status--queued {
+  color: #facc15 !important;
+}
+
+.hud .scrim-repeat-btn {
+  background: #111422 !important;
+  border: 1px solid #24304d !important;
+  color: #cbd5e1 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 800 !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+.hud .scrim-repeat-btn:hover {
+  border-color: #ffe600 !important;
+  color: #ffe600 !important;
+  background: #1c1f10 !important;
+}
+
+.hud .scrim-next-btn {
+  background: #ffe600 !important;
+  border: 1px solid #ffe600 !important;
+  color: #000000 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 900 !important;
+  border-radius: 2px !important;
+  box-shadow: 0 0 10px rgba(255, 230, 0, 0.4) !important;
+}
+
+.hud .scrim-next-btn:hover {
+  background: #fff066 !important;
+}
+
+/* Scrim Closure Modal */
+.hud .scrim-closure-modal {
+  border: none !important;
+  background: transparent !important;
+  color: #f1f5f9 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.hud .scrim-closure-title {
+  color: #ffe600 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 15px !important;
+  letter-spacing: 0.04em !important;
+}
+
+.hud .scrim-closure-text {
+  color: #cbd5e1 !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+}
+
+.hud .scrim-closure-confirm-btn {
+  background: #ffe600 !important;
+  color: #000000 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 900 !important;
+  border-radius: 2px !important;
+}
+
+.hud .scrim-closure-reload-btn {
+  background: #111422 !important;
+  border: 1px solid #24304d !important;
+  color: #cbd5e1 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 700 !important;
+  border-radius: 2px !important;
+}
+
+/* Roadmap Concept Popover & Mastery Blocker */
+.hud .rm-concept-pop {
+  border: none !important;
+  background: transparent !important;
+  color: #f1f5f9 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.hud .rm-concept-pop h2 {
+  color: #ffffff !important;
+  font-family: 'Chakra Petch', 'Space Grotesk', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 20px !important;
+}
+
+.hud .rm-concept-pop p {
+  color: #cbd5e1 !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.hud .rm-concept-pop .rm-pill {
+  background: rgba(0, 240, 255, 0.12) !important;
+  color: #00f0ff !important;
+  border: 1px solid rgba(0, 240, 255, 0.4) !important;
+  font-family: 'Chakra Petch', monospace !important;
+  font-weight: 800 !important;
+  font-size: 10px !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  border-radius: 2px !important;
+}
+
+.hud .rm-concept-pop .rm-enter-btn {
+  background: #ffe600 !important;
+  color: #000000 !important;
+  border: 1px solid #ffe600 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  border-radius: 2px !important;
+  box-shadow: 0 0 10px rgba(255, 230, 0, 0.35) !important;
+}
+
+.hud .rm-concept-pop .rm-enter-btn:hover {
+  background: #fff066 !important;
+}
+
+.hud .rm-mastery-blocker h2 {
+  color: #fef08a !important;
+}
+
+.hud .rm-mastery-blocker ul {
+  color: #cbd5e1 !important;
+}
+
+.hud .rm-mastery-blocker li {
+  border-left: 2px solid #ffe600 !important;
+  background: rgba(255, 230, 0, 0.06) !important;
+  padding: 4px 8px !important;
+  margin: 4px 0 !important;
+}
+
+.hud .rm-briefing-close {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #94a3b8 !important;
+  border-radius: 2px !important;
+}
+
+.hud .rm-briefing-close:hover {
+  background: rgba(255, 0, 85, 0.25) !important;
+  border-color: #ff0055 !important;
+  color: #ffffff !important;
+}
+
+/* Learning Center Modal */
+.hud .learning-center {
+  border: none !important;
+  background: transparent !important;
+  color: #f1f5f9 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.hud .learning-center > header {
+  border-bottom: 1px solid #1a233a !important;
+  background: rgba(8, 12, 22, 0.95) !important;
+}
+
+.hud .learning-center > header h2 {
+  color: #ffffff !important;
+  font-family: 'Chakra Petch', 'Space Grotesk', sans-serif !important;
+  font-weight: 800 !important;
+}
+
+.hud .learning-center > header p {
+  color: #94a3b8 !important;
+}
+
+.hud .learning-center > header span {
+  color: #ffe600 !important;
+  font-family: 'Chakra Petch', monospace !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.15em !important;
+}
+
+.hud .learning-center > header button {
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #94a3b8 !important;
+  border-radius: 4px !important;
+}
+
+.hud .learning-center > header button:hover {
+  border-color: #ff0055 !important;
+  background: rgba(255, 0, 85, 0.2) !important;
+  color: #ffffff !important;
+}
+
+.hud .learning-center__summary {
+  border-block: 1px solid #1a233a !important;
+  background: #080b15 !important;
+}
+
+.hud .learning-center__summary span {
+  background: #080c18 !important;
+  color: #94a3b8 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+}
+
+.hud .learning-center__summary strong {
+  color: #ffe600 !important;
+  font-family: 'Fira Code', monospace !important;
+}
+
+.hud .learning-center > nav {
+  background: #05070e !important;
+  border-bottom: 1px solid #1a233a !important;
+}
+
+.hud .learning-center > nav button {
+  border: 1px solid #1c2438 !important;
+  background: #090c16 !important;
+  color: #cbd5e1 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  border-radius: 4px !important;
+}
+
+.hud .learning-center > nav button:hover:not(:disabled) {
+  border-color: #00f0ff !important;
+  color: #00f0ff !important;
+  background: #0f1526 !important;
+}
+
+.hud .learning-center > nav button.is-active {
+  border-color: #ffe600 !important;
+  background: #ffe600 !important;
+  color: #000000 !important;
+  box-shadow: 0 0 12px rgba(255, 230, 0, 0.4) !important;
+}
+
+.hud .learning-center > main {
+  background: #070911 !important;
+  color: #cbd5e1 !important;
+}
+
+.hud .learning-center h3 {
+  color: #ffffff !important;
+  font-family: 'Chakra Petch', 'Space Grotesk', sans-serif !important;
+}
+
+.hud .learning-center label {
+  color: #f1f5f9 !important;
+}
+
+.hud .learning-center textarea,
+.hud .learning-center select {
+  background: #05070e !important;
+  border: 1px solid #1e293b !important;
+  color: #f1f5f9 !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  border-radius: 4px !important;
+}
+
+.hud .learning-center textarea:focus,
+.hud .learning-center select:focus {
+  border-color: #00f0ff !important;
+  outline: none !important;
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.3) !important;
+}
+

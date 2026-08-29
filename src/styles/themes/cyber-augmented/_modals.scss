@@ -1,0 +1,102 @@
+// Cyber Augmented — desde src/themes/hud-augmented.css líneas 553-650
+// augmented-ui HUD, modularizado.
+// ==========================================================================
+
+/* ==========================================================================
+   augmented-ui v2 — Modals, Popovers and Drawers Cyberpunk Surfaces
+   ========================================================================== */
+
+/* Scrim Completion Banner */
+.hud [data-augmented-ui~="scrim-completion-banner"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(90deg, #00ff88 0%, #00f0ff 50%, #ffe600 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #070a12;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 10px;
+  --aug-tr: 10px;
+  --aug-br: 10px;
+  --aug-bl: 10px;
+  filter: drop-shadow(0 0 16px rgba(0, 255, 136, 0.25));
+}
+
+/* Pedagogy Closure Modal */
+.hud [data-augmented-ui~="scrim-closure-modal"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(135deg, #ffe600 0%, #00f0ff 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #090c16;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 12px;
+  --aug-tr: 12px;
+  --aug-br: 12px;
+  --aug-bl: 12px;
+  filter: drop-shadow(0 0 20px rgba(0, 0, 0, 0.8));
+}
+
+/* General Scrim Confirmation Modal */
+.hud [data-augmented-ui~="scrim-confirm-modal"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #ffe600;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #090c16;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 12px;
+  --aug-tr: 6px;
+  --aug-br: 12px;
+  --aug-bl: 6px;
+  filter: drop-shadow(0 0 24px rgba(0, 0, 0, 0.9));
+}
+
+/* Challenge Drawer Dialog */
+.hud [data-augmented-ui~="challenge-drawer-modal"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(135deg, #ff007f 0%, #00f0ff 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #07080f;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 10px;
+  --aug-tr: 10px;
+  --aug-br: 10px;
+  --aug-bl: 10px;
+  filter: drop-shadow(0 0 20px rgba(255, 0, 127, 0.25));
+}
+
+/* Roadmap Concept Popover & Mastery Blocker */
+.hud [data-augmented-ui~="rm-concept-pop"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(135deg, #00f0ff 0%, #ffe600 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #080b15;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 12px;
+  --aug-tr: 12px;
+  --aug-br: 12px;
+  --aug-bl: 12px;
+  filter: drop-shadow(0 0 24px rgba(0, 0, 0, 0.85));
+}
+
+/* Learning Center Modal */
+.hud [data-augmented-ui~="learning-center-modal"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(180deg, #ffe600 0%, #00f0ff 50%, #b026ff 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #070911;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 14px;
+  --aug-tr: 14px;
+  --aug-br: 14px;
+  --aug-bl: 14px;
+  filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.9));
+}
+
+/* (Roadmap nodes use CSS borders, not augmented-ui clip-path) */
+
+/* Fallback for environments lacking full clip-path */
+@supports not ((clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%))) {
+  .hud [data-augmented-ui] {
+    border: 1px solid var(--hud-yellow) !important;
+  }
+}
+
+

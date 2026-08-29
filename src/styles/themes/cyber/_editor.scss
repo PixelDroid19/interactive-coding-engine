@@ -1,0 +1,169 @@
+// Cyber — migrado desde src/themes/hud.css líneas 386-550
+// Mantiene .hud intacto; ahora usa mixins del sistema de temas.
+// ==========================================================================
+
+/* Editor & Preview */
+.hud .lesson-stage {
+  gap: 10px !important;
+}
+
+.hud .editor-window-wrapper,
+.hud .editor-wrapper {
+  overflow: hidden !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #07070b !important;
+  box-shadow: none !important;
+}
+
+.hud .editor-window-wrapper.has-floating-preview {
+  margin-right: 0;
+}
+
+.hud .editor-tabs-bar {
+  min-height: 34px !important;
+  height: 34px !important;
+  padding: 0 6px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: #050508 !important;
+  gap: 4px !important;
+}
+
+.hud .editor-tabs-group {
+  gap: 4px !important;
+}
+
+.hud .editor-action-btn,
+.hud .round-icon-btn {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #0b0b10 !important;
+  color: #e2e8f0 !important;
+}
+
+.hud .tab-btn {
+  min-height: 26px;
+  margin: 0 !important;
+  padding: 4px 10px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #0b0b10 !important;
+  box-shadow: none !important;
+  color: #94a3b8 !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 11px !important;
+}
+
+.hud .tab-btn:hover {
+  color: #fff !important;
+}
+
+.hud .tab-btn-active {
+  background: var(--hud-yellow) !important;
+  color: #000 !important;
+  box-shadow: 0 0 10px var(--hud-yellow-glow) !important;
+  font-weight: 800 !important;
+}
+
+.hud .editor-body,
+.hud .cm-editor,
+.hud .cm-scroller,
+.hud .cm-gutters {
+  background: #07070b !important;
+}
+
+.hud .cm-gutters {
+  border-right: 1px solid #1a1a24 !important;
+  color: #64748b !important;
+}
+
+.hud .cm-content,
+.hud .cm-line {
+  font-family: "Fira Code", monospace !important;
+  font-size: 13px !important;
+  line-height: 1.65 !important;
+  color: #e2e8f0 !important;
+}
+
+.hud .cm-content span {
+  filter: brightness(1.18) contrast(1.05);
+}
+
+.hud .cm-editor [class*="ͼ"] {
+  filter: brightness(1.12);
+}
+
+.hud .cm-editor .tok-comment {
+  color: #a0aec0 !important;
+  filter: none;
+}
+
+.hud .cm-activeLine,
+.hud .cm-activeLineGutter {
+  background: rgb(176 38 255 / 8%) !important;
+}
+
+.hud .cm-cursor {
+  border-left-color: var(--hud-yellow) !important;
+}
+
+.hud .caption-chip {
+  position: relative;
+  width: min(650px, 92%) !important;
+  max-width: 100% !important;
+  min-height: 68px;
+  padding: 12px 24px 12px 42px !important;
+  gap: 10px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #0f0718 !important;
+  box-shadow: 0 0 20px rgba(176, 38, 255, 0.25) !important;
+  color: #f1f5f9 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+}
+
+.hud .editor-window-wrapper.has-floating-preview .caption-overlay {
+  left: 28% !important;
+  width: min(560px, 58%) !important;
+}
+
+.hud .caption-chip > svg {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  color: #d8b4fe;
+}
+
+.hud .caption-chip > p::before {
+  content: "✚";
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  color: var(--hud-purple);
+  font-family: monospace;
+  font-size: 10px;
+  opacity: 0.8;
+}
+
+.hud .caption-chip > p::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  bottom: 5px;
+  width: 44px;
+  height: 4px;
+  background: repeating-linear-gradient(-45deg, rgba(176, 38, 255, 0.4) 0 4px, transparent 4px 8px);
+}
+
+.hud .instructor-pointer-tag {
+  border: 1px solid var(--hud-purple) !important;
+  border-radius: 0 !important;
+  background: #100817 !important;
+  box-shadow: 0 0 8px rgb(176 38 255 / 25%) !important;
+  color: #e1b9ff !important;
+  font-family: "Fira Code", monospace !important;
+  font-size: 10px !important;
+}
+

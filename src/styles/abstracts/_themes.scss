@@ -1,0 +1,79 @@
+// ==========================================================================
+// Abstracts — Theme system
+// Mejor gestión del sistema de temas:
+// - Mapa SCSS con tokens por tema (normal vs cyber)
+// - Helpers para generar CSS vars y scopear estilos sin duplicar selectores .hud
+// - Compatible con ThemeProvider (clases .hud/.cyber + data-theme)
+// ==========================================================================
+
+@use 'sass:map';
+@use 'variables' as *;
+
+// Mapa central de temas. Ampliar aquí para añadir un tercer tema sin tocar
+// los parciales de componentes.
+$themes: (
+  normal: (
+    bg-main: #0d0f15,
+    bg-surface: #131720,
+    bg-surface-light: #1b202c,
+    bg-editor: #0c0e14,
+    text-main: #f8fafc,
+    text-muted: #94a3b8,
+    pencil: #475569,
+    brand: $brand-yellow,
+  ),
+  cyber: (
+    bg: $cyber-bg,
+    panel: $cyber-panel,
+    yellow: $cyber-yellow,
+    yellow-glow: $cyber-yellow-glow,
+    magenta: $cyber-magenta,
+    cyan: $cyber-cyan,
+    purple: $cyber-purple,
+    green: $cyber-green,
+    danger: $cyber-danger,
+    text: #e2e8f0,
+    muted: #94a3b8,
+    line: #232334,
+  ),
+);
+
+// Helper para leer un token del mapa
+@function theme-token($theme, $key) {
+  @return map.get(map.get($themes, $theme), $key);
+}
+
+// Emite las CSS vars --hud-* para el tema cyber.
+// Se incluye una sola vez en themes/cyber/_tokens.scss
+@mixin emit-cyber-tokens {
+  --hud-bg: #{theme-token(cyber, bg)};
+  --hud-panel: #{theme-token(cyber, panel)};
+  --hud-panel-raised: #0b0b10;
+  --hud-panel-soft: #111118;
+  --hud-yellow: #{theme-token(cyber, yellow)};
+  --hud-yellow-glow: #{theme-token(cyber, yellow-glow)};
+  --hud-magenta: #{theme-token(cyber, magenta)};
+  --hud-magenta-glow: rgba(255, 0, 127, 0.8);
+  --hud-purple: #{theme-token(cyber, purple)};
+  --hud-cyan: #{theme-token(cyber, cyan)};
+  --hud-green: #{theme-token(cyber, green)};
+  --hud-danger: #{theme-token(cyber, danger)};
+  --hud-text: #{theme-token(cyber, text)};
+  --hud-muted: #{theme-token(cyber, muted)};
+  --hud-line: #{theme-token(cyber, line)};
+  color-scheme: dark;
+}
+
+// Scope helper agnóstico: genera tanto [data-theme="cyber"] como .hud/.cyber
+// para máxima compatibilidad con ThemeProvider y legacy URLs (?hud=1, ?theme=cyber).
+@mixin on-cyber {
+  :where(html.hud, html.cyber, html[data-theme='cyber'], .hud, .cyber) & {
+    @content;
+  }
+}
+
+@mixin on-normal {
+  :where(html:not(.hud):not(.cyber):not([data-theme='cyber'])) & {
+    @content;
+  }
+}

@@ -1,0 +1,83 @@
+// ==========================================================================
+// Abstracts — Mixins
+// Re-usable SCSS helpers. No output on their own.
+// ==========================================================================
+
+@use 'variables' as *;
+
+// --- Media query helper ---
+@mixin respond($breakpoint) {
+  @if $breakpoint == sm { @media (max-width: $bp-sm) { @content; } }
+  @else if $breakpoint == md { @media (max-width: $bp-md) { @content; } }
+  @else if $breakpoint == lg { @media (max-width: $bp-lg) { @content; } }
+  @else if $breakpoint == xl { @media (max-width: $bp-xl) { @content; } }
+  @else if $breakpoint == 2xl { @media (max-width: $bp-2xl) { @content; } }
+  @else { @media (max-width: $breakpoint) { @content; } }
+}
+
+// --- Theme scoping helper ---
+// Usage: @include theme(cyber) { ... } emits .hud & { ... }, .cyber & { ... }
+@mixin theme-cyber {
+  .hud &,
+  .cyber &,
+  html.hud &,
+  html.cyber & {
+    @content;
+  }
+}
+
+@mixin theme-dark {
+  .dark &,
+  html.dark & {
+    @content;
+  }
+}
+
+// --- Cyber glow ---
+@mixin cyber-glow($color, $intensity: 0.45) {
+  box-shadow: 0 0 12px rgba($color, $intensity);
+  filter: drop-shadow(0 0 8px rgba($color, $intensity * 0.6));
+}
+
+@mixin cyber-border($color, $width: 1.5px) {
+  border: $width solid $color;
+}
+
+// --- Card hover elevation ---
+@mixin cyber-card-hover($glow-color) {
+  transform: translateY(-5px) scale(1.01);
+  filter: drop-shadow(0 0 22px $glow-color);
+}
+
+// --- Flex center ---
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// --- Truncate ---
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// --- Focus ring ---
+@mixin focus-ring($color: $cyber-cyan) {
+  outline: 2px solid $color;
+  outline-offset: 2px;
+}
+
+// --- Augmented-ui shorthand (sets border+inlay in one place) ---
+@mixin aug-panel($border-bg, $inlay-bg, $tl: 8px, $br: 8px, $tr: 6px, $bl: 6px) {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #{$border-bg};
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #{$inlay-bg};
+  --aug-inlay-opacity: 1;
+  --aug-tl: #{$tl};
+  --aug-br: #{$br};
+  --aug-tr: #{$tr};
+  --aug-bl: #{$bl};
+}

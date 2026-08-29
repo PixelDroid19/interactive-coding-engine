@@ -37,7 +37,7 @@ After UI/layout/routing/state changes, verify in a real browser: enter the lesso
 
 ## Visual language
 
-CodeSilk: warm paper (`#f5f2eb`), hard black shadows, 2px black borders, highlighter yellow `#ffe600` / `#FFE600`. Fonts: Outfit, Space Grotesk, Patrick Hand (see `index.html`). Player tokens live in `src/index.css` (`:root` paper/pencil variables).
+CodeSilk: warm paper (`#f5f2eb`), hard black shadows, 2px black borders, highlighter yellow `#ffe600` / `#FFE600`. Fonts: Outfit, Space Grotesk, Patrick Hand (see `index.html`). Player tokens live en `src/styles/base/_tokens.scss` y `src/styles/abstracts/_variables.scss` (`:root` paper/pencil variables) y se agregan vía `src/styles/main.scss` (ver `src/styles/README.md`). Legacy `src/index.css` se mantiene solo como referencia no importada.
 
 Roadmap home (`RoadmapHome`):
 

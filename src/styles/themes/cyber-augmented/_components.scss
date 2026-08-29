@@ -1,0 +1,242 @@
+// Cyber Augmented — desde src/themes/hud-augmented.css líneas 82-319
+// augmented-ui HUD, modularizado.
+// ==========================================================================
+
+/* Roadmap Topbar Button */
+.hud [data-augmented-ui~="hud-roadmap"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #ffe600;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #ffe600;
+  --aug-inlay-opacity: 1;
+  --aug-tr: 8px;
+  --aug-bl: 8px;
+  filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.45));
+}
+.hud [data-augmented-ui~="hud-roadmap"]:hover {
+  --aug-border-bg: #fff066;
+  --aug-inlay-bg: #fff066;
+  filter: drop-shadow(0 0 12px rgba(255, 230, 0, 0.75));
+}
+
+/* Previous Lesson Button */
+.hud [data-augmented-ui~="hud-prev"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: rgba(255, 255, 255, 0.25);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #0a0a0f;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 8px;
+  --aug-br: 8px;
+}
+.hud [data-augmented-ui~="hud-prev"]:hover {
+  --aug-border-bg: rgba(255, 255, 255, 0.6);
+  --aug-inlay-bg: #14141e;
+}
+
+/* Explain Button */
+.hud [data-augmented-ui~="hud-explain"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #ffe600;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #ffe600;
+  --aug-inlay-opacity: 1;
+  --aug-tr: 8px;
+  --aug-bl: 8px;
+  filter: drop-shadow(0 0 10px rgba(255, 230, 0, 0.6));
+}
+.hud [data-augmented-ui~="hud-explain"]:hover {
+  --aug-border-bg: #fff066;
+  --aug-inlay-bg: #fff066;
+  filter: drop-shadow(0 0 14px rgba(255, 230, 0, 0.85));
+}
+
+/* Floating Preview Toggle Button */
+.hud [data-augmented-ui~="hud-floating"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #ff007f;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: rgba(255, 0, 127, 0.15);
+  --aug-inlay-opacity: 1;
+  --aug-tl: 6px;
+  --aug-br: 6px;
+  filter: drop-shadow(0 0 6px rgba(255, 0, 127, 0.35));
+}
+.hud [data-augmented-ui~="hud-floating"]:hover {
+  --aug-border-bg: #ff3399;
+  --aug-inlay-bg: rgba(255, 0, 127, 0.28);
+  filter: drop-shadow(0 0 10px rgba(255, 0, 127, 0.6));
+}
+
+/* Next Lesson Button */
+.hud [data-augmented-ui~="hud-next"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #00f0ff;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: rgba(0, 240, 255, 0.12);
+  --aug-inlay-opacity: 1;
+  --aug-tl: 6px;
+  --aug-br: 6px;
+  filter: drop-shadow(0 0 8px rgba(0, 240, 255, 0.4));
+}
+.hud [data-augmented-ui~="hud-next"]:hover {
+  --aug-border-bg: #66f6ff;
+  --aug-inlay-bg: rgba(0, 240, 255, 0.25);
+  filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.7));
+}
+
+/* Action Buttons (e.g. Volver, Reto) */
+.hud [data-augmented-ui~="hud-action"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #4a4a58;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #0c0c12;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 7px;
+  --aug-br: 7px;
+}
+.hud [data-augmented-ui~="hud-action"]:hover {
+  --aug-border-bg: var(--hud-yellow);
+  --aug-inlay-bg: #14141e;
+  filter: drop-shadow(0 0 6px rgba(255, 230, 0, 0.3));
+}
+
+/* File Tree Item */
+.hud [data-augmented-ui~="hud-file"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: rgba(255, 255, 255, 0.14);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #111118;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 6px;
+  --aug-br: 6px;
+}
+.hud [data-augmented-ui~="hud-file"]:hover {
+  --aug-border-bg: rgba(255, 230, 0, 0.55);
+  --aug-inlay-bg: #161622;
+}
+
+.hud [data-augmented-ui~="hud-file"].file-item-btn-active {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #ffe600;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #171705;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 6px;
+  --aug-br: 6px;
+  filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.35));
+}
+
+/* Editor Tabs */
+.hud [data-augmented-ui~="hud-tab"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #30303a;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #0b0b10;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 5px;
+  --aug-tr: 5px;
+}
+.hud [data-augmented-ui~="hud-tab"]:hover {
+  --aug-border-bg: rgba(255, 255, 255, 0.4);
+  --aug-inlay-bg: #14141e;
+}
+
+.hud [data-augmented-ui~="hud-tab"].tab-btn-active {
+  --aug-border-all: 0px;
+  --aug-border-bg: #ffe600;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #ffe600;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 5px;
+  --aug-tr: 5px;
+  filter: drop-shadow(0 0 8px rgba(255, 230, 0, 0.45));
+}
+
+/* Control Buttons (Reload, minimize, etc.) */
+.hud [data-augmented-ui~="hud-control"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: #34343e;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #09090d;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 5px;
+  --aug-br: 5px;
+}
+.hud [data-augmented-ui~="hud-control"]:hover {
+  --aug-border-bg: var(--hud-cyan);
+  --aug-inlay-bg: #101018;
+  filter: drop-shadow(0 0 6px rgba(0, 240, 255, 0.4));
+}
+
+/* Browser Address URL Bar */
+.hud [data-augmented-ui~="hud-url"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: rgb(176 38 255 / 75%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #07040d;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 5px;
+  --aug-br: 5px;
+  filter: drop-shadow(0 0 6px rgba(176, 38, 255, 0.3));
+}
+
+/* Concepts Popover Button */
+.hud [data-augmented-ui~="hud-concepts"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #ff007f;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #120817;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 8px;
+  --aug-tr: 8px;
+  filter: drop-shadow(0 0 8px rgba(255, 0, 127, 0.35));
+}
+.hud [data-augmented-ui~="hud-concepts"]:hover {
+  --aug-border-bg: #ff3399;
+  filter: drop-shadow(0 0 12px rgba(255, 0, 127, 0.6));
+}
+
+/* Play/Pause Button */
+.hud [data-augmented-ui~="hud-play"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: #ffe600;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #ffe600;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 5px;
+  --aug-br: 5px;
+  filter: drop-shadow(0 0 10px rgba(255, 230, 0, 0.65));
+}
+.hud [data-augmented-ui~="hud-play"]:hover {
+  --aug-border-bg: #fff066;
+  --aug-inlay-bg: #fff066;
+  filter: drop-shadow(0 0 14px rgba(255, 230, 0, 0.85));
+}
+
+/* Category/Chapter Tag */
+.hud [data-augmented-ui~="hud-category"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: var(--card-accent, #ffe600);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #0a0a10;
+  --aug-inlay-opacity: 1;
+  --aug-tr: 6px;
+  --aug-bl: 6px;
+  filter: drop-shadow(0 0 6px rgba(255, 0, 85, 0.35));
+}
+
+/* Browser Console Trigger Button */
+.hud [data-augmented-ui~="hud-console"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: rgba(255, 255, 255, 0.15);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #06060a;
+  --aug-inlay-opacity: 1;
+  --aug-br: 8px;
+}
+.hud [data-augmented-ui~="hud-console"]:hover {
+  --aug-border-bg: var(--hud-yellow);
+  filter: drop-shadow(0 0 6px rgba(255, 230, 0, 0.3));
+}
+

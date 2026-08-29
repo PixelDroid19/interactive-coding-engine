@@ -1,0 +1,189 @@
+// Auto-migrated from src/index.css lines 3-186
+// Se mantiene 100% compatible — ahora en SCSS modular.
+// Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
+// ==========================================================================
+
+/* Ayuda local de la lección: comparte los tokens del producto. */
+.socratic-tutor {
+  position: fixed;
+  inset: auto 1rem 1rem auto;
+  z-index: 220;
+  color: var(--color-text-main);
+  font-family: 'Outfit', sans-serif;
+}
+
+.app-screen .socratic-tutor { bottom: 5.6rem; }
+
+.socratic-tutor__launcher {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  min-height: 3rem;
+  border: 2px solid var(--color-pencil);
+  border-radius: .65rem .65rem .2rem .65rem;
+  padding: .65rem .9rem;
+  background: var(--color-brand);
+  color: var(--color-brand-contrast);
+  box-shadow: 3px 3px 0 var(--color-pencil);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.socratic-tutor__launcher:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--color-pencil); }
+.socratic-tutor__launcher:focus-visible,
+.socratic-tutor__panel button:focus-visible,
+.socratic-tutor__panel select:focus-visible,
+.socratic-tutor__panel textarea:focus-visible { outline: 3px solid #0284c7; outline-offset: 2px; }
+
+.socratic-tutor__panel {
+  display: flex;
+  flex-direction: column;
+  width: min(27rem, calc(100vw - 2rem));
+  max-height: min(46rem, calc(100vh - 7rem));
+  overflow: hidden;
+  border: 2px solid var(--color-pencil);
+  border-radius: .9rem .9rem .25rem .9rem;
+  background: var(--bg-surface-light);
+  box-shadow: 7px 7px 0 var(--color-pencil);
+}
+
+.socratic-tutor__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 2px solid var(--color-pencil);
+  padding: 1rem 1.1rem .9rem;
+  background: var(--bg-surface);
+}
+
+.socratic-tutor__header h2 { margin: .1rem 0; font: 850 1.15rem/1.2 'Outfit', sans-serif; }
+.socratic-tutor__header p { margin: 0; color: var(--color-text-muted); font-size: .82rem; }
+.socratic-tutor__header button { border: 0; padding: .35rem; background: transparent; color: inherit; cursor: pointer; }
+.socratic-tutor__eyebrow { color: #0369a1; font: 800 .67rem/1.2 'Space Grotesk', sans-serif; letter-spacing: .13em; }
+
+.socratic-tutor__setup { display: grid; gap: .85rem; overflow: auto; padding: 1.2rem; }
+.socratic-tutor__setup h3 { margin: 0; font-size: 1rem; }
+.socratic-tutor__setup p { margin: 0; color: var(--color-text-muted); font-size: .84rem; line-height: 1.5; }
+.socratic-tutor__setup label { display: grid; gap: .35rem; font-weight: 800; font-size: .8rem; }
+.socratic-tutor__setup select,
+.socratic-tutor__composer textarea {
+  width: 100%;
+  border: 1.5px solid var(--color-pencil);
+  border-radius: .45rem;
+  padding: .7rem .75rem;
+  background: var(--bg-browser-bar);
+  color: var(--color-text-main);
+  font: 500 .86rem/1.45 'Outfit', sans-serif;
+}
+.socratic-tutor__model-note { border-left: 4px solid var(--color-brand); padding-left: .65rem; }
+.socratic-tutor__progress { display: grid; gap: .35rem; font-size: .78rem; font-weight: 700; }
+.socratic-tutor__progress progress { width: 100%; accent-color: #0284c7; }
+.socratic-tutor__error { margin: 0; border: 1px solid #be123c; border-radius: .4rem; padding: .65rem; background: #fff1f2; color: #9f1239; font-size: .8rem; }
+.socratic-tutor__primary,
+.socratic-tutor__composer button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  min-height: 2.65rem;
+  border: 2px solid var(--color-pencil);
+  border-radius: .4rem;
+  padding: .6rem .85rem;
+  background: var(--color-brand);
+  color: var(--color-brand-contrast);
+  box-shadow: 2px 2px 0 var(--color-pencil);
+  font-weight: 850;
+  cursor: pointer;
+}
+.socratic-tutor__primary:disabled,
+.socratic-tutor__composer button:disabled { cursor: not-allowed; opacity: .55; }
+
+.socratic-tutor__ready { display: flex; align-items: center; gap: .45rem; border-bottom: 1px solid color-mix(in srgb, var(--color-pencil) 18%, transparent); padding: .55rem 1rem; color: #047857; font-size: .75rem; font-weight: 750; }
+.socratic-tutor__ready span { width: .48rem; height: .48rem; border-radius: 50%; background: #10b981; }
+.socratic-tutor__ready button { margin-left: auto; border: 0; background: transparent; color: inherit; font: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.socratic-tutor__controls { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; border-bottom: 1px solid color-mix(in srgb, var(--color-pencil) 18%, transparent); padding: .75rem .85rem; background: var(--bg-surface); }
+.socratic-tutor__controls label { display: grid; align-content: start; gap: .3rem; min-width: 0; font-size: .72rem; font-weight: 850; }
+.socratic-tutor__controls select { width: 100%; min-width: 0; border: 1.5px solid var(--color-pencil); border-radius: .42rem; padding: .48rem 1.7rem .48rem .55rem; background: var(--bg-browser-bar); color: var(--color-text-main); font: 700 .78rem/1.2 'Outfit', sans-serif; }
+.socratic-tutor__controls small { color: var(--color-text-muted); font-size: .67rem; font-weight: 500; line-height: 1.35; }
+.socratic-tutor__activity { display: grid; gap: .45rem; border-bottom: 1px solid color-mix(in srgb, var(--color-pencil) 18%, transparent); padding: .65rem .85rem; background: color-mix(in srgb, var(--color-highlighter-cyan) 18%, var(--bg-surface)); }
+.socratic-tutor__activity > div { display: flex; align-items: center; justify-content: space-between; gap: .5rem; font-size: .72rem; }
+.socratic-tutor__activity > div button { display: inline-flex; align-items: center; gap: .3rem; border: 1px solid var(--color-pencil); border-radius: .35rem; padding: .28rem .45rem; background: var(--bg-surface-light); color: inherit; font-size: .68rem; font-weight: 800; cursor: pointer; }
+.socratic-tutor__activity ul { display: grid; gap: .3rem; margin: 0; padding: 0; list-style: none; }
+.socratic-tutor__activity li { display: flex; align-items: flex-start; gap: .4rem; color: #047857; }
+.socratic-tutor__activity li.is-denied,
+.socratic-tutor__activity li.is-failed { color: #be123c; }
+.socratic-tutor__activity li.is-unavailable { color: #a16207; }
+.socratic-tutor__activity li span { display: grid; min-width: 0; }
+.socratic-tutor__activity li strong { font-size: .72rem; }
+.socratic-tutor__activity li small { overflow: hidden; color: var(--color-text-muted); font-size: .66rem; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.socratic-tutor__conversation { display: grid; align-content: start; gap: .7rem; min-height: 12rem; overflow-y: auto; padding: .75rem .9rem; }
+.socratic-tutor__empty { border: 1px dashed var(--color-pencil-soft); border-radius: .5rem; padding: .85rem; background: var(--bg-surface); }
+.socratic-tutor__empty p { margin: .25rem 0 0; color: var(--color-text-muted); font-size: .82rem; line-height: 1.5; }
+.socratic-tutor__message { max-width: 92%; border: 1px solid color-mix(in srgb, var(--color-pencil) 25%, transparent); border-radius: .6rem; padding: .65rem .75rem; background: var(--bg-surface); }
+.socratic-tutor__message.is-user { justify-self: end; background: var(--color-highlighter-cyan); }
+.socratic-tutor__message span { display: block; margin-bottom: .25rem; color: var(--color-text-muted); font-size: .66rem; font-weight: 850; text-transform: uppercase; letter-spacing: .08em; }
+.socratic-tutor__message-content { display: grid; gap: .6rem; min-width: 0; }
+.socratic-tutor__message p { margin: 0; white-space: pre-wrap; font-size: .84rem; line-height: 1.55; }
+.socratic-tutor__message pre { max-width: 100%; overflow-x: auto; margin: 0; border: 1px solid color-mix(in srgb, var(--color-pencil) 35%, transparent); border-radius: .4rem; padding: .65rem .7rem; background: var(--bg-editor); color: #e5e7eb; font: 500 .78rem/1.55 'Space Grotesk', monospace; tab-size: 2; white-space: pre; }
+.socratic-tutor__message code { font: inherit; }
+.socratic-tutor__composer { position: relative; border-top: 2px solid var(--color-pencil); padding: .75rem; background: var(--bg-surface); }
+.socratic-tutor__composer textarea { min-height: 4.6rem; padding-right: 3.5rem; padding-bottom: 1rem; resize: vertical; }
+.socratic-tutor__composer button {
+  position: absolute;
+  right: 1.05rem;
+  bottom: 1.05rem;
+  width: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  padding: 0;
+  box-shadow: none;
+}
+
+.rm-node-main.is-locked,
+.rm-node-cp.is-locked {
+  filter: saturate(.3);
+  opacity: .72;
+}
+.rm-node-main.is-locked:hover,
+.rm-node-cp.is-locked:hover { opacity: 1; }
+.rm-node-main.is-locked svg:last-child,
+.rm-node-cp.is-locked svg:last-child { flex: none; }
+.rm-mastery-blocker ul { display: grid; gap: .35rem; margin: .8rem 0 1rem; padding-left: 1.25rem; color: var(--color-text-muted); font-size: .86rem; }
+.hud .rm-mastery-blocker ul { color: #c8d0e0; }
+
+.hud .socratic-tutor { color: #f7f7fb; }
+.hud .socratic-tutor__launcher,
+.hud .socratic-tutor__primary,
+.hud .socratic-tutor__composer button,
+.hud .socratic-tutor__controls select { border-color: #47516a; background: #07080d; color: #f7f7fb; }
+.hud .socratic-tutor__panel { border-color: #00e7ff; border-radius: 0; background: #090a0f; box-shadow: 6px 6px 0 #dfff00; }
+.hud .socratic-tutor__header { border-color: #dfff00; background: #10131b; }
+.hud .socratic-tutor__header p,
+.hud .socratic-tutor__setup p,
+.hud .socratic-tutor__empty p { color: #b8c1d4; }
+.hud .socratic-tutor__eyebrow { color: #00e7ff; }
+.hud .socratic-tutor__setup select,
+.hud .socratic-tutor__composer textarea { border-color: #47516a; background: #07080d; color: #f7f7fb; }
+.hud .socratic-tutor__controls,
+.hud .socratic-tutor__activity { border-color: #2d3548; background: #10131b; }
+.hud .socratic-tutor__activity > div button { border-color: #00e7ff; background: #090a0f; color: #f7f7fb; }
+.hud .socratic-tutor__conversation,
+.hud .socratic-tutor__composer { background: #090a0f; }
+.hud .socratic-tutor__composer { border-color: #2d3548; }
+.hud .socratic-tutor__empty,
+.hud .socratic-tutor__message { border-color: #3a4255; background: #141722; }
+.hud .socratic-tutor__message.is-user { border-color: #00e7ff; background: #06252b; }
+.hud .socratic-tutor__ready { color: #7dffb2; }
+.hud .socratic-tutor__error { border-color: #ff3b81; background: #2b0b19; color: #ffacc9; }
+
+@media (max-width: 680px) {
+  .socratic-tutor { inset: auto 0 0 0; }
+  .app-screen .socratic-tutor { bottom: 0; }
+  .socratic-tutor__launcher { position: fixed; right: .75rem; bottom: 5.25rem; }
+  .socratic-tutor__panel { width: 100%; max-height: 78dvh; border-right: 0; border-bottom: 0; border-left: 0; border-radius: .9rem .9rem 0 0; box-shadow: 0 -4px 0 var(--color-pencil); }
+  .socratic-tutor__controls { grid-template-columns: 1fr; }
+}
+

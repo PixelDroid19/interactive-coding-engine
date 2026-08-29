@@ -1,0 +1,79 @@
+@use "../../abstracts/variables" as *;
+@use "../../abstracts/themes" as theme;
+
+// Cyber — migrado desde src/themes/hud.css líneas 1-79
+// Tokens HUD ahora centralizados en abstracts/_themes.scss.
+// El mixin emit-cyber-tokens genera las mismas --hud-* pero desde un único
+// mapa $themes (fácil añadir 'neon', 'paper', etc. sin duplicar hex).
+// Se mantiene compatibilidad con .hud, .cyber y [data-theme="cyber"].
+// ==========================================================================
+
+/* Cyberpunk theme inspired by the supplied player reference.
+   It is opt-in through <html class="hud"> and never changes the default theme. */
+
+// Sistema mejorado: tokens generados desde el mapa central.
+// Mantiene salida idéntica pero gestionable desde un solo lugar.
+:root,
+.hud,
+.cyber,
+[data-theme="cyber"] {
+  @include theme.emit-cyber-tokens;
+}
+
+.hud body,
+.hud #root,
+.hud .app-screen,
+.hud .studio-card,
+.hud .lesson-body,
+.hud .course-catalog,
+.hud .roadmap-home,
+.hud .reasoning-screen,
+.hud .debug-screen,
+.hud .reading-screen {
+  background: var(--hud-bg) !important;
+  color: var(--hud-text) !important;
+}
+
+.hud body,
+.hud button,
+.hud input,
+.hud select,
+.hud textarea {
+  font-family: "Chakra Petch", "Space Grotesk", sans-serif;
+}
+
+.hud code,
+.hud pre,
+.hud .font-mono,
+.hud .cm-editor,
+.hud .timestamp-text,
+.hud .browser-url-text,
+.hud .tree-title,
+.hud .tab-btn {
+  font-family: "Fira Code", "JetBrains Mono", monospace !important;
+}
+
+.hud ::selection {
+  background: rgb(176 38 255 / 42%);
+  color: #fff;
+}
+
+.hud ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.hud ::-webkit-scrollbar-track {
+  background: #07070b;
+}
+
+.hud ::-webkit-scrollbar-thumb {
+  border: 0 !important;
+  border-radius: 2px !important;
+  background: #232334 !important;
+}
+
+.hud ::-webkit-scrollbar-thumb:hover {
+  background: var(--hud-yellow) !important;
+}
+

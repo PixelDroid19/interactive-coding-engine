@@ -1,0 +1,310 @@
+// Auto-migrated from src/index.css lines 454-758
+// Se mantiene 100% compatible — ahora en SCSS modular.
+// Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
+// ==========================================================================
+
+/* Split Workbench */
+.cells-lab__workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(380px, 0.95fr);
+  min-height: 660px;
+  background: #090a0f;
+}
+
+/* Left: Code Studio */
+.cells-lab__studio {
+  display: grid;
+  grid-template-columns: clamp(224px, 20vw, 260px) minmax(0, 1fr);
+  min-width: 0;
+  border-right: 1px solid #27272a;
+  background: #101218;
+}
+
+.cells-lab__files {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid #27272a;
+  background: #0c0e13;
+  overflow: hidden;
+}
+
+.cells-lab__files-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #1f222b;
+  background: #0c0e13;
+  color: #a1a1aa;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cells-lab__files input {
+  display: block;
+  width: calc(100% - 0.9rem);
+  margin: 0.45rem;
+  border: 1px solid #27272a;
+  min-height: 2.25rem;
+  padding: 0.5rem 0.6rem;
+  outline: 0;
+  background: #06070a;
+  color: #f4f4f5;
+  font: 0.78rem/1.2 ui-monospace, monospace;
+}
+
+.cells-lab__files input:focus {
+  border-color: #fde047;
+}
+
+.cells-lab__files-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.cells-lab__files .workspace-tree {
+  min-width: 176px;
+  padding: 0.25rem 0 0.75rem;
+  font: 500 0.8rem/1.35 ui-monospace, monospace;
+}
+
+.cells-lab__files .workspace-tree__row {
+  min-height: 36px;
+  border-bottom: 1px solid #161820;
+}
+
+.cells-lab__files .workspace-tree__folder {
+  color: #c2c7d1;
+}
+
+.cells-lab__files .workspace-tree__file.is-active {
+  background: #222010;
+  color: #fef08a;
+}
+
+.cells-lab__file-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+  flex: none;
+}
+
+.cells-lab__editor {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #141720;
+}
+
+.cells-lab__editor-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.65rem;
+  padding: 0 0.85rem;
+  border-bottom: 1px solid #27272a;
+  background: #0d0f15;
+  color: #d4d4d8;
+  font: 600 0.78rem/1 ui-monospace, monospace;
+}
+
+.cells-lab__editor-file {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #f4f4f5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cells-lab__dirty-tag {
+  color: #fbbf24;
+  font-style: normal;
+  font-size: 0.74rem;
+  flex: none;
+}
+
+.cells-lab__synced-tag {
+  color: #4ade80;
+  font-size: 0.74rem;
+  flex: none;
+}
+
+.cells-lab__editor-canvas {
+  flex: 1;
+  min-height: 620px;
+  position: relative;
+}
+
+/* Right: Inspector & Output */
+.cells-lab__inspector {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #0c0e13;
+}
+
+.cells-lab__inspector-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.65rem;
+  padding: 0 0.65rem;
+  border-bottom: 1px solid #27272a;
+  background: #11131a;
+  gap: 0.5rem;
+}
+
+.cells-lab__inspector-tabgroup {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cells-lab__tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0 0.65rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #9ca3af;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.cells-lab__tab-btn:hover {
+  color: #f4f4f5;
+  background: #181b24;
+}
+
+.cells-lab__tab-btn.is-active {
+  border-color: #3f3f46;
+  background: #1e222e;
+  color: #fde047;
+  box-shadow: 0 1px 0 #fde047;
+}
+
+.cells-lab__tab-counter {
+  display: inline-flex;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  border-radius: 9999px;
+}
+
+.cells-lab__tab-counter.is-pass {
+  background: #14532d;
+  color: #86efac;
+}
+
+.cells-lab__tab-counter.is-fail {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
+
+.cells-lab__tab-retest {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  height: 1.7rem;
+  padding: 0 0.55rem;
+  border: 1px solid #059669;
+  background: #0a251b;
+  color: #86efac;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cells-lab__preview-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.cells-lab__preview-tools [role='group'] {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.cells-lab__preview-tools button {
+  min-width: 2rem;
+  border: 1px solid #3f3f46;
+  background: #181b24;
+  color: #d4d4d8;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.2rem 0.4rem;
+  cursor: pointer;
+}
+
+.cells-lab__preview-tools button[aria-pressed='true'] {
+  background: #fde047;
+  color: #000000;
+  border-color: #fde047;
+}
+
+.cells-lab__inspector-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  position: relative;
+}
+
+.cells-lab__pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cells-lab__pane--preview.is-hidden {
+  display: none;
+}
+
+.cells-lab__preview-state {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2rem;
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid var(--cells-line, #303744);
+  background: var(--cells-panel, #151922);
+  color: #aeb8c8;
+  font: 600 0.72rem/1.2 "Space Grotesk", sans-serif;
+}
+
+.cells-lab__preview-state > span {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #7f8a99;
+}
+
+.cells-lab__preview-state[data-state='fresh'] > span { background: #31d17c; }
+.cells-lab__preview-state[data-state='building'] > span { background: #21b7ff; }
+.cells-lab__preview-state[data-state='stale'] > span { background: #ffe600; }
+.cells-lab__preview-state[data-state='error'] > span { background: #ff5c6c; }
+
+.cells-lab__pane--preview iframe {
+  display: block;
+  width: 100%;
+  flex: 1;
+  min-height: 620px;
+  border: 0;
+  background: white;
+}
+

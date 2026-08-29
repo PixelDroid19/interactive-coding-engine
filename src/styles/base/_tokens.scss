@@ -1,0 +1,87 @@
+@use "../abstracts/variables" as *;
+@use "../abstracts/themes" as *;
+
+// Auto-migrado desde src/index.css líneas 187-264
+// Tokens CodeSilk — ahora gestionados vía src/styles/abstracts/variables.scss
+// y emitidos como CSS vars. Para añadir un tema nuevo, amplía $themes en
+// abstracts/_themes.scss; los componentes leen var(--token) sin hardcode.
+// ==========================================================================
+
+/* ==========================================================================
+   CodeSilk Studio — Clean Architectural Pencil & Hand-Drawn Sketch Aesthetic
+   Combines organic hand-drawn sketch charm with ultra-clean, high-precision IDE ergonomics.
+   ========================================================================== */
+
+:root {
+  /* Paper & Graphite Palette (Light Mode: Architectural Warm Paper) */
+  --bg-main: #f5f2eb;
+  --bg-surface: #eee9dd;
+  --bg-surface-light: #ffffff;
+  --bg-surface-dark: #e4ddcd;
+  --bg-surface-pressed: #dcd4c2;
+  
+  /* Coding Notebook Area (Clean Pro Dark Slate IDE) */
+  --bg-editor: #12151e;
+  --bg-editor-tabs: #0d1017;
+  --bg-editor-gutter: #0f121a;
+  --bg-browser: #fcfbf8;
+  --bg-browser-header: #ebe6d8;
+  --bg-browser-bar: #ffffff;
+  --bg-console: #11141c;
+  --bg-console-log: #0b0d13;
+
+  /* Pencil & Ink Highlights */
+  --color-pencil: #232733;
+  --color-pencil-soft: #4b5563;
+  --color-pencil-light: #94a3b8;
+  --color-sketch-shadow: #1e222d;
+  
+  --color-highlighter-yellow: #fef08a;
+  --color-highlighter-cyan: #bae6fd;
+  --color-highlighter-pink: #fbcfe8;
+  --color-highlighter-mint: #bbf7d0;
+
+  --color-primary: #0284c7;
+  --color-primary-hover: #0369a1;
+  --color-accent: #e11d48;
+  --color-text-main: #1e2433;
+  --color-text-muted: #525d70;
+  --color-text-subtle: #828e9e;
+
+  /* Brand — high-contrast action yellow (centralized, not hard-coded) */
+  --color-brand: #ffe600;
+  --color-brand-hover: #fff04d;
+  --color-brand-contrast: #0f172a;
+  --color-brand-contrast-soft: #111;
+  --color-inverse: #f8fafc;
+  --color-inverse-muted: #cbd5e1;
+  --bg-nav: rgba(248, 250, 252, 0.92);
+  --border-nav: #000;
+  --color-black: #000;
+  --color-white: #fff;
+
+  /* Semáforo niveles — verde principiante, amarillo intermedio, rojo avanzado */
+  --course-beginner: #86efac;
+  --course-beginner-soft: #bbf7d0;
+  --course-intermediate: #ffe600;
+  --course-advanced: #fca5a5;
+  --course-advanced-soft: #fecdd3;
+  
+  /* Hand-drawn clean borders & Sketch shadows */
+  --border-pencil: 2px solid var(--color-pencil);
+  --border-pencil-thin: 1.5px solid var(--color-pencil);
+  --border-pencil-dashed: 2px dashed var(--color-pencil-soft);
+  
+  --shadow-sketch: 3px 3px 0px var(--color-pencil);
+  --shadow-sketch-sm: 2px 2px 0px var(--color-pencil);
+  --shadow-sketch-lg: 5px 5px 0px var(--color-pencil);
+  --shadow-sketch-hover: 4px 5px 0px var(--color-pencil);
+  --shadow-sketch-pressed: 1px 1px 0px var(--color-pencil);
+
+  /* Doodle radii */
+  --radius-doodle-sm: 180px 12px 160px 14px / 14px 160px 12px 180px;
+  --radius-doodle-md: 14px 18px 16px 20px / 18px 16px 20px 14px;
+  --radius-doodle-pill: 9999px;
+  --radius-clean-box: 10px;
+}
+

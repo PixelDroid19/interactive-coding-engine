@@ -1,0 +1,126 @@
+// Cyber — migrado desde src/themes/hud.css líneas 80-201
+// Mantiene .hud intacto; ahora usa mixins del sistema de temas.
+// ==========================================================================
+
+/* Shared cyber surfaces */
+.hud .workspace-container,
+.hud .studio-center-area {
+  gap: 10px !important;
+  padding: 6px 8px 8px !important;
+  background:
+    radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 0),
+    var(--hud-bg) !important;
+  background-size: 20px 20px !important;
+}
+
+.hud .window-topbar {
+  min-height: 42px !important;
+  height: 42px !important;
+  padding: 4px 12px !important;
+  gap: 8px !important;
+  border-top: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 2px solid var(--hud-yellow) !important;
+  background: #050508 !important;
+  box-shadow: 0 2px 10px rgba(255, 230, 0, 0.15) !important;
+  z-index: 100 !important;
+}
+
+.hud .window-titlebar-left {
+  min-width: 0;
+  gap: 6px !important;
+  align-items: center;
+}
+
+.hud .topbar-divider {
+  width: 14px !important;
+  height: 1px !important;
+  background: var(--hud-magenta) !important;
+  opacity: .75 !important;
+  transform: none !important;
+}
+
+.hud .topbar-lesson-title {
+  position: relative;
+  max-width: min(45vw, 620px);
+  color: #f1f5f9 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: clamp(12px, 1.25vw, 16px) !important;
+  font-style: normal;
+  font-weight: 800 !important;
+  letter-spacing: .06em !important;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.hud .topbar-lesson-title::first-letter {
+  color: var(--hud-magenta);
+  font-style: italic;
+  text-shadow: 0 0 10px var(--hud-magenta-glow);
+}
+
+.hud .window-topbar .neu-pill-btn,
+.hud .window-topbar button {
+  min-height: 32px;
+  height: 32px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: #cbd5e1 !important;
+  font-family: "Chakra Petch", sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase;
+  transform: none !important;
+  padding: 0 12px !important;
+}
+
+.hud .window-topbar .window-titlebar-left > button:first-child {
+  color: #000 !important;
+  font-weight: 900 !important;
+  letter-spacing: .08em !important;
+}
+
+.hud .window-topbar .window-titlebar-left > button:first-child svg {
+  color: #000 !important;
+}
+
+.hud .window-topbar .btn-explain {
+  color: #000 !important;
+  font-weight: 900 !important;
+  box-shadow: 0 0 12px var(--hud-yellow-glow) !important;
+}
+
+.hud .window-topbar .cyber-theme-toggle,
+.hud button.cyber-theme-toggle {
+  color: #000000;
+  font-weight: 900;
+  background: var(--hud-yellow);
+  border: 1.5px solid var(--hud-yellow);
+  box-shadow: 0 0 16px var(--hud-yellow-glow);
+}
+
+.hud .window-topbar .cyber-theme-toggle .cyber-glitch-content svg,
+.hud button.cyber-theme-toggle .cyber-glitch-content svg,
+.hud .window-topbar .cyber-theme-toggle .cyber-glitch-content span,
+.hud button.cyber-theme-toggle .cyber-glitch-content span {
+  color: #000000;
+  stroke: #000000;
+}
+
+.hud .window-topbar .btn-next-lesson,
+.hud .window-topbar button[aria-label="Siguiente"] {
+  color: var(--hud-cyan) !important;
+}
+
+.hud .window-topbar button:focus-visible,
+.hud .player-bar button:focus-visible,
+.hud .browser-btn:focus-visible,
+.hud .file-item-btn:focus-within,
+.hud .tab-btn:focus-visible {
+  outline: 2px solid var(--hud-cyan) !important;
+  outline-offset: 2px;
+}
+

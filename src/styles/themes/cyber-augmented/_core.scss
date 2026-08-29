@@ -1,0 +1,85 @@
+// Cyber Augmented — desde src/themes/hud-augmented.css líneas 1-81
+// augmented-ui HUD, modularizado.
+// ==========================================================================
+
+/* augmented-ui v2 layer — Enhanced Cyberpunk High-Tech HUD Styling */
+
+/* Top Navigation Bar */
+.hud [data-augmented-ui~="hud-topbar"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(90deg, var(--hud-yellow) 0%, rgba(255, 230, 0, 0.5) 30%, rgba(176, 38, 255, 0.35) 70%, var(--hud-yellow) 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #050508;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 0px;
+  --aug-br: 12px;
+  filter: drop-shadow(0 2px 8px rgba(255, 230, 0, 0.15));
+}
+
+/* File Explorer Sidebar */
+.hud [data-augmented-ui~="hud-sidebar"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(180deg, var(--hud-yellow) 0%, rgba(255, 230, 0, 0.5) 35%, rgba(176, 38, 255, 0.35) 75%, var(--hud-magenta) 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #0a0a10;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 14px;
+  --aug-br: 14px;
+  --aug-bl: 6px;
+  filter: drop-shadow(0 0 10px rgba(255, 230, 0, 0.12));
+}
+
+/* Central Code Editor Window */
+.hud [data-augmented-ui~="hud-editor"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(135deg, var(--hud-yellow) 0%, rgba(255, 230, 0, 0.45) 22%, rgba(0, 240, 255, 0.3) 60%, rgba(176, 38, 255, 0.45) 85%, var(--hud-yellow) 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #07070b;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 14px;
+  --aug-tr: 6px;
+  --aug-br: 14px;
+  --aug-bl: 6px;
+  filter: drop-shadow(0 0 12px rgba(255, 230, 0, 0.14));
+}
+
+/* Live Preview Browser Window */
+.hud [data-augmented-ui~="hud-browser"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(225deg, var(--hud-cyan) 0%, rgba(0, 240, 255, 0.45) 30%, rgba(255, 230, 0, 0.35) 70%, var(--hud-cyan) 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #07070b;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 14px;
+  --aug-tr: 6px;
+  --aug-br: 14px;
+  --aug-bl: 6px;
+  filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.15));
+}
+
+/* Bottom Player Timeline Bar */
+.hud [data-augmented-ui~="hud-player"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(90deg, var(--hud-yellow) 0%, rgba(0, 240, 255, 0.45) 50%, var(--hud-yellow) 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #06060a;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 10px;
+  --aug-tr: 10px;
+  filter: drop-shadow(0 -2px 10px rgba(255, 230, 0, 0.14));
+}
+
+/* Floating Narration / Captions Card */
+.hud [data-augmented-ui~="hud-narration"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: linear-gradient(135deg, var(--hud-purple) 0%, var(--hud-magenta) 65%, var(--hud-cyan) 100%);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: #0e0618;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 12px;
+  --aug-tr: 12px;
+  --aug-br: 12px;
+  --aug-bl: 12px;
+  filter: drop-shadow(0 0 16px rgba(176, 38, 255, 0.4));
+}
+

@@ -1,0 +1,235 @@
+// Auto-migrated from src/index.css lines 3770-3999
+// Se mantiene 100% compatible — ahora en SCSS modular.
+// Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
+// ==========================================================================
+
+/* Sidebar Styles — Sketched Icon Rail & Files Tree */
+.sidebar-container {
+  display: flex;
+  height: 100%;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.icon-rail {
+  width: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-right: var(--border-pencil-dashed);
+}
+
+.icon-rail-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.rail-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-doodle-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--border-pencil);
+  cursor: pointer;
+  position: relative;
+  background: var(--bg-surface-light);
+  box-shadow: var(--shadow-sketch-sm);
+  color: var(--color-text-muted);
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.rail-btn:hover {
+  transform: translateY(-2px) rotate(-2deg);
+  box-shadow: var(--shadow-sketch);
+  color: var(--color-primary);
+  background: var(--color-highlighter-cyan);
+}
+
+.rail-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px;
+}
+
+.rail-btn-active {
+  background: var(--color-highlighter-yellow);
+  box-shadow: var(--shadow-sketch-sm);
+  color: var(--color-text-main);
+  border: var(--border-pencil);
+  transform: rotate(1deg);
+}
+
+.notification-badge-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  background: var(--color-accent);
+  border: 1px solid var(--color-text-main);
+  border-radius: 50%;
+}
+
+.files-tree-panel {
+  width: 210px;
+  height: 100%;
+  background: transparent;
+  padding: 12px 12px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  border-right: none;
+  min-width: 210px;
+}
+
+.tree-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px dashed rgba(35, 39, 51, 0.2);
+}
+
+.tree-title {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-text-main);
+  text-transform: uppercase;
+}
+
+.files-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.file-item-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: var(--radius-doodle-sm);
+  border: var(--border-pencil-thin);
+  font-family: 'Patrick Hand', cursive;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--bg-surface-light);
+  color: var(--color-text-main);
+  box-shadow: var(--shadow-sketch-sm);
+  text-align: left;
+  width: 100%;
+  white-space: nowrap;
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.file-item-btn:hover {
+  transform: translateY(-2px) rotate(1deg);
+  box-shadow: var(--shadow-sketch);
+  background: var(--bg-surface-light);
+  color: var(--color-primary);
+}
+
+.file-item-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px;
+}
+
+.file-item-btn-active {
+  background: var(--color-highlighter-cyan);
+  border: var(--border-pencil);
+  box-shadow: var(--shadow-sketch);
+  color: var(--color-brand-contrast);
+  font-weight: 700;
+  transform: rotate(-1deg);
+}
+
+.badge-html {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ea580c;
+  border: 1.5px solid var(--color-text-main);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  flex-shrink: 0;
+}
+
+.badge-css {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 1.5px solid var(--color-text-main);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  flex-shrink: 0;
+}
+
+.badge-js {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #eab308;
+  border: 1.5px solid var(--color-text-main);
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 800;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  flex-shrink: 0;
+}
+
+.reset-code-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: var(--radius-doodle-sm);
+  border: var(--border-pencil);
+  background: var(--bg-surface-light);
+  box-shadow: var(--shadow-sketch-sm);
+  font-family: 'Patrick Hand', cursive;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.reset-code-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  transform: translateY(-2px) rotate(-1deg);
+  box-shadow: var(--shadow-sketch);
+}
+
+.reset-code-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px;
+}
+

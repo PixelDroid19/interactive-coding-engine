@@ -1,0 +1,295 @@
+// Auto-migrated from src/index.css lines 7396-7685
+// Se mantiene 100% compatible — ahora en SCSS modular.
+// Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
+// ==========================================================================
+
+/* New debugging layout - editor dominant, single panel */
+.debug-new-layout {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  gap: 0;
+  background: var(--bg-surface);
+}
+
+.debug-editor-area {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  padding: 8px;
+}
+
+.debug-panel {
+  width: 380px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface-light);
+  border-left: var(--border-pencil);
+  min-height: 0;
+}
+
+.debug-panel-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: var(--border-pencil);
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.debug-panel-tab {
+  flex: 1;
+  padding: 8px 10px;
+  font-family: 'Patrick Hand', cursive;
+  font-weight: 700;
+  font-size: 13px;
+  background: transparent;
+  border: none;
+  border-right: var(--border-pencil-thin);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  position: relative;
+}
+
+.debug-panel-tab:last-child {
+  border-right: none;
+}
+
+.debug-panel-tab.is-active {
+  background: var(--bg-surface-light);
+  color: var(--color-text-main);
+  box-shadow: inset 0 -2px 0 var(--color-highlighter-yellow);
+}
+
+.debug-panel-tab:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
+.debug-panel-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.debug-panel-pane {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.debug-panel-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.debug-panel-title {
+  font-family: 'Patrick Hand', cursive;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-text-main);
+  margin: 0 0 4px;
+}
+
+.debug-details {
+  border: var(--border-pencil-thin);
+  border-radius: 8px;
+  padding: 6px 8px;
+  background: var(--bg-surface);
+}
+
+.debug-details[open] {
+  background: var(--bg-surface-light);
+}
+
+.debug-summary {
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.debug-summary::-webkit-details-marker {
+  display: none;
+}
+
+.debug-panel-actions {
+  padding: 10px 14px;
+  border-top: var(--border-pencil);
+  background: var(--bg-surface-light);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.debug-logic-output {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+}
+
+.debug-logic-output .logic-runner-panel {
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  flex: 1;
+  box-shadow: none;
+}
+
+.debug-file-popover {
+  position: absolute;
+  top: 42px;
+  left: 8px;
+  width: 260px;
+  max-height: 60vh;
+  background: var(--bg-surface-light);
+  border: var(--border-pencil);
+  box-shadow: var(--shadow-sketch);
+  border-radius: var(--radius-doodle-sm);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.debug-file-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-bottom: var(--border-pencil-thin);
+  background: var(--bg-surface);
+}
+
+.debug-test.is-evaluation-error {
+  background: #fef3c7 !important;
+  border-color: #f59e0b !important;
+  color: #78350f !important;
+}
+
+/* Estado discreto del lenguaje: no tapa el código ni compite con la consola. */
+.editor-language-status {
+  position: absolute;
+  z-index: 24;
+  right: 10px;
+  bottom: 7px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: min(520px, calc(100% - 62px));
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid #3f3f46;
+  border-radius: 5px;
+  background: rgba(18, 18, 20, 0.94);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  color: #cbd5e1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10.5px;
+  line-height: 1.2;
+  pointer-events: none;
+  backdrop-filter: blur(7px);
+}
+
+.editor-language-status-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #4ade80;
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.14);
+}
+
+.editor-language-status.has-errors {
+  color: #fecdd3;
+  border-color: rgba(251, 113, 133, 0.6);
+}
+
+.editor-language-status.has-errors .editor-language-status-dot {
+  background: #fb7185;
+  box-shadow: 0 0 0 2px rgba(251, 113, 133, 0.14);
+}
+
+.editor-language-status.has-warnings {
+  color: #fef08a;
+  border-color: rgba(250, 204, 21, 0.55);
+}
+
+.editor-language-status.has-warnings .editor-language-status-dot {
+  background: #facc15;
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.14);
+}
+
+.editor-language-status kbd {
+  margin-left: 2px;
+  padding: 1px 4px;
+  border: 1px solid #52525b;
+  border-bottom-color: #71717a;
+  border-radius: 3px;
+  color: #94a3b8;
+  font: inherit;
+  font-size: 9px;
+}
+
+@media (max-width: 720px) {
+  .editor-language-status kbd {
+    display: none;
+  }
+}
+
+/* Responsive for new debug layout */
+@media (max-width: 1024px) {
+  .debug-new-layout {
+    flex-direction: column;
+  }
+  .debug-panel {
+    width: 100%;
+    border-left: none;
+    border-top: var(--border-pencil);
+    max-height: 45vh;
+  }
+}
+
+@media (max-width: 768px) {
+  .debug-new-layout {
+    flex-direction: column;
+  }
+  .debug-editor-area {
+    min-height: 40vh;
+  }
+  .debug-panel {
+    width: 100%;
+    border-left: none;
+    border-top: var(--border-pencil);
+    max-height: none;
+    flex: 1;
+  }
+  .debug-panel-tabs {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  .debug-run-tab-button {
+    display: none;
+  }
+}
+

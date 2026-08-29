@@ -1,0 +1,49 @@
+// Auto-migrated from src/index.css lines 2735-2778
+// Se mantiene 100% compatible — ahora en SCSS modular.
+// Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
+// ==========================================================================
+
+/* ==========================================================================
+   Window Top Header (Sketched Architectural Titlebar)
+   ========================================================================== */
+.window-topbar {
+  position: relative;
+  z-index: 100;
+  background: var(--bg-surface-light);
+  padding: 8px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: var(--border-pencil);
+  flex-shrink: 0;
+  box-shadow: 0 2px 0px rgba(0,0,0,0.03);
+}
+
+.window-titlebar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.topbar-app-name {
+  font-family: 'Patrick Hand', 'Architects Daughter', cursive;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  letter-spacing: 0.02em;
+}
+
+.topbar-divider {
+  height: 18px;
+  width: 2px;
+  background: var(--color-pencil);
+  opacity: 0.3;
+  transform: rotate(8deg);
+}
+
