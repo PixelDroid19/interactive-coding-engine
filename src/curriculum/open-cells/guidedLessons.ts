@@ -5,6 +5,7 @@ import { createOpenCellsProjectJourney, type OpenCellsProjectJourney } from './p
 import { createOpenCellsLessonWorkspace } from './lessonWorkspaces';
 import { openCellsArtifactForLesson, openCellsProjectForLesson } from './lessonProjects';
 import { advancedApplicationArtifactForLesson } from './advancedApplicationArtifacts';
+import { OPEN_CELLS_AUDIO_BY_LESSON } from './audioManifest';
 
 interface ContractPractice {
   path: string;
@@ -473,6 +474,7 @@ function skillGroup(number: number): { required: string[]; introduced: string[];
 export function createOpenCellsGuidedLesson(reading: ReadingItem): ScrimLessonData {
   const number = readNumber(reading);
   const lessonId = `open-cells-${suffix(number)}`;
+  const audio = OPEN_CELLS_AUDIO_BY_LESSON[lessonId];
   const project = openCellsProjectForLesson(number);
   const practice = practiceFor(number);
   const prepared = prepareJourney(number);
@@ -543,7 +545,7 @@ export function createOpenCellsGuidedLesson(reading: ReadingItem): ScrimLessonDa
     title: `${number}. ${reading.title}`,
     description: reading.summary,
     templateId: project.workspaceKind === 'component' ? 'cells-component' : 'cells-application',
-    narrationMode: 'silent',
+    narrationMode: audio ? 'audio' : 'silent',
     initialWorkspace: workspace,
     teachingFilePaths: journey.stops.map((stop) => stop.path),
     concepts: reading.keyPoints.slice(0, 3),
@@ -565,7 +567,9 @@ export function createOpenCellsGuidedLesson(reading: ReadingItem): ScrimLessonDa
     ],
     frequentQuestions: reading.frequentQuestions,
     teachNotes: reading.sections.slice(0, 3).map((section) => ({ title: section.title, body: section.content })),
-    durationMs,
+    audioUrl: audio?.url,
+    durationMs: audio?.durationMs ?? durationMs,
+    fitTimelineToDuration: Boolean(audio),
     beats: [
       ...projectTape.beats,
       { at: runAt, type: 'run' },

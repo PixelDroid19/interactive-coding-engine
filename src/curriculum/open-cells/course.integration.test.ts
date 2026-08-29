@@ -72,8 +72,8 @@ describe('curso Open Cells', () => {
     const lesson = OPEN_CELLS_SCRIMS['open-cells-06'];
     expect(lesson).toBeDefined();
     expect(lesson.templateId).toBe('cells-component');
-    expect(lesson.narrationMode).toBe('silent');
-    expect(lesson.audioTrack?.url).toBeUndefined();
+    expect(lesson.narrationMode).toBe('audio');
+    expect(lesson.audioTrack?.url).toMatch(/^\/audio\/open-cells-06\.mp3\?v=/);
     expect(lesson.challenges).toHaveLength(1);
     expect(lesson.challenges[0].instructions).toContain('producto');
     expect(lesson.initialWorkspace.files['src/academy-product-card.js']).toBeDefined();

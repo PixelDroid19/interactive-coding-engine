@@ -4,6 +4,7 @@ import type { ScrimEvent } from '../../types/scrim';
 import type { WorkspaceSnapshot } from '../../types/scrim';
 import { buildCellsPreviewDocument } from '../../engine/cells/cellsPreviewCompiler';
 import { auditCellsProject } from '../../engine/cells/cellsProjectAudit';
+import { OPEN_CELLS_AUDIO_BY_LESSON } from './audioManifest';
 import { OPEN_CELLS_COURSE, OPEN_CELLS_SCRIMS } from './course';
 
 function applyTape(workspace: WorkspaceSnapshot, events: ScrimEvent[]): WorkspaceSnapshot {
@@ -118,6 +119,30 @@ describe('recorrido guiado completo de Open Cells', () => {
       for (const cue of lesson.audioTrack.narrationScript ?? []) {
         expect(script, `${lesson.id} no contiene el subtítulo completo`).toContain(cue.text);
       }
+    }
+  });
+
+  it('integra 84 audios Gemini válidos con sus duraciones reales', () => {
+    expect(Object.keys(OPEN_CELLS_AUDIO_BY_LESSON)).toHaveLength(84);
+    for (const lesson of lessons) {
+      const number = lesson.id.replace('open-cells-', '');
+      const audio = OPEN_CELLS_AUDIO_BY_LESSON[lesson.id];
+      const metadata = JSON.parse(readFileSync(`public/audio/${lesson.id}.json`, 'utf8')) as {
+        durationMs: number;
+        engine: string;
+        voice: string;
+        script: string;
+      };
+      expect(lesson.narrationMode, lesson.id).toBe('audio');
+      expect(lesson.audioTrack.url, lesson.id).toBe(audio.url);
+      expect(lesson.durationMs, lesson.id).toBe(audio.durationMs);
+      expect(readFileSync(`public/audio/${lesson.id}.mp3`).byteLength, lesson.id).toBeGreaterThan(10_000);
+      expect(metadata, lesson.id).toMatchObject({
+        durationMs: audio.durationMs,
+        engine: 'gemini-3.1-flash-tts-preview',
+        voice: 'Aoede',
+        script: `docs/guiones/open-cells/${number}.md`,
+      });
     }
   });
 

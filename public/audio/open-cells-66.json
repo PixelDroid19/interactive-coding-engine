@@ -1,0 +1,9 @@
+{
+  "id": "open-cells-66",
+  "durationMs": 314477,
+  "wordsPerMinute": 94,
+  "language": "es",
+  "engine": "gemini-3.1-flash-tts-preview",
+  "voice": "Aoede",
+  "script": "docs/guiones/open-cells/66.md"
+}
