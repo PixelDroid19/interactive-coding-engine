@@ -7,6 +7,7 @@ import { validateReasoningAttempt } from '../../engine/reasoningRunner';
 import { reconstructWorkspaceAt } from '../../engine/eventLog';
 import { runChallengeValidation } from '../../engine/testRunner';
 import { ReasoningAttempt } from '../../types/curriculum';
+import { R2_AUDIO_BY_LESSON } from '../../config/r2Audio';
 
 describe('progresión integrada del curso de Fundamentos', () => {
   const scriptFileByLesson: Record<string, string> = {
@@ -413,11 +414,12 @@ describe('progresión integrada del curso de Fundamentos', () => {
     for (const item of orderedScrims) {
       const lesson = FUNDAMENTOS_SCRIMS[item.scrimDataId];
       const number = lesson.id.slice(-2);
-      const mp3 = resolve('public/audio', `fundamentos-${number}.mp3`);
       const metadataPath = resolve('public/audio', `fundamentos-${number}.json`);
+      const published = R2_AUDIO_BY_LESSON[lesson.id];
 
-      expect(lesson.audioTrack?.url, `${lesson.id} no carga el MP3 generado`).toBe(`/audio/fundamentos-${number}.mp3?v=gemini-20260824`);
-      expect(existsSync(mp3), `${lesson.id} no tiene MP3`).toBe(true);
+      expect(published, `${lesson.id} no aparece en el inventario R2`).toBeDefined();
+      expect(lesson.audioTrack?.url, `${lesson.id} no carga el MP3 publicado`).toBe(published.url);
+      expect(published.objectKey).toMatch(new RegExp(`^audio/fundamentos/${number}-[a-z0-9-]+--${published.sha256.slice(0, 12)}\\.mp3$`));
       expect(existsSync(metadataPath), `${lesson.id} no tiene metadatos de audio`).toBe(true);
       const metadata = JSON.parse(readFileSync(metadataPath, 'utf8')) as { durationMs: number; engine: string; voice: string; script: string };
       expect(metadata.durationMs, `${lesson.id} no usa la duración medida`).toBe(lesson.durationMs);

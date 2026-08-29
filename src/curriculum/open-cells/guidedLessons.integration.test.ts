@@ -6,6 +6,7 @@ import { buildCellsPreviewDocument } from '../../engine/cells/cellsPreviewCompil
 import { auditCellsProject } from '../../engine/cells/cellsProjectAudit';
 import { OPEN_CELLS_AUDIO_BY_LESSON } from './audioManifest';
 import { OPEN_CELLS_COURSE, OPEN_CELLS_SCRIMS } from './course';
+import { R2_AUDIO_BY_LESSON } from '../../config/r2Audio';
 
 function applyTape(workspace: WorkspaceSnapshot, events: ScrimEvent[]): WorkspaceSnapshot {
   const files = Object.fromEntries(Object.entries(workspace.files).map(([path, file]) => [path, { ...file }]));
@@ -127,6 +128,7 @@ describe('recorrido guiado completo de Open Cells', () => {
     for (const lesson of lessons) {
       const number = lesson.id.replace('open-cells-', '');
       const audio = OPEN_CELLS_AUDIO_BY_LESSON[lesson.id];
+      const published = R2_AUDIO_BY_LESSON[lesson.id];
       const metadata = JSON.parse(readFileSync(`public/audio/${lesson.id}.json`, 'utf8')) as {
         durationMs: number;
         engine: string;
@@ -134,9 +136,10 @@ describe('recorrido guiado completo de Open Cells', () => {
         script: string;
       };
       expect(lesson.narrationMode, lesson.id).toBe('audio');
-      expect(lesson.audioTrack.url, lesson.id).toBe(audio.url);
+      expect(published, `${lesson.id} no aparece en R2`).toBeDefined();
+      expect(lesson.audioTrack.url, lesson.id).toBe(published.url);
+      expect(published.objectKey).toMatch(new RegExp(`^audio/open-cells/${number}-[a-z0-9-]+--${published.sha256.slice(0, 12)}\\.mp3$`));
       expect(lesson.durationMs, lesson.id).toBe(audio.durationMs);
-      expect(readFileSync(`public/audio/${lesson.id}.mp3`).byteLength, lesson.id).toBeGreaterThan(10_000);
       expect(metadata, lesson.id).toMatchObject({
         durationMs: audio.durationMs,
         engine: 'gemini-3.1-flash-tts-preview',

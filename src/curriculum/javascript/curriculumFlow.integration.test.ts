@@ -1,5 +1,4 @@
-import { createHash } from 'node:crypto';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from '../fundamentos/course';
@@ -7,6 +6,7 @@ import { reconstructWorkspaceAt } from '../../engine/eventLog';
 import { runChallengeValidation } from '../../engine/testRunner';
 import { JAVASCRIPT_COURSE, JAVASCRIPT_SCRIMS, JAVASCRIPT_SPECS } from './course';
 import { JAVASCRIPT_AUDIO_BY_LESSON } from './audioManifest';
+import { R2_AUDIO_BY_LESSON } from '../../config/r2Audio';
 
 describe('curso de JavaScript independiente y progresivo', () => {
   const ordered = JAVASCRIPT_COURSE.modules.flatMap((module) => module.items.filter((item) => item.type === 'scrim'));
@@ -149,7 +149,7 @@ describe('curso de JavaScript independiente y progresivo', () => {
     for (const item of ordered) {
       const lesson = JAVASCRIPT_SCRIMS[item.scrimDataId];
       const audio = JAVASCRIPT_AUDIO_BY_LESSON[lesson.id];
-      const mp3 = resolve(process.cwd(), `public/audio/${lesson.id}.mp3`);
+      const published = R2_AUDIO_BY_LESSON[lesson.id];
       const metadata = JSON.parse(readFileSync(resolve(process.cwd(), `public/audio/${lesson.id}.json`), 'utf8')) as {
         engine: string;
         durationMs: number;
@@ -157,11 +157,12 @@ describe('curso de JavaScript independiente y progresivo', () => {
         cues: { timestamp: number; end: number; text: string }[];
       };
 
-      expect(statSync(mp3).size, `${lesson.id} no contiene audio`).toBeGreaterThan(10_000);
+      expect(published, `${lesson.id} no aparece en el inventario R2`).toBeDefined();
       expect(metadata.engine).toBe('gemini-3.1-flash-tts-preview');
       expect(metadata.voice).toBe('Aoede');
       expect(metadata.durationMs).toBe(audio.durationMs);
-      expect(lesson.audioTrack?.url).toBe(audio.url);
+      expect(lesson.audioTrack?.url).toBe(published.url);
+      expect(published.objectKey).toMatch(new RegExp(`^audio/javascript/${lesson.id.slice(-2)}-[a-z0-9-]+--${published.sha256.slice(0, 12)}\\.mp3$`));
       expect(lesson.durationMs).toBe(audio.durationMs);
       expect(metadata.cues.map((cue) => cue.timestamp)).toEqual(audio.cues);
       expect(metadata.cues.map((cue) => cue.end)).toEqual(audio.ends);
@@ -172,13 +173,11 @@ describe('curso de JavaScript independiente y progresivo', () => {
   });
 
   it('usa grabaciones propias y no copia audios de Fundamentos', () => {
-    const digest = (filePath: string) => createHash('sha256').update(readFileSync(filePath)).digest('hex');
-    const fundamentosHashes = new Set(Array.from({ length: 24 }, (_, index) => {
-      const number = String(index + 1).padStart(2, '0');
-      return digest(resolve(process.cwd(), `public/audio/fundamentos-${number}.mp3`));
-    }));
+    const fundamentosHashes = new Set(Object.entries(R2_AUDIO_BY_LESSON)
+      .filter(([, entry]) => entry.courseSlug === 'fundamentos')
+      .map(([, entry]) => entry.sha256));
 
-    const javascriptHashes = ordered.map((item) => digest(resolve(process.cwd(), `public/audio/${item.id}.mp3`)));
+    const javascriptHashes = ordered.map((item) => R2_AUDIO_BY_LESSON[item.id].sha256);
     expect(new Set(javascriptHashes)).toHaveLength(24);
     expect(javascriptHashes.filter((hash) => fundamentosHashes.has(hash))).toEqual([]);
   });

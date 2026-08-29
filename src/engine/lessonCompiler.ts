@@ -8,6 +8,7 @@ import {
   WorkspaceSnapshot,
 } from '../types/scrim';
 import { cloneWorkspace, generateSnapshots } from './eventLog';
+import { resolvePublishedAudioUrl } from '../config/r2Audio';
 
 type Timed<T> = T & { at?: number };
 
@@ -499,7 +500,7 @@ export function compileLesson(input: CompileLessonInput): ScrimLessonData {
   events.splice(0, events.length, ...eventsWithoutOriginalPointers, ...pointerRoute);
   events.sort((a, b) => a.timestamp - b.timestamp || a.id.localeCompare(b.id));
   const audioTrack: AudioTrackInfo = {
-    url: input.audioUrl,
+    url: resolvePublishedAudioUrl(input.id, input.audioUrl),
     durationMs,
     language: input.language ?? 'es',
     narrationScript,

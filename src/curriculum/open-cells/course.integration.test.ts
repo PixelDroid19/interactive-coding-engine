@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_COURSE } from '../web-components-lit/course';
+import { R2_AUDIO_BY_LESSON } from '../../config/r2Audio';
 import { OPEN_CELLS_COURSE, OPEN_CELLS_SCRIMS } from './course';
 
 describe('curso Open Cells', () => {
@@ -73,7 +74,7 @@ describe('curso Open Cells', () => {
     expect(lesson).toBeDefined();
     expect(lesson.templateId).toBe('cells-component');
     expect(lesson.narrationMode).toBe('audio');
-    expect(lesson.audioTrack?.url).toMatch(/^\/audio\/open-cells-06\.mp3\?v=/);
+    expect(lesson.audioTrack?.url).toBe(R2_AUDIO_BY_LESSON['open-cells-06'].url);
     expect(lesson.challenges).toHaveLength(1);
     expect(lesson.challenges[0].instructions).toContain('producto');
     expect(lesson.initialWorkspace.files['src/academy-product-card.js']).toBeDefined();

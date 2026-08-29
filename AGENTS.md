@@ -68,7 +68,8 @@ Each clickable must do something different.
 | `src/components/player/Timeline.tsx` | Bottom bar after the class has started |
 | `src/components/challenges/DebuggingView.tsx` | Debug lab |
 | `docs/guiones/` | Spoken-only scripts |
-| `public/audio/` | `fundamentos-NN.mp3` + optional Whisper JSON |
+| `public/audio/` | Metadatos JSON de sincronización; los MP3 publicados viven en Cloudflare R2 |
+| `src/config/r2AudioManifest.generated.ts` | Mapa generado de lección → URL, clave legible y SHA-256 en R2 |
 
 Stack: Vite 6, React 19, TypeScript, Tailwind v4, CodeMirror 6, lucide-react.
 
@@ -89,7 +90,7 @@ On entering a scrim, `awaitingStart` is true. A full-screen gate (below the head
 ```ts
 compileLesson({
   id: 'fundamentos-01',
-  audioUrl: '/audio/fundamentos-01.mp3?v=voz', // bump ?v= when replacing the file
+  audioUrl: '/audio/fundamentos-01.mp3', // fuente temporal; compileLesson la resuelve al objeto R2 publicado
   durationMs: AUDIO_MS,                      // real MP3 length in ms
   beats: [
     { at: 0, type: 'chapter', title: '…' },
@@ -115,16 +116,17 @@ Rules:
 
 ## Audio
 
-Files: `public/audio/fundamentos-01.mp3` … `14`. The player loads `lesson.audioUrl`. Query strings (`?v=voz`) bust cache.
+Los MP3 publicados no forman parte del frontend. `compileLesson` resuelve cada ID mediante `src/config/r2AudioManifest.generated.ts` hacia una clave R2 legible e inmutable: `audio/<curso>/<número>-<tema>--<sha12>.mp3`.
 
-1. Record or drop the MP3 into `public/audio/`.
+1. Genera o coloca el MP3 en un directorio local temporal; `public/audio/` puede usarse durante la preparación, pero el archivo no se commitea.
 2. Set `durationMs` in the lesson to the **real** file length (do not leave a stale constant).
 3. Time the `speak` / `write` / `gesture` `at` values against the recording. Play the lesson and listen: if the mouse or the type-out leads/lags the voice, move `at`.
-4. Bump `?v=` on `audioUrl` after replacing an MP3.
+4. Ejecuta `pnpm audio:r2:descriptors`, construye el inventario en el backend, sube y verifica ambos buckets, y regenera el mapa del frontend.
+5. Comprueba la URL pública y una petición `Range`; después elimina la copia MP3 temporal.
 
 `AudioNarrator` prefers the MP3 as `hardware-audio` clock. If there is no URL, it falls back to speech synthesis / a synthetic clock. Fundamentos lessons always have an MP3 — do not remove `audioUrl`.
 
-Optional Whisper JSON (`public/audio/fundamentos-NN.json`) is a timing aid from `scripts/transcribe_lecciones.py` (faster-whisper, word timestamps). The live player does **not** read that JSON; it reads `narrationScript` from beats. Use the JSON (or the guion + a listen pass) to set `at` on `speak`.
+Los JSON de `public/audio/` son ayudas pequeñas de duración y sincronización. El reproductor en vivo no obtiene el MP3 de ese directorio: usa R2 y lee `narrationScript` desde los beats.
 
 Regenerating TTS (only if the user asks): `npm run audio:generate` (Piper + cues). Prefer the user’s recorded MP3s when they exist.
 
@@ -158,7 +160,7 @@ When you change a guion paragraph, update the matching `speak` beat and check `a
 ## Adding a Fundamentos lesson (checklist)
 
 1. Guion in `docs/guiones/` — spoken text only.
-2. MP3 in `public/audio/fundamentos-NN.mp3`.
+2. MP3 generado localmente, subido y verificado en R2 con clave legible; no se conserva en el bundle.
 3. Workspace HTML/CSS/JS that looks like the class, not a dark “AI” theme.
 4. `lessonNN.ts` with `speak`/`write`/`gesture` timed to the MP3, `durationMs` exact.
 5. Register in `course.ts`, terms in `LESSON_TERMS`, debug item in `debugExercises.ts`.
