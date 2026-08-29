@@ -8,6 +8,7 @@
 
 /* Scrim Completion Banner */
 .hud [data-augmented-ui~="scrim-completion-banner"] {
+  position: fixed !important;
   --aug-border-all: 1.5px;
   --aug-border-bg: linear-gradient(90deg, #00ff88 0%, #00f0ff 50%, #ffe600 100%);
   --aug-inlay-all: 1px;
@@ -22,6 +23,7 @@
 
 /* Pedagogy Closure Modal */
 .hud [data-augmented-ui~="scrim-closure-modal"] {
+  position: fixed !important;
   --aug-border-all: 1.5px;
   --aug-border-bg: linear-gradient(135deg, #ffe600 0%, #00f0ff 100%);
   --aug-inlay-all: 1px;

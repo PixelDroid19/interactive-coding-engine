@@ -1269,6 +1269,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       {showClosure && !closureConfirmed && (
         <div
           className="scrim-closure-modal fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-[#171b24] text-slate-100 border-2 border-slate-500 rounded-xl shadow-[4px_4px_0_#000] p-4 max-w-lg w-[90%]"
+          style={{ position: 'fixed' }}
           data-augmented-ui={isCyber ? "scrim-closure-modal tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
         >
           <h4 className="scrim-closure-title font-bold text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Ejecutaste tus dos mensajes?</h4>
@@ -1289,6 +1290,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       {isCompleted && (
         <div
           className="scrim-completion-banner fixed bottom-20 left-1/2 -translate-x-1/2 z-40 bg-emerald-50 border-2 border-emerald-700 rounded-xl shadow-[4px_4px_0_#000] p-3 flex flex-wrap items-center gap-2 max-w-xl w-[90%]"
+          style={{ position: 'fixed' }}
           data-augmented-ui={isCyber ? "scrim-completion-banner tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
         >
           <span className="scrim-completion-badge text-emerald-700 font-bold text-sm">✓ Clase completada</span>

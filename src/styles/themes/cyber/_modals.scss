@@ -8,6 +8,11 @@
 
 /* Scrim Completion Banner */
 .hud .scrim-completion-banner {
+  position: fixed !important;
+  bottom: 5rem !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 40 !important;
   border: none !important;
   background: transparent !important;
   color: #f1f5f9 !important;
@@ -91,6 +96,11 @@
 
 /* Scrim Closure Modal */
 .hud .scrim-closure-modal {
+  position: fixed !important;
+  bottom: 5rem !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 40 !important;
   border: none !important;
   background: transparent !important;
   color: #f1f5f9 !important;
