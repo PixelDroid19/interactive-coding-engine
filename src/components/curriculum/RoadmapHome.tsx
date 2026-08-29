@@ -20,6 +20,7 @@ import {
   saveNotebookEntry,
 } from '../../learning/curriculumEvidence';
 import { LearningCenter } from '../learning/LearningCenter';
+import type { LearningCenterSnapshot } from '../../services/learningCenterApi';
 
 interface RoadmapHomeProps {
   course: Course;
@@ -47,6 +48,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
   const { themeId } = useTheme();
   const isCyber = themeId === 'cyber';
   const [showLearningCenter, setShowLearningCenter] = useState(false);
+  const [remoteLearningSummary, setRemoteLearningSummary] = useState<LearningCenterSnapshot['summary'] | null>(null);
   const phases = useMemo(() => buildRoadmap(course, scrims), [course, scrims]);
   const lessonCount = course.modules.reduce(
     (sum, mod) => sum + mod.items.filter((item) => item.type === 'scrim' || (item.type === 'reading' && !item.relatedLessonId)).length,
@@ -57,7 +59,8 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
     0
   );
   const hasReasoning = course.modules.some((mod) => mod.items.some((item) => item.type === 'reasoning'));
-  const dueReviewCount = learningProfile.reviews.filter((review) => review.courseId === course.id && review.dueAt <= Date.now()).length;
+  const dueReviewCount = remoteLearningSummary?.dueReviews
+    ?? learningProfile.reviews.filter((review) => review.courseId === course.id && review.dueAt <= Date.now()).length;
 
   const enterLesson = (lessonId: string) => {
     const found = findCourseItem(course, lessonId);
@@ -410,6 +413,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
           onSaveNotebook={async (entry) => onLearningProfileChange(await saveNotebookEntry(entry))}
           onCompleteExam={async (questions, result) => onLearningProfileChange(await saveExamEvaluation(course.id, questions, result))}
           onReviewReinforcement={async (reinforcementId) => onLearningProfileChange(await markTutorReinforcementReviewed(reinforcementId))}
+          onSummaryChange={setRemoteLearningSummary}
         />
       )}
     </div>

@@ -233,6 +233,8 @@ export interface Course {
   thumbnailGradient?: string;
   isCustom?: boolean;
   conceptGlossary?: Record<string, { label: string; desc: string }[]>;
+  availability?: 'available' | 'locked';
+  availabilityReason?: string;
 }
 
 export interface UserProgressRecord {

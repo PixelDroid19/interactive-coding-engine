@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Course, CurriculumItem, UserProgressRecord } from './types/curriculum';
 import { type CourseLanguage, ScrimLessonData } from './types/scrim';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from './curriculum/fundamentos/course';
@@ -26,7 +26,13 @@ import { getItemReadiness, type ItemReadiness } from './learning/unlockPolicy';
 import { getCurriculumSkillIndex, loadLearningProfile } from './learning/curriculumEvidence';
 import { X } from 'lucide-react';
 import { fetchPublishedLesson } from './services/learningApi';
-import { flushLearningQueue, queueLearningEvent, queueLessonProgress, submitLessonFeedback } from './services/learningSync';
+import { fetchPublishedCourses, getCachedPublishedCourses, type PublishedCourseSummary } from './services/courseCatalogApi';
+import { flushLearningQueue, queueLearningEvent, queueLearningProfileEvidence, queueLessonProgress, submitLessonFeedback } from './services/learningSync';
+
+const COURSE_SLUG_BY_ID: Record<string, string> = Object.fromEntries(
+  [FUNDAMENTOS_COURSE, JAVASCRIPT_COURSE, COMPONENT_COURSE, OPEN_CELLS_COURSE, AI_ENGINEER_COURSE]
+    .flatMap((candidate) => [[candidate.id, candidate.slug], [candidate.slug, candidate.slug]]),
+);
 
 type AppView = 'catalog' | 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'reasoning' | 'playground' | 'studio';
 
@@ -48,6 +54,26 @@ function getInitialCourses(): Course[] {
   return [FUNDAMENTOS_COURSE, JAVASCRIPT_COURSE, COMPONENT_COURSE, OPEN_CELLS_COURSE, AI_ENGINEER_COURSE].map((baseCourse) => {
     const savedCourse = savedCourses.find((candidate) => candidate.id === baseCourse.id);
     return savedCourse ? mergeSavedCourseItems(baseCourse, savedCourse) : baseCourse;
+  });
+}
+
+function applyPublishedCatalog(localCourses: Course[], published: PublishedCourseSummary[]): Course[] {
+  return published.flatMap((remote) => {
+    const local = localCourses.find((candidate) => candidate.slug === remote.slug);
+    if (!local) return [];
+    const metadata = remote.metadata ?? {};
+    return [{
+      ...local,
+      title: remote.title,
+      description: remote.description,
+      tagline: metadata.tagline ?? local.tagline,
+      level: metadata.level ?? local.level,
+      tags: metadata.tags ?? local.tags,
+      instructor: metadata.instructor ?? local.instructor,
+      thumbnailGradient: metadata.thumbnailGradient ?? local.thumbnailGradient,
+      availability: remote.availability,
+      availabilityReason: remote.availabilityReason ?? undefined,
+    }];
   });
 }
 
@@ -232,6 +258,20 @@ export default function App() {
   const [playgroundReturnView, setPlaygroundReturnView] = useState<'catalog' | 'home'>(initialAppState.view === 'playground' ? 'catalog' : 'home');
   const [navigationBlocker, setNavigationBlocker] = useState<ItemReadiness | null>(null);
   const [remoteLessonState, setRemoteLessonState] = useState<{ id: string; status: 'loading' | 'ready' | 'backup'; message?: string } | null>(null);
+  const activitySession = useRef<{ id: string; courseSlug: string; itemId: string; itemType: string; openedAt: number; playbackMs: number } | null>(null);
+
+  const closeActivitySession = (reason: string) => {
+    const active = activitySession.current;
+    if (!active) return;
+    activitySession.current = null;
+    queueLearningEvent(active.courseSlug, active.itemId, 'item_left', {
+      sessionId: active.id,
+      itemType: active.itemType,
+      reason,
+      activeMs: Math.max(0, Date.now() - active.openedAt),
+      playbackMs: active.playbackMs,
+    });
+  };
 
   // Sync custom scrims and progress from storage on mount
   useEffect(() => {
@@ -261,6 +301,53 @@ export default function App() {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const cachedCatalog = getCachedPublishedCourses();
+    if (cachedCatalog?.catalog.items.length) {
+      setCourses((current) => applyPublishedCatalog(current, cachedCatalog.catalog.items));
+      if (cachedCatalog.fresh) return;
+    }
+    const controller = new AbortController();
+    void fetchPublishedCourses(controller.signal).then((catalog) => {
+      if (!controller.signal.aborted && catalog.items.length > 0) {
+        setCourses((current) => applyPublishedCatalog(current, catalog.items));
+      }
+    }).catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (learningProfile.evidence.length === 0) return;
+    queueLearningProfileEvidence(learningProfile, COURSE_SLUG_BY_ID);
+  }, [learningProfile]);
+
+  useEffect(() => {
+    if (!activeItem || ['catalog', 'home', 'playground', 'studio'].includes(currentView)) return;
+    closeActivitySession('navigation');
+    activitySession.current = {
+      id: crypto.randomUUID(),
+      courseSlug: course.slug,
+      itemId: activeItem.id,
+      itemType: activeItem.type,
+      openedAt: Date.now(),
+      playbackMs: scrimInitialTimeMs,
+    };
+    queueLearningEvent(course.slug, activeItem.id, 'item_opened', {
+      itemType: activeItem.type,
+      moduleId: activeModuleId,
+      sessionId: activitySession.current.id,
+    });
+    return () => closeActivitySession('navigation');
+  // La sesión cambia únicamente al cambiar de actividad; la posición se actualiza mediante la referencia.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeItem?.id, course.slug, currentView]);
+
+  useEffect(() => {
+    const leave = () => closeActivitySession('page_hidden');
+    window.addEventListener('pagehide', leave);
+    return () => window.removeEventListener('pagehide', leave);
   }, []);
 
   useEffect(() => {
@@ -307,8 +394,6 @@ export default function App() {
       timestampMs: initialTimeMs,
     });
     refreshProgress();
-    queueLearningEvent(course.slug, item.id, 'item_opened', { itemType: item.type, moduleId });
-
     setCurrentView(nextView);
   };
 
@@ -327,7 +412,7 @@ export default function App() {
 
   const handleOpenCourse = (courseId: string) => {
     const selected = courses.find((candidate) => candidate.id === courseId);
-    if (!selected) return;
+    if (!selected || selected.availability === 'locked') return;
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     setCourse(selected);
     setCourseLanguage(loadCourseLanguage(selected.id));
@@ -574,6 +659,7 @@ export default function App() {
               timestampMs: timeMs,
             });
             if (activeItem.type === 'scrim') {
+              if (activitySession.current?.itemId === activeItem.id) activitySession.current.playbackMs = timeMs;
               queueLessonProgress(course.slug, activeItem.id, 'in_progress', timeMs);
             }
           }}

@@ -271,6 +271,13 @@
   margin-top: 6px !important;
 }
 
+.hud .course-card__availability {
+  border-color: color-mix(in srgb, var(--card-color) 55%, transparent);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--card-color) 7%, transparent);
+  color: var(--text-secondary);
+}
+
 /* Action Button ("VER RECORRIDO →") Cyber Glitch Button */
 .hud .course-card > button {
   margin-top: 16px !important;
@@ -304,3 +311,9 @@
   transform: scale(0.96) !important;
 }
 
+.hud .course-card > button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(.7);
+  opacity: .55;
+  box-shadow: none;
+}

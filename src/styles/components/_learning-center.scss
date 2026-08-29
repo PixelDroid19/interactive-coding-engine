@@ -27,6 +27,9 @@
 .learning-center > header span { color: #785b00; font: 700 .7rem/1 var(--font-mono, monospace); letter-spacing: .13em; }
 .learning-center > header h2 { margin: .35rem 0 .15rem; font-size: clamp(1.55rem, 4vw, 2.25rem); line-height: 1; }
 .learning-center > header p { margin: 0; color: color-mix(in srgb, currentColor 62%, transparent); }
+.learning-center__sync { display: flex; align-items: center; flex-wrap: wrap; gap: .35rem; width: fit-content; margin-top: .65rem; color: #126b4b; font: 700 .68rem/1.25 var(--font-mono, monospace); }
+.learning-center__sync small { flex-basis: 100%; max-width: 70ch; color: color-mix(in srgb, currentColor 70%, transparent); font: 500 .67rem/1.35 var(--font-body, sans-serif); }
+.learning-center__sync.is-cached, .learning-center__sync.is-error { color: #8a4b10; }
 .learning-center > header button { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border: 1px solid currentColor; border-radius: 10px; background: transparent; }
 .learning-center__summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; border-block: 1px solid color-mix(in srgb, currentColor 15%, transparent); background: color-mix(in srgb, currentColor 15%, transparent); }
 .learning-center__summary span { padding: .6rem .8rem; background: #ebe7dc; color: #4c515b; font-size: .7rem; text-align: center; }
@@ -127,6 +130,8 @@ html.hud .learning-center {
 html.hud .learning-center__summary span { background: #0b101a; color: #b8c1d4; }
 html.hud .learning-center__summary strong { color: #f4f8ff; }
 html.hud .learning-center > header span, html.hud .exam-mode label > span { color: #ffe600; }
+html.hud .learning-center__sync { color: #5fffc4; }
+html.hud .learning-center__sync.is-cached, html.hud .learning-center__sync.is-error { color: #ffe600; }
 html.hud .learning-center textarea, html.hud .learning-center select { background: #090c12; border-color: #39465a; }
 html.hud .learning-center > nav button.is-active { background: #00e7f1; }
 html.hud .learning-section-heading span { color: #00e7f1; }

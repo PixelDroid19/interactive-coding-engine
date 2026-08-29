@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createEmptyLearningProfile, recordEvidence } from '../learning/mastery';
 
 beforeEach(() => {
   localStorage.clear();
@@ -40,5 +41,27 @@ describe('learning sync', () => {
     await vi.advanceTimersByTimeAsync(1);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({ status: 'in_progress', playbackMs: 6000 });
+  });
+
+  it('migra evidencia local una sola vez y la agrupa por lotes idempotentes', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 202 }));
+    const sync = await import('./learningSync');
+    const profile = recordEvidence(createEmptyLearningProfile(0), {
+      id: 'local-evidence-01', courseId: 'course-open-cells', itemId: 'open-cells-01',
+      skillId: 'scoped-elements', capability: 'debug', result: 'partial', source: 'debugging', timestamp: 1000,
+    });
+    sync.queueLearningProfileEvidence(profile, { 'course-open-cells': 'open-cells' });
+    expect(await sync.flushLearningQueue()).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(body.evidence[0]).toMatchObject({
+      courseSlug: 'open-cells', itemKey: 'open-cells-01', skillKey: 'scoped-elements', capability: 'debug', result: 'partial',
+    });
+    expect(body.evidence[0].id).toMatch(/^[0-9a-f-]{36}$/i);
+
+    fetchMock.mockClear();
+    sync.queueLearningProfileEvidence(profile, { 'course-open-cells': 'open-cells' });
+    expect(await sync.flushLearningQueue()).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

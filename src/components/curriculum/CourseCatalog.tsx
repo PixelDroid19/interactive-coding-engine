@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, BookOpen, CheckCircle2, Code2, Route } from 'lucide-react';
+import { ArrowRight, BookOpen, CheckCircle2, Code2, LockKeyhole, Route } from 'lucide-react';
 import { Course, UserProgressRecord } from '../../types/curriculum';
 import { ThemeToggle } from '../ThemeToggle';
 import { useTheme } from '../../themes/ThemeProvider';
@@ -36,6 +36,7 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress,
           const percent = items.length ? Math.round((completed / items.length) * 100) : 0;
           const variant = course.level === 'Beginner' ? 'green' : course.level === 'Intermediate' ? 'yellow' : course.level === 'Advanced' ? 'red' : 'yellow';
           const levelLabel = course.level === 'Beginner' ? 'Desde cero' : course.level === 'Intermediate' ? 'Intermedio' : course.level === 'Advanced' ? 'Avanzado' : course.level;
+          const isLocked = course.availability === 'locked';
           return (
             <article key={course.id} className={`course-card course-card--${variant}`} data-augmented-ui={isCyber ? 'hud-card tl-clip br-clip border' : undefined}>
               <div className="course-card__topline">
@@ -50,13 +51,15 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress,
                 <div><span style={{ width: `${percent}%` }} /></div>
                 <small>{completed > 0 ? `${percent}% completado` : 'Listo para empezar'}</small>
               </div>
+              {isLocked && <p className="course-card__availability"><LockKeyhole size={14} /> {course.availabilityReason ?? 'Este curso no está disponible por ahora.'}</p>}
               <button
                 type="button"
                 data-augmented-ui={isCyber ? 'hud-primary tl-clip br-clip border' : undefined}
                 onClick={() => onOpenCourse(course.id)}
-                aria-label={`${completed > 0 ? 'Continuar curso' : 'Ver recorrido'}: ${course.title}`}
+                disabled={isLocked}
+                aria-label={isLocked ? `Curso bloqueado: ${course.title}` : `${completed > 0 ? 'Continuar curso' : 'Ver recorrido'}: ${course.title}`}
               >
-                {completed > 0 ? <><CheckCircle2 size={16} /> Continuar curso</> : <>Ver recorrido <ArrowRight size={16} /></>}
+                {isLocked ? <><LockKeyhole size={16} /> Curso bloqueado</> : completed > 0 ? <><CheckCircle2 size={16} /> Continuar curso</> : <>Ver recorrido <ArrowRight size={16} /></>}
               </button>
             </article>
           );

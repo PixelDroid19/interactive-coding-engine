@@ -1,13 +1,30 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FUNDAMENTOS_COURSE } from '../../curriculum/fundamentos/course';
 import { createEmptyLearningProfile } from '../../learning/mastery';
 import { LearningCenter } from './LearningCenter';
 
 describe('LearningCenter', () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    vi.restoreAllMocks();
+  });
+  beforeEach(() => {
+    localStorage.clear();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      courseSlug: 'fundamentos',
+      generatedAt: new Date(0).toISOString(),
+      summary: { dueReviews: 0, reinforcements: 1, notes: 0, averageMastery: null, activeSkills: 1 },
+      reviews: [], notes: [], skillGaps: [], recentItems: [],
+      reinforcements: [{
+        id: 'a32b923e-1f3d-45f7-b2e7-cf86a1956136', itemKey: 'fundamentos-07', skillKey: 'return-values',
+        note: 'Distingue mostrar un dato de devolverlo.', evidence: 'El mismo error apareció en tres intentos.',
+        occurrences: 3, reviewedAt: null, createdAt: new Date(1).toISOString(), updatedAt: new Date(2).toISOString(),
+      }],
+    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+  });
 
   it('reúne repaso, cuaderno, examen, entrevista y ruta sin salir del curso', () => {
     const profile = createEmptyLearningProfile(0);
