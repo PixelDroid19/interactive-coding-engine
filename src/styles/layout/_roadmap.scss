@@ -189,10 +189,7 @@
 }
 
 .reading-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(17rem, 0.5fr);
-  align-items: end;
-  gap: clamp(24px, 5vw, 84px);
+  display: block;
 }
 
 .reading-pulse-dot {
@@ -209,49 +206,13 @@
   display: none;
 }
 
+.reading-hero-stat-chip {
+  color: #a1a1aa;
+}
+
 .reading-hero h1:focus,
 .reading-hero h1:focus-visible {
   outline: none;
-}
-
-.reading-hero-meta {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-self: stretch;
-  min-width: min(100%, 320px);
-  overflow: hidden;
-  border: 1px solid #3f3f46;
-  background: rgba(9, 9, 11, 0.72);
-}
-
-.reading-hero-meta span,
-.reading-meta-cell {
-  flex: 1;
-  display: flex;
-  min-height: 76px;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 12px 14px;
-  border-left: 1px solid #3f3f46;
-  color: #a1a1aa;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.reading-hero-meta span:first-child {
-  border-left: 0;
-}
-
-.reading-hero-meta strong {
-  color: #fef08a;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 24px;
-  line-height: 1.1;
-  margin-bottom: 2px;
 }
 
 .reading-overview {

@@ -273,17 +273,8 @@
 }
 
 @media (max-width: 1023px) {
-  .reading-hero {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-
   .reading-apply-grid {
     grid-template-columns: 1fr;
-  }
-
-  .reading-hero-meta {
-    width: 100%;
   }
 }
 
@@ -380,20 +371,6 @@
   .reading-lab-zone,
   .reading-library-zone {
     padding: 24px 12px;
-  }
-
-  .reading-hero-meta {
-    grid-template-columns: 1fr;
-  }
-
-  .reading-hero-meta span {
-    min-height: 54px;
-    border-top: 1px solid #3f3f46;
-    border-left: 0;
-  }
-
-  .reading-hero-meta span:first-child {
-    border-top: 0;
   }
 
   .reading-footer {

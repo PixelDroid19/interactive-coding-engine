@@ -213,12 +213,12 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
 
             <div className="reading-content-flow">
               <header
-                className="reading-hero relative overflow-hidden border border-zinc-700 bg-[#101218] px-6 py-7 sm:px-9 sm:py-9"
+                className="reading-hero relative overflow-hidden border border-zinc-700 bg-[#101218] px-6 py-7 sm:px-9 sm:py-8"
                 data-augmented-ui={isCyber ? "reading-hero tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
               >
                 <div className="reading-hero-accent-bar absolute inset-y-0 left-0 w-1.5 bg-yellow-300" aria-hidden="true" />
                 <div className="reading-hero-copy">
-                  <div className="reading-hero-eyebrow-row flex items-center gap-2.5">
+                  <div className="reading-hero-eyebrow-row flex items-center gap-2.5 flex-wrap">
                     <span className="reading-pulse-dot" aria-hidden="true" />
                     <p className="reading-hero-eyebrow text-[11px] font-black uppercase tracking-[0.2em] text-yellow-300">
                       Lectura de preparación
@@ -226,6 +226,14 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                     <span className="reading-hero-sys-badge font-mono text-[10px]">
                       DECK_{displayDeckNumber} // READY
                     </span>
+                    <span className="reading-hero-stat-chip font-mono text-[11px] text-zinc-400">
+                      · {reading.sections.length} {reading.sections.length === 1 ? 'idea' : 'ideas'}
+                    </span>
+                    {reading.frequentQuestions && reading.frequentQuestions.length > 0 && (
+                      <span className="reading-hero-stat-chip font-mono text-[11px] text-zinc-400">
+                        · {reading.frequentQuestions.length} {reading.frequentQuestions.length === 1 ? 'duda' : 'dudas'}
+                      </span>
+                    )}
                   </div>
                   <h1
                     ref={titleRef}
@@ -235,38 +243,9 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                   >
                     {reading.title}
                   </h1>
-                  <p className="reading-hero-summary mt-4 max-w-4xl text-base leading-relaxed text-zinc-300 sm:text-[17px]">
+                  <p className="reading-hero-summary mt-3 max-w-4xl text-base leading-relaxed text-zinc-300 sm:text-[16.5px]">
                     {reading.summary}
                   </p>
-                </div>
-
-                <div className="reading-hero-meta" aria-label="Contenido y recorrido">
-                  <span className="reading-meta-cell">
-                    <strong>{reading.sections.length}</strong>
-                    <small>{reading.sections.length === 1 ? 'idea' : 'ideas'}</small>
-                  </span>
-                  {(reading.interactiveLab || reading.handsOnLab || cellsAppLab) && (
-                    <span className="reading-meta-cell">
-                      <strong>1</strong>
-                      <small>laboratorio</small>
-                    </span>
-                  )}
-                  {reading.frequentQuestions && reading.frequentQuestions.length > 0 ? (
-                    <span className="reading-meta-cell">
-                      <strong>{reading.frequentQuestions.length}</strong>
-                      <small>{reading.frequentQuestions.length === 1 ? 'duda' : 'dudas'}</small>
-                    </span>
-                  ) : reading.sources && reading.sources.length > 0 ? (
-                    <span className="reading-meta-cell">
-                      <strong>{reading.sources.length}</strong>
-                      <small>{reading.sources.length === 1 ? 'fuente' : 'fuentes'}</small>
-                    </span>
-                  ) : (
-                    <span className="reading-meta-cell">
-                      <strong>1</strong>
-                      <small>práctica</small>
-                    </span>
-                  )}
                 </div>
               </header>
 

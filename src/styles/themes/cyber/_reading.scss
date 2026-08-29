@@ -225,27 +225,10 @@
   line-height: 1.75 !important;
 }
 
-.hud .reading-hero-meta {
-  border: 1px solid #1e293b !important;
-  background: rgba(4, 6, 12, 0.9) !important;
-}
-
-.hud .reading-hero-meta span,
-.hud .reading-meta-cell {
-  border-left: 1px solid #1e293b !important;
+.hud .reading-hero-stat-chip {
   color: #94a3b8 !important;
-  font-family: "Chakra Petch", sans-serif !important;
-}
-
-.hud .reading-hero-meta span:first-child,
-.hud .reading-meta-cell:first-child {
-  border-left: 0 !important;
-}
-
-.hud .reading-hero-meta strong {
-  color: #ffe600 !important;
-  font-family: "Fira Code", monospace !important;
-  font-weight: 800 !important;
+  font-family: "Chakra Petch", monospace !important;
+  font-size: 11px !important;
 }
 
 /* Left Rail Navigation & Protocol Deck */
