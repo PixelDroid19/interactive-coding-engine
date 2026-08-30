@@ -121,7 +121,7 @@ Los MP3 publicados no forman parte del frontend. `compileLesson` resuelve cada I
 1. Genera o coloca el MP3 en un directorio local temporal; `public/audio/` puede usarse durante la preparación, pero el archivo no se commitea.
 2. Set `durationMs` in the lesson to the **real** file length (do not leave a stale constant).
 3. Time the `speak` / `write` / `gesture` `at` values against the recording. Play the lesson and listen: if the mouse or the type-out leads/lags the voice, move `at`.
-4. Ejecuta `pnpm audio:r2:descriptors`, construye el inventario en el backend, sube y verifica ambos buckets, y regenera el mapa del frontend.
+4. Ejecuta `pnpm audio:r2:descriptors`, construye el inventario en el backend, sube y verifica únicamente el bucket principal `learning-platform-media`, y regenera el mapa del frontend. No crees un bucket de respaldo automático: una copia en la misma cuenta no aporta aislamiento ante una caída de la plataforma.
 5. Comprueba la URL pública y una petición `Range`; después elimina la copia MP3 temporal.
 
 `AudioNarrator` prefers the MP3 as `hardware-audio` clock. If there is no URL, it falls back to speech synthesis / a synthetic clock. Fundamentos lessons always have an MP3 — do not remove `audioUrl`.
