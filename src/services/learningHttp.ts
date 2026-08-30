@@ -3,6 +3,8 @@ export const LEARNING_API_URL = (import.meta.env.VITE_LEARNING_API_URL || DEFAUL
 
 const ACTOR_KEY = 'aula_anonymous_actor_v1';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+let csrfToken: string | null = null;
 
 export function getLearningActorId(): string {
   try {
@@ -16,15 +18,31 @@ export function getLearningActorId(): string {
   }
 }
 
+export function rotateLearningActorId(): string {
+  const created = crypto.randomUUID();
+  try {
+    localStorage.setItem(ACTOR_KEY, created);
+  } catch {
+    // La sesión anónima seguirá viva solo durante esta carga si Storage no existe.
+  }
+  return created;
+}
+
+export function setLearningCsrfToken(token: string | null): void {
+  csrfToken = token;
+}
+
 export async function learningApiRequest(path: string, init: RequestInit = {}): Promise<Response> {
+  const method = (init.method ?? 'GET').toUpperCase();
+  const headers = Object.fromEntries(new Headers(init.headers).entries());
+  headers.accept ??= 'application/json';
+  headers['x-anonymous-id'] ??= getLearningActorId();
+  if (init.body && !headers['content-type']) headers['content-type'] = 'application/json';
+  if (!SAFE_METHODS.has(method) && csrfToken && !headers['x-csrf-token']) headers['x-csrf-token'] = csrfToken;
   return fetch(`${LEARNING_API_URL}${path}`, {
     ...init,
-    headers: {
-      accept: 'application/json',
-      'x-anonymous-id': getLearningActorId(),
-      ...(init.body ? { 'content-type': 'application/json' } : {}),
-      ...init.headers,
-    },
+    credentials: 'include',
+    headers,
     signal: init.signal ?? AbortSignal.timeout(10_000),
   });
 }

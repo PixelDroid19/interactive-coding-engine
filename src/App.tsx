@@ -260,6 +260,7 @@ export default function App() {
   const [playgroundReturnView, setPlaygroundReturnView] = useState<'catalog' | 'home'>(initialAppState.view === 'playground' ? 'catalog' : 'home');
   const [navigationBlocker, setNavigationBlocker] = useState<ItemReadiness | null>(null);
   const [remoteLessonState, setRemoteLessonState] = useState<{ id: string; status: 'loading' | 'ready' | 'offline' | 'unavailable'; message?: string } | null>(null);
+  const [identityRevision, setIdentityRevision] = useState(0);
   const activitySession = useRef<{ id: string; courseSlug: string; itemId: string; itemType: string; openedAt: number; playbackMs: number } | null>(null);
 
   const closeActivitySession = (reason: string) => {
@@ -306,6 +307,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const handleIdentityChange = () => {
+      setProgress(loadUserProgress());
+      void loadLearningProfile().then(setLearningProfile);
+      setIdentityRevision((revision) => revision + 1);
+    };
+    window.addEventListener('aula-auth-session', handleIdentityChange);
+    return () => window.removeEventListener('aula-auth-session', handleIdentityChange);
+  }, []);
+
+  useEffect(() => {
     const applyRemoteProgress = (items: Parameters<typeof mergeRemoteProgress>[1]) => {
       setProgress((current) => {
         const merged = mergeRemoteProgress(current, items);
@@ -325,7 +336,7 @@ export default function App() {
       })
       .catch(() => undefined);
     return () => controller.abort();
-  }, []);
+  }, [identityRevision]);
 
   useEffect(() => {
     const applyManifest = (manifest: Parameters<typeof applyPublishedManifest>[1]) => {

@@ -21,6 +21,7 @@ import {
 } from '../../learning/curriculumEvidence';
 import { LearningCenter } from '../learning/LearningCenter';
 import type { LearningCenterSnapshot } from '../../services/learningCenterApi';
+import { AccountMenu } from '../../auth/AccountMenu';
 
 interface RoadmapHomeProps {
   course: Course;
@@ -216,15 +217,16 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
               Aprende<span>Código</span>
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="rm-nav-actions flex items-center gap-2">
+            <AccountMenu />
             <ThemeToggle />
-            <button type="button" className="rm-play-btn rm-learning-btn" onClick={() => setShowLearningCenter(true)}>
-              <BrainCircuit size={14} /> Mi aprendizaje
+            <button type="button" className="rm-play-btn rm-learning-btn" aria-label="Mi aprendizaje" onClick={() => setShowLearningCenter(true)}>
+              <BrainCircuit size={14} /> <span className="rm-button-label">Mi aprendizaje</span>
               {dueReviewCount > 0 && <strong aria-label={`${dueReviewCount} repasos pendientes`}>{dueReviewCount}</strong>}
             </button>
-            <button type="button" className="rm-play-btn" onClick={onBackToCourses}>Cursos</button>
-            <button type="button" className="rm-play-btn" onClick={onPlayground}>
-              <Terminal size={13} /> Playground
+            <button type="button" className="rm-play-btn rm-courses-btn" onClick={onBackToCourses}>Cursos</button>
+            <button type="button" className="rm-play-btn rm-playground-btn" aria-label="Abrir playground" onClick={onPlayground}>
+              <Terminal size={13} /> <span className="rm-button-label">Playground</span>
             </button>
           </div>
         </div>

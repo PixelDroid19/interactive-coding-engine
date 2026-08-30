@@ -3,6 +3,7 @@ import { ArrowRight, BookOpen, CheckCircle2, Code2, LockKeyhole, Route } from 'l
 import { Course, UserProgressRecord } from '../../types/curriculum';
 import { ThemeToggle } from '../ThemeToggle';
 import { useTheme } from '../../themes/ThemeProvider';
+import { AccountMenu } from '../../auth/AccountMenu';
 
 interface CourseCatalogProps {
   courses: Course[];
@@ -17,9 +18,12 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress,
   return <div className="course-catalog">
     <header className="course-catalog__nav">
       <div className="course-catalog__brand"><Route size={18} /> Aprende<span>Código</span></div>
-      <div className="flex items-center gap-2">
+      <div className="course-catalog__actions flex items-center gap-2">
+        <AccountMenu />
         <ThemeToggle />
-        <button type="button" className="rm-play-btn" onClick={onPlayground}><Code2 size={14} /> Playground</button>
+        <button type="button" className="rm-play-btn rm-playground-btn" aria-label="Abrir playground" onClick={onPlayground}>
+          <Code2 size={14} /> <span className="rm-button-label">Playground</span>
+        </button>
       </div>
     </header>
     <main className="course-catalog__main">

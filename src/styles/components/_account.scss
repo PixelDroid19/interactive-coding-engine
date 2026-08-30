@@ -1,0 +1,119 @@
+.account-control {
+  position: relative;
+  flex: 0 0 auto;
+  font-family: Outfit, sans-serif;
+}
+
+.account-trigger {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 7px;
+  border: 2px solid #111318;
+  border-radius: 8px;
+  background: var(--color-brand);
+  padding: 6px 10px;
+  color: #111318;
+  box-shadow: 2px 2px 0 #111318;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.account-trigger:not(:disabled):active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 #111318; }
+.account-trigger:focus-visible { outline: 3px solid #38bdf8; outline-offset: 2px; }
+.account-trigger:disabled { cursor: default; opacity: .68; box-shadow: none; }
+.account-trigger.is-authenticated { background: #f5f2eb; }
+.account-trigger--error { border-color: #be123c; background: #fff1f2; color: #881337; }
+
+.account-trigger--loading {
+  width: 88px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.account-trigger--loading i {
+  width: 100%;
+  height: 9px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #c8c4ba 20%, #f5f2eb 50%, #c8c4ba 80%);
+  background-size: 200% 100%;
+  animation: account-loading 1.2s ease-in-out infinite;
+}
+
+@keyframes account-loading { to { background-position: -200% 0; } }
+
+.account-monogram {
+  display: grid;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border: 1.5px solid #111318;
+  border-radius: 5px;
+  background: #ffe600;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.account-menu {
+  position: absolute;
+  z-index: 80;
+  top: calc(100% + 10px);
+  right: 0;
+  width: min(320px, calc(100vw - 24px));
+  border: 2px solid #111318;
+  border-radius: 12px;
+  background: #f5f2eb;
+  padding: 16px;
+  color: #20232a;
+  box-shadow: 6px 6px 0 #111318;
+}
+
+.account-menu__identity { display: grid; gap: 4px; }
+.account-menu__identity > span { color: #6b6252; font-size: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.account-menu__identity strong { font-family: 'Space Grotesk', sans-serif; font-size: 17px; line-height: 1.15; }
+.account-menu__identity p { margin: 0; color: #625f58; font-size: 12px; line-height: 1.45; overflow-wrap: anywhere; }
+
+.account-menu__roles { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 13px; padding-top: 12px; border-top: 1px solid #b9b3a8; }
+.account-menu__roles span { border: 1px solid #111318; border-radius: 999px; padding: 3px 7px; background: #fff; font-size: 10px; font-weight: 800; }
+
+.account-menu__providers { display: grid; gap: 8px; margin-top: 14px; }
+.account-menu__providers button,
+.account-menu__action {
+  width: 100%;
+  min-height: 38px;
+  border: 2px solid #111318;
+  border-radius: 8px;
+  background: #111318;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 850;
+  text-align: left;
+}
+.account-menu__providers button:first-child { background: #ffe600; color: #111318; }
+.account-menu__providers button:active,
+.account-menu__action:active { transform: translate(1px, 1px); }
+.account-menu__action { margin-top: 14px; background: transparent; color: #111318; text-align: center; }
+.account-menu__action:disabled { cursor: wait; opacity: .6; }
+.account-menu__error { margin: 12px 0 0; border-left: 3px solid #be123c; padding-left: 9px; color: #881337; font-size: 11px; line-height: 1.45; }
+
+.hud .account-trigger { border-color: #00e5ee; background: #10141c; color: #f4f7fb; box-shadow: 3px 3px 0 #ffe600; }
+.hud .account-trigger.is-authenticated { background: #18202b; }
+.hud .account-monogram { border-color: #00e5ee; color: #10141c; }
+.hud .account-menu { border-color: #00e5ee; background: #121720; color: #f4f7fb; box-shadow: 6px 6px 0 #d9ff00; }
+.hud .account-menu__identity > span { color: #00e5ee; }
+.hud .account-menu__identity p { color: #aeb7c8; }
+.hud .account-menu__roles { border-top-color: #3c4657; }
+.hud .account-menu__roles span { border-color: #536078; background: #1c2430; }
+.hud .account-menu__action { border-color: #536078; color: #f4f7fb; }
+
+@media (max-width: 600px) {
+  .account-trigger__label { max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .account-menu { position: fixed; top: 68px; right: 10px; left: 10px; width: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-trigger--loading i { animation: none; }
+}

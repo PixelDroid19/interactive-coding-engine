@@ -551,11 +551,25 @@
   .rm-wordmark { display: none; }
   .rm-nav-inner > div:last-child {
     min-width: 0;
-    overflow-x: auto;
-    overscroll-behavior-inline: contain;
-    scrollbar-width: none;
+    overflow: visible;
   }
-  .rm-nav-inner > div:last-child::-webkit-scrollbar { display: none; }
+  .rm-nav-actions { gap: 6px; }
+  .rm-nav-actions .account-trigger,
+  .rm-nav-actions .rm-play-btn,
+  .rm-nav-actions .cyber-glitch-btn {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    min-height: 34px;
+    justify-content: center;
+    padding: 0;
+  }
+  .rm-nav-actions .account-trigger__label,
+  .rm-nav-actions .rm-button-label,
+  .rm-nav-actions .cyber-hud-badge,
+  .rm-nav-actions .cyber-text-main,
+  .rm-nav-actions .cyber-glitch-ghost span,
+  .rm-nav-actions .rm-courses-btn { display: none; }
   .rm-play-btn { padding: 6px 9px; }
   .rm-main { padding-inline: 10px; }
   .rm-hero { padding: 18px 16px; align-items: stretch; }
@@ -634,4 +648,3 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-

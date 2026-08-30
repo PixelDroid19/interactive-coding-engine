@@ -47,6 +47,22 @@
 @media (max-width: 600px) {
   .course-catalog__main { width: min(100% - 22px, 1120px); padding-top: 38px; }
   .course-catalog__nav { padding-inline: 12px; }
+  .course-catalog__actions { gap: 6px; }
+  .course-catalog__actions .account-trigger,
+  .course-catalog__actions .rm-play-btn,
+  .course-catalog__actions .cyber-glitch-btn {
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+    min-height: 34px;
+    justify-content: center;
+    padding: 0;
+  }
+  .course-catalog__actions .account-trigger__label,
+  .course-catalog__actions .rm-button-label,
+  .course-catalog__actions .cyber-hud-badge,
+  .course-catalog__actions .cyber-text-main,
+  .course-catalog__actions .cyber-glitch-ghost span { display: none; }
   .course-card { min-height: 390px; padding: 20px; }
 }
 

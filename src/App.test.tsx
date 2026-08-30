@@ -11,8 +11,18 @@ import { ThemeProvider } from './themes/ThemeProvider';
 import { createEmptyLearningProfile, recordEvidence } from './learning/mastery';
 import { getCurriculumSkillIndex } from './learning/curriculumEvidence';
 import { LEARNING_PROFILE_STORAGE_KEY } from './learning/localLearningRepository';
+import { AuthSessionProvider } from './auth/AuthSessionProvider';
 
-const renderApp = () => render(<ThemeProvider><App /></ThemeProvider>);
+vi.mock('./services/authSessionApi', async () => {
+  const actual = await vi.importActual('./services/authSessionApi');
+  return {
+    ...actual,
+    fetchAuthSession: vi.fn().mockResolvedValue({ authenticated: false, providers: [] }),
+    logoutAuthSession: vi.fn().mockResolvedValue(undefined),
+  };
+});
+
+const renderApp = () => render(<ThemeProvider><AuthSessionProvider><App /></AuthSessionProvider></ThemeProvider>);
 
 function seedMastery(lessonIds: string[]) {
   let profile = createEmptyLearningProfile(1);
