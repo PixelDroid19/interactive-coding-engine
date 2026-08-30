@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Activity, ArrowLeft, BookOpenCheck, Inbox, MessageSquareText, RefreshCw, Search, ShieldCheck, Users, X } from 'lucide-react';
-import { staffDashboardApi, type LearnerDetail, type StaffLearner, type StaffOverview, type StaffThread } from '../services/staffDashboardApi';
+import { Activity, ArrowLeft, BookOpenCheck, Inbox, LibraryBig, MessageSquareText, RefreshCw, Search, ShieldCheck, Trash2, Users, X } from 'lucide-react';
+import { staffDashboardApi, type AdminCourse, type IdentityAccessRule, type LearnerDetail, type StaffLearner, type StaffOverview, type StaffThread } from '../services/staffDashboardApi';
 import { useTheme } from '../themes/ThemeProvider';
 
-type Tab = 'overview' | 'learners' | 'inbox' | 'access';
+type Tab = 'overview' | 'learners' | 'inbox' | 'access' | 'content';
 
 function date(value: unknown): string {
   if (typeof value !== 'string') return 'Sin actividad';
@@ -22,6 +22,8 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
   const [learners, setLearners] = useState<StaffLearner[]>([]);
   const [threads, setThreads] = useState<StaffThread[]>([]);
   const [users, setUsers] = useState<Array<Record<string, unknown>>>([]);
+  const [accessRules, setAccessRules] = useState<IdentityAccessRule[]>([]);
+  const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [selected, setSelected] = useState<LearnerDetail | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
@@ -37,14 +39,18 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
     setLoading(true);
     setError(null);
     try {
-      const [nextOverview, nextLearners, nextThreads, nextUsers] = await Promise.all([
+      const [nextOverview, nextLearners, nextThreads, nextUsers, nextRules, nextCourses] = await Promise.all([
         staffDashboardApi.overview(), staffDashboardApi.learners(), staffDashboardApi.threads(),
         canAdmin ? staffDashboardApi.users() : Promise.resolve([]),
+        canAdmin ? staffDashboardApi.accessRules() : Promise.resolve([]),
+        canAdmin ? staffDashboardApi.courses() : Promise.resolve([]),
       ]);
       setOverview(nextOverview);
       setLearners(nextLearners);
       setThreads(nextThreads);
       setUsers(nextUsers);
+      setAccessRules(nextRules);
+      setCourses(nextCourses);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'No pudimos cargar el panel.');
     } finally {
@@ -104,12 +110,13 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
           <button className={tab === 'learners' ? 'is-active' : ''} onClick={() => setTab('learners')}><Users size={18} />Personas</button>
           <button className={tab === 'inbox' ? 'is-active' : ''} onClick={() => setTab('inbox')}><Inbox size={18} />Mensajes{overview?.openThreads ? <b>{overview.openThreads}</b> : null}</button>
           {canAdmin && <button className={tab === 'access' ? 'is-active' : ''} onClick={() => setTab('access')}><ShieldCheck size={18} />Permisos</button>}
+          {canAdmin && <button className={tab === 'content' ? 'is-active' : ''} onClick={() => setTab('content')}><LibraryBig size={18} />Cursos</button>}
         </nav>
         <p>Los cursos y prácticas siguen disponibles sin cuenta. Este espacio muestra solo datos vinculados.</p>
       </aside>
       <main className="staff-dashboard__main">
         <header className="staff-dashboard__header">
-          <div><span>{canAdmin ? 'Administración' : 'Formación'}</span><h1>{tab === 'overview' ? 'Pulso de aprendizaje' : tab === 'learners' ? 'Seguimiento individual' : tab === 'inbox' ? 'Bandeja de acompañamiento' : 'Acceso y responsabilidades'}</h1></div>
+          <div><span>{canAdmin ? 'Administración' : 'Formación'}</span><h1>{tab === 'overview' ? 'Pulso de aprendizaje' : tab === 'learners' ? 'Seguimiento individual' : tab === 'inbox' ? 'Bandeja de acompañamiento' : tab === 'content' ? 'Disponibilidad de cursos' : 'Acceso y responsabilidades'}</h1></div>
           <div className="staff-dashboard__header-actions"><button onClick={() => void load()} aria-label="Actualizar"><RefreshCw size={18} /></button><button onClick={onClose} aria-label="Cerrar panel"><X size={20} /></button></div>
         </header>
         {error && <div className="staff-dashboard__error" role="alert">{error}</div>}
@@ -119,8 +126,8 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
               <>
                 <section className="staff-metrics" aria-label="Indicadores">
                   <article><span>Personas registradas</span><strong>{overview.learners}</strong><small>cuentas activas</small></article>
-                  <article><span>Actividad reciente</span><strong>{overview.active30d}</strong><small>últimos 30 días</small></article>
-                  <article><span>Avances cerrados</span><strong>{overview.completedItems}</strong><small>ítems completados</small></article>
+                  <article><span>Actividad reciente</span><strong>{overview.active30d}</strong><small>cuentas y visitas anónimas · 30 días</small></article>
+                  <article><span>Avances cerrados</span><strong>{overview.completedItems}</strong><small>registrados · {overview.anonymousCompletedItems} anónimos</small></article>
                   <article className={overview.needsSupport ? 'is-alert' : ''}><span>Necesitan refuerzo</span><strong>{overview.needsSupport}</strong><small>patrones repetidos</small></article>
                 </section>
                 <section className="staff-dashboard__split">
@@ -149,7 +156,8 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
                 <div className="staff-inbox__conversation">{activeThread ? (() => { const thread = threads.find((candidate) => candidate.id === activeThread); return thread ? <><header><button onClick={() => setActiveThread(null)}><ArrowLeft size={17} /></button><div><h2>{thread.subject}</h2><p>{thread.displayName || thread.email}</p></div></header><div className="staff-messages">{thread.messages.map((message) => <article key={message.id} className={message.authorUserId === thread.learnerId ? 'is-learner' : 'is-staff'}><p>{message.body}</p><time>{date(message.createdAt)}</time></article>)}</div><form onSubmit={(event) => { event.preventDefault(); void sendReply(thread); }}><label htmlFor="staff-reply">Responder con orientación concreta</label><textarea id="staff-reply" value={reply} onChange={(event) => setReply(event.target.value)} maxLength={4000} /><button disabled={saving || !reply.trim()}>{saving ? 'Enviando…' : 'Enviar y esperar respuesta'}</button></form></> : null; })() : <Empty label="Elige una conversación para responder." />}</div>
               </section>
             )}
-            {tab === 'access' && canAdmin && <AccessView users={users} reload={load} setError={setError} />}
+            {tab === 'access' && canAdmin && <AccessView users={users} rules={accessRules} reload={load} setError={setError} />}
+            {tab === 'content' && canAdmin && <ContentView courses={courses} reload={load} setError={setError} />}
           </div>
         )}
       </main>
@@ -168,8 +176,11 @@ function LearnerDetailView({ detail, feedback, courseSlug, saving, onFeedback, o
   return <><header className="staff-detail-header"><span className="staff-avatar is-large">{String(user.displayName || user.email).slice(0, 2).toUpperCase()}</span><div><h2>{String(user.displayName || user.email)}</h2><p>{String(user.email)} · última actividad {date(user.lastSeenAt)}</p></div></header><section className="staff-detail-stats"><span><b>{detail.progress.length}</b> avances</span><span><b>{detail.attempts.length}</b> intentos</span><span><b>{detail.skills.filter((skill) => Number(skill.score) < .55).length}</b> refuerzos</span></section><section className="staff-detail-section"><h3>Conceptos a reforzar</h3>{detail.skills.slice(0, 8).map((skill, index) => <div className="staff-skill" key={`${String(skill.skillKey)}-${index}`}><span><strong>{String(skill.skillKey)}</strong><small>{String(skill.capability)} · {String(skill.attempts)} intentos</small></span><b>{score(skill.score)}</b></div>)}{detail.skills.length === 0 && <Empty label="Aún no hay evidencia suficiente." />}</section><section className="staff-feedback-compose"><h3><MessageSquareText size={17} /> Dejar feedback</h3><input value={courseSlug} onChange={(event) => onCourse(event.target.value)} placeholder="Curso (opcional, ej. fundamentos)" /><textarea value={feedback} onChange={(event) => onFeedback(event.target.value)} maxLength={4000} placeholder="Explica qué hizo bien, qué patrón debe revisar y cuál es el siguiente paso concreto." /><button disabled={saving || !feedback.trim()} onClick={onSend}>{saving ? 'Guardando…' : 'Enviar feedback'}</button></section>{detail.feedback.length > 0 && <section className="staff-detail-section"><h3>Feedback anterior</h3>{detail.feedback.slice(0, 5).map((item) => <article className="staff-feedback-history" key={String(item.id)}><p>{String(item.message)}</p><small>{date(item.createdAt)} · {String(item.status)}</small></article>)}</section>}</>;
 }
 
-function AccessView({ users, reload, setError }: { users: Array<Record<string, unknown>>; reload(): Promise<void>; setError(value: string | null): void }) {
+function AccessView({ users, rules, reload, setError }: { users: Array<Record<string, unknown>>; rules: IdentityAccessRule[]; reload(): Promise<void>; setError(value: string | null): void }) {
   const [busy, setBusy] = useState('');
+  const [provider, setProvider] = useState<'google' | 'microsoft'>('google');
+  const [ruleType, setRuleType] = useState<'email' | 'domain'>('email');
+  const [value, setValue] = useState('');
   const change = async (user: Record<string, unknown>, role: 'tutor' | 'admin') => {
     const id = String(user.id); const roles = Array.isArray(user.roles) ? user.roles : []; const has = roles.includes(role);
     setBusy(`${id}:${role}`); setError(null);
@@ -177,5 +188,37 @@ function AccessView({ users, reload, setError }: { users: Array<Record<string, u
     catch (error) { setError(error instanceof Error ? error.message : 'No pudimos cambiar el permiso.'); }
     finally { setBusy(''); }
   };
-  return <section className="staff-access"><div className="staff-access__intro"><ShieldCheck size={28} /><div><h2>Responsabilidades explícitas</h2><p>Estudiante aprende; formador acompaña y deja feedback; administrador gestiona contenido, acceso y permisos.</p></div></div><div className="staff-access__table">{users.map((user) => { const roles = Array.isArray(user.roles) ? user.roles : []; const id = String(user.id); return <article key={id}><span><strong>{String(user.displayName || user.email)}</strong><small>{String(user.email)}</small></span><div><button className={roles.includes('tutor') ? 'is-active' : ''} disabled={Boolean(busy)} onClick={() => void change(user, 'tutor')}>Formador</button><button className={roles.includes('admin') ? 'is-active' : ''} disabled={Boolean(busy)} onClick={() => void change(user, 'admin')}>Admin</button></div></article>; })}{users.length === 0 && <Empty label="No hay cuentas registradas todavía." />}</div></section>;
+  const changeStatus = async (user: Record<string, unknown>) => {
+    const id = String(user.id); const next = user.status === 'blocked' ? 'active' : 'blocked';
+    setBusy(`${id}:status`); setError(null);
+    try { await staffDashboardApi.setUserStatus(id, next); await reload(); }
+    catch (error) { setError(error instanceof Error ? error.message : 'No pudimos cambiar el estado de la cuenta.'); }
+    finally { setBusy(''); }
+  };
+  const addRule = async (event: React.FormEvent) => {
+    event.preventDefault(); if (!value.trim()) return;
+    setBusy('rule:new'); setError(null);
+    try { await staffDashboardApi.upsertAccessRule({ provider, ruleType, value: value.trim(), enabled: true }); setValue(''); await reload(); }
+    catch (error) { setError(error instanceof Error ? error.message : 'No pudimos guardar la regla de acceso.'); }
+    finally { setBusy(''); }
+  };
+  const removeRule = async (id: string) => {
+    setBusy(`rule:${id}`); setError(null);
+    try { await staffDashboardApi.deleteAccessRule(id); await reload(); }
+    catch (error) { setError(error instanceof Error ? error.message : 'No pudimos eliminar la regla de acceso.'); }
+    finally { setBusy(''); }
+  };
+  return <section className="staff-access"><div className="staff-access__intro"><ShieldCheck size={28} /><div><h2>Responsabilidades explícitas</h2><p>Estudiante aprende; formador acompaña y deja feedback; administrador gestiona contenido, acceso y permisos.</p></div></div><div className="staff-access__grid"><section className="staff-access__section"><header><div><span>Cuentas</span><h2>Roles y estado</h2></div><small>Bloquear revoca las sesiones abiertas.</small></header><div className="staff-access__table">{users.map((user) => { const roles = Array.isArray(user.roles) ? user.roles : []; const id = String(user.id); const blocked = user.status === 'blocked'; return <article key={id}><span><strong>{String(user.displayName || user.email)}</strong><small>{String(user.email)} · {blocked ? 'bloqueada' : 'activa'}</small></span><div><button className={roles.includes('tutor') ? 'is-active' : ''} disabled={Boolean(busy) || blocked} onClick={() => void change(user, 'tutor')}>Formador</button><button className={roles.includes('admin') ? 'is-active' : ''} disabled={Boolean(busy) || blocked} onClick={() => void change(user, 'admin')}>Admin</button><button className={blocked ? 'is-warning' : ''} disabled={Boolean(busy)} onClick={() => void changeStatus(user)}>{blocked ? 'Reactivar' : 'Bloquear'}</button></div></article>; })}{users.length === 0 && <Empty label="No hay cuentas registradas todavía." />}</div></section><section className="staff-access__section"><header><div><span>Inicio de sesión</span><h2>Quién puede registrarse</h2></div><small>Google admite correos concretos; Microsoft también dominios EPAM.</small></header><form className="staff-rule-form" onSubmit={(event) => void addRule(event)}><label>Proveedor<select value={provider} onChange={(event) => { const next = event.target.value as 'google' | 'microsoft'; setProvider(next); if (next === 'google') setRuleType('email'); }}><option value="google">Google</option><option value="microsoft">Microsoft</option></select></label><label>Tipo<select value={ruleType} onChange={(event) => setRuleType(event.target.value as 'email' | 'domain')}><option value="email">Correo exacto</option><option value="domain" disabled={provider === 'google'}>Dominio</option></select></label><label className="staff-rule-form__value">Valor<input type={ruleType === 'email' ? 'email' : 'text'} value={value} onChange={(event) => setValue(event.target.value)} placeholder={ruleType === 'email' ? 'persona@empresa.com' : 'empresa.com'} /></label><button disabled={Boolean(busy) || !value.trim()}>Agregar acceso</button></form><div className="staff-rule-list">{rules.map((rule) => <article key={rule.id}><span><b>{rule.provider === 'google' ? 'Google' : 'Microsoft'}</b><strong>{rule.value}</strong><small>{rule.ruleType === 'email' ? 'Correo exacto' : 'Dominio completo'} · {rule.enabled ? 'activo' : 'desactivado'}</small></span><button aria-label={`Eliminar acceso ${rule.value}`} disabled={Boolean(busy)} onClick={() => void removeRule(rule.id)}><Trash2 size={16} /></button></article>)}{rules.length === 0 && <Empty label="No hay reglas adicionales configuradas." />}</div></section></div></section>;
+}
+
+function ContentView({ courses, reload, setError }: { courses: AdminCourse[]; reload(): Promise<void>; setError(value: string | null): void }) {
+  const [busy, setBusy] = useState('');
+  const [reasons, setReasons] = useState<Record<string, string>>({});
+  const change = async (course: AdminCourse, availability: AdminCourse['availability']) => {
+    setBusy(course.slug); setError(null);
+    try { await staffDashboardApi.setCourseAvailability(course.slug, availability, availability === 'available' ? undefined : reasons[course.slug] ?? course.availabilityReason ?? 'Disponible próximamente.'); await reload(); }
+    catch (error) { setError(error instanceof Error ? error.message : 'No pudimos cambiar la disponibilidad del curso.'); }
+    finally { setBusy(''); }
+  };
+  return <section className="staff-content"><div className="staff-access__intro"><LibraryBig size={28} /><div><h2>Publicación controlada</h2><p>Disponible permite entrar; bloqueado conserva la tarjeta con una explicación; oculto lo retira del catálogo público.</p></div></div><div className="staff-course-list">{courses.map((course) => <article key={course.slug}><div><span>{course.slug}</span><h2>{course.title}</h2><p>{course.description}</p></div><div className="staff-course-list__controls"><label>Disponibilidad<select value={course.availability} disabled={Boolean(busy)} onChange={(event) => void change(course, event.target.value as AdminCourse['availability'])}><option value="available">Disponible</option><option value="locked">Bloqueado</option><option value="hidden">Oculto</option></select></label><label>Mensaje público<input value={reasons[course.slug] ?? course.availabilityReason ?? ''} onChange={(event) => setReasons((current) => ({ ...current, [course.slug]: event.target.value }))} placeholder="Ej. Disponible próximamente" /></label><button disabled={Boolean(busy)} onClick={() => void change(course, course.availability)}>{busy === course.slug ? 'Guardando…' : 'Guardar mensaje'}</button></div></article>)}{courses.length === 0 && <Empty label="Todavía no hay cursos publicados en el backend." />}</div></section>;
 }

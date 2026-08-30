@@ -1,6 +1,9 @@
 import { learningApiRequest, readApiJson } from './learningHttp';
 
-export type StaffOverview = Readonly<{ learners: number; active30d: number; completedItems: number; needsSupport: number; openThreads: number }>;
+export type StaffOverview = Readonly<{
+  learners: number; anonymousLearners: number; active30d: number; completedItems: number;
+  anonymousCompletedItems: number; needsSupport: number; openThreads: number;
+}>;
 export type StaffLearner = Readonly<{
   id: string; email: string; displayName: string | null; status: string; emailVerifiedAt: string | null;
   lastSeenAt: string | null; progressItems: number; completed: number; lowestSkillScore: number; skillsAtRisk: number;
@@ -17,9 +20,16 @@ export type LearnerDetail = Readonly<{
   attempts: readonly Record<string, unknown>[];
   feedback: readonly Record<string, unknown>[];
 }>;
+export type IdentityAccessRule = Readonly<{ id: string; provider: 'google' | 'microsoft'; ruleType: 'domain' | 'email'; value: string; enabled: boolean; createdAt: string }>;
+export type AdminCourse = Readonly<{ slug: string; title: string; description: string; availability: 'available' | 'locked' | 'hidden'; availabilityReason: string | null }>;
 
 async function json<T>(path: string, init?: RequestInit): Promise<T> {
   return readApiJson<T>(await learningApiRequest(path, init));
+}
+
+async function empty(path: string, init?: RequestInit): Promise<void> {
+  const response = await learningApiRequest(path, init);
+  if (!response.ok) await readApiJson(response);
 }
 
 export const staffDashboardApi = {
@@ -36,6 +46,14 @@ export const staffDashboardApi = {
   users: async () => (await json<{ items: Array<Record<string, unknown>> }>('/v1/admin/users?limit=100')).items,
   grantRole: (userId: string, role: 'tutor' | 'admin') => json(`/v1/admin/users/${encodeURIComponent(userId)}/roles/${role}`, { method: 'PUT' }),
   revokeRole: (userId: string, role: 'tutor' | 'admin') => json(`/v1/admin/users/${encodeURIComponent(userId)}/roles/${role}`, { method: 'DELETE' }),
+  setUserStatus: (userId: string, status: 'active' | 'blocked') => json(`/v1/admin/users/${encodeURIComponent(userId)}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  accessRules: async () => (await json<{ items: IdentityAccessRule[] }>('/v1/admin/identity/access-rules')).items,
+  upsertAccessRule: (input: { provider: 'google' | 'microsoft'; ruleType: 'domain' | 'email'; value: string; enabled: boolean }) => json('/v1/admin/identity/access-rules', { method: 'PUT', body: JSON.stringify(input) }),
+  deleteAccessRule: (id: string) => empty(`/v1/admin/identity/access-rules/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  courses: async () => (await json<{ items: AdminCourse[] }>('/v1/admin/courses?limit=50')).items,
+  setCourseAvailability: (slug: string, availability: AdminCourse['availability'], reason?: string) => json(`/v1/admin/courses/${encodeURIComponent(slug)}/availability`, {
+    method: 'PUT', body: JSON.stringify({ availability, ...(reason?.trim() ? { reason: reason.trim() } : {}) }),
+  }),
 };
 
 export type LearnerThread = Readonly<{
