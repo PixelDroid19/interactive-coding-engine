@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Activity, ArrowLeft, BookOpenCheck, CheckCircle2, Clock3, Inbox, LibraryBig, MessageSquareText, RefreshCw, Search, ShieldCheck, Trash2, TriangleAlert, Users, X } from 'lucide-react';
-import { staffDashboardApi, type AdminCourse, type IdentityAccessRule, type LearnerDetail, type StaffAdminUser, type StaffLearner, type StaffOverview, type StaffThread } from '../services/staffDashboardApi';
+import { staffDashboardApi, type AdminCourse, type IdentityAccessRule, type LearnerDetail, type StaffAdminUser, type StaffLearner, type StaffOverview, type StaffThread, type UserCourseAccess } from '../services/staffDashboardApi';
 import { useTheme } from '../themes/ThemeProvider';
 
 type Tab = 'overview' | 'learners' | 'inbox' | 'access' | 'content';
@@ -31,6 +31,7 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
   const [accessRules, setAccessRules] = useState<IdentityAccessRule[]>([]);
   const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [selected, setSelected] = useState<LearnerDetail | null>(null);
+  const [selectedCourseAccess, setSelectedCourseAccess] = useState<UserCourseAccess[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -97,7 +98,14 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
     setSelectedLoading(true);
     setSelectedError(null);
     setError(null);
-    try { setSelected(await staffDashboardApi.learner(id)); }
+    try {
+      const [detail, access] = await Promise.all([
+        staffDashboardApi.learner(id),
+        canAdmin ? staffDashboardApi.courseAccess(id) : Promise.resolve([]),
+      ]);
+      setSelected(detail);
+      setSelectedCourseAccess(access);
+    }
     catch (loadError) { setSelectedError(loadError instanceof Error ? loadError.message : 'No pudimos abrir el seguimiento.'); }
     finally { setSelectedLoading(false); }
   };
@@ -146,7 +154,7 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
       </aside>
       <main className="staff-dashboard__main">
         <header className="staff-dashboard__header">
-          <div><span>{canAdmin ? 'Administración' : 'Formación'}</span><h1>{tab === 'overview' ? 'Pulso de aprendizaje' : tab === 'learners' ? 'Seguimiento individual' : tab === 'inbox' ? 'Bandeja de acompañamiento' : tab === 'content' ? 'Disponibilidad de cursos' : 'Acceso y responsabilidades'}</h1></div>
+          <div><span>{canAdmin ? 'Administración' : 'Formación'}</span><h1>{tab === 'overview' ? 'Pulso de aprendizaje' : tab === 'learners' ? 'Seguimiento individual' : tab === 'inbox' ? 'Bandeja de acompañamiento' : tab === 'content' ? 'Gestión de cursos' : 'Acceso y responsabilidades'}</h1></div>
           <div className="staff-dashboard__header-actions"><button onClick={() => void load()} aria-label="Actualizar"><RefreshCw size={18} /></button><button onClick={onClose} aria-label="Cerrar panel"><X size={20} /></button></div>
         </header>
         {error && <div className="staff-dashboard__error" role="alert">{error}</div>}
@@ -195,7 +203,7 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
                   {!selectedId && <Empty label="Selecciona una persona para revisar su recorrido." />}
                   {selectedId && selectedLoading && <div className="staff-dashboard__loading">Cargando recorrido…</div>}
                   {selectedId && selectedError && <div className="staff-detail-error" role="alert"><TriangleAlert size={20} /><p>{selectedError}</p><button onClick={() => void openLearner(selectedId)}>Reintentar</button></div>}
-                  {selected && <LearnerDetailView detail={selected} feedback={feedback} courseSlug={courseSlug} itemKey={itemKey} skillKey={skillKey} saving={saving} onBack={() => { setSelectedId(null); setSelected(null); setSelectedError(null); }} onFeedback={setFeedback} onCourse={setCourseSlug} onItem={setItemKey} onSkill={setSkillKey} onSend={() => void sendFeedback()} />}
+                  {selected && <LearnerDetailView detail={selected} feedback={feedback} courseSlug={courseSlug} itemKey={itemKey} skillKey={skillKey} saving={saving} onBack={() => { setSelectedId(null); setSelected(null); setSelectedCourseAccess([]); setSelectedError(null); }} onFeedback={setFeedback} onCourse={setCourseSlug} onItem={setItemKey} onSkill={setSkillKey} onSend={() => void sendFeedback()} adminCourses={canAdmin ? courses : []} courseAccess={selectedCourseAccess} onCourseAccess={setSelectedCourseAccess} setError={setError} />}
                 </div>
               </section>
             )}
@@ -229,10 +237,11 @@ function LearnerRow({ learner, selected, onOpen }: { learner: StaffLearner; sele
 
 function Empty({ label }: { label: string }) { return <div className="staff-empty"><BookOpenCheck size={24} /><p>{label}</p></div>; }
 
-function LearnerDetailView({ detail, feedback, courseSlug, itemKey, skillKey, saving, onBack, onFeedback, onCourse, onItem, onSkill, onSend }: {
+function LearnerDetailView({ detail, feedback, courseSlug, itemKey, skillKey, saving, onBack, onFeedback, onCourse, onItem, onSkill, onSend, adminCourses, courseAccess, onCourseAccess, setError }: {
   detail: LearnerDetail; feedback: string; courseSlug: string; itemKey: string; skillKey: string; saving: boolean;
   onBack(): void; onFeedback(value: string): void; onCourse(value: string): void; onItem(value: string): void;
-  onSkill(value: string): void; onSend(): void;
+  onSkill(value: string): void; onSend(): void; adminCourses: AdminCourse[]; courseAccess: UserCourseAccess[];
+  onCourseAccess(value: UserCourseAccess[]): void; setError(value: string | null): void;
 }) {
   const user = detail.user;
   const courses = useMemo(() => [...new Set([
@@ -263,8 +272,36 @@ function LearnerDetailView({ detail, feedback, courseSlug, itemKey, skillKey, sa
     </section>
 
     <section className="staff-feedback-compose"><h3><MessageSquareText size={17} /> Dejar feedback contextual</h3><div className="staff-feedback-context"><label>Curso<select value={courseSlug} onChange={(event) => selectCourse(event.target.value)}><option value="">General</option>{courses.map((course) => <option key={course} value={course}>{course}</option>)}</select></label><label>Actividad<select value={itemKey} onChange={(event) => onItem(event.target.value)}><option value="">Sin actividad concreta</option>{items.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label>Concepto<select value={skillKey} onChange={(event) => onSkill(event.target.value)}><option value="">Sin concepto concreto</option>{skills.map((skill) => <option key={skill} value={skill}>{skill}</option>)}</select></label></div><textarea value={feedback} onChange={(event) => onFeedback(event.target.value)} maxLength={4000} placeholder="Explica qué hizo bien, qué patrón debe revisar y cuál es el siguiente paso concreto." /><div className="staff-feedback-compose__footer"><small>{feedback.length}/4000 · llegará al centro de mensajes de la persona</small><button disabled={saving || !feedback.trim()} onClick={onSend}>{saving ? 'Guardando…' : 'Enviar feedback'}</button></div></section>
+    {adminCourses.length > 0 && <LearnerCourseAccess userId={user.id} courses={adminCourses} access={courseAccess} onChange={onCourseAccess} setError={setError} />}
     {detail.feedback.length > 0 && <section className="staff-detail-section"><h3>Feedback anterior</h3>{detail.feedback.slice(0, 8).map((item) => <article className="staff-feedback-history" key={item.id}><p>{item.message}</p><small>{date(item.createdAt)} · {item.status}{item.courseSlug ? ` · ${item.courseSlug}` : ''}{item.itemKey ? ` · ${item.itemKey}` : ''}</small></article>)}</section>}
   </>;
+}
+
+function LearnerCourseAccess({ userId, courses, access, onChange, setError }: {
+  userId: string; courses: AdminCourse[]; access: UserCourseAccess[];
+  onChange(value: UserCourseAccess[]): void; setError(value: string | null): void;
+}) {
+  const [courseSlug, setCourseSlug] = useState('');
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState('');
+  const available = courses.filter((course) => !access.some((item) => item.courseSlug === course.slug));
+  const lock = async () => {
+    if (!courseSlug || !reason.trim()) return;
+    setBusy(courseSlug); setError(null);
+    try {
+      await staffDashboardApi.lockCourseForUser(userId, courseSlug, reason.trim());
+      onChange(await staffDashboardApi.courseAccess(userId));
+      setCourseSlug(''); setReason('');
+    } catch (error) { setError(error instanceof Error ? error.message : 'No pudimos restringir el curso.'); }
+    finally { setBusy(''); }
+  };
+  const unlock = async (course: UserCourseAccess) => {
+    setBusy(course.courseSlug); setError(null);
+    try { await staffDashboardApi.unlockCourseForUser(userId, course.courseSlug); onChange(await staffDashboardApi.courseAccess(userId)); }
+    catch (error) { setError(error instanceof Error ? error.message : 'No pudimos restaurar el acceso.'); }
+    finally { setBusy(''); }
+  };
+  return <section className="staff-detail-section staff-personal-access"><div className="staff-detail-section__heading"><h3>Acceso individual a cursos</h3><small>Solo afecta a esta persona; el bloqueo general se administra en Cursos.</small></div><div className="staff-personal-access__form"><label>Curso a restringir<select value={courseSlug} onChange={(event) => setCourseSlug(event.target.value)}><option value="">Selecciona un curso</option>{available.map((course) => <option key={course.slug} value={course.slug}>{course.title}</option>)}</select></label><label>Motivo para esta persona<input value={reason} maxLength={500} onChange={(event) => setReason(event.target.value)} placeholder="Explica qué debe ocurrir antes de continuar" /></label><button disabled={Boolean(busy) || !courseSlug || !reason.trim()} onClick={() => void lock()}>Bloquear solo para esta persona</button></div><div className="staff-personal-access__list">{access.map((item) => <article key={item.courseSlug}><span><strong>{item.title}</strong><small>{item.reason}</small></span><button disabled={Boolean(busy)} aria-label={`Restaurar acceso a ${item.title}`} onClick={() => void unlock(item)}>Restaurar acceso</button></article>)}{access.length === 0 && <p>No hay cursos restringidos para esta persona.</p>}</div></section>;
 }
 
 function AccessView({ users, rules, reload, setError }: { users: StaffAdminUser[]; rules: IdentityAccessRule[]; reload(): Promise<void>; setError(value: string | null): void }) {
@@ -311,5 +348,30 @@ function ContentView({ courses, reload, setError }: { courses: AdminCourse[]; re
     catch (error) { setError(error instanceof Error ? error.message : 'No pudimos cambiar la disponibilidad del curso.'); }
     finally { setBusy(''); }
   };
-  return <section className="staff-content"><div className="staff-access__intro"><LibraryBig size={28} /><div><h2>Publicación controlada</h2><p>Disponible permite entrar; bloqueado conserva la tarjeta con una explicación; oculto lo retira del catálogo público.</p></div></div><div className="staff-course-list">{courses.map((course) => <article key={course.slug}><div><span>{course.slug}</span><h2>{course.title}</h2><p>{course.description}</p></div><div className="staff-course-list__controls"><label>Disponibilidad<select value={course.availability} disabled={Boolean(busy)} onChange={(event) => void change(course, event.target.value as AdminCourse['availability'])}><option value="available">Disponible</option><option value="locked">Bloqueado</option><option value="hidden">Oculto</option></select></label><label>Mensaje público<input value={reasons[course.slug] ?? course.availabilityReason ?? ''} onChange={(event) => setReasons((current) => ({ ...current, [course.slug]: event.target.value }))} placeholder="Ej. Disponible próximamente" /></label><button disabled={Boolean(busy)} onClick={() => void change(course, course.availability)}>{busy === course.slug ? 'Guardando…' : 'Guardar mensaje'}</button></div></article>)}{courses.length === 0 && <Empty label="Todavía no hay cursos publicados en el backend." />}</div></section>;
+  return <section className="staff-content"><div className="staff-access__intro"><LibraryBig size={28} /><div><h2>Contenido y publicación</h2><p>Edita la ficha pública con campos seguros y controla el acceso general. Cada cambio de contenido crea una versión nueva sin alterar las lecciones publicadas.</p></div></div><div className="staff-course-list">{courses.map((course) => <article key={course.slug}><CourseContentEditor course={course} disabled={Boolean(busy)} reload={reload} setError={setError} /><div className="staff-course-list__controls"><label>Disponibilidad general<select value={course.availability} disabled={Boolean(busy)} onChange={(event) => void change(course, event.target.value as AdminCourse['availability'])}><option value="available">Disponible</option><option value="locked">Bloqueado</option><option value="hidden">Oculto</option></select></label><label>Mensaje público<input value={reasons[course.slug] ?? course.availabilityReason ?? ''} onChange={(event) => setReasons((current) => ({ ...current, [course.slug]: event.target.value }))} placeholder="Ej. Disponible próximamente" /></label><button disabled={Boolean(busy)} onClick={() => void change(course, course.availability)}>{busy === course.slug ? 'Guardando…' : `Guardar acceso general de ${course.slug}`}</button></div></article>)}{courses.length === 0 && <Empty label="Todavía no hay cursos publicados en el backend." />}</div></section>;
+}
+
+function CourseContentEditor({ course, disabled, reload, setError }: { course: AdminCourse; disabled: boolean; reload(): Promise<void>; setError(value: string | null): void }) {
+  const [title, setTitle] = useState(course.title);
+  const [description, setDescription] = useState(course.description);
+  const [tagline, setTagline] = useState(typeof course.metadata.tagline === 'string' ? course.metadata.tagline : '');
+  const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    setTitle(course.title);
+    setDescription(course.description);
+    setTagline(typeof course.metadata.tagline === 'string' ? course.metadata.tagline : '');
+  }, [course.description, course.metadata.tagline, course.title]);
+  const save = async () => {
+    if (!title.trim() || !description.trim()) return;
+    setSaving(true); setError(null);
+    try {
+      await staffDashboardApi.updateCourseContent(course.slug, {
+        title: title.trim(), description: description.trim(),
+        metadata: { ...course.metadata, tagline: tagline.trim() },
+      });
+      await reload();
+    } catch (error) { setError(error instanceof Error ? error.message : 'No pudimos actualizar el contenido del curso.'); }
+    finally { setSaving(false); }
+  };
+  return <div className="staff-course-content"><span>{course.slug}</span><label>Título de {course.slug}<input value={title} maxLength={160} onChange={(event) => setTitle(event.target.value)} /></label><label>Descripción de {course.slug}<textarea value={description} maxLength={1000} onChange={(event) => setDescription(event.target.value)} /></label><label>Frase corta de {course.slug}<input value={tagline} maxLength={180} onChange={(event) => setTagline(event.target.value)} /></label><button aria-label={`Guardar contenido de ${course.slug}`} disabled={disabled || saving || !title.trim() || !description.trim()} onClick={() => void save()}>{saving ? 'Guardando versión…' : 'Guardar contenido'}</button></div>;
 }

@@ -347,7 +347,7 @@ export default function App() {
       setCourses((current) => current.map((candidate) => candidate.slug === hydrated.slug ? hydrated : candidate));
       setCourse((current) => current.slug === hydrated.slug ? hydrated : current);
     };
-    const cached = getCachedPublishedManifest(course.slug);
+    const cached = identityRevision === 0 ? getCachedPublishedManifest(course.slug) : null;
     if (cached) {
       applyManifest(cached.manifest);
       if (cached.fresh) return;
@@ -361,7 +361,7 @@ export default function App() {
     return () => controller.abort();
   // La fuente base conserva el contenido ejecutable; el manifiesto remoto decide estructura y acceso.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [course.slug]);
+  }, [course.slug, identityRevision]);
 
   useEffect(() => {
     if (!activeItem || ['catalog', 'home', 'playground', 'studio'].includes(currentView)) return;
@@ -376,7 +376,7 @@ export default function App() {
   }, [activeItem, course, currentView]);
 
   useEffect(() => {
-    const cachedCatalog = getCachedPublishedCourses();
+    const cachedCatalog = identityRevision === 0 ? getCachedPublishedCourses() : null;
     if (cachedCatalog?.catalog.items.length) {
       setCourses((current) => applyPublishedCatalog(current, cachedCatalog.catalog.items));
       if (cachedCatalog.fresh) return;
@@ -388,7 +388,7 @@ export default function App() {
       }
     }).catch(() => undefined);
     return () => controller.abort();
-  }, []);
+  }, [identityRevision]);
 
   useEffect(() => {
     if (learningProfile.evidence.length === 0) return;

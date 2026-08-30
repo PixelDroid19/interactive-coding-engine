@@ -8,7 +8,8 @@ const api = vi.hoisted(() => ({
   overview: vi.fn(), learners: vi.fn(), learner: vi.fn(), threads: vi.fn(), users: vi.fn(),
   accessRules: vi.fn(), courses: vi.fn(), leaveFeedback: vi.fn(), reply: vi.fn(),
   grantRole: vi.fn(), revokeRole: vi.fn(), setUserStatus: vi.fn(), upsertAccessRule: vi.fn(),
-  deleteAccessRule: vi.fn(), setCourseAvailability: vi.fn(),
+  deleteAccessRule: vi.fn(), setCourseAvailability: vi.fn(), courseAccess: vi.fn(),
+  lockCourseForUser: vi.fn(), unlockCourseForUser: vi.fn(), updateCourseContent: vi.fn(),
 }));
 
 vi.mock('../services/staffDashboardApi', async () => {
@@ -36,7 +37,18 @@ beforeEach(() => {
   api.threads.mockResolvedValue([]);
   api.users.mockResolvedValue([{ id: 'admin-1', email: 'admin@example.com', displayName: 'Admin', status: 'active', roles: ['admin'] }]);
   api.accessRules.mockResolvedValue([]);
-  api.courses.mockResolvedValue([{ slug: 'fundamentos', title: 'Fundamentos', description: 'Aprende desde cero.', availability: 'available', availabilityReason: null }]);
+  api.courses.mockResolvedValue([{
+    slug: 'fundamentos', title: 'Fundamentos', description: 'Aprende desde cero.',
+    metadata: { tagline: 'Programa desde el inicio', level: 'Beginner', tags: ['JavaScript'] },
+    availability: 'available', availabilityReason: null,
+  }]);
+  api.courseAccess.mockResolvedValue([]);
+  api.lockCourseForUser.mockResolvedValue({
+    userId: 'learner-1', courseSlug: 'fundamentos', title: 'Fundamentos', availability: 'locked',
+    reason: 'Acompañamiento pendiente.', updatedAt: '2026-08-30T12:00:00.000Z',
+  });
+  api.unlockCourseForUser.mockResolvedValue(undefined);
+  api.updateCourseContent.mockResolvedValue({ slug: 'fundamentos', version: 2 });
   api.learner.mockResolvedValue({
     user: { ...learner, roles: ['student'], actorId: 'actor-1' },
     progress: [{ courseSlug: 'fundamentos', lessonKey: 'fundamentos-01', status: 'in_progress', playbackMs: 6000, score: 40, updatedAt: '2026-08-30T12:00:00.000Z' }],
@@ -59,7 +71,7 @@ describe('panel de seguimiento', () => {
     expect(await screen.findByText('Personas registradas')).toBeTruthy();
     expect(screen.getByText('Necesitan refuerzo')).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Cursos' }));
-    expect(await screen.findByText('Fundamentos')).toBeTruthy();
+    expect((await screen.findByLabelText('Título de fundamentos') as HTMLInputElement).value).toBe('Fundamentos');
     expect(api.users).toHaveBeenCalledOnce();
     expect(api.accessRules).toHaveBeenCalledOnce();
     expect(api.courses).toHaveBeenCalledOnce();
@@ -148,5 +160,49 @@ describe('panel de seguimiento', () => {
 
     expect(await screen.findByText('No hay conceptos por debajo del umbral de refuerzo.')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /funciones-dominadas/ })).toBeNull();
+  });
+
+  it('permite bloquear y restaurar un curso para una sola persona', async () => {
+    api.courseAccess
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{
+        userId: 'learner-1', courseSlug: 'fundamentos', title: 'Fundamentos', availability: 'locked',
+        reason: 'Necesita una revisión acompañada.', updatedAt: '2026-08-30T12:00:00.000Z',
+      }])
+      .mockResolvedValueOnce([]);
+    renderDashboard(true);
+    await screen.findByText('Personas registradas');
+    fireEvent.click(screen.getByRole('button', { name: 'Personas' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Persona Ejemplo/ }));
+
+    expect(await screen.findByText('Acceso individual a cursos')).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Curso a restringir'), { target: { value: 'fundamentos' } });
+    fireEvent.change(screen.getByLabelText('Motivo para esta persona'), { target: { value: 'Necesita una revisión acompañada.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Bloquear solo para esta persona' }));
+
+    await waitFor(() => expect(api.lockCourseForUser).toHaveBeenCalledWith(
+      'learner-1', 'fundamentos', 'Necesita una revisión acompañada.',
+    ));
+    expect(await screen.findByText('Necesita una revisión acompañada.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar acceso a Fundamentos' }));
+    await waitFor(() => expect(api.unlockCourseForUser).toHaveBeenCalledWith('learner-1', 'fundamentos'));
+  });
+
+  it('edita la ficha pública del curso sin exponer un editor JSON', async () => {
+    renderDashboard(true);
+    await screen.findByText('Personas registradas');
+    fireEvent.click(screen.getByRole('button', { name: 'Cursos' }));
+
+    fireEvent.change(await screen.findByLabelText('Título de fundamentos'), { target: { value: 'Fundamentos profesionales' } });
+    fireEvent.change(screen.getByLabelText('Descripción de fundamentos'), { target: { value: 'Aprende programación con práctica guiada.' } });
+    fireEvent.change(screen.getByLabelText('Frase corta de fundamentos'), { target: { value: 'Piensa, prueba y depura' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar contenido de fundamentos' }));
+
+    await waitFor(() => expect(api.updateCourseContent).toHaveBeenCalledWith('fundamentos', {
+      title: 'Fundamentos profesionales',
+      description: 'Aprende programación con práctica guiada.',
+      metadata: { tagline: 'Piensa, prueba y depura', level: 'Beginner', tags: ['JavaScript'] },
+    }));
+    expect(screen.queryByRole('textbox', { name: /JSON/i })).toBeNull();
   });
 });

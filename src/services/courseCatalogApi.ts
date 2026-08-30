@@ -20,6 +20,7 @@ export interface PublishedCourseSummary {
   };
   availability: CourseAvailability;
   availabilityReason: string | null;
+  availabilityScope?: 'global' | 'user' | null;
   updatedAt: string;
 }
 

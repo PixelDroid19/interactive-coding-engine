@@ -50,7 +50,14 @@ export type LearnerDetail = Readonly<{
   feedback: readonly StaffFeedbackEntry[];
 }>;
 export type IdentityAccessRule = Readonly<{ id: string; provider: 'google' | 'microsoft'; ruleType: 'domain' | 'email'; value: string; enabled: boolean; createdAt: string }>;
-export type AdminCourse = Readonly<{ slug: string; title: string; description: string; availability: 'available' | 'locked' | 'hidden'; availabilityReason: string | null }>;
+export type AdminCourse = Readonly<{
+  slug: string; title: string; description: string;
+  metadata: Readonly<{ tagline?: string; level?: 'Beginner' | 'Intermediate' | 'Advanced'; tags?: string[]; [key: string]: unknown }>;
+  availability: 'available' | 'locked' | 'hidden'; availabilityReason: string | null;
+}>;
+export type UserCourseAccess = Readonly<{
+  userId: string; courseSlug: string; title: string; availability: 'locked'; reason: string; updatedAt: string;
+}>;
 
 async function json<T>(path: string, init?: RequestInit): Promise<T> {
   return readApiJson<T>(await learningApiRequest(path, init));
@@ -83,6 +90,14 @@ export const staffDashboardApi = {
   setCourseAvailability: (slug: string, availability: AdminCourse['availability'], reason?: string) => json(`/v1/admin/courses/${encodeURIComponent(slug)}/availability`, {
     method: 'PUT', body: JSON.stringify({ availability, ...(reason?.trim() ? { reason: reason.trim() } : {}) }),
   }),
+  updateCourseContent: (slug: string, input: { title: string; description: string; metadata: Record<string, unknown> }) => json(`/v1/admin/courses/${encodeURIComponent(slug)}/content`, {
+    method: 'PUT', body: JSON.stringify(input),
+  }),
+  courseAccess: async (userId: string) => (await json<{ items: UserCourseAccess[] }>(`/v1/admin/users/${encodeURIComponent(userId)}/course-access`)).items,
+  lockCourseForUser: (userId: string, courseSlug: string, reason: string) => json(`/v1/admin/users/${encodeURIComponent(userId)}/course-access/${encodeURIComponent(courseSlug)}`, {
+    method: 'PUT', body: JSON.stringify({ reason }),
+  }),
+  unlockCourseForUser: (userId: string, courseSlug: string) => empty(`/v1/admin/users/${encodeURIComponent(userId)}/course-access/${encodeURIComponent(courseSlug)}`, { method: 'DELETE' }),
 };
 
 export type LearnerThread = Readonly<{

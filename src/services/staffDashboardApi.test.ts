@@ -43,4 +43,27 @@ describe('cliente del panel administrativo', () => {
 
     await expect(staffDashboardApi.deleteAccessRule('20000000-0000-4000-8000-000000000002')).resolves.toBeUndefined();
   });
+
+  it('usa contratos separados para contenido versionado y acceso individual', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => new Response(
+      init?.method === 'DELETE' ? null : JSON.stringify({ items: [] }),
+      { status: init?.method === 'DELETE' ? 204 : 200, headers: { 'content-type': 'application/json' } },
+    ));
+    const { staffDashboardApi } = await import('./staffDashboardApi');
+    const userId = '10000000-0000-4000-8000-000000000001';
+
+    await staffDashboardApi.updateCourseContent('fundamentos', {
+      title: 'Fundamentos', description: 'Aprende.', metadata: { tagline: 'Empieza aquí' },
+    });
+    await staffDashboardApi.lockCourseForUser(userId, 'fundamentos', 'Revisión pendiente.');
+    await staffDashboardApi.unlockCourseForUser(userId, 'fundamentos');
+
+    expect(fetchMock.mock.calls[0]?.[0]).toContain('/v1/admin/courses/fundamentos/content');
+    expect(fetchMock.mock.calls[0]?.[1]).toEqual(expect.objectContaining({ method: 'PUT' }));
+    expect(fetchMock.mock.calls[1]?.[0]).toContain(`/v1/admin/users/${userId}/course-access/fundamentos`);
+    expect(fetchMock.mock.calls[1]?.[1]).toEqual(expect.objectContaining({
+      method: 'PUT', body: JSON.stringify({ reason: 'Revisión pendiente.' }),
+    }));
+    expect(fetchMock.mock.calls[2]?.[1]).toEqual(expect.objectContaining({ method: 'DELETE' }));
+  });
 });
