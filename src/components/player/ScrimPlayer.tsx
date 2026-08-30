@@ -1306,10 +1306,18 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           <h4 className="scrim-closure-title font-bold text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>¿Ejecutaste tus dos mensajes?</h4>
           <p className="scrim-closure-text text-xs text-slate-300 mt-1">Abre la consola y comprueba que los dos textos aparecen en el mismo orden que tus instrucciones. Después confirma para completar la clase.</p>
           <div className="scrim-closure-actions flex gap-2 mt-3">
-            <button onClick={handleClosureConfirm} className="scrim-closure-confirm-btn flex-1 neu-pill-btn btn-brand text-sm" aria-label="He ejecutado mi programa, completar clase">He ejecutado mi programa</button>
+            <button
+              onClick={handleClosureConfirm}
+              className="scrim-closure-confirm-btn flex-1 neu-pill-btn btn-brand text-sm"
+              data-augmented-ui={isCyber ? "hud-closure-confirm tl-clip br-clip border inlay" : undefined}
+              aria-label="He ejecutado mi programa, completar clase"
+            >
+              He ejecutado mi programa
+            </button>
             <button
               onClick={() => isLogicMode ? void logicRunnerRef.current?.run() : void previewRef.current?.reloadPreview()}
               className="scrim-closure-reload-btn neu-pill-btn text-sm"
+              data-augmented-ui={isCyber ? "hud-closure-reload tr-clip bl-clip border inlay" : undefined}
               aria-label={isLogicMode ? 'Ejecutar lógica de nuevo' : 'Recargar vista previa'}
             >
               {isLogicMode ? 'Ejecutar de nuevo' : 'Recargar'}

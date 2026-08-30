@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { UserRound } from 'lucide-react';
 import type { AuthProvider, UserRole } from '../services/authSessionApi';
 import { useAuthSession } from './AuthSessionProvider';
+import { useTheme } from '../themes/ThemeProvider';
 
 const ROLE_LABEL: Record<UserRole, string> = {
   student: 'Estudiante',
@@ -20,6 +21,8 @@ function initials(name: string): string {
 
 export function AccountMenu() {
   const auth = useAuthSession();
+  const { themeId } = useTheme();
+  const isCyber = themeId === 'cyber';
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
 
@@ -64,6 +67,7 @@ export function AccountMenu() {
       <button
         type="button"
         className={`account-trigger${authenticated ? ' is-authenticated' : ''}`}
+        data-augmented-ui={isCyber ? "hud-account-btn tl-clip br-clip border inlay" : undefined}
         aria-label={triggerLabel}
         aria-expanded={noProviders ? undefined : open}
         disabled={noProviders}
@@ -76,7 +80,11 @@ export function AccountMenu() {
       </button>
 
       {open && !noProviders && (
-        <section className="account-menu" aria-label={authenticated ? 'Cuenta' : 'Acceso'}>
+        <section
+          className="account-menu"
+          data-augmented-ui={isCyber ? "hud-account-menu tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
+          aria-label={authenticated ? 'Cuenta' : 'Acceso'}
+        >
           {authenticated ? (
             <>
               <div className="account-menu__identity">

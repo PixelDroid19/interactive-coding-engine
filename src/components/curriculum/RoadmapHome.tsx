@@ -210,7 +210,13 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
       <header className="rm-nav">
         <div className="rm-nav-inner">
           <div className="rm-brand">
-            <button type="button" className="rm-logo" onClick={onBackToCourses} aria-label="Volver a cursos">
+            <button
+              type="button"
+              className="rm-logo"
+              data-augmented-ui={isCyber ? "hud-brand-logo tl-clip br-clip border inlay" : undefined}
+              onClick={onBackToCourses}
+              aria-label="Volver a cursos"
+            >
               <Route size={15} />
             </button>
             <span className="rm-wordmark">
@@ -220,12 +226,30 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
           <div className="rm-nav-actions flex items-center gap-2">
             <AccountMenu />
             <ThemeToggle />
-            <button type="button" className="rm-play-btn rm-learning-btn" aria-label="Mi aprendizaje" onClick={() => setShowLearningCenter(true)}>
+            <button
+              type="button"
+              className="rm-play-btn rm-learning-btn"
+              data-augmented-ui={isCyber ? "hud-learning-btn tl-clip br-clip border inlay" : undefined}
+              aria-label="Mi aprendizaje"
+              onClick={() => setShowLearningCenter(true)}
+            >
               <BrainCircuit size={14} /> <span className="rm-button-label">Mi aprendizaje</span>
               {dueReviewCount > 0 && <strong aria-label={`${dueReviewCount} repasos pendientes`}>{dueReviewCount}</strong>}
             </button>
-            <button type="button" className="rm-play-btn rm-courses-btn" onClick={onBackToCourses}>Cursos</button>
-            <button type="button" className="rm-play-btn rm-playground-btn" aria-label="Abrir playground" onClick={onPlayground}>
+            <button
+              type="button"
+              className="rm-play-btn rm-courses-btn"
+              data-augmented-ui={isCyber ? "hud-courses-btn tr-clip bl-clip border inlay" : undefined}
+              onClick={onBackToCourses}
+            >
+              Cursos
+            </button>
+            <button
+              type="button"
+              className="rm-play-btn rm-playground-btn"
+              data-augmented-ui={isCyber ? "hud-playground-btn tl-clip br-clip border inlay" : undefined}
+              onClick={onPlayground}
+            >
               <Terminal size={13} /> <span className="rm-button-label">Playground</span>
             </button>
           </div>

@@ -21,8 +21,13 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress,
       <div className="course-catalog__actions flex items-center gap-2">
         <AccountMenu />
         <ThemeToggle />
-        <button type="button" className="rm-play-btn rm-playground-btn" aria-label="Abrir playground" onClick={onPlayground}>
-          <Code2 size={14} /> <span className="rm-button-label">Playground</span>
+        <button
+          type="button"
+          className="rm-play-btn rm-playground-btn"
+          data-augmented-ui={isCyber ? "hud-playground-btn tl-clip br-clip border inlay" : undefined}
+          onClick={onPlayground}
+        >
+          <Code2 size={14} /> Playground
         </button>
       </div>
     </header>

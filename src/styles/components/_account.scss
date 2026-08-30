@@ -99,15 +99,39 @@
 .account-menu__action:disabled { cursor: wait; opacity: .6; }
 .account-menu__error { margin: 12px 0 0; border-left: 3px solid #be123c; padding-left: 9px; color: #881337; font-size: 11px; line-height: 1.45; }
 
-.hud .account-trigger { border-color: #00e5ee; background: #10141c; color: #f4f7fb; box-shadow: 3px 3px 0 #ffe600; }
-.hud .account-trigger.is-authenticated { background: #18202b; }
-.hud .account-monogram { border-color: #00e5ee; color: #10141c; }
-.hud .account-menu { border-color: #00e5ee; background: #121720; color: #f4f7fb; box-shadow: 6px 6px 0 #d9ff00; }
-.hud .account-menu__identity > span { color: #00e5ee; }
-.hud .account-menu__identity p { color: #aeb7c8; }
-.hud .account-menu__roles { border-top-color: #3c4657; }
-.hud .account-menu__roles span { border-color: #536078; background: #1c2430; }
-.hud .account-menu__action { border-color: #536078; color: #f4f7fb; }
+.hud .account-trigger {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #e2e8f0 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+}
+.hud .account-trigger.is-authenticated {
+  background: transparent !important;
+}
+.hud .account-monogram {
+  border-color: #00f0ff !important;
+  color: #00f0ff !important;
+  background: #090e18 !important;
+  border-radius: 2px !important;
+}
+.hud .account-menu {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #f4f7fb !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+}
+.hud .account-menu__identity > span { color: #00f0ff !important; font-family: 'Chakra Petch', sans-serif !important; }
+.hud .account-menu__identity strong { color: #ffffff !important; font-family: 'Chakra Petch', sans-serif !important; }
+.hud .account-menu__identity p { color: #94a3b8 !important; }
+.hud .account-menu__roles { border-top-color: #1e293b !important; }
+.hud .account-menu__roles span { border-color: #00f0ff !important; background: #0c1220 !important; color: #00f0ff !important; }
+.hud .account-menu__action { border-color: rgba(255, 0, 127, 0.5) !important; color: #ff007f !important; background: #1a0818 !important; }
 
 @media (max-width: 600px) {
   .account-trigger__label { max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
