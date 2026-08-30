@@ -13,6 +13,7 @@ import { ContextBudgetDiagram } from './diagrams/ContextBudgetDiagram';
 import { ThemeToggle } from '../ThemeToggle';
 import { PostSolveStudio } from '../learning/PostSolveStudio';
 import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
+import type { ExerciseCompletion } from '../../services/learningSync';
 
 interface Props {
   item: ReasoningExerciseItem;
@@ -21,14 +22,15 @@ interface Props {
   onPrevious?: () => void;
   onNext?: () => void;
   navigationState?: NavigationState;
-  onCompleted?: () => void;
+  onCompleted?: (completion?: ExerciseCompletion) => void;
+  onAttempt?: (result: 'success' | 'partial' | 'failure', completion: ExerciseCompletion) => void;
 }
 
 function sameConnection(left: ReasoningConnection, right: ReasoningConnection) {
   return left.from === right.from && left.to === right.to && (left.label ?? '') === (right.label ?? '');
 }
 
-export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPrevious, onNext, navigationState, onCompleted }: Props) {
+export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPrevious, onNext, navigationState, onCompleted, onAttempt }: Props) {
   const version = useMemo(() => createReasoningActivityVersion(item.activity), [item.activity]);
   const restored = useMemo(() => loadReasoningDraft(item.id, version), [item.id, version]);
   const [attempt, setAttempt] = useState<ReasoningAttempt>(() => restored?.attempt ?? createInitialReasoningAttempt(item.activity));
@@ -64,9 +66,18 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
   const check = () => {
     const next = validateReasoningAttempt(item.activity, attempt);
     setResult(next);
+    const passed = next.checks.filter((check) => check.passed).length;
+    onAttempt?.(next.allPassed ? 'success' : passed > 0 ? 'partial' : 'failure', {
+      score: next.checks.length > 0 ? Math.round((passed / next.checks.length) * 100) : 0,
+      response: { attempt }, diagnostics: { result: next, revealedHints },
+    });
     if (next.allPassed) {
       markItemCompleted(item.id);
-      onCompleted?.();
+      onCompleted?.({
+        score: next.checks.length > 0 ? Math.round((next.checks.filter((check) => check.passed).length / next.checks.length) * 100) : 100,
+        response: { attempt },
+        diagnostics: { result: next, revealedHints },
+      });
     }
   };
 

@@ -99,3 +99,27 @@ export async function logoutAuthSession(): Promise<void> {
   if (!response.ok && response.status !== 204) await readApiJson(response);
   setLearningCsrfToken(null);
 }
+
+export async function verifyAuthEmailCode(code: string): Promise<{ session: Extract<AuthSession, { authenticated: true }>; returnTo: string }> {
+  const response = await learningApiRequest('/v1/auth/email/verify', {
+    method: 'POST',
+    headers: { 'x-auth-intent': 'verify-email' },
+    body: JSON.stringify({ code }),
+  });
+  const payload = await readApiJson<Record<string, unknown>>(response);
+  const session = parseSession(payload);
+  if (!session.authenticated) throw new Error('La sesión verificada no es válida.');
+  reconcileDeviceIdentity(session);
+  setLearningCsrfToken(session.csrfToken);
+  const returnTo = typeof payload.returnTo === 'string' && SAFE_RETURN_TO.test(payload.returnTo) ? payload.returnTo : '/';
+  return { session, returnTo };
+}
+
+export async function resendAuthEmailCode(): Promise<void> {
+  const response = await learningApiRequest('/v1/auth/email/resend', {
+    method: 'POST',
+    headers: { 'x-auth-intent': 'resend-email' },
+    body: JSON.stringify({}),
+  });
+  await readApiJson(response);
+}

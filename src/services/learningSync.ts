@@ -44,16 +44,35 @@ type QueuedEvidence = Readonly<{
   occurredAt: string;
 }>;
 
+export type ExerciseCompletion = Readonly<{
+  response?: Record<string, unknown>;
+  diagnostics?: Record<string, unknown>;
+  score?: number;
+}>;
+
+type QueuedAttempt = Readonly<{
+  id: string;
+  courseSlug: string;
+  itemKey: string;
+  kind: 'challenge' | 'debugging' | 'exam' | 'project' | 'agent';
+  result: 'success' | 'partial' | 'failure';
+  score?: number;
+  response?: Record<string, unknown>;
+  diagnostics?: Record<string, unknown>;
+  occurredAt: string;
+}>;
+
 type SyncQueue = {
   events: QueuedEvent[];
   progress: Record<string, QueuedProgress>;
   feedback: QueuedFeedback[];
   evidence: QueuedEvidence[];
+  attempts: QueuedAttempt[];
   syncedEvidence: string[];
 };
 
 function emptyQueue(): SyncQueue {
-  return { events: [], progress: {}, feedback: [], evidence: [], syncedEvidence: [] };
+  return { events: [], progress: {}, feedback: [], evidence: [], attempts: [], syncedEvidence: [] };
 }
 
 function loadQueue(): SyncQueue {
@@ -65,6 +84,7 @@ function loadQueue(): SyncQueue {
       progress: parsed.progress,
       feedback: parsed.feedback.slice(-100),
       evidence: Array.isArray(parsed.evidence) ? parsed.evidence.slice(-300) : [],
+      attempts: Array.isArray(parsed.attempts) ? parsed.attempts.slice(-100) : [],
       syncedEvidence: Array.isArray(parsed.syncedEvidence) ? parsed.syncedEvidence.slice(-500) : [],
     };
   } catch {
@@ -152,17 +172,30 @@ async function flushEvidence(queue: SyncQueue): Promise<void> {
   saveQueue(queue);
 }
 
+async function flushAttempts(queue: SyncQueue): Promise<void> {
+  if (queue.attempts.length === 0) return;
+  const batch = queue.attempts.slice(0, 50);
+  const response = await learningApiRequest('/v1/me/attempts/batch', {
+    method: 'POST', body: JSON.stringify({ attempts: batch }),
+  });
+  if (!response.ok) throw new Error(`attempts HTTP ${response.status}`);
+  const ids = new Set(batch.map((attempt) => attempt.id));
+  queue.attempts = queue.attempts.filter((attempt) => !ids.has(attempt.id));
+  saveQueue(queue);
+}
+
 export async function flushLearningQueue(): Promise<boolean> {
   if (activeFlush) return activeFlush;
   activeFlush = (async () => {
     const queue = loadQueue();
-    if (queue.events.length === 0 && Object.keys(queue.progress).length === 0 && queue.feedback.length === 0 && queue.evidence.length === 0) return true;
+    if (queue.events.length === 0 && Object.keys(queue.progress).length === 0 && queue.feedback.length === 0 && queue.evidence.length === 0 && queue.attempts.length === 0) return true;
     notify('syncing');
     try {
       await flushEvents(queue);
       await flushProgress(queue);
       await flushFeedback(queue);
       await flushEvidence(queue);
+      await flushAttempts(queue);
       retryAttempt = 0;
       notify('synced');
       return true;
@@ -230,6 +263,33 @@ export function queueLearningProfileEvidence(profile: LearningProfile, courseSlu
   queue.evidence = queue.evidence.slice(-300);
   saveQueue(queue);
   scheduleFlush(250);
+}
+
+export function queueExerciseAttempt(
+  courseSlug: string,
+  itemKey: string,
+  kind: QueuedAttempt['kind'],
+  result: QueuedAttempt['result'],
+  completion: ExerciseCompletion = {},
+): void {
+  const queue = loadQueue();
+  const safe = (value: Record<string, unknown> | undefined, maximum: number): Record<string, unknown> | undefined => {
+    if (!value) return undefined;
+    try { return JSON.stringify(value).length <= maximum ? value : { omitted: true, reason: 'payload-too-large' }; }
+    catch { return { omitted: true, reason: 'not-serializable' }; }
+  };
+  const safeResponse = safe(completion.response, 60_000);
+  const safeDiagnostics = safe(completion.diagnostics, 28_000);
+  queue.attempts.push({
+    id: crypto.randomUUID(), courseSlug, itemKey, kind, result,
+    ...(completion.score !== undefined ? { score: completion.score } : {}),
+    ...(safeResponse ? { response: safeResponse } : {}),
+    ...(safeDiagnostics ? { diagnostics: safeDiagnostics } : {}),
+    occurredAt: new Date().toISOString(),
+  });
+  queue.attempts = queue.attempts.slice(-100);
+  saveQueue(queue);
+  scheduleFlush(100);
 }
 
 if (typeof window !== 'undefined') {

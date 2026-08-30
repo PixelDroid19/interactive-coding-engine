@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
   fetchAuthSession: vi.fn(),
   logoutAuthSession: vi.fn(),
   getAuthLoginUrl: vi.fn((provider: string) => `https://api.example.test/v1/auth/login/${provider}`),
+  verifyAuthEmailCode: vi.fn(),
+  resendAuthEmailCode: vi.fn(),
 }));
 
 vi.mock('../services/authSessionApi', async () => {
@@ -66,6 +68,28 @@ describe('cuenta de la plataforma', () => {
 
     expect((await screen.findByRole('button', { name: 'Reintentar sesión' })).getAttribute('title'))
       .toBe('Esta cuenta no está autorizada para acceder.');
+    expect(window.location.search).toBe('');
+  });
+
+  it('bloquea la sesión hasta confirmar el código recibido por correo', async () => {
+    window.history.replaceState({}, '', '/?auth=verify&email=p*******%40gmail.com');
+    mocks.fetchAuthSession.mockResolvedValue({ authenticated: false, providers: ['google'] });
+    mocks.verifyAuthEmailCode.mockResolvedValue({
+      returnTo: '/',
+      session: {
+        authenticated: true,
+        user: { id: 'user-verified', email: 'persona@gmail.com', displayName: 'Persona', roles: ['student'] },
+        csrfToken: 'csrf-token-confirmado-y-seguro',
+      },
+    });
+    render(<AuthSessionProvider><AccountMenu /></AuthSessionProvider>);
+
+    expect(await screen.findByRole('dialog', { name: 'Confirma que eres tú' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Código de verificación'), { target: { value: '482901' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar y entrar' }));
+
+    await waitFor(() => expect(mocks.verifyAuthEmailCode).toHaveBeenCalledWith('482901'));
+    expect(await screen.findByRole('button', { name: 'Cuenta de Persona' })).toBeTruthy();
     expect(window.location.search).toBe('');
   });
 });

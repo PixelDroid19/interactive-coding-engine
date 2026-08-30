@@ -27,6 +27,7 @@ import { runChallengeValidation } from '../../engine/testRunner';
 import type { ChallengeValidationResult } from '../../types/runtime';
 import { PostSolveStudio } from '../learning/PostSolveStudio';
 import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
+import type { ExerciseCompletion } from '../../services/learningSync';
 
 interface SoloProjectViewProps {
   project: SoloProjectItem;
@@ -38,7 +39,8 @@ interface SoloProjectViewProps {
   navigationState?: NavigationState;
   language?: CourseLanguage;
   onLanguageChange?: (language: CourseLanguage) => void;
-  onCompleted?: () => void;
+  onCompleted?: (completion?: ExerciseCompletion) => void;
+  onAttempt?: (result: 'success' | 'partial' | 'failure', completion: ExerciseCompletion) => void;
 }
 
 export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
@@ -52,6 +54,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
   language = 'javascript',
   onLanguageChange,
   onCompleted,
+  onAttempt,
 }) => {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() =>
     loadLanguageWorkspaceDraft(project.id, language) ?? cloneWorkspace(project.initialWorkspace),
@@ -105,6 +108,11 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
         hints: [],
       }, workspace);
       setValidationResult(result);
+      onAttempt?.(result.allPassed ? 'success' : result.passedCount > 0 ? 'partial' : 'failure', {
+        score: result.totalCount > 0 ? Math.round((result.passedCount / result.totalCount) * 100) : 0,
+        response: { files: Object.fromEntries(Object.entries(workspace.files).map(([path, file]) => [path, file.content])) },
+        diagnostics: { tests: result.tests, checkedRequirements },
+      });
       if (result.allPassed && completedCount === totalCount) {
         setIsCompleted(true);
         const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -327,7 +335,15 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
                 onComplete={async (readingAnswer, variationAnswer) => {
                   await recordPostSolveEvidence(project.id, readingAnswer, variationAnswer);
                   markItemCompleted(project.id);
-                  onCompleted?.();
+                  onCompleted?.({
+                    score: validationResult?.totalCount ? Math.round((validationResult.passedCount / validationResult.totalCount) * 100) : 100,
+                    response: {
+                      files: Object.fromEntries(Object.entries(workspace.files).map(([path, file]) => [path, file.content])),
+                      readingAnswer,
+                      variationAnswer,
+                    },
+                    diagnostics: validationResult ? { tests: validationResult.tests, checkedRequirements } : { checkedRequirements },
+                  });
                   setPostSolveComplete(true);
                 }}
               />

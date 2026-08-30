@@ -64,4 +64,22 @@ describe('learning sync', () => {
     expect(await sync.flushLearningQueue()).toBe(true);
     expect(fetchMock).not.toHaveBeenCalled();
   });
+
+  it('sincroniza la respuesta y los diagnósticos de un intento real', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 202 }));
+    const sync = await import('./learningSync');
+    sync.queueExerciseAttempt('fundamentos', 'fundamentos-02-debug', 'debugging', 'failure', {
+      score: 40,
+      response: { files: { 'app.js': 'console.log(valor)' } },
+      diagnostics: { failedTests: 2 },
+    });
+
+    expect(await sync.flushLearningQueue()).toBe(true);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(body.attempts[0]).toMatchObject({
+      courseSlug: 'fundamentos', itemKey: 'fundamentos-02-debug', kind: 'debugging', result: 'failure', score: 40,
+      response: { files: { 'app.js': 'console.log(valor)' } }, diagnostics: { failedTests: 2 },
+    });
+  });
 });

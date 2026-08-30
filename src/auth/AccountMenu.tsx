@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { UserRound } from 'lucide-react';
 import type { AuthProvider, UserRole } from '../services/authSessionApi';
 import { useAuthSession } from './AuthSessionProvider';
 import { useTheme } from '../themes/ThemeProvider';
+import { StaffDashboard } from './StaffDashboard';
+import { LearnerSupportPanel } from './LearnerSupportPanel';
 
 const ROLE_LABEL: Record<UserRole, string> = {
   student: 'Estudiante',
@@ -24,6 +27,8 @@ export function AccountMenu() {
   const { themeId } = useTheme();
   const isCyber = themeId === 'cyber';
   const [open, setOpen] = useState(false);
+  const [staffOpen, setStaffOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,6 +66,8 @@ export function AccountMenu() {
   const noProviders = !authenticated && providers.length === 0;
   const displayName = signedInSession ? signedInSession.user.displayName || signedInSession.user.email.split('@')[0]! : '';
   const triggerLabel = authenticated ? `Cuenta de ${displayName}` : noProviders ? 'Sesión local' : 'Entrar';
+  const isStaff = Boolean(signedInSession?.user.roles.some((role) => role === 'tutor' || role === 'admin'));
+  const isAdmin = Boolean(signedInSession?.user.roles.includes('admin'));
 
   return (
     <div className="account-control" ref={root}>
@@ -95,6 +102,12 @@ export function AccountMenu() {
               <div className="account-menu__roles" aria-label="Roles">
                 {signedInSession!.user.roles.map((role) => <span key={role}>{ROLE_LABEL[role]}</span>)}
               </div>
+              <button type="button" className="account-menu__action account-menu__action--primary" onClick={() => { setOpen(false); setSupportOpen(true); }}>
+                Mensajes y feedback
+              </button>
+              {isStaff && <button type="button" className="account-menu__action account-menu__action--primary" onClick={() => { setOpen(false); setStaffOpen(true); }}>
+                Abrir panel de seguimiento
+              </button>}
               <button type="button" className="account-menu__action" disabled={auth.busy} onClick={() => void auth.logout()}>
                 {auth.busy ? 'Cerrando…' : 'Cerrar sesión'}
               </button>
@@ -115,6 +128,8 @@ export function AccountMenu() {
           )}
         </section>
       )}
+      {staffOpen && createPortal(<StaffDashboard canAdmin={isAdmin} onClose={() => setStaffOpen(false)} />, document.body)}
+      {supportOpen && signedInSession && createPortal(<LearnerSupportPanel userId={signedInSession.user.id} onClose={() => setSupportOpen(false)} />, document.body)}
     </div>
   );
 }

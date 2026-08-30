@@ -55,4 +55,19 @@ describe('sesión de la plataforma', () => {
     expect(localStorage.getItem('aula_learning_center_cache_v1:curso:actor')).toBeNull();
     expect(localStorage.getItem('aula_anonymous_actor_v1')).not.toBe('30000000-0000-4000-8000-000000000003');
   });
+
+  it('confirma el código con una intención explícita y activa la nueva sesión', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      authenticated: true,
+      returnTo: '/panel',
+      user: { id: 'user-verified', email: 'persona@gmail.com', displayName: 'Persona', roles: ['admin', 'student'] },
+      csrfToken: 'csrf-token-confirmado-y-seguro',
+    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    const auth = await import('./authSessionApi');
+
+    await expect(auth.verifyAuthEmailCode('482901')).resolves.toMatchObject({ returnTo: '/panel', session: { authenticated: true } });
+    const init = fetchMock.mock.calls[0]?.[1];
+    expect(init?.headers).toEqual(expect.objectContaining({ 'x-auth-intent': 'verify-email' }));
+    expect(JSON.parse(String(init?.body))).toEqual({ code: '482901' });
+  });
 });

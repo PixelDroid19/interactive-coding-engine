@@ -96,6 +96,7 @@
 .account-menu__providers button:active,
 .account-menu__action:active { transform: translate(1px, 1px); }
 .account-menu__action { margin-top: 14px; background: transparent; color: #111318; text-align: center; }
+.account-menu__action--primary { margin-top: 8px; background: #fff; color: #111318; text-align: left; }
 .account-menu__action:disabled { cursor: wait; opacity: .6; }
 .account-menu__error { margin: 12px 0 0; border-left: 3px solid #be123c; padding-left: 9px; color: #881337; font-size: 11px; line-height: 1.45; }
 
@@ -140,4 +141,111 @@
 
 @media (prefers-reduced-motion: reduce) {
   .account-trigger--loading i { animation: none; }
+}
+
+.email-verification {
+  position: fixed;
+  z-index: 260;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(17, 19, 24, .72);
+  backdrop-filter: blur(5px);
+}
+
+.email-verification__panel {
+  position: relative;
+  width: min(490px, 100%);
+  border: 2px solid #111318;
+  border-radius: 18px;
+  background: #f5f2eb;
+  padding: 34px;
+  color: #20232a;
+  box-shadow: 10px 10px 0 #111318;
+}
+
+.email-verification__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1.5px solid #111318;
+  border-radius: 10px;
+  background: transparent;
+}
+
+.email-verification__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #715d00;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.email-verification h2 { margin: 15px 50px 6px 0; font: 800 34px/1.05 'Space Grotesk', sans-serif; }
+.email-verification__panel > p { margin: 0 0 23px; color: #625f58; line-height: 1.55; }
+.email-verification form { display: grid; gap: 10px; }
+.email-verification label { font-size: 12px; font-weight: 850; }
+.email-verification input {
+  width: 100%;
+  border: 2px solid #111318;
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px 16px;
+  font: 800 28px/1 'Space Grotesk', sans-serif;
+  letter-spacing: .28em;
+  text-align: center;
+}
+.email-verification input:focus { outline: 4px solid rgba(255, 230, 0, .55); outline-offset: 2px; }
+.email-verification input[aria-invalid="true"] { border-color: #be123c; }
+.email-verification__error { margin: 0; border-left: 3px solid #be123c; padding-left: 10px; color: #881337; font-size: 12px; }
+.email-verification__submit {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 4px;
+  border: 2px solid #111318;
+  border-radius: 10px;
+  background: #ffe600;
+  color: #111318;
+  box-shadow: 4px 4px 0 #111318;
+  font-weight: 900;
+}
+.email-verification__submit:disabled { cursor: not-allowed; opacity: .55; box-shadow: none; }
+.email-verification__footer { display: flex; justify-content: space-between; gap: 12px; margin-top: 19px; }
+.email-verification__footer button { border: 0; background: transparent; color: #4b5563; font-size: 12px; font-weight: 800; text-decoration: underline; }
+.email-verification__footer button:disabled { opacity: .55; text-decoration: none; }
+
+.hud .email-verification { background: rgba(3, 7, 15, .82); }
+.hud .email-verification__panel {
+  --aug-border-bg: #00f0ff;
+  --aug-border-all: 2px;
+  border: 0;
+  border-radius: 0;
+  background: #090e18;
+  color: #f8fafc;
+  box-shadow: 10px 10px 0 #d7ff00;
+  font-family: 'Chakra Petch', sans-serif;
+}
+.hud .email-verification__eyebrow { color: #00f0ff; }
+.hud .email-verification__panel > p { color: #a5b4c8; }
+.hud .email-verification input { border-color: #00f0ff; border-radius: 0; background: #060a11; color: #fff; }
+.hud .email-verification__submit { border-color: #d7ff00; border-radius: 0; background: #d7ff00; box-shadow: 4px 4px 0 #00f0ff; }
+.hud .email-verification__close { border-color: #ff007f; border-radius: 0; color: #ff007f; }
+.hud .email-verification__footer button { color: #94a3b8; }
+
+@media (max-width: 540px) {
+  .email-verification { padding: 12px; align-items: end; }
+  .email-verification__panel { padding: 28px 20px 22px; border-radius: 16px 16px 0 0; }
+  .email-verification h2 { font-size: 28px; }
+  .email-verification__footer { align-items: flex-start; flex-direction: column; }
 }

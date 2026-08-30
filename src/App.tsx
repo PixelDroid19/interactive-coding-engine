@@ -29,7 +29,7 @@ import { fetchPublishedLesson, PublishedLessonError } from './services/learningA
 import { fetchPublishedCourses, getCachedPublishedCourses, type PublishedCourseSummary } from './services/courseCatalogApi';
 import { applyPublishedManifest, fetchPublishedManifest, getCachedPublishedManifest } from './services/courseManifestApi';
 import { fetchCourseProgress, getCachedCourseProgress, mergeRemoteProgress } from './services/courseProgressApi';
-import { flushLearningQueue, queueLearningEvent, queueLearningProfileEvidence, queueLessonProgress, submitLessonFeedback } from './services/learningSync';
+import { flushLearningQueue, queueExerciseAttempt, queueLearningEvent, queueLearningProfileEvidence, queueLessonProgress, submitLessonFeedback } from './services/learningSync';
 
 const COURSE_SLUG_BY_ID: Record<string, string> = Object.fromEntries(
   [FUNDAMENTOS_COURSE, JAVASCRIPT_COURSE, COMPONENT_COURSE, OPEN_CELLS_COURSE, AI_ENGINEER_COURSE]
@@ -781,11 +781,13 @@ export default function App() {
           navigationState={navigationState}
           language={courseLanguage}
           onLanguageChange={handleCourseLanguageChange}
-          onCompleted={() => {
+          onCompleted={(completion) => {
             queueLessonProgress(course.slug, activeItem.id, 'completed', 0);
             queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
+            queueExerciseAttempt(course.slug, activeItem.id, 'debugging', 'success', completion);
             refreshProgress();
           }}
+          onAttempt={(result, completion) => queueExerciseAttempt(course.slug, activeItem.id, 'debugging', result, completion)}
         />
       )}
 
@@ -809,11 +811,13 @@ export default function App() {
           onPrevious={navigationState.hasPrevious ? handlePrevious : undefined}
           onNext={navigationState.hasNext ? handleNext : handleBackToRoadmap}
           navigationState={navigationState}
-          onCompleted={() => {
+          onCompleted={(completion) => {
             queueLessonProgress(course.slug, activeItem.id, 'completed', 0);
             queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
+            queueExerciseAttempt(course.slug, activeItem.id, 'challenge', 'success', completion);
             refreshProgress();
           }}
+          onAttempt={(result, completion) => queueExerciseAttempt(course.slug, activeItem.id, 'challenge', result, completion)}
         />
       )}
 
@@ -829,11 +833,13 @@ export default function App() {
           navigationState={navigationState}
           language={courseLanguage}
           onLanguageChange={handleCourseLanguageChange}
-          onCompleted={() => {
+          onCompleted={(completion) => {
             queueLessonProgress(course.slug, activeItem.id, 'completed', 0);
             queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
+            queueExerciseAttempt(course.slug, activeItem.id, 'project', 'success', completion);
             refreshProgress();
           }}
+          onAttempt={(result, completion) => queueExerciseAttempt(course.slug, activeItem.id, 'project', result, completion)}
         />
       )}
 

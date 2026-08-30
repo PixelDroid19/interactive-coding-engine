@@ -32,6 +32,7 @@ import { ThemeToggle } from '../ThemeToggle';
 import { PostSolveStudio } from '../learning/PostSolveStudio';
 import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
 import { useTheme } from '../../themes/ThemeProvider';
+import type { ExerciseCompletion } from '../../services/learningSync';
 
 interface DebuggingViewProps {
   exercise: DebuggingExerciseItem;
@@ -43,7 +44,8 @@ interface DebuggingViewProps {
   navigationState?: NavigationState;
   language?: CourseLanguage;
   onLanguageChange?: (language: CourseLanguage) => void;
-  onCompleted?: () => void;
+  onCompleted?: (completion?: ExerciseCompletion) => void;
+  onAttempt?: (result: 'success' | 'partial' | 'failure', completion: ExerciseCompletion) => void;
 }
 
 function inferValidator(test: ChallengeTest): ChallengeTest['validatorType'] {
@@ -87,6 +89,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   language = 'javascript',
   onLanguageChange,
   onCompleted,
+  onAttempt,
 }) => {
   const { themeId } = useTheme();
   const isCyber = themeId === 'cyber';
@@ -189,6 +192,11 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
       if (generationRef.current !== currentGen) return 'El código cambió durante la comprobación; el resultado se descartó.';
 
       setValidationResult(result);
+      onAttempt?.(result.allPassed ? 'success' : result.passedCount > 0 ? 'partial' : 'failure', {
+        score: result.totalCount > 0 ? Math.round((result.passedCount / result.totalCount) * 100) : 0,
+        response: { files: Object.fromEntries(Object.entries(workspace.files).map(([path, file]) => [path, file.content])) },
+        diagnostics: { tests: result.tests, revealedHints },
+      });
       setActiveTab('resultado');
       // Move focus to result summary for accessibility
       setTimeout(() => resultSummaryRef.current?.focus(), 50);
@@ -753,7 +761,11 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                               onComplete={async (readingAnswer, variationAnswer) => {
                                 await recordPostSolveEvidence(exercise.id, readingAnswer, variationAnswer);
                                 markItemCompleted(exercise.id);
-                                onCompleted?.();
+                                onCompleted?.({
+                                  score: validationResult.totalCount > 0 ? Math.round((validationResult.passedCount / validationResult.totalCount) * 100) : 100,
+                                  response: { files: Object.fromEntries(Object.entries(workspace.files).map(([path, file]) => [path, file.content])) },
+                                  diagnostics: { tests: validationResult.tests, revealedHints },
+                                });
                                 setPostSolveComplete(true);
                                 handleNext();
                               }}
