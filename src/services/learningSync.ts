@@ -2,8 +2,6 @@ import type { LearningEvidence, LearningProfile } from '../learning/types';
 import { learningApiRequest } from './learningHttp';
 
 const QUEUE_KEY = 'aula_learning_sync_v1';
-const MAX_EVENTS = 300;
-
 type ProgressStatus = 'not_started' | 'in_progress' | 'completed';
 type FeedbackKind = 'positive' | 'negative' | 'suggestion' | 'confusion';
 
@@ -75,25 +73,47 @@ function emptyQueue(): SyncQueue {
   return { events: [], progress: {}, feedback: [], evidence: [], attempts: [], syncedEvidence: [] };
 }
 
+function progressKey(courseSlug: string, lessonKey: string): string {
+  return `${courseSlug}:${lessonKey}`;
+}
+
+let volatileQueue: SyncQueue | null = null;
+let queueGeneration = 0;
+
 function loadQueue(): SyncQueue {
+  if (volatileQueue) return volatileQueue;
   try {
     const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? 'null') as Partial<SyncQueue> | null;
     if (!parsed || !Array.isArray(parsed.events) || !parsed.progress || !Array.isArray(parsed.feedback)) return emptyQueue();
+    const progress = Object.values(parsed.progress).reduce<Record<string, QueuedProgress>>((items, item) => {
+      if (!item || typeof item.courseSlug !== 'string' || typeof item.lessonKey !== 'string') return items;
+      items[progressKey(item.courseSlug, item.lessonKey)] = item;
+      return items;
+    }, {});
     return {
-      events: parsed.events.slice(-MAX_EVENTS),
-      progress: parsed.progress,
-      feedback: parsed.feedback.slice(-100),
-      evidence: Array.isArray(parsed.evidence) ? parsed.evidence.slice(-300) : [],
-      attempts: Array.isArray(parsed.attempts) ? parsed.attempts.slice(-100) : [],
-      syncedEvidence: Array.isArray(parsed.syncedEvidence) ? parsed.syncedEvidence.slice(-500) : [],
+      events: parsed.events,
+      progress,
+      feedback: parsed.feedback,
+      evidence: Array.isArray(parsed.evidence) ? parsed.evidence : [],
+      attempts: Array.isArray(parsed.attempts) ? parsed.attempts : [],
+      syncedEvidence: Array.isArray(parsed.syncedEvidence) ? parsed.syncedEvidence : [],
     };
   } catch {
     return emptyQueue();
   }
 }
 
-function saveQueue(queue: SyncQueue): void {
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+function saveQueue(queue: SyncQueue, expectedGeneration = queueGeneration): boolean {
+  if (expectedGeneration !== queueGeneration) return false;
+  try {
+    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+    volatileQueue = null;
+    return true;
+  } catch {
+    volatileQueue = queue;
+    notify('queued', 'storage');
+    return false;
+  }
 }
 
 let flushTimer: ReturnType<typeof setTimeout> | undefined;
@@ -101,8 +121,8 @@ let flushScheduledAt = 0;
 let activeFlush: Promise<boolean> | undefined;
 let retryAttempt = 0;
 
-function notify(status: 'syncing' | 'synced' | 'queued'): void {
-  window.dispatchEvent(new CustomEvent('aula-learning-sync', { detail: { status } }));
+function notify(status: 'syncing' | 'synced' | 'queued', reason?: 'network' | 'storage'): void {
+  window.dispatchEvent(new CustomEvent('aula-learning-sync', { detail: { status, ...(reason ? { reason } : {}) } }));
 }
 
 function scheduleFlush(delayMs = 900): void {
@@ -117,29 +137,33 @@ function scheduleFlush(delayMs = 900): void {
   }, delayMs);
 }
 
-async function flushEvents(queue: SyncQueue): Promise<void> {
-  if (queue.events.length === 0) return;
+async function flushEvents(queue: SyncQueue, generation: number): Promise<void> {
+  if (queue.events.length === 0 || generation !== queueGeneration) return;
   const batch = queue.events.slice(0, 100);
   const response = await learningApiRequest('/v1/events/batch', { method: 'POST', body: JSON.stringify({ events: batch }) });
   if (!response.ok) throw new Error(`events HTTP ${response.status}`);
+  if (generation !== queueGeneration) return;
   queue.events.splice(0, batch.length);
-  saveQueue(queue);
+  saveQueue(queue, generation);
 }
 
-async function flushProgress(queue: SyncQueue): Promise<void> {
+async function flushProgress(queue: SyncQueue, generation: number): Promise<void> {
   for (const progress of Object.values(queue.progress).slice(0, 20)) {
-    const response = await learningApiRequest(`/v1/progress/${encodeURIComponent(progress.lessonKey)}`, {
+    if (generation !== queueGeneration) return;
+    const response = await learningApiRequest(`/v1/courses/${encodeURIComponent(progress.courseSlug)}/progress/${encodeURIComponent(progress.lessonKey)}`, {
       method: 'PUT',
       body: JSON.stringify({ status: progress.status, playbackMs: progress.playbackMs, ...(progress.score !== undefined ? { score: progress.score } : {}) }),
     });
     if (!response.ok) throw new Error(`progress HTTP ${response.status}`);
-    delete queue.progress[progress.lessonKey];
-    saveQueue(queue);
+    if (generation !== queueGeneration) return;
+    delete queue.progress[progressKey(progress.courseSlug, progress.lessonKey)];
+    saveQueue(queue, generation);
   }
 }
 
-async function flushFeedback(queue: SyncQueue): Promise<void> {
+async function flushFeedback(queue: SyncQueue, generation: number): Promise<void> {
   for (const feedback of queue.feedback.slice(0, 10)) {
+    if (generation !== queueGeneration) return;
     const response = await learningApiRequest('/v1/feedback', {
       method: 'POST',
       body: JSON.stringify({
@@ -151,13 +175,14 @@ async function flushFeedback(queue: SyncQueue): Promise<void> {
       }),
     });
     if (!response.ok) throw new Error(`feedback HTTP ${response.status}`);
+    if (generation !== queueGeneration) return;
     queue.feedback = queue.feedback.filter((candidate) => candidate.id !== feedback.id);
-    saveQueue(queue);
+    saveQueue(queue, generation);
   }
 }
 
-async function flushEvidence(queue: SyncQueue): Promise<void> {
-  if (queue.evidence.length === 0) return;
+async function flushEvidence(queue: SyncQueue, generation: number): Promise<void> {
+  if (queue.evidence.length === 0 || generation !== queueGeneration) return;
   const batch = queue.evidence.slice(0, 100);
   const response = await learningApiRequest('/v1/me/evidence/batch', {
     method: 'POST',
@@ -166,42 +191,51 @@ async function flushEvidence(queue: SyncQueue): Promise<void> {
     }),
   });
   if (!response.ok) throw new Error(`evidence HTTP ${response.status}`);
+  if (generation !== queueGeneration) return;
   const fingerprints = new Set(batch.map((entry) => entry.fingerprint));
   queue.evidence = queue.evidence.filter((entry) => !fingerprints.has(entry.fingerprint));
-  queue.syncedEvidence = [...new Set([...queue.syncedEvidence, ...fingerprints])].slice(-500);
-  saveQueue(queue);
+  queue.syncedEvidence = [...new Set([...queue.syncedEvidence, ...fingerprints])];
+  saveQueue(queue, generation);
 }
 
-async function flushAttempts(queue: SyncQueue): Promise<void> {
-  if (queue.attempts.length === 0) return;
+async function flushAttempts(queue: SyncQueue, generation: number): Promise<void> {
+  if (queue.attempts.length === 0 || generation !== queueGeneration) return;
   const batch = queue.attempts.slice(0, 50);
   const response = await learningApiRequest('/v1/me/attempts/batch', {
     method: 'POST', body: JSON.stringify({ attempts: batch }),
   });
   if (!response.ok) throw new Error(`attempts HTTP ${response.status}`);
+  if (generation !== queueGeneration) return;
   const ids = new Set(batch.map((attempt) => attempt.id));
   queue.attempts = queue.attempts.filter((attempt) => !ids.has(attempt.id));
-  saveQueue(queue);
+  saveQueue(queue, generation);
 }
 
 export async function flushLearningQueue(): Promise<boolean> {
   if (activeFlush) return activeFlush;
   activeFlush = (async () => {
+    const generation = queueGeneration;
     const queue = loadQueue();
     if (queue.events.length === 0 && Object.keys(queue.progress).length === 0 && queue.feedback.length === 0 && queue.evidence.length === 0 && queue.attempts.length === 0) return true;
     notify('syncing');
     try {
-      await flushEvents(queue);
-      await flushProgress(queue);
-      await flushFeedback(queue);
-      await flushEvidence(queue);
-      await flushAttempts(queue);
+      await flushEvents(queue, generation);
+      if (generation !== queueGeneration) return false;
+      await flushProgress(queue, generation);
+      if (generation !== queueGeneration) return false;
+      await flushFeedback(queue, generation);
+      if (generation !== queueGeneration) return false;
+      await flushEvidence(queue, generation);
+      if (generation !== queueGeneration) return false;
+      await flushAttempts(queue, generation);
+      if (generation !== queueGeneration) return false;
       retryAttempt = 0;
       notify('synced');
       return true;
     } catch {
+      if (generation !== queueGeneration) return false;
       retryAttempt += 1;
-      notify('queued');
+      notify('queued', 'network');
       if (retryAttempt <= 5 && navigator.onLine) scheduleFlush(Math.min(30_000, 1000 * 2 ** retryAttempt));
       return false;
     }
@@ -214,15 +248,15 @@ export async function flushLearningQueue(): Promise<boolean> {
 export function queueLearningEvent(courseSlug: string, lessonKey: string | undefined, type: string, payload?: Record<string, unknown>): void {
   const queue = loadQueue();
   queue.events.push({ id: crypto.randomUUID(), courseSlug, ...(lessonKey ? { lessonKey } : {}), type, occurredAt: new Date().toISOString(), ...(payload ? { payload } : {}) });
-  queue.events = queue.events.slice(-MAX_EVENTS);
   saveQueue(queue);
   scheduleFlush();
 }
 
 export function queueLessonProgress(courseSlug: string, lessonKey: string, status: ProgressStatus, playbackMs: number, score?: number): void {
   const queue = loadQueue();
-  const current = queue.progress[lessonKey];
-  queue.progress[lessonKey] = {
+  const key = progressKey(courseSlug, lessonKey);
+  const current = queue.progress[key];
+  queue.progress[key] = {
     courseSlug,
     lessonKey,
     status: current?.status === 'completed' ? 'completed' : status,
@@ -231,6 +265,16 @@ export function queueLessonProgress(courseSlug: string, lessonKey: string, statu
   };
   saveQueue(queue);
   scheduleFlush(status === 'completed' ? 100 : 15_000);
+}
+
+export function clearLearningSyncQueue(): void {
+  queueGeneration += 1;
+  volatileQueue = null;
+  retryAttempt = 0;
+  if (flushTimer !== undefined) clearTimeout(flushTimer);
+  flushTimer = undefined;
+  flushScheduledAt = 0;
+  try { localStorage.removeItem(QUEUE_KEY); } catch { /* Storage puede estar bloqueado. */ }
 }
 
 export async function submitLessonFeedback(courseSlug: string, lessonKey: string, kind: FeedbackKind, message?: string): Promise<'sent' | 'queued'> {
@@ -260,7 +304,6 @@ export function queueLearningProfileEvidence(profile: LearningProfile, courseSlu
     });
     known.add(evidence.id);
   }
-  queue.evidence = queue.evidence.slice(-300);
   saveQueue(queue);
   scheduleFlush(250);
 }
@@ -287,7 +330,6 @@ export function queueExerciseAttempt(
     ...(safeDiagnostics ? { diagnostics: safeDiagnostics } : {}),
     occurredAt: new Date().toISOString(),
   });
-  queue.attempts = queue.attempts.slice(-100);
   saveQueue(queue);
   scheduleFlush(100);
 }

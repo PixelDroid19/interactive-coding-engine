@@ -3,10 +3,39 @@ import { learningApiRequest, readApiJson } from './learningHttp';
 export type StaffOverview = Readonly<{
   learners: number; anonymousLearners: number; active30d: number; completedItems: number;
   anonymousCompletedItems: number; needsSupport: number; openThreads: number;
+  verifiedLearners: number; verificationPending: number; active7d: number; attempts30d: number;
+  failedAttempts30d: number; pendingFeedback: number; latestActivityAt: string | null;
+  courses: readonly StaffCourseOverview[];
+  activity7d: readonly StaffActivityPoint[];
 }>;
+export type StaffCourseOverview = Readonly<{
+  courseSlug: string; title: string; learners: number; progressItems: number; completedItems: number;
+  averageScore: number | null; attempts: number; attemptsToReview: number;
+}>;
+export type StaffActivityPoint = Readonly<{ day: string; events: number; activeActors: number; completions: number }>;
 export type StaffLearner = Readonly<{
   id: string; email: string; displayName: string | null; status: string; emailVerifiedAt: string | null;
   lastSeenAt: string | null; progressItems: number; completed: number; lowestSkillScore: number; skillsAtRisk: number;
+}>;
+export type LearnerProgress = Readonly<{
+  courseSlug: string; lessonKey: string; status: 'not_started' | 'in_progress' | 'completed';
+  playbackMs: number; score: number | null; updatedAt: string;
+}>;
+export type LearnerSkill = Readonly<{
+  courseSlug: string; skillKey: string; capability: string; score: number; attempts: number;
+  successes: number; lastResult: 'success' | 'partial' | 'failure'; lastPracticedAt: string;
+}>;
+export type LearnerAttempt = Readonly<{
+  id: string; courseSlug: string; itemKey: string; kind: string; result: 'success' | 'partial' | 'failure';
+  score: number | null; response: Record<string, unknown>; diagnostics: Record<string, unknown>; occurredAt: string;
+}>;
+export type StaffFeedbackEntry = Readonly<{
+  id: string; courseSlug: string | null; itemKey: string | null; skillKey: string | null;
+  message: string; status: 'unread' | 'read' | 'resolved'; createdAt: string;
+}>;
+export type StaffAdminUser = Readonly<{
+  id: string; email: string; displayName: string | null; status: 'pending' | 'active' | 'blocked';
+  emailVerifiedAt: string | null; lastLoginAt: string | null; roles: readonly ('student' | 'tutor' | 'admin')[];
 }>;
 export type StaffThread = Readonly<{
   id: string; subject: string; status: 'open' | 'waiting_student' | 'resolved'; updatedAt: string;
@@ -14,11 +43,11 @@ export type StaffThread = Readonly<{
   messages: readonly Readonly<{ id: string; body: string; authorUserId: string; createdAt: string }>[];
 }>;
 export type LearnerDetail = Readonly<{
-  user: Record<string, unknown>;
-  progress: readonly Record<string, unknown>[];
-  skills: readonly Record<string, unknown>[];
-  attempts: readonly Record<string, unknown>[];
-  feedback: readonly Record<string, unknown>[];
+  user: StaffLearner & Readonly<{ roles: readonly string[]; actorId: string | null }>;
+  progress: readonly LearnerProgress[];
+  skills: readonly LearnerSkill[];
+  attempts: readonly LearnerAttempt[];
+  feedback: readonly StaffFeedbackEntry[];
 }>;
 export type IdentityAccessRule = Readonly<{ id: string; provider: 'google' | 'microsoft'; ruleType: 'domain' | 'email'; value: string; enabled: boolean; createdAt: string }>;
 export type AdminCourse = Readonly<{ slug: string; title: string; description: string; availability: 'available' | 'locked' | 'hidden'; availabilityReason: string | null }>;
@@ -43,7 +72,7 @@ export const staffDashboardApi = {
   leaveFeedback: (input: { learnerUserId: string; courseSlug?: string; itemKey?: string; skillKey?: string; message: string }) => json('/v1/staff/feedback', {
     method: 'POST', body: JSON.stringify(input),
   }),
-  users: async () => (await json<{ items: Array<Record<string, unknown>> }>('/v1/admin/users?limit=100')).items,
+  users: async () => (await json<{ items: StaffAdminUser[] }>('/v1/admin/users?limit=100')).items,
   grantRole: (userId: string, role: 'tutor' | 'admin') => json(`/v1/admin/users/${encodeURIComponent(userId)}/roles/${role}`, { method: 'PUT' }),
   revokeRole: (userId: string, role: 'tutor' | 'admin') => json(`/v1/admin/users/${encodeURIComponent(userId)}/roles/${role}`, { method: 'DELETE' }),
   setUserStatus: (userId: string, status: 'active' | 'blocked') => json(`/v1/admin/users/${encodeURIComponent(userId)}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),

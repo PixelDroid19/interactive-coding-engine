@@ -1,4 +1,5 @@
 import { getLearningActorId, LEARNING_API_URL, learningApiRequest, readApiJson, rotateLearningActorId, setLearningCsrfToken } from './learningHttp';
+import { clearLearningSyncQueue } from './learningSync';
 
 export type AuthProvider = 'google' | 'microsoft';
 export type UserRole = 'student' | 'tutor' | 'admin';
@@ -24,6 +25,7 @@ const PRIVATE_KEYS = ['aula_user_progress_v1', 'aula_learning_profile_v1', 'aula
 const PRIVATE_PREFIXES = ['aula_course_progress_cache_v1:', 'aula_learning_center_cache_v1:'] as const;
 
 function clearPrivateDeviceState(): void {
+  clearLearningSyncQueue();
   try {
     PRIVATE_KEYS.forEach((key) => localStorage.removeItem(key));
     for (let index = localStorage.length - 1; index >= 0; index -= 1) {
