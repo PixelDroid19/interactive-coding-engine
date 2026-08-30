@@ -116,4 +116,19 @@ describe('panel de seguimiento', () => {
     expect(screen.getByText('Selecciona una persona para revisar su recorrido.')).toBeTruthy();
     expect(screen.queryByText('Conceptos a reforzar')).toBeNull();
   });
+
+  it('no presenta como refuerzo un concepto que la persona ya domina', async () => {
+    api.learner.mockResolvedValueOnce({
+      user: { ...learner, roles: ['student'], actorId: 'actor-1' },
+      progress: [], attempts: [], feedback: [],
+      skills: [{ courseSlug: 'fundamentos', skillKey: 'funciones-dominadas', capability: 'aplicar', attempts: 4, successes: 4, score: 1, lastResult: 'success', lastPracticedAt: '2026-08-30T12:00:00.000Z' }],
+    });
+    renderDashboard(false);
+    await screen.findByText('Personas registradas');
+    fireEvent.click(screen.getByRole('button', { name: 'Personas' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Persona Ejemplo/ }));
+
+    expect(await screen.findByText('No hay conceptos por debajo del umbral de refuerzo.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /funciones-dominadas/ })).toBeNull();
+  });
 });

@@ -247,6 +247,7 @@ function LearnerDetailView({ detail, feedback, courseSlug, itemKey, skillKey, sa
   const skills = useMemo(() => [...new Set(detail.skills
     .filter((item) => !courseSlug || item.courseSlug === courseSlug)
     .map((item) => item.skillKey))].sort(), [courseSlug, detail.skills]);
+  const skillsAtRisk = useMemo(() => detail.skills.filter((skill) => skill.score < .55), [detail.skills]);
   const selectCourse = (value: string) => { onCourse(value); onItem(''); onSkill(''); };
 
   return <>
@@ -254,7 +255,7 @@ function LearnerDetailView({ detail, feedback, courseSlug, itemKey, skillKey, sa
     <header className="staff-detail-header"><span className="staff-avatar is-large">{String(user.displayName || user.email).slice(0, 2).toUpperCase()}</span><div><h2>{String(user.displayName || user.email)}</h2><p>{String(user.email)} · última actividad {date(user.lastSeenAt)}</p></div></header>
     <section className="staff-detail-stats"><span><b>{detail.progress.length}</b> avances</span><span><b>{detail.attempts.length}</b> intentos</span><span><b>{detail.skills.filter((skill) => skill.score < .55).length}</b> refuerzos</span><span><b>{detail.progress.filter((item) => item.status === 'completed').length}</b> completados</span></section>
 
-    <section className="staff-detail-section"><div className="staff-detail-section__heading"><h3>Conceptos a reforzar</h3><small>Selecciona uno para contextualizar el feedback</small></div>{detail.skills.slice(0, 8).map((skill, index) => <button className="staff-skill" key={`${skill.courseSlug}:${skill.skillKey}:${index}`} onClick={() => { selectCourse(skill.courseSlug); onSkill(skill.skillKey); }}><span><strong>{skill.skillKey}</strong><small>{skill.courseSlug} · {skill.capability} · {skill.attempts} intentos</small></span><b>{score(skill.score)}</b></button>)}{detail.skills.length === 0 && <Empty label="Aún no hay evidencia suficiente." />}</section>
+    <section className="staff-detail-section"><div className="staff-detail-section__heading"><h3>Conceptos a reforzar</h3><small>Selecciona uno para contextualizar el feedback</small></div>{skillsAtRisk.slice(0, 8).map((skill, index) => <button className="staff-skill" key={`${skill.courseSlug}:${skill.skillKey}:${index}`} onClick={() => { selectCourse(skill.courseSlug); onSkill(skill.skillKey); }}><span><strong>{skill.skillKey}</strong><small>{skill.courseSlug} · {skill.capability} · {skill.attempts} intentos</small></span><b>{score(skill.score)}</b></button>)}{skillsAtRisk.length === 0 && <Empty label="No hay conceptos por debajo del umbral de refuerzo." />}</section>
 
     <section className="staff-detail-grid">
       <div className="staff-detail-section"><h3>Progreso reciente</h3>{detail.progress.slice(0, 8).map((progress) => <article className="staff-progress-row" key={`${progress.courseSlug}:${progress.lessonKey}`}><span><strong>{progress.lessonKey}</strong><small>{progress.courseSlug} · {duration(progress.playbackMs)} · {date(progress.updatedAt)}</small></span><b className={`is-${progress.status}`}>{progress.status === 'completed' ? 'Completado' : progress.status === 'in_progress' ? 'En curso' : 'Sin iniciar'}</b></article>)}{detail.progress.length === 0 && <Empty label="No hay progreso remoto todavía." />}</div>
