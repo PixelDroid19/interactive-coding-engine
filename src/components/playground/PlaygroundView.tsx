@@ -166,6 +166,24 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
                   return { ...prev, files: copy, activeFilePath: remaining[0] || '' };
                 })
               }
+              onFileRename={(oldPath, newPath) =>
+                setWorkspace((prev) => {
+                  const previousFile = prev.files[oldPath];
+                  if (!previousFile || prev.files[newPath]) return prev;
+                  const files = { ...prev.files };
+                  delete files[oldPath];
+                  files[newPath] = {
+                    ...previousFile,
+                    name: newPath.split('/').at(-1) || newPath,
+                    path: newPath,
+                  };
+                  return {
+                    ...prev,
+                    files,
+                    activeFilePath: prev.activeFilePath === oldPath ? newPath : prev.activeFilePath,
+                  };
+                })
+              }
               readOnly={false}
             />
           </div>

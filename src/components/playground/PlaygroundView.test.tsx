@@ -68,6 +68,19 @@ describe('PlaygroundView', () => {
     expect(showFiles.getAttribute('aria-expanded')).toBe('false');
   });
 
+  it('renombra archivos sin perder su contenido ni la selección activa', () => {
+    render(<PlaygroundView onBack={() => {}} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir app.js' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Renombrar app.js' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nuevo nombre para app.js' }), { target: { value: 'main.js' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar nombre' }));
+
+    expect(screen.queryByRole('button', { name: 'Abrir app.js' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Abrir main.js' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('textbox').textContent).toContain('Lógica interactiva en JavaScript');
+  });
+
   it('restaura la plantilla y el estado del explorador después de recargar', () => {
     const firstRender = render(<PlaygroundView onBack={() => {}} />);
 
