@@ -12,6 +12,13 @@ type RemoteLesson = Readonly<{
   audio: Readonly<{ url: string; durationMs: number }> | null;
 }>;
 
+export class PublishedLessonError extends Error {
+  constructor(readonly status: number, readonly code: string | undefined, message: string) {
+    super(message);
+    this.name = 'PublishedLessonError';
+  }
+}
+
 function isWorkspace(value: unknown): value is WorkspaceSnapshot {
   return Boolean(value && typeof value === 'object' && 'files' in value && 'activeFilePath' in value);
 }
@@ -39,7 +46,18 @@ export async function fetchPublishedLesson(lessonId: string, signal?: AbortSigna
     headers: { accept: 'application/json' },
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(12_000)]) : AbortSignal.timeout(12_000),
   });
-  if (!response.ok) throw new Error(`No se pudo cargar la revisión publicada (HTTP ${response.status}).`);
+  if (!response.ok) {
+    let code: string | undefined;
+    let message = `No se pudo cargar la revisión publicada (HTTP ${response.status}).`;
+    try {
+      const payload = await response.json() as { error?: { code?: string; message?: string } };
+      code = payload.error?.code;
+      if (payload.error?.message) message = payload.error.message;
+    } catch {
+      // Los proxies intermedios pueden devolver una respuesta sin JSON.
+    }
+    throw new PublishedLessonError(response.status, code, message);
+  }
   const remote = parseRemoteLesson(await response.json(), lessonId);
   const durationMs = remote.audio?.durationMs ?? remote.scrim.durationMs;
   return {
@@ -53,4 +71,3 @@ export async function fetchPublishedLesson(lessonId: string, signal?: AbortSigna
         : undefined,
   } as ScrimLessonData;
 }
-

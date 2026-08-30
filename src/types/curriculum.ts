@@ -10,6 +10,8 @@ export interface BaseCurriculumItem {
   type: ItemType;
   estimatedMinutes: number;
   description?: string;
+  availability?: 'available' | 'locked';
+  availabilityReason?: string;
 }
 
 export interface ScrimCurriculumItem extends BaseCurriculumItem {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchPublishedLesson } from './learningApi';
+import { fetchPublishedLesson, PublishedLessonError } from './learningApi';
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -27,5 +27,15 @@ describe('learning API', () => {
   it('rechaza una respuesta que intenta sustituir otra lección', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ key: 'open-cells-99' }), { status: 200 }));
     await expect(fetchPublishedLesson('open-cells-01')).rejects.toThrow('otra lección');
+  });
+
+  it('conserva el estado 403 para que la interfaz no abra una copia local bloqueada', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      error: { code: 'LESSON_LOCKED', message: 'Disponible después del módulo anterior.' },
+    }), { status: 403, headers: { 'content-type': 'application/json' } }));
+
+    const error = await fetchPublishedLesson('open-cells-01').catch((caught) => caught);
+    expect(error).toBeInstanceOf(PublishedLessonError);
+    expect(error).toMatchObject({ status: 403, code: 'LESSON_LOCKED', message: 'Disponible después del módulo anterior.' });
   });
 });

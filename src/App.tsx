@@ -6,7 +6,7 @@ import { JAVASCRIPT_COURSE, JAVASCRIPT_SCRIMS } from './curriculum/javascript/co
 import { COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS } from './curriculum/web-components-lit/course';
 import { AI_ENGINEER_COURSE, AI_ENGINEER_SCRIMS } from './curriculum/ai-engineer/course';
 import { OPEN_CELLS_COURSE, OPEN_CELLS_SCRIMS } from './curriculum/open-cells/course';
-import { AppNavigationState, loadAppNavigationState, loadUserProgress, loadCustomCourses, loadCustomScrims, loadCourseLanguage, markItemCompleted, saveAppNavigationState, saveCourseLanguage, saveCustomCourse, updateRecentPosition } from './engine/persistence';
+import { AppNavigationState, loadAppNavigationState, loadUserProgress, loadCustomCourses, loadCustomScrims, loadCourseLanguage, markItemCompleted, saveAppNavigationState, saveCourseLanguage, saveCustomCourse, saveUserProgress, updateRecentPosition } from './engine/persistence';
 import { resolveDebuggingLanguage, resolveLessonLanguage, resolveProjectLanguage, resolveStandaloneChallengeLanguage } from './engine/runtime/languageVariants';
 import { getNavigationState } from './engine/navigation';
 import { RoadmapHome } from './components/curriculum/RoadmapHome';
@@ -25,8 +25,10 @@ import type { LearningProfile } from './learning/types';
 import { getItemReadiness, type ItemReadiness } from './learning/unlockPolicy';
 import { getCurriculumSkillIndex, loadLearningProfile } from './learning/curriculumEvidence';
 import { X } from 'lucide-react';
-import { fetchPublishedLesson } from './services/learningApi';
+import { fetchPublishedLesson, PublishedLessonError } from './services/learningApi';
 import { fetchPublishedCourses, getCachedPublishedCourses, type PublishedCourseSummary } from './services/courseCatalogApi';
+import { applyPublishedManifest, fetchPublishedManifest, getCachedPublishedManifest } from './services/courseManifestApi';
+import { fetchCourseProgress, getCachedCourseProgress, mergeRemoteProgress } from './services/courseProgressApi';
 import { flushLearningQueue, queueLearningEvent, queueLearningProfileEvidence, queueLessonProgress, submitLessonFeedback } from './services/learningSync';
 
 const COURSE_SLUG_BY_ID: Record<string, string> = Object.fromEntries(
@@ -257,7 +259,7 @@ export default function App() {
   const [scrimInitialTimeMs, setScrimInitialTimeMs] = useState(initialAppState.timestampMs);
   const [playgroundReturnView, setPlaygroundReturnView] = useState<'catalog' | 'home'>(initialAppState.view === 'playground' ? 'catalog' : 'home');
   const [navigationBlocker, setNavigationBlocker] = useState<ItemReadiness | null>(null);
-  const [remoteLessonState, setRemoteLessonState] = useState<{ id: string; status: 'loading' | 'ready' | 'backup'; message?: string } | null>(null);
+  const [remoteLessonState, setRemoteLessonState] = useState<{ id: string; status: 'loading' | 'ready' | 'offline' | 'unavailable'; message?: string } | null>(null);
   const activitySession = useRef<{ id: string; courseSlug: string; itemId: string; itemType: string; openedAt: number; playbackMs: number } | null>(null);
 
   const closeActivitySession = (reason: string) => {
@@ -302,6 +304,65 @@ export default function App() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    const applyRemoteProgress = (items: Parameters<typeof mergeRemoteProgress>[1]) => {
+      setProgress((current) => {
+        const merged = mergeRemoteProgress(current, items);
+        saveUserProgress(merged);
+        return merged;
+      });
+    };
+    const cached = getCachedCourseProgress();
+    if (cached) {
+      applyRemoteProgress(cached.snapshot.items);
+      if (cached.fresh) return;
+    }
+    const controller = new AbortController();
+    void fetchCourseProgress(controller.signal)
+      .then((snapshot) => {
+        if (!controller.signal.aborted) applyRemoteProgress(snapshot.items);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    const applyManifest = (manifest: Parameters<typeof applyPublishedManifest>[1]) => {
+      const base = initialCourses.find((candidate) => candidate.slug === manifest.slug);
+      if (!base) return;
+      const currentPublished = courses.find((candidate) => candidate.slug === manifest.slug) ?? base;
+      const hydrated = applyPublishedManifest({ ...base, ...currentPublished, modules: base.modules }, manifest);
+      setCourses((current) => current.map((candidate) => candidate.slug === hydrated.slug ? hydrated : candidate));
+      setCourse((current) => current.slug === hydrated.slug ? hydrated : current);
+    };
+    const cached = getCachedPublishedManifest(course.slug);
+    if (cached) {
+      applyManifest(cached.manifest);
+      if (cached.fresh) return;
+    }
+    const controller = new AbortController();
+    void fetchPublishedManifest(course.slug, controller.signal)
+      .then((manifest) => {
+        if (!controller.signal.aborted) applyManifest(manifest);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  // La fuente base conserva el contenido ejecutable; el manifiesto remoto decide estructura y acceso.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [course.slug]);
+
+  useEffect(() => {
+    if (!activeItem || ['catalog', 'home', 'playground', 'studio'].includes(currentView)) return;
+    const publishedItem = course.modules.flatMap((module) => module.items).find((item) => item.id === activeItem.id);
+    if (!publishedItem) {
+      setActiveItem(null);
+      saveRoute({ view: 'home', courseId: course.id });
+      setCurrentView('home');
+      return;
+    }
+    if (publishedItem !== activeItem) setActiveItem(publishedItem);
+  }, [activeItem, course, currentView]);
 
   useEffect(() => {
     const cachedCatalog = getCachedPublishedCourses();
@@ -351,7 +412,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (currentView !== 'scrim' || course.slug !== OPEN_CELLS_COURSE.slug || activeItem?.type !== 'scrim') return;
+    if (currentView !== 'scrim' || activeItem?.type !== 'scrim' || activeItem.availability === undefined) return;
     const lessonId = activeItem.scrimDataId;
     const controller = new AbortController();
     setRemoteLessonState({ id: lessonId, status: 'loading' });
@@ -363,9 +424,10 @@ export default function App() {
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
+        const denied = error instanceof PublishedLessonError && (error.status === 403 || error.status === 404);
         setRemoteLessonState({
           id: lessonId,
-          status: 'backup',
+          status: denied ? 'unavailable' : 'offline',
           message: error instanceof Error ? error.message : 'No se pudo consultar el backend.',
         });
       });
@@ -380,6 +442,10 @@ export default function App() {
   };
 
   const handleSelectItem = (item: CurriculumItem, moduleId: string, initialTimeMs = 0) => {
+    if (item.availability === 'locked') {
+      setNavigationBlocker({ unlocked: false, missing: [], message: item.availabilityReason ?? 'Esta actividad no está disponible por ahora.' });
+      return;
+    }
     const nextView = viewForItem(item);
     setActiveItem(item);
     setActiveModuleId(moduleId);
@@ -440,6 +506,7 @@ export default function App() {
   const handleNext = async () => {
     if (activeItem?.type === 'reading') {
       markItemCompleted(activeItem.id);
+      queueLessonProgress(course.slug, activeItem.id, 'completed', 0);
       queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
       const { curriculumEvidence } = await import('./learning/curriculumEvidence');
       await curriculumEvidence.record(activeItem.id);
@@ -450,6 +517,14 @@ export default function App() {
       refreshProgress();
       saveRoute({ view: 'home', courseId: course.id });
       setCurrentView('home');
+      return;
+    }
+    if (nav.next.item.availability === 'locked') {
+      setNavigationBlocker({
+        unlocked: false,
+        missing: [],
+        message: nav.next.item.availabilityReason ?? 'La siguiente actividad no está disponible por ahora.',
+      });
       return;
     }
     const latestProfile = await loadLearningProfile();
@@ -522,11 +597,21 @@ export default function App() {
   };
   const activeScrimIsUnavailable = currentView === 'scrim' && activeItem?.type === 'scrim' && !activeScrimData;
   const activeScrimError = activeScrimData?.audioTrack?.audioError;
-  const remoteLessonIsLoading = course.slug === OPEN_CELLS_COURSE.slug
-    && activeItem?.type === 'scrim'
+  const remoteLessonIsLoading = activeItem?.type === 'scrim'
     && remoteLessonState?.id === activeItem.scrimDataId
     && remoteLessonState.status === 'loading';
-  const activeScrimCannotPlay = activeScrimIsUnavailable || Boolean(activeScrimError) || remoteLessonIsLoading;
+  const remoteLessonIsUnavailable = activeItem?.type === 'scrim'
+    && remoteLessonState?.id === activeItem.scrimDataId
+    && remoteLessonState.status === 'unavailable';
+  const activeScrimCannotPlay = activeScrimIsUnavailable || Boolean(activeScrimError) || remoteLessonIsUnavailable;
+  const activeScrimUnavailableMessage = activeScrimError
+    ?? (remoteLessonIsUnavailable
+      ? remoteLessonState?.message ?? 'Esta clase no está disponible por ahora.'
+      : remoteLessonIsLoading
+        ? 'Cargando la revisión publicada de esta clase…'
+        : customScrimsStatus === 'loading'
+          ? 'Cargando la clase guardada…'
+          : customScrimsError || 'No se encontró el contenido de esta clase.');
   const tutorActivity = useMemo(
     () => buildTutorActivity(course, activeItem, scrimsMap),
     [activeItem, course, scrimsMap],
@@ -590,12 +675,7 @@ export default function App() {
           >
             <h1 className="text-xl font-bold">{activeItem?.title ?? 'Clase'}</h1>
             <p className="mt-3 text-sm">
-              {activeScrimError
-                || (remoteLessonIsLoading
-                ? 'Cargando la revisión publicada de esta clase…'
-                : customScrimsStatus === 'loading'
-                ? 'Cargando la clase guardada…'
-                : customScrimsError || 'No se encontró el contenido de esta clase.')}
+              {activeScrimUnavailableMessage}
             </p>
             {(activeScrimError || customScrimsStatus !== 'loading') && (
               <button type="button" className="neu-pill-btn mt-5" onClick={handleBackToRoadmap}>
@@ -608,9 +688,9 @@ export default function App() {
 
       {currentView === 'scrim' && activeItem && !activeScrimCannotPlay && (
         <>
-        {remoteLessonState?.id === activeItem.id && remoteLessonState.status === 'backup' && (
+        {activeItem.type === 'scrim' && remoteLessonState?.id === activeItem.scrimDataId && remoteLessonState.status === 'offline' && (
           <div className="fixed left-1/2 top-20 z-[110] -translate-x-1/2 border-2 border-amber-500 bg-amber-50 px-4 py-2 text-sm text-amber-950 shadow-[4px_4px_0_#111]" role="status">
-            Backend temporalmente no disponible. Estás usando la copia local verificada. {remoteLessonState.message}
+            Sin conexión con el catálogo. Estás usando el contenido guardado en este dispositivo. {remoteLessonState.message}
           </div>
         )}
         <ScrimPlayer
@@ -664,9 +744,14 @@ export default function App() {
             }
           }}
           onCompleted={() => {
-            if (activeItem.type !== 'scrim') return;
-            queueLessonProgress(course.slug, activeItem.id, 'completed', resolvedScrimData?.durationMs ?? 0);
-            queueLearningEvent(course.slug, activeItem.id, 'lesson_completed', { durationMs: resolvedScrimData?.durationMs ?? 0 });
+            const durationMs = activeItem.type === 'scrim' ? resolvedScrimData?.durationMs ?? 0 : 0;
+            queueLessonProgress(course.slug, activeItem.id, 'completed', durationMs);
+            queueLearningEvent(
+              course.slug,
+              activeItem.id,
+              activeItem.type === 'scrim' ? 'lesson_completed' : 'item_completed',
+              { itemType: activeItem.type, durationMs },
+            );
           }}
           onFeedback={(kind) => submitLessonFeedback(course.slug, activeItem.id, kind)}
         />
@@ -686,6 +771,7 @@ export default function App() {
           language={courseLanguage}
           onLanguageChange={handleCourseLanguageChange}
           onCompleted={() => {
+            queueLessonProgress(course.slug, activeItem.id, 'completed', 0);
             queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
             refreshProgress();
           }}
@@ -713,6 +799,7 @@ export default function App() {
           onNext={navigationState.hasNext ? handleNext : handleBackToRoadmap}
           navigationState={navigationState}
           onCompleted={() => {
+            queueLessonProgress(course.slug, activeItem.id, 'completed', 0);
             queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
             refreshProgress();
           }}
@@ -732,6 +819,7 @@ export default function App() {
           language={courseLanguage}
           onLanguageChange={handleCourseLanguageChange}
           onCompleted={() => {
+            queueLessonProgress(course.slug, activeItem.id, 'completed', 0);
             queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
             refreshProgress();
           }}

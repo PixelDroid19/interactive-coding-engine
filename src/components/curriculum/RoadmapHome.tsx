@@ -65,6 +65,15 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
   const enterLesson = (lessonId: string) => {
     const found = findCourseItem(course, lessonId);
     if (!found) return;
+    if (found.item.availability === 'locked') {
+      setBlockedItem({
+        unlocked: false,
+        missing: [],
+        itemId: found.item.id,
+        message: found.item.availabilityReason ?? 'Esta actividad no está disponible por ahora.',
+      });
+      return;
+    }
     const readiness = getItemReadiness(course, found.item.id, learningProfile, getCurriculumSkillIndex());
     if (!readiness.unlocked) {
       setBlockedItem({ ...readiness, itemId: found.item.id });
@@ -75,7 +84,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
 
   const isLocked = (lessonId: string) => {
     const found = findCourseItem(course, lessonId);
-    return found ? !getItemReadiness(course, found.item.id, learningProfile, getCurriculumSkillIndex()).unlocked : false;
+    return found ? found.item.availability === 'locked' || !getItemReadiness(course, found.item.id, learningProfile, getCurriculumSkillIndex()).unlocked : false;
   };
 
   const openRecovery = () => {
@@ -388,7 +397,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
               <X size={14} />
             </button>
             <span className="rm-pill">Siguiente paso</span>
-            <h2>No es un castigo: detectamos un hueco</h2>
+            <h2>{blockedItem.missing.length > 0 ? 'No es un castigo: detectamos un hueco' : 'Contenido no disponible'}</h2>
             <p>{blockedItem.message}</p>
             <ul>
               {blockedItem.missing.slice(0, 3).map((gap) => (
@@ -397,9 +406,11 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
                 </li>
               ))}
             </ul>
-            <button type="button" className="rm-enter-btn" onClick={openRecovery}>
-              Ir al refuerzo <ChevronRight size={14} />
-            </button>
+            {blockedItem.missing.length > 0 && (
+              <button type="button" className="rm-enter-btn" onClick={openRecovery}>
+                Ir al refuerzo <ChevronRight size={14} />
+              </button>
+            )}
           </aside>
         </div>
       )}
