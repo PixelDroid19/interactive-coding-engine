@@ -33,7 +33,9 @@ export function EmailVerificationDialog() {
         <button type="button" className="email-verification__close" onClick={auth.dismissVerification} aria-label="Continuar sin iniciar sesión"><X size={20} /></button>
         <span className="email-verification__eyebrow"><MailCheck size={17} /> Correo protegido</span>
         <h2 id="email-verification-title">Confirma que eres tú</h2>
-        <p>Enviamos un código de seis cifras a <strong>{verification.emailHint}</strong>. La cuenta todavía no está abierta.</p>
+        <p>{verification.deliveryFailed
+          ? <>La verificación de <strong>{verification.emailHint}</strong> sigue pendiente. La cuenta todavía no está abierta.</>
+          : <>Enviamos un código de seis cifras a <strong>{verification.emailHint}</strong>. La cuenta todavía no está abierta.</>}</p>
         <form onSubmit={(event) => { event.preventDefault(); if (code.length === 6) void auth.verifyEmail(code); }}>
           <label htmlFor="email-code">Código de verificación</label>
           <input

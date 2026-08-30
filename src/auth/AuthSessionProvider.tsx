@@ -21,7 +21,7 @@ type AuthContextValue = AuthState & Readonly<{
   login(provider: AuthProvider): void;
   logout(): Promise<void>;
   refresh(): Promise<void>;
-  verification: Readonly<{ open: boolean; emailHint: string; error: string | null; busy: boolean; resendReadyAt: number }>;
+  verification: Readonly<{ open: boolean; emailHint: string; deliveryFailed: boolean; error: string | null; busy: boolean; resendReadyAt: number }>;
   verifyEmail(code: string): Promise<void>;
   resendCode(): Promise<void>;
   dismissVerification(): void;
@@ -43,10 +43,14 @@ export function AuthSessionProvider({ children }: { children: React.ReactNode })
   const [busy, setBusy] = useState(false);
   const [verification, setVerification] = useState(() => {
     const url = new URL(window.location.href);
+    const deliveryFailed = url.searchParams.get('delivery') === 'failed';
     return {
       open: url.searchParams.get('auth') === 'verify',
       emailHint: url.searchParams.get('email') || 'tu correo',
-      error: null as string | null,
+      deliveryFailed,
+      error: deliveryFailed
+        ? 'No pudimos entregar el primer correo. Tu verificación sigue protegida; podrás reenviarlo cuando termine la espera.'
+        : null as string | null,
       busy: false,
       resendReadyAt: Date.now() + 60_000,
     };
@@ -107,6 +111,7 @@ export function AuthSessionProvider({ children }: { children: React.ReactNode })
     url.searchParams.delete('auth');
     url.searchParams.delete('email');
     url.searchParams.delete('code');
+    url.searchParams.delete('delivery');
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
   }, []);
 
@@ -133,7 +138,7 @@ export function AuthSessionProvider({ children }: { children: React.ReactNode })
     setVerification((current) => ({ ...current, busy: true, error: null }));
     try {
       await resendAuthEmailCode();
-      setVerification((current) => ({ ...current, busy: false, resendReadyAt: Date.now() + 60_000 }));
+      setVerification((current) => ({ ...current, busy: false, deliveryFailed: false, resendReadyAt: Date.now() + 60_000 }));
     } catch (error) {
       setVerification((current) => ({
         ...current, busy: false,

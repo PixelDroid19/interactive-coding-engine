@@ -92,4 +92,15 @@ describe('cuenta de la plataforma', () => {
     expect(await screen.findByRole('button', { name: 'Cuenta de Persona' })).toBeTruthy();
     expect(window.location.search).toBe('');
   });
+
+  it('conserva la verificación y explica cómo recuperarla si falla el primer envío', async () => {
+    window.history.replaceState({}, '', '/?auth=verify&email=p*******%40gmail.com&delivery=failed');
+    mocks.fetchAuthSession.mockResolvedValue({ authenticated: false, providers: ['google'] });
+    render(<AuthSessionProvider><AccountMenu /></AuthSessionProvider>);
+
+    expect(await screen.findByRole('dialog', { name: 'Confirma que eres tú' })).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain('No pudimos entregar el primer correo');
+    expect(screen.queryByText(/Enviamos un código de seis cifras/)).toBeNull();
+    expect((screen.getByRole('button', { name: /Reenviar en/ }) as HTMLButtonElement).disabled).toBe(true);
+  });
 });
