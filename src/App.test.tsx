@@ -12,6 +12,19 @@ import { createEmptyLearningProfile, recordEvidence } from './learning/mastery';
 import { getCurriculumSkillIndex } from './learning/curriculumEvidence';
 import { LEARNING_PROFILE_STORAGE_KEY } from './learning/localLearningRepository';
 import { AuthSessionProvider } from './auth/AuthSessionProvider';
+import { PublishedLessonError } from './services/learningApi';
+
+const { fetchPublishedLessonMock } = vi.hoisted(() => ({
+  fetchPublishedLessonMock: vi.fn(),
+}));
+
+vi.mock('./services/learningApi', async () => {
+  const actual = await vi.importActual('./services/learningApi');
+  return {
+    ...actual,
+    fetchPublishedLesson: fetchPublishedLessonMock,
+  };
+});
 
 vi.mock('./services/authSessionApi', async () => {
   const actual = await vi.importActual('./services/authSessionApi');
@@ -42,9 +55,43 @@ function seedMastery(lessonIds: string[]) {
   localStorage.setItem(LEARNING_PROFILE_STORAGE_KEY, JSON.stringify(profile));
 }
 
+function seedPublishedFirstLessonManifest() {
+  const lesson = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.type === 'scrim')!;
+  const module = FUNDAMENTOS_COURSE.modules[0];
+  localStorage.setItem('aula_app_navigation_v1', JSON.stringify({
+    view: 'home',
+    courseId: FUNDAMENTOS_COURSE.id,
+  }));
+  localStorage.setItem(`aula_course_manifest_cache_v1:${FUNDAMENTOS_COURSE.slug}`, JSON.stringify({
+    cachedAt: Date.now(),
+    manifest: {
+      slug: FUNDAMENTOS_COURSE.slug,
+      version: 1,
+      publishedAt: '2026-08-30T00:00:00.000Z',
+      modules: [{
+        id: module.id,
+        title: module.title,
+        items: [{
+          id: lesson.id,
+          title: lesson.title,
+          type: lesson.type,
+          estimatedMinutes: lesson.estimatedMinutes,
+          lessonKey: lesson.id,
+          availability: 'available',
+          availabilityReason: null,
+        }],
+      }],
+      lessons: [{ key: lesson.id, availability: 'available', availabilityReason: null }],
+    },
+  }));
+  return lesson;
+}
+
 describe('App navigation persistence', () => {
   beforeEach(() => {
     localStorage.clear();
+    fetchPublishedLessonMock.mockReset();
+    fetchPublishedLessonMock.mockRejectedValue(new Error('Sin conexión durante la prueba.'));
   });
 
   afterEach(() => {
@@ -89,6 +136,33 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('button', { name: /^46\. onPageLeave y cleanup/ })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: /^1\. Qué añade Cells sobre Lit/ }));
     expect(screen.getByRole('button', { name: 'Abrir ayuda de IA' })).toBeTruthy();
+  });
+
+  it('abre la copia local cuando la revisión publicada responde 404', async () => {
+    const lesson = seedPublishedFirstLessonManifest();
+    fetchPublishedLessonMock.mockRejectedValue(
+      new PublishedLessonError(404, 'LESSON_NOT_FOUND', 'No se encontró la lección.'),
+    );
+
+    renderApp();
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`^${lesson.title}`) }));
+
+    expect(await screen.findByRole('button', { name: 'Empezar la clase' })).toBeTruthy();
+    expect(screen.queryByText(/No se encontró la lección/)).toBeNull();
+    expect(screen.getByText(/La revisión publicada aún no está disponible/)).toBeTruthy();
+  });
+
+  it('no abre la copia local cuando el backend responde 403', async () => {
+    const lesson = seedPublishedFirstLessonManifest();
+    fetchPublishedLessonMock.mockRejectedValue(
+      new PublishedLessonError(403, 'LESSON_LOCKED', 'Completa el módulo anterior.'),
+    );
+
+    renderApp();
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`^${lesson.title}`) }));
+
+    expect(await screen.findByText('Completa el módulo anterior.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Empezar la clase' })).toBeNull();
   });
 
   it('restaura el roadmap del curso activo al recargar la aplicación en vez de volver a fundamentos', () => {

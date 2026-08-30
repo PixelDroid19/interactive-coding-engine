@@ -435,11 +435,17 @@ export default function App() {
       })
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
-        const denied = error instanceof PublishedLessonError && (error.status === 403 || error.status === 404);
+        const publishedError = error instanceof PublishedLessonError ? error : null;
+        const denied = publishedError?.status === 403;
+        const details = error instanceof Error ? error.message : 'No se pudo consultar el backend.';
         setRemoteLessonState({
           id: lessonId,
           status: denied ? 'unavailable' : 'offline',
-          message: error instanceof Error ? error.message : 'No se pudo consultar el backend.',
+          message: denied
+            ? details
+            : publishedError?.status === 404
+              ? 'La revisión publicada aún no está disponible. Estás usando el contenido guardado en este dispositivo.'
+              : `Sin conexión con el catálogo. Estás usando el contenido guardado en este dispositivo. ${details}`,
         });
       });
     return () => controller.abort();
@@ -701,7 +707,7 @@ export default function App() {
         <>
         {activeItem.type === 'scrim' && remoteLessonState?.id === activeItem.scrimDataId && remoteLessonState.status === 'offline' && (
           <div className="fixed left-1/2 top-20 z-[110] -translate-x-1/2 border-2 border-amber-500 bg-amber-50 px-4 py-2 text-sm text-amber-950 shadow-[4px_4px_0_#111]" role="status">
-            Sin conexión con el catálogo. Estás usando el contenido guardado en este dispositivo. {remoteLessonState.message}
+            {remoteLessonState.message}
           </div>
         )}
         <ScrimPlayer
