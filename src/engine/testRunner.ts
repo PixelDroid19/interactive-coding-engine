@@ -310,9 +310,8 @@ async function evaluateSingleTest(
           hint: test.hintTip,
         };
       }
-      const frameDocument = iframeElement?.contentDocument;
       const frameWindow = iframeElement?.contentWindow;
-      if (!frameDocument || !frameWindow) {
+      if (!iframeElement || !frameWindow) {
         return {
           id: test.id,
           description: test.description,
@@ -340,35 +339,48 @@ async function evaluateSingleTest(
       const awaitedTags = [...test.customValidatorScript.matchAll(
         /(?:\bcustomElements|\.customElements)\.whenDefined\s*\(\s*['"]([^'"]+)['"]/g,
       )].map((match) => match[1]);
-      const missingTag = awaitedTags.find((tag) => !frameWindow.customElements.get(tag));
-      if (missingTag) {
-        return {
-          id: test.id,
-          description: test.description,
-          passed: false,
-          status: 'failed',
-          errorMessage: `Aún no registraste la etiqueta <${missingTag}> en la vista previa.`,
-          hint: test.hintTip,
-        };
-      }
       try {
-        const validator = new Function(`return (${test.customValidatorScript});`)();
-        if (typeof validator !== 'function') throw new Error('la comprobación no es una función');
-        const rawResult = await Promise.race([
-          Promise.resolve(validator({
-            window: frameWindow,
-            document: frameDocument,
-            customElements: frameWindow.customElements,
-          HTMLElement: (frameWindow as any).HTMLElement,
-          Event: (frameWindow as any).Event,
-          CustomEvent: (frameWindow as any).CustomEvent,
-          })),
-          new Promise((_, reject) => setTimeout(
-            () => reject(new Error('la comprobación superó el tiempo de espera; revisa que el elemento se registre y termine de actualizar')),
-            1200,
-          )),
-        ]);
-        const normalized = typeof rawResult === 'boolean' ? { passed: rawResult } : rawResult;
+        const validationId = crypto.randomUUID();
+        const hostWindow = iframeElement.ownerDocument?.defaultView ?? window;
+        const normalized = await new Promise<any>((resolve, reject) => {
+          let settled = false;
+          const finish = (callback: () => void) => {
+            if (settled) return;
+            settled = true;
+            hostWindow.clearTimeout(timeoutId);
+            hostWindow.removeEventListener('message', onMessage);
+            callback();
+          };
+          const onMessage = (event: MessageEvent) => {
+            const data = event.data;
+            if (event.source !== frameWindow || !data || data.source !== 'aula-validator' || data.validationId !== validationId) return;
+            if (data.type === 'missing-tag') {
+              finish(() => resolve({ missingTag: String(data.tag || '') }));
+            } else if (data.type === 'result') {
+              finish(() => resolve(data.result));
+            } else if (data.type === 'error') {
+              finish(() => reject(new Error(String(data.message || 'la comprobación falló'))));
+            }
+          };
+          const timeoutId = hostWindow.setTimeout(() => {
+            finish(() => reject(new Error('la comprobación superó el tiempo de espera; revisa que el elemento se registre y termine de actualizar')));
+          }, 1200);
+          hostWindow.addEventListener('message', onMessage);
+          frameWindow.postMessage({
+            source: 'aula-validator', type: 'run', validationId,
+            script: test.customValidatorScript, awaitedTags,
+          }, '*');
+        });
+        if (normalized?.missingTag) {
+          return {
+            id: test.id,
+            description: test.description,
+            passed: false,
+            status: 'failed',
+            errorMessage: `Aún no registraste la etiqueta <${normalized.missingTag}> en la vista previa.`,
+            hint: test.hintTip,
+          };
+        }
         if (!normalized || typeof normalized.passed !== 'boolean') {
           throw new Error('la comprobación no devolvió true, false ni un resultado con passed');
         }

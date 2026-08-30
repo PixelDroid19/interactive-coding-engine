@@ -49,6 +49,12 @@ describe('FloatingBrowser', () => {
     expect(markup).toContain('Vista previa');
   });
 
+  it('ejecuta el código del estudiante sin compartir el origen de la plataforma', () => {
+    const markup = renderToStaticMarkup(<FloatingBrowser workspace={workspace} isFloating autoReload={false} onToggleFloating={() => {}} />);
+    expect(markup).toContain('sandbox="allow-scripts allow-modals allow-forms"');
+    expect(markup).not.toContain('allow-same-origin');
+  });
+
   it('solo acepta mensajes de la vista previa que controla', async () => {
     const { container } = render(<FloatingBrowser workspace={workspace} isFloating autoReload={false} onToggleFloating={() => {}} />);
     const iframe = container.querySelector('iframe') as HTMLIFrameElement;

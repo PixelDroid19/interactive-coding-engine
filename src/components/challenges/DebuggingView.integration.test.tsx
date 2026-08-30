@@ -195,6 +195,24 @@ console.log("Estoy aprendiendo JavaScript");`;
     };
     render(<DebuggingView exercise={browserExercise} onBack={() => {}} />);
 
+    const iframe = await screen.findByTitle('Vista previa') as HTMLIFrameElement;
+    const frameWindow = {
+      postMessage(message: { validationId: string }) {
+        queueMicrotask(() => {
+          window.dispatchEvent(new MessageEvent('message', {
+            source: frameWindow as any,
+            data: {
+              source: 'aula-validator',
+              type: 'result',
+              validationId: message.validationId,
+              result: { passed: false },
+            },
+          }));
+        });
+      },
+    };
+    Object.defineProperty(iframe, 'contentWindow', { configurable: true, value: frameWindow });
+
     fireEvent.click(screen.getByRole('button', { name: 'Comprobar' }));
 
     await waitFor(() => {

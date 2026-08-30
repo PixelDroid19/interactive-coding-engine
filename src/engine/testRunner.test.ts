@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { runChallengeValidation } from './testRunner';
 import { evaluationValuesEqual } from './evaluationEquality';
+import { Window } from 'happy-dom';
 
 describe('comparación de resultados numéricos', () => {
   it('acepta el ruido normal de coma flotante sin ocultar diferencias reales', () => {
@@ -11,7 +12,6 @@ describe('comparación de resultados numéricos', () => {
 });
 import { ScrimChallenge, WorkspaceSnapshot } from '../types/scrim';
 import { file, workspaceOf } from './lessonCompiler';
-import { Window } from 'happy-dom';
 import { LESSON1_HTML } from '../curriculum/fundamentos/workspaces';
 import { LESSON_01 } from '../curriculum/fundamentos/lesson01';
 
@@ -25,6 +25,29 @@ function wsFromJs(js: string): WorkspaceSnapshot {
 
 // El reto real de la lección 01 reescrita: dos instrucciones de consola.
 const retoLeccion1: ScrimChallenge = LESSON_01.challenges[0];
+
+function validatorIframe(
+  response?: Readonly<{ type: 'result'; result: unknown } | { type: 'missing-tag'; tag: string }>,
+  generation = 1,
+): HTMLIFrameElement {
+  const hostWindow = new Window();
+  const frameWindow = {
+    postMessage(message: { validationId: string }) {
+      if (!response) return;
+      queueMicrotask(() => {
+        hostWindow.dispatchEvent(new hostWindow.MessageEvent('message', {
+          source: frameWindow as any,
+          data: { source: 'aula-validator', validationId: message.validationId, ...response },
+        }));
+      });
+    },
+  };
+  return {
+    contentWindow: frameWindow,
+    ownerDocument: { defaultView: hostWindow },
+    __generation: generation,
+  } as unknown as HTMLIFrameElement;
+}
 
 describe('testRunner reto lección 01 (sintaxis mínima)', () => {
   it('el starter vacío falla', async () => {
@@ -515,14 +538,7 @@ document.getElementById("linea2").textContent = "";`
 
 describe('testRunner para componentes ejecutados en navegador', () => {
   it('acepta una comprobación asíncrona contra la vista previa real', async () => {
-    const previewWindow = new Window();
-    const previewDocument = previewWindow.document;
-    previewDocument.body.innerHTML = '<estado-curso><span id="estado">listo</span></estado-curso>';
-    const iframe = {
-      contentDocument: previewDocument,
-      contentWindow: previewWindow,
-      __generation: 7,
-    } as unknown as HTMLIFrameElement;
+    const iframe = validatorIframe({ type: 'result', result: { passed: true } }, 7);
     const challenge = {
       id: 'componente-real',
       title: 'Componente real',
@@ -569,12 +585,7 @@ describe('testRunner para componentes ejecutados en navegador', () => {
   });
 
   it('corta una comprobación que espera para siempre por un elemento no registrado', async () => {
-    const previewWindow = new Window();
-    const iframe = {
-      contentDocument: previewWindow.document,
-      contentWindow: previewWindow,
-      __generation: 3,
-    } as unknown as HTMLIFrameElement;
+    const iframe = validatorIframe(undefined, 3);
     const challenge = {
       id: 'registro-ausente', title: 'Registro ausente', timestamp: 0, instructions: '', hints: [],
       tests: [{
@@ -593,12 +604,7 @@ describe('testRunner para componentes ejecutados en navegador', () => {
   });
 
   it('trata una etiqueta esperada pero aún no registrada como respuesta fallida, no como avería', async () => {
-    const previewWindow = new Window();
-    const iframe = {
-      contentDocument: previewWindow.document,
-      contentWindow: previewWindow,
-      __generation: 4,
-    } as unknown as HTMLIFrameElement;
+    const iframe = validatorIframe({ type: 'missing-tag', tag: 'status-badge' }, 4);
     const challenge = {
       id: 'registro-por-aprender', title: 'Registra la etiqueta', timestamp: 0, instructions: '', hints: [],
       tests: [{

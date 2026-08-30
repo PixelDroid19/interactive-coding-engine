@@ -12,6 +12,12 @@ function templateWorkspace(templateId: keyof typeof STARTER_TEMPLATES): Workspac
 }
 
 describe('buildPreviewDocument', () => {
+  it('incluye un puente de validación dentro del iframe aislado', () => {
+    const document = buildPreviewDocument(templateWorkspace('vanilla-js'));
+    expect(document).toContain("data.source !== 'aula-validator'");
+    expect(document).toContain("source: 'aula-validator', type: 'result'");
+  });
+
   it('mantiene en español los documentos iniciales que ve el estudiante', () => {
     for (const templateId of ['vanilla-js', 'lit', 'react'] as const) {
       const document = buildPreviewDocument(templateWorkspace(templateId));

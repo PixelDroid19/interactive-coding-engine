@@ -328,16 +328,9 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
   };
 
   const mapPreviewPointer = useCallback((x: number, y: number) => {
-    const iframe = iframeRef.current;
-    const doc = iframe?.contentDocument;
-    const viewportH = iframe?.clientHeight || 1;
-    const viewportW = iframe?.clientWidth || 1;
-    const body = doc?.body;
-    const contentH = Math.max(120, Math.min(body?.scrollHeight || viewportH, viewportH));
-    const contentW = Math.max(160, Math.min(body?.scrollWidth || viewportW, viewportW));
     return {
-      x: Math.min(92, Math.max(8, (x / 100) * (contentW / viewportW) * 100)),
-      y: Math.min(90, Math.max(8, (y / 100) * (contentH / viewportH) * 100)),
+      x: Math.min(92, Math.max(8, x)),
+      y: Math.min(90, Math.max(8, y)),
     };
   }, []);
 
@@ -435,7 +428,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
           <iframe
             ref={iframeRef}
             title="Vista previa"
-            sandbox="allow-scripts allow-modals allow-forms allow-same-origin"
+            sandbox="allow-scripts allow-modals allow-forms"
             className="h-full w-full border-none bg-white"
           />
         )}

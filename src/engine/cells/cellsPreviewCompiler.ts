@@ -708,7 +708,31 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
 
     const reportPreviewError = (message) => window.parent.postMessage({ source: 'open-cells-preview', type: 'error', message: String(message) }, '*');
     window.addEventListener('message', (event) => {
-      if (event.source !== window.parent || event.data?.source !== 'open-cells-shell') return;
+      if (event.source !== window.parent) return;
+      if (event.data?.source === 'aula-validator' && event.data.type === 'run') {
+        void (async () => {
+          try {
+            const missingTag = Array.isArray(event.data.awaitedTags)
+              ? event.data.awaitedTags.find((tag) => typeof tag === 'string' && !customElements.get(tag))
+              : undefined;
+            if (missingTag) {
+              window.parent.postMessage({ source: 'aula-validator', type: 'missing-tag', validationId: event.data.validationId, tag: missingTag }, '*');
+              return;
+            }
+            const validator = new Function('return (' + String(event.data.script || '') + ');')();
+            if (typeof validator !== 'function') throw new Error('la comprobación no es una función');
+            const raw = await validator({ window, document, customElements, HTMLElement, Event, CustomEvent });
+            const normalized = typeof raw === 'boolean' ? { passed: raw } : raw;
+            if (!normalized || typeof normalized.passed !== 'boolean') throw new Error('la comprobación no devolvió un resultado válido');
+            const result = JSON.parse(JSON.stringify(normalized));
+            window.parent.postMessage({ source: 'aula-validator', type: 'result', validationId: event.data.validationId, result }, '*');
+          } catch (error) {
+            window.parent.postMessage({ source: 'aula-validator', type: 'error', validationId: event.data.validationId, message: error?.message || String(error) }, '*');
+          }
+        })();
+        return;
+      }
+      if (event.data?.source !== 'open-cells-shell') return;
       if (event.data.type === 'locale:set' && ['es', 'en'].includes(event.data.locale)) {
         if (globalThis.__OPEN_CELLS_CONTRACT_TESTS__) return;
         globalThis.IntlMsg.lang = event.data.locale;

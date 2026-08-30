@@ -27,6 +27,35 @@ const CONSOLE_BRIDGE = `
   window.onunhandledrejection = function (event) {
     send({ type: 'error', message: 'Promesa rechazada: ' + (event.reason && event.reason.message ? event.reason.message : event.reason) });
   };
+  window.addEventListener('message', function (event) {
+    const data = event.data;
+    if (event.source !== window.parent || !data || data.source !== 'aula-validator' || data.type !== 'run') return;
+    void (async function () {
+      try {
+        const missingTag = Array.isArray(data.awaitedTags)
+          ? data.awaitedTags.find((tag) => typeof tag === 'string' && !customElements.get(tag))
+          : undefined;
+        if (missingTag) {
+          window.parent.postMessage({ source: 'aula-validator', type: 'missing-tag', validationId: data.validationId, tag: missingTag }, '*');
+          return;
+        }
+        const validator = new Function('return (' + String(data.script || '') + ');')();
+        if (typeof validator !== 'function') throw new Error('la comprobación no es una función');
+        const raw = await validator({ window, document, customElements, HTMLElement, Event, CustomEvent });
+        const normalized = typeof raw === 'boolean' ? { passed: raw } : raw;
+        if (!normalized || typeof normalized.passed !== 'boolean') {
+          throw new Error('la comprobación no devolvió true, false ni un resultado con passed');
+        }
+        const result = JSON.parse(JSON.stringify(normalized));
+        window.parent.postMessage({ source: 'aula-validator', type: 'result', validationId: data.validationId, result }, '*');
+      } catch (error) {
+        window.parent.postMessage({
+          source: 'aula-validator', type: 'error', validationId: data.validationId,
+          message: error && error.message ? error.message : String(error),
+        }, '*');
+      }
+    })();
+  });
 })();
 </script>
 `;

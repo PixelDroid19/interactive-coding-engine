@@ -94,6 +94,9 @@ describe('CellsPreviewWorkbench', () => {
     expect(screen.queryByText('/index.html')).toBeNull();
     expect(screen.queryByLabelText('Ruta actual')).toBeNull();
     expect(screen.queryByLabelText('Atrás (no disponible)')).toBeNull();
+    const iframe = screen.getByTitle('Vista previa del componente Cells');
+    expect(iframe.getAttribute('sandbox')).toBe('allow-scripts allow-modals allow-forms');
+    expect(iframe.getAttribute('sandbox')).not.toContain('allow-same-origin');
   });
 
   it('evita controles redundantes cuando el proyecto solo contiene una demo', () => {
