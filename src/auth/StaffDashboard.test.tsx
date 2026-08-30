@@ -84,4 +84,17 @@ describe('panel de seguimiento', () => {
     }));
     expect(api.learner).toHaveBeenCalledTimes(2);
   });
+
+  it('permite volver a la lista después de abrir un expediente en móvil', async () => {
+    renderDashboard(false);
+    await screen.findByText('Personas registradas');
+    fireEvent.click(screen.getByRole('button', { name: 'Personas' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Persona Ejemplo/ }));
+
+    expect(await screen.findByText('Conceptos a reforzar')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Volver a personas' }));
+
+    expect(screen.getByText('Selecciona una persona para revisar su recorrido.')).toBeTruthy();
+    expect(screen.queryByText('Conceptos a reforzar')).toBeNull();
+  });
 });
