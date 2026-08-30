@@ -93,6 +93,33 @@ describe('cuenta de la plataforma', () => {
     expect(window.location.search).toBe('');
   });
 
+  it('no vuelve a pedir el código cuando ya existe una sesión válida', async () => {
+    window.history.replaceState({}, '', '/?auth=verify&email=p*******%40gmail.com');
+    mocks.fetchAuthSession.mockResolvedValue({
+      authenticated: true,
+      user: { id: 'user-verified', email: 'persona@gmail.com', displayName: 'Persona', roles: ['student'] },
+      csrfToken: 'csrf-token-confirmado-y-seguro',
+    });
+    render(<AuthSessionProvider><AccountMenu /></AuthSessionProvider>);
+
+    expect(await screen.findByRole('button', { name: 'Cuenta de Persona' })).toBeTruthy();
+    expect(screen.queryByRole('dialog', { name: 'Confirma que eres tú' })).toBeNull();
+    expect(window.location.search).toBe('');
+  });
+
+  it('conserva parámetros code ajenos al callback de verificación', async () => {
+    window.history.replaceState({}, '', '/?code=curso-01');
+    mocks.fetchAuthSession.mockResolvedValue({
+      authenticated: true,
+      user: { id: 'user-verified', email: 'persona@gmail.com', displayName: 'Persona', roles: ['student'] },
+      csrfToken: 'csrf-token-confirmado-y-seguro',
+    });
+    render(<AuthSessionProvider><AccountMenu /></AuthSessionProvider>);
+
+    expect(await screen.findByRole('button', { name: 'Cuenta de Persona' })).toBeTruthy();
+    expect(window.location.search).toBe('?code=curso-01');
+  });
+
   it('conserva la verificación y explica cómo recuperarla si falla el primer envío', async () => {
     window.history.replaceState({}, '', '/?auth=verify&email=p*******%40gmail.com&delivery=failed');
     mocks.fetchAuthSession.mockResolvedValue({ authenticated: false, providers: ['google'] });

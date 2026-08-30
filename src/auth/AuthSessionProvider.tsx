@@ -38,6 +38,16 @@ function authErrorMessage(code: string | null): string | null {
   return 'No se pudo completar el acceso. Inténtalo otra vez.';
 }
 
+function clearVerificationQuery(): void {
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('auth') !== 'verify') return;
+  url.searchParams.delete('auth');
+  url.searchParams.delete('email');
+  url.searchParams.delete('code');
+  url.searchParams.delete('delivery');
+  window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
 export function AuthSessionProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: 'loading', session: null, error: null });
   const [busy, setBusy] = useState(false);
@@ -73,7 +83,11 @@ export function AuthSessionProvider({ children }: { children: React.ReactNode })
       } else {
         setState({ status: 'ready', session, error: null });
       }
-      if (session.authenticated) void flushLearningQueue();
+      if (session.authenticated) {
+        setVerification((current) => ({ ...current, open: false, error: null, busy: false }));
+        clearVerificationQuery();
+        void flushLearningQueue();
+      }
       window.dispatchEvent(new CustomEvent('aula-auth-session', { detail: { authenticated: session.authenticated } }));
     } catch {
       setState({ status: 'error', session: null, error: 'No se pudo comprobar la sesión. Puedes seguir trabajando en este dispositivo.' });
@@ -106,15 +120,6 @@ export function AuthSessionProvider({ children }: { children: React.ReactNode })
     }
   }, [refresh]);
 
-  const clearVerificationQuery = useCallback(() => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('auth');
-    url.searchParams.delete('email');
-    url.searchParams.delete('code');
-    url.searchParams.delete('delivery');
-    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
-  }, []);
-
   const verifyEmail = useCallback(async (code: string) => {
     setVerification((current) => ({ ...current, busy: true, error: null }));
     try {
@@ -131,7 +136,7 @@ export function AuthSessionProvider({ children }: { children: React.ReactNode })
         error: error instanceof Error ? error.message : 'No pudimos comprobar el código.',
       }));
     }
-  }, [clearVerificationQuery]);
+  }, []);
 
   const resendCode = useCallback(async () => {
     if (Date.now() < verification.resendReadyAt) return;
@@ -150,7 +155,7 @@ export function AuthSessionProvider({ children }: { children: React.ReactNode })
   const dismissVerification = useCallback(() => {
     clearVerificationQuery();
     setVerification((current) => ({ ...current, open: false, error: null }));
-  }, [clearVerificationQuery]);
+  }, []);
 
   const value = useMemo<AuthContextValue>(() => ({
     ...state, busy, login, logout, refresh, verification, verifyEmail, resendCode, dismissVerification,
