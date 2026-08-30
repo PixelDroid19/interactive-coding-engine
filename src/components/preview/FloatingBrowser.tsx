@@ -223,12 +223,18 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
     const handleMessage = (event: MessageEvent) => {
       if (!event.data || typeof event.data !== 'object') return;
       if (event.data.__preview_source !== 'preview-sandbox') return;
+      if (event.source !== iframeRef.current?.contentWindow) return;
 
       if (event.data.type === 'console') {
+        const args = Array.isArray(event.data.args) ? event.data.args : [];
         const newMsg: ConsoleMessage = {
           id: `log-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
           type: event.data.level || 'log',
-          args: event.data.args.map((a: any) => (typeof a === 'object' ? JSON.stringify(a) : String(a))),
+          args: args.slice(0, 100).map((value: unknown) => {
+            if (typeof value !== 'object' || value === null) return String(value);
+            try { return JSON.stringify(value); }
+            catch { return '[Objeto no serializable]'; }
+          }),
           timestamp: Date.now(),
         };
         setLogs((prev) => [...prev.slice(-150), newMsg]);

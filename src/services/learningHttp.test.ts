@@ -33,4 +33,11 @@ describe('cliente HTTP de aprendizaje', () => {
       'x-csrf-token': 'csrf-recibido-desde-la-sesion',
     }));
   });
+
+  it('explica en español cuando el backend no está disponible', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
+
+    await expect(learningApiRequest('/v1/staff/dashboard/overview'))
+      .rejects.toThrow('No pudimos conectar con el servicio. Conservamos los datos que ya estaban cargados.');
+  });
 });

@@ -39,12 +39,20 @@ export async function learningApiRequest(path: string, init: RequestInit = {}): 
   headers['x-anonymous-id'] ??= getLearningActorId();
   if (init.body && !headers['content-type']) headers['content-type'] = 'application/json';
   if (!SAFE_METHODS.has(method) && csrfToken && !headers['x-csrf-token']) headers['x-csrf-token'] = csrfToken;
-  return fetch(`${LEARNING_API_URL}${path}`, {
-    ...init,
-    credentials: 'include',
-    headers,
-    signal: init.signal ?? AbortSignal.timeout(10_000),
-  });
+  try {
+    return await fetch(`${LEARNING_API_URL}${path}`, {
+      ...init,
+      credentials: 'include',
+      headers,
+      signal: init.signal ?? AbortSignal.timeout(10_000),
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error;
+    if (error instanceof DOMException && error.name === 'TimeoutError') {
+      throw new Error('El servicio tardó demasiado en responder. Inténtalo otra vez.');
+    }
+    throw new Error('No pudimos conectar con el servicio. Conservamos los datos que ya estaban cargados.');
+  }
 }
 
 export async function readApiJson<T>(response: Response): Promise<T> {

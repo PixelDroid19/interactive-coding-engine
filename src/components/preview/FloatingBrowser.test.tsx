@@ -13,6 +13,8 @@ const workspace = workspaceOf('index.html', {
 const cellsWorkspace = createCellsPracticeWorkspace('styles').snapshot;
 
 describe('FloatingBrowser', () => {
+  afterEach(cleanup);
+
   it('badge traducido refleja estado real', () => {
     const markupLive = renderToStaticMarkup(<FloatingBrowser workspace={workspace} isFloating autoReload onToggleFloating={() => {}} />);
     expect(markupLive).toContain('En vivo');
@@ -45,6 +47,26 @@ describe('FloatingBrowser', () => {
   it('título Vista previa visible', () => {
     const markup = renderToStaticMarkup(<FloatingBrowser workspace={workspace} isFloating autoReload={false} onToggleFloating={() => {}} />);
     expect(markup).toContain('Vista previa');
+  });
+
+  it('solo acepta mensajes de la vista previa que controla', async () => {
+    const { container } = render(<FloatingBrowser workspace={workspace} isFloating autoReload={false} onToggleFloating={() => {}} />);
+    const iframe = container.querySelector('iframe') as HTMLIFrameElement;
+    const foreign = new MessageEvent('message', {
+      data: { __preview_source: 'preview-sandbox', type: 'error', message: 'mensaje forjado' },
+      source: window,
+    });
+
+    window.dispatchEvent(foreign);
+    expect(screen.queryByText('mensaje forjado')).toBeNull();
+
+    const own = new MessageEvent('message', {
+      data: { __preview_source: 'preview-sandbox', type: 'error', message: 'error del preview' },
+      source: iframe.contentWindow,
+    });
+    window.dispatchEvent(own);
+
+    expect(await screen.findByText('error del preview')).toBeTruthy();
   });
 });
 

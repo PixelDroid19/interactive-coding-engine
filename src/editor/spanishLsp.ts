@@ -528,12 +528,13 @@ function createCompletionSource(lessonId?: string) {
 }
 
 function tooltipHtml(entry: DocEntry): string {
-  const escapedInfo = entry.info
+  const escape = (value: string) => value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+  const escapedInfo = escape(entry.info);
 
-  return `<strong style="color:#f8fafc">${entry.label}</strong> <em style="color:#94a3b8">${entry.detail}</em><br><span style="color:#cbd5e1">${escapedInfo.replace(/\n/g, '<br>')}</span>`;
+  return `<strong style="color:#f8fafc">${escape(entry.label)}</strong> <em style="color:#94a3b8">${escape(entry.detail)}</em><br><span style="color:#cbd5e1">${escapedInfo.replace(/\n/g, '<br>')}</span>`;
 }
 
 function createHoverTooltip(lessonId?: string) {
