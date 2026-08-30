@@ -1,4 +1,4 @@
-const DEFAULT_API_URL = 'https://api-production-df85c.up.railway.app';
+const DEFAULT_API_URL = 'https://api.devt.lat';
 export const LEARNING_API_URL = (import.meta.env.VITE_LEARNING_API_URL || DEFAULT_API_URL).replace(/\/$/, '');
 
 const ACTOR_KEY = 'aula_anonymous_actor_v1';

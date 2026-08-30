@@ -1,8 +1,8 @@
 import { generateSnapshots } from '../engine/eventLog';
 import type { ScrimLessonData, WorkspaceSnapshot } from '../types/scrim';
+import { LEARNING_API_URL } from './learningHttp';
 
-const DEFAULT_API_URL = 'https://api-production-df85c.up.railway.app';
-const API_URL = (import.meta.env.VITE_LEARNING_API_URL || DEFAULT_API_URL).replace(/\/$/, '');
+const API_URL = LEARNING_API_URL;
 
 type RemoteLesson = Readonly<{
   key: string;
