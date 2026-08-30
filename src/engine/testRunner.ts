@@ -3,6 +3,7 @@ import { ChallengeValidationResult, TestResultItem } from '../types/runtime';
 import { buildPreviewDocument } from './previewDocument';
 import { runPythonChallengeValidation } from './python/pythonChallengeValidator';
 import { evaluationValuesEqual } from './evaluationEquality';
+import { evaluateConsoleIsolated, evaluateFunctionIsolated } from './isolatedJavaScriptEvaluator';
 
 function normalizeForMatch(str: string, opts: { caseInsensitive?: boolean; normalizeSpaces?: boolean; ignorePunctuation?: boolean }): string {
   let s = str;
@@ -26,73 +27,6 @@ function stringContainsAll(result: string, expectedContains: string[], opts: { c
     const normExp = normalizeForMatch(exp, opts);
     return normResult.includes(normExp);
   });
-}
-
-function createEvaluationElement(): any {
-  const children: any[] = [];
-  const classes = new Set<string>();
-  const element: any = {
-    textContent: '',
-    innerText: '',
-    innerHTML: '',
-    value: '',
-    className: '',
-    style: {},
-    dataset: {},
-    children,
-    classList: {
-      add: (...names: string[]) => names.forEach((name) => classes.add(name)),
-      remove: (...names: string[]) => names.forEach((name) => classes.delete(name)),
-      contains: (name: string) => classes.has(name),
-      toggle(name: string) {
-        if (classes.has(name)) {
-          classes.delete(name);
-          return false;
-        }
-        classes.add(name);
-        return true;
-      },
-    },
-    addEventListener() {},
-    removeEventListener() {},
-    appendChild(child: any) {
-      children.push(child);
-      return child;
-    },
-    removeChild(child: any) {
-      const index = children.indexOf(child);
-      if (index >= 0) children.splice(index, 1);
-      return child;
-    },
-    setAttribute(name: string, value: unknown) {
-      element[name] = String(value);
-    },
-    getAttribute(name: string) {
-      return element[name] ?? null;
-    },
-  };
-  return element;
-}
-
-function createEvaluationDocument(): any {
-  const elements: Record<string, any> = {};
-  const documentStub: any = {
-    body: createEvaluationElement(),
-    head: createEvaluationElement(),
-    getElementById(id: string) {
-      if (!elements[id]) elements[id] = createEvaluationElement();
-      return elements[id];
-    },
-    querySelector(selector: string) {
-      const idMatch = selector.match(/#([\w-]+)/);
-      return idMatch ? documentStub.getElementById(idMatch[1]) : createEvaluationElement();
-    },
-    querySelectorAll: () => [],
-    createElement: () => createEvaluationElement(),
-    addEventListener() {},
-    removeEventListener() {},
-  };
-  return documentStub;
 }
 
 function isStringMatch(result: any, test: ChallengeTest): { passed: boolean; error?: string } {
@@ -186,6 +120,136 @@ function sourceForTest(test: ChallengeTest, workspace: WorkspaceSnapshot): strin
   const escapedName = test.targetFunction.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const declaration = new RegExp(`(?:function\\s+${escapedName}\\b|(?:const|let|var)\\s+${escapedName}\\s*=)`);
   return files.find((file) => declaration.test(file.content))?.content ?? files.map((file) => file.content).join('\n\n');
+}
+
+async function requestIframeValidation(iframe: HTMLIFrameElement, script: string, awaitedTags: string[] = []): Promise<any> {
+  const frameWindow = iframe.contentWindow;
+  if (!frameWindow) throw new Error('la vista previa todavía no está lista');
+  const validationId = crypto.randomUUID();
+  const hostWindow = iframe.ownerDocument?.defaultView ?? window;
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (callback: () => void) => {
+      if (settled) return;
+      settled = true;
+      hostWindow.clearTimeout(timeoutId);
+      hostWindow.removeEventListener('message', onMessage);
+      callback();
+    };
+    const onMessage = (event: MessageEvent) => {
+      const data = event.data;
+      if (event.source !== frameWindow || !data || data.source !== 'aula-validator' || data.validationId !== validationId) return;
+      if (data.type === 'missing-tag') finish(() => resolve({ missingTag: String(data.tag || '') }));
+      else if (data.type === 'result') finish(() => resolve(data.result));
+      else if (data.type === 'error') finish(() => reject(new Error(String(data.message || 'la comprobación falló'))));
+    };
+    const timeoutId = hostWindow.setTimeout(() => {
+      finish(() => reject(new Error('la comprobación superó el tiempo de espera; revisa que el programa termine de actualizar')));
+    }, 1_500);
+    hostWindow.addEventListener('message', onMessage);
+    frameWindow.postMessage({ source: 'aula-validator', type: 'run', validationId, script, awaitedTags }, '*');
+  });
+}
+
+function domValidatorScript(test: ChallengeTest): string {
+  const contract = JSON.stringify({
+    selector: test.domSelector,
+    property: test.domProperty ?? 'innerText',
+    expectedValue: test.expectedValue,
+    regexPattern: test.regexPattern,
+    expectedContains: test.expectedContains,
+    matcher: test.matcher,
+    caseInsensitive: test.caseInsensitive ?? true,
+    normalizeSpaces: test.normalizeSpaces ?? true,
+    ignorePunctuation: test.ignorePunctuation ?? true,
+    triggerClick: test.triggerClick,
+    errorMessage: test.errorMessage,
+  });
+  return `({ document, Event }) => {
+    const test = ${contract};
+    const normalize = (value) => {
+      let text = String(value ?? '');
+      if (test.normalizeSpaces) text = text.replace(/\\s+/g, ' ').trim();
+      if (test.ignorePunctuation) text = text.replace(/[.,/#!$%^&*;:{}=\\-_\\\`~()¿?¡!"']/g, '');
+      if (test.caseInsensitive) text = text.toLowerCase();
+      return text;
+    };
+    if (test.triggerClick) {
+      const trigger = document.querySelector(test.triggerClick);
+      if (trigger) {
+        if (typeof trigger.click === 'function') trigger.click();
+        else trigger.dispatchEvent(new Event('click', { bubbles: true }));
+      }
+    }
+    const matches = document.querySelectorAll(test.selector);
+    const element = matches[0];
+    if (!element) return { passed: false, missingSelector: true, errorMessage: 'No encontramos el elemento ' + test.selector + ' en la página.' };
+    if (test.property === 'exists') return { passed: true };
+    if (test.property === 'count') {
+      const value = matches.length;
+      return { passed: value === test.expectedValue, receivedValue: value, expectedValue: test.expectedValue };
+    }
+    let raw = element[test.property];
+    if (typeof raw === 'string' && raw.trim() === '' && typeof element.textContent === 'string' && element.textContent.trim() !== '') raw = element.textContent;
+    if (typeof raw === 'string' && raw.trim() === '' && typeof element.innerText === 'string' && element.innerText.trim() !== '') raw = element.innerText;
+    const value = String(raw ?? '').trim();
+    if (test.regexPattern) {
+      const passed = new RegExp(test.regexPattern, 'i').test(value);
+      return { passed, receivedValue: value, errorMessage: passed ? undefined : test.errorMessage };
+    }
+    const expectedContains = Array.isArray(test.expectedContains) && test.expectedContains.length
+      ? test.expectedContains
+      : (['contains', 'contains-all', 'string-contains-all'].includes(test.matcher) ? [String(test.expectedValue)] : []);
+    if (expectedContains.length) {
+      const normalized = normalize(value);
+      const passed = expectedContains.every((item) => normalized.includes(normalize(item)));
+      return { passed, receivedValue: value, expectedValue: expectedContains, errorMessage: passed ? undefined : test.errorMessage };
+    }
+    if (test.expectedValue !== undefined) {
+      const expected = String(test.expectedValue);
+      const passed = expected.startsWith('!')
+        ? !value.toLowerCase().includes(expected.slice(1).toLowerCase())
+        : (typeof test.expectedValue === 'string' ? value.toLowerCase().includes(expected.toLowerCase()) : value === expected);
+      return { passed, receivedValue: value, expectedValue: test.expectedValue, errorMessage: passed ? undefined : test.errorMessage };
+    }
+    return { passed: value.length > 0, receivedValue: value };
+  }`;
+}
+
+async function evaluateDomTestIsolated(test: ChallengeTest, workspace: WorkspaceSnapshot, existingIframe?: HTMLIFrameElement | null): Promise<TestResultItem> {
+  let iframe = existingIframe ?? null;
+  let ownedIframe: HTMLIFrameElement | null = null;
+  try {
+    if (!iframe) {
+      ownedIframe = document.createElement('iframe');
+      ownedIframe.title = 'Comprobación aislada';
+      ownedIframe.sandbox.add('allow-scripts', 'allow-forms');
+      ownedIframe.hidden = true;
+      const loaded = new Promise<void>((resolve) => ownedIframe!.addEventListener('load', () => resolve(), { once: true }));
+      ownedIframe.srcdoc = buildPreviewDocument(workspace);
+      document.body.appendChild(ownedIframe);
+      iframe = ownedIframe;
+      await loaded;
+    }
+    const normalized = await requestIframeValidation(iframe, domValidatorScript(test));
+    const passed = normalized?.passed === true;
+    return {
+      id: test.id,
+      description: test.description,
+      passed,
+      status: passed ? 'passed' : 'failed',
+      receivedValue: normalized?.receivedValue,
+      expectedValue: normalized?.expectedValue ?? test.expectedValue,
+      errorMessage: passed ? undefined : (normalized?.errorMessage || test.errorMessage || (normalized?.missingSelector
+        ? `No encontramos el elemento '${test.domSelector}' en la página. ¿Lo borraste o cambiaste el id?`
+        : 'La página no cumple el comportamiento esperado.')),
+      hint: test.hintTip,
+    };
+  } catch (error) {
+    return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: `No pudimos comprobar la página aislada: ${error instanceof Error ? error.message : String(error)}`, hint: test.hintTip };
+  } finally {
+    ownedIframe?.remove();
+  }
 }
 
 export async function runChallengeValidation(
@@ -428,29 +492,46 @@ async function evaluateSingleTest(
       if (!test.targetFunction) {
         return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'Prueba mal configurada: falta función objetivo.', hint: test.hintTip };
       }
-      let targetFn: any;
+
+      if (test.callSequence?.length === 0) {
+        return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'Prueba mal configurada: la secuencia de llamadas está vacía.', hint: test.hintTip };
+      }
+      if (test.returnedFunctionCallCounts && (
+        test.returnedFunctionCallCounts.length === 0
+        || test.returnedFunctionCallCounts.some((count) => !Number.isInteger(count) || count < 0)
+        || test.expectedReturn === undefined
+      )) {
+        return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'Prueba mal configurada: la secuencia de llamadas no es válida.', hint: test.hintTip };
+      }
+
+      let evaluation;
       try {
-        // Deterministic: always evaluate current workspace via Function, not iframe
-        const stubDocument = createEvaluationDocument();
-        const evalScope = new Function(
-          'document',
-          'window',
-          `${prepareExecutableJavaScript(combinedJs)}\n; return typeof ${test.targetFunction} === "function" ? ${test.targetFunction} : null;`
+        const source = prepareExecutableJavaScript(combinedJs);
+        evaluation = await evaluateFunctionIsolated(
+          source,
+          test.targetFunction,
+          test.callSequence
+            ? { mode: 'sequence', calls: test.callSequence.map((step) => cloneEvaluationArgs(step.args)) }
+            : test.returnedFunctionCallCounts
+              ? { mode: 'returned-sequence', args: cloneEvaluationArgs(test.args), counts: test.returnedFunctionCallCounts }
+              : { mode: 'single', args: cloneEvaluationArgs(test.args), referenceArgIndex: test.expectNewReferenceFromArg },
         );
-        targetFn = evalScope(stubDocument, { document: stubDocument });
-      } catch (e: any) {
+      } catch (error) {
         return {
           id: test.id,
           description: test.description,
           passed: false,
           status: 'evaluation-error',
           isEvaluationError: true,
-          errorMessage: `No se pudo evaluar '${test.targetFunction}': ${e.message}`,
+          errorMessage: `No se pudo evaluar '${test.targetFunction}': ${error instanceof Error ? error.message : String(error)}`,
           hint: test.hintTip,
         };
       }
 
-      if (typeof targetFn !== 'function') {
+      if (evaluation.kind === 'setup-error') {
+        return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: `No se pudo evaluar '${test.targetFunction}': ${evaluation.message}`, hint: test.hintTip };
+      }
+      if (evaluation.kind === 'missing') {
         return {
           id: test.id,
           description: test.description,
@@ -461,109 +542,66 @@ async function evaluateSingleTest(
         };
       }
 
-      try {
-        if (test.callSequence) {
-          if (test.callSequence.length === 0) {
-            return {
-              id: test.id,
-              description: test.description,
-              passed: false,
-              status: 'evaluation-error',
-              isEvaluationError: true,
-              errorMessage: 'Prueba mal configurada: la secuencia de llamadas está vacía.',
-              hint: test.hintTip,
-            };
+      if (test.callSequence) {
+          if (evaluation.kind === 'thrown') {
+            return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: `La función '${test.targetFunction}' lanzó un error: ${evaluation.message}`, hint: test.hintTip };
           }
-
-          const received: unknown[] = [];
+          if (evaluation.kind !== 'sequence') {
+            return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'El entorno aislado devolvió un resultado inesperado.', hint: test.hintTip };
+          }
           const expected: unknown[] = [];
-          for (const step of test.callSequence) {
-            const value = await targetFn(...cloneEvaluationArgs(step.args));
-            received.push(value);
-            expected.push(step.expectedReturn);
-          }
-          const passed = evaluationValuesEqual(received, expected);
+          for (const step of test.callSequence) expected.push(step.expectedReturn);
+          const passed = evaluationValuesEqual(evaluation.values, expected);
           return {
             id: test.id,
             description: test.description,
             passed,
             status: passed ? 'passed' : 'failed',
-            receivedValue: received,
+            receivedValue: evaluation.values,
             expectedValue: expected,
-            errorMessage: passed ? undefined : (test.errorMessage || `Esperábamos la secuencia '${JSON.stringify(expected)}' pero obtuvimos '${JSON.stringify(received)}'.`),
+            errorMessage: passed ? undefined : (test.errorMessage || `Esperábamos la secuencia '${JSON.stringify(expected)}' pero obtuvimos '${JSON.stringify(evaluation.values)}'.`),
             hint: test.hintTip,
           };
-        }
+      }
 
-        if (test.returnedFunctionCallCounts) {
-          const counts = test.returnedFunctionCallCounts;
-          if (
-            counts.length === 0
-            || counts.some((count) => !Number.isInteger(count) || count < 0)
-            || test.expectedReturn === undefined
-          ) {
-            return {
-              id: test.id,
-              description: test.description,
-              passed: false,
-              status: 'evaluation-error',
-              isEvaluationError: true,
-              errorMessage: 'Prueba mal configurada: la secuencia de llamadas no es válida.',
-              hint: test.hintTip,
-            };
+      if (test.returnedFunctionCallCounts) {
+          if (evaluation.kind === 'thrown') {
+            return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: `La función '${test.targetFunction}' lanzó un error: ${evaluation.message}`, hint: test.hintTip };
           }
-
-          const sequences: unknown[][] = [];
-          for (const count of counts) {
-            const args = cloneEvaluationArgs(test.args);
-            const returnedFunction = targetFn(...args);
-            if (typeof returnedFunction !== 'function') {
-              return {
-                id: test.id,
-                description: test.description,
-                passed: false,
-                status: 'failed',
-                receivedValue: returnedFunction,
-                expectedValue: test.expectedReturn,
-                errorMessage: test.errorMessage || `'${test.targetFunction}' debe devolver una función.`,
-                hint: test.hintTip,
-              };
-            }
-            const values: unknown[] = [];
-            for (let call = 0; call < count; call++) values.push(returnedFunction());
-            sequences.push(values);
+          if (evaluation.kind === 'returned-not-function') {
+            return { id: test.id, description: test.description, passed: false, status: 'failed', receivedValue: evaluation.value, expectedValue: test.expectedReturn, errorMessage: test.errorMessage || `'${test.targetFunction}' debe devolver una función.`, hint: test.hintTip };
           }
-
-          const isMatch = evaluationValuesEqual(sequences, test.expectedReturn);
+          if (evaluation.kind !== 'returned-sequence') {
+            return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'El entorno aislado devolvió un resultado inesperado.', hint: test.hintTip };
+          }
+          const isMatch = evaluationValuesEqual(evaluation.values, test.expectedReturn);
           return {
             id: test.id,
             description: test.description,
             passed: isMatch,
             status: isMatch ? 'passed' : 'failed',
-            receivedValue: sequences,
+            receivedValue: evaluation.values,
             expectedValue: test.expectedReturn,
-            errorMessage: isMatch ? undefined : (test.errorMessage || `Esperábamos '${JSON.stringify(test.expectedReturn)}' pero obtuvimos '${JSON.stringify(sequences)}'.`),
+            errorMessage: isMatch ? undefined : (test.errorMessage || `Esperábamos '${JSON.stringify(test.expectedReturn)}' pero obtuvimos '${JSON.stringify(evaluation.values)}'.`),
             hint: test.hintTip,
           };
+      }
+
+      if (evaluation.kind === 'thrown') {
+        if (test.expectedErrorContains !== undefined) {
+          const passed = evaluation.message.includes(test.expectedErrorContains);
+          return { id: test.id, description: test.description, passed, status: passed ? 'passed' : 'failed', receivedValue: evaluation.message, expectedValue: test.expectedErrorContains, errorMessage: passed ? undefined : (test.errorMessage || `El error debe incluir "${test.expectedErrorContains}", pero recibimos "${evaluation.message}".`), hint: test.hintTip };
         }
+        return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: `La función '${test.targetFunction}' lanzó un error: ${evaluation.message}`, hint: test.hintTip };
+      }
+      if (evaluation.kind !== 'single') {
+        return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'El entorno aislado devolvió un resultado inesperado.', hint: test.hintTip };
+      }
+
+      const result = evaluation.value;
 
         // Special handling for semantic string matchers
         if (test.matcher === 'contains-all' || test.matcher === 'string-contains-all' || test.matcher === 'contains' || test.expectedContains || test.requireArgInResult !== undefined) {
-          const args = cloneEvaluationArgs(test.args);
-          let result: any;
-          try {
-            result = await targetFn(...args);
-          } catch (e: any) {
-            return {
-              id: test.id,
-              description: test.description,
-              passed: false,
-              status: 'evaluation-error',
-              isEvaluationError: true,
-              errorMessage: `La función '${test.targetFunction}' lanzó un error: ${e.message}`,
-              hint: test.hintTip,
-            };
-          }
           const match = isStringMatch(result, test);
           return {
             id: test.id,
@@ -573,37 +611,6 @@ async function evaluateSingleTest(
             receivedValue: result,
             expectedValue: test.expectedContains || test.expectedReturn,
             errorMessage: match.passed ? undefined : (test.errorMessage || match.error || `El resultado "${result}" no contiene lo esperado.`),
-            hint: test.hintTip,
-          };
-        }
-
-        const args = cloneEvaluationArgs(test.args);
-        const argsBefore = cloneEvaluationArgs(args);
-        let result: any;
-        try {
-          result = await targetFn(...args);
-        } catch (e: any) {
-          if (test.expectedErrorContains !== undefined) {
-            const message = e instanceof Error ? e.message : String(e);
-            const passed = message.includes(test.expectedErrorContains);
-            return {
-              id: test.id,
-              description: test.description,
-              passed,
-              status: passed ? 'passed' : 'failed',
-              receivedValue: message,
-              expectedValue: test.expectedErrorContains,
-              errorMessage: passed ? undefined : (test.errorMessage || `El error debe incluir "${test.expectedErrorContains}", pero recibimos "${message}".`),
-              hint: test.hintTip,
-            };
-          }
-          return {
-            id: test.id,
-            description: test.description,
-            passed: false,
-            status: 'evaluation-error',
-            isEvaluationError: true,
-            errorMessage: `La función '${test.targetFunction}' lanzó un error: ${e.message}`,
             hint: test.hintTip,
           };
         }
@@ -621,20 +628,20 @@ async function evaluateSingleTest(
           };
         }
 
-        if (test.expectArgsUnchanged && JSON.stringify(args) !== JSON.stringify(argsBefore)) {
+        if (test.expectArgsUnchanged && JSON.stringify(evaluation.argsAfter) !== JSON.stringify(cloneEvaluationArgs(test.args))) {
           return {
             id: test.id,
             description: test.description,
             passed: false,
             status: 'failed',
-            receivedValue: args,
-            expectedValue: argsBefore,
+            receivedValue: evaluation.argsAfter,
+            expectedValue: cloneEvaluationArgs(test.args),
             errorMessage: test.errorMessage || 'La función cambió el dato original. Conserva los argumentos recibidos y construye el resultado aparte.',
             hint: test.hintTip,
           };
         }
 
-        if (test.expectNewReferenceFromArg !== undefined && result === args[test.expectNewReferenceFromArg]) {
+        if (test.expectNewReferenceFromArg !== undefined && evaluation.sameReference) {
           return {
             id: test.id,
             description: test.description,
@@ -662,22 +669,18 @@ async function evaluateSingleTest(
         }
 
         return { id: test.id, description: test.description, passed: true, status: 'passed' };
-      } catch (e: any) {
-        return {
-          id: test.id,
-          description: test.description,
-          passed: false,
-          status: 'evaluation-error',
-          isEvaluationError: true,
-          errorMessage: `La función '${test.targetFunction}' lanzó un error: ${e.message}`,
-          hint: test.hintTip,
-        };
-      }
     }
 
     case 'dom-check': {
       if (!test.domSelector) {
         return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, errorMessage: 'Prueba mal configurada: falta selector del DOM.', hint: test.hintTip };
+      }
+
+      // En navegador, el programa del alumno se ejecuta únicamente dentro de
+      // un iframe opaco. happy-dom no ejecuta srcdoc y conserva el simulador
+      // determinista inferior para las pruebas de Node.
+      if (typeof document !== 'undefined' && typeof Worker !== 'undefined') {
+        return evaluateDomTestIsolated(test, workspace, iframeElement);
       }
 
       // For deterministic evaluation, build preview document from current workspace and simulate, not iframe
@@ -1008,41 +1011,25 @@ async function evaluateSingleTest(
         };
       }
 
-      const output: string[] = [];
-      const formatConsoleValue = (value: unknown) => {
-        if (typeof value === 'string') return value;
-        if (value === undefined) return 'undefined';
-        try {
-          return JSON.stringify(value);
-        } catch {
-          return String(value);
-        }
-      };
-      const capturedConsole = {
-        log: (...values: unknown[]) => output.push(values.map(formatConsoleValue).join(' ')),
-        warn: (...values: unknown[]) => output.push(values.map(formatConsoleValue).join(' ')),
-        error: (...values: unknown[]) => output.push(values.map(formatConsoleValue).join(' ')),
-      };
-
+      let consoleEvaluation;
       try {
-        const stubDocument = createEvaluationDocument();
-        new Function('document', 'window', 'console', combinedJs)(
-          stubDocument,
-          { document: stubDocument },
-          capturedConsole,
-        );
-      } catch (e: any) {
+        consoleEvaluation = await evaluateConsoleIsolated(prepareExecutableJavaScript(combinedJs));
+      } catch (error) {
         return {
           id: test.id,
           description: test.description,
           passed: false,
           status: 'evaluation-error',
           isEvaluationError: true,
-          receivedValue: output,
-          errorMessage: `El programa produjo un error al ejecutarse: ${e.message}`,
+          receivedValue: [],
+          errorMessage: `El programa produjo un error al ejecutarse: ${error instanceof Error ? error.message : String(error)}`,
           hint: test.hintTip,
         };
       }
+      if (consoleEvaluation.kind === 'setup-error') {
+        return { id: test.id, description: test.description, passed: false, status: 'evaluation-error', isEvaluationError: true, receivedValue: consoleEvaluation.output, errorMessage: `El programa produjo un error al ejecutarse: ${consoleEvaluation.message}`, hint: test.hintTip };
+      }
+      const output = consoleEvaluation.output;
 
       let passed = false;
       if (Array.isArray(test.expectedValue)) {
