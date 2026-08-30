@@ -49,7 +49,7 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 function renderDashboard(canAdmin: boolean) {
-  render(<ThemeProvider><StaffDashboard canAdmin={canAdmin} onClose={vi.fn()} /></ThemeProvider>);
+  return render(<ThemeProvider><StaffDashboard canAdmin={canAdmin} onClose={vi.fn()} /></ThemeProvider>);
 }
 
 describe('panel de seguimiento', () => {
@@ -105,16 +105,34 @@ describe('panel de seguimiento', () => {
   });
 
   it('permite volver a la lista después de abrir un expediente en móvil', async () => {
-    renderDashboard(false);
+    const { container } = renderDashboard(false);
     await screen.findByText('Personas registradas');
     fireEvent.click(screen.getByRole('button', { name: 'Personas' }));
+    expect(container.querySelector('.staff-learners__detail')?.classList.contains('is-open')).toBe(false);
     fireEvent.click(await screen.findByRole('button', { name: /Persona Ejemplo/ }));
 
     expect(await screen.findByText('Conceptos a reforzar')).toBeTruthy();
+    expect(container.querySelector('.staff-learners__detail')?.classList.contains('is-open')).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Volver a personas' }));
 
     expect(screen.getByText('Selecciona una persona para revisar su recorrido.')).toBeTruthy();
     expect(screen.queryByText('Conceptos a reforzar')).toBeNull();
+    expect(container.querySelector('.staff-learners__detail')?.classList.contains('is-open')).toBe(false);
+  });
+
+  it('solo abre la conversación móvil después de elegir un mensaje', async () => {
+    api.threads.mockResolvedValueOnce([{
+      id: 'thread-1', subject: 'Ayuda con funciones', status: 'open', updatedAt: '2026-08-30T12:00:00.000Z',
+      learnerId: 'learner-1', email: 'persona@example.com', displayName: 'Persona Ejemplo', messages: [],
+    }]);
+    const { container } = renderDashboard(false);
+    await screen.findByText('Personas registradas');
+    fireEvent.click(screen.getByRole('button', { name: 'Mensajes' }));
+    expect(container.querySelector('.staff-inbox__conversation')?.classList.contains('is-open')).toBe(false);
+    fireEvent.click(await screen.findByRole('button', { name: /Ayuda con funciones/ }));
+
+    expect(await screen.findByText('Responder con orientación concreta')).toBeTruthy();
+    expect(container.querySelector('.staff-inbox__conversation')?.classList.contains('is-open')).toBe(true);
   });
 
   it('no presenta como refuerzo un concepto que la persona ya domina', async () => {
