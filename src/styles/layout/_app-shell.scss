@@ -370,6 +370,18 @@
   max-width: min(48vw, 36rem);
 }
 
+@media (min-width: 769px) {
+  .playground-actions {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+  }
+
+  .playground-templates {
+    flex: 1 1 auto;
+    max-width: none;
+  }
+}
+
 .playground-file-tabs,
 .solo-project-file-tabs {
   flex: 1 1 auto;

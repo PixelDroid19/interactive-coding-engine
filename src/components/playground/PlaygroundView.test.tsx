@@ -52,18 +52,26 @@ describe('PlaygroundView', () => {
     expect(jsTemplate.getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('permite recorrer las plantillas con el teclado sin perder el foco', () => {
+  it('permite recorrer todas las plantillas, incluidas las de Cells, con el teclado', () => {
     render(<PlaygroundView onBack={() => {}} />);
 
     const selector = screen.getByRole('group', { name: 'Plantilla inicial' });
     const htmlTemplate = within(selector).getByRole('button', { name: 'HTML, CSS y JavaScript' });
     const jsTemplate = within(selector).getByRole('button', { name: 'JavaScript puro' });
+    const cellsComponent = within(selector).getByRole('button', { name: 'Componente Cells' });
+    const cellsApplication = within(selector).getByRole('button', { name: 'Aplicación Cells' });
     htmlTemplate.focus();
 
     fireEvent.keyDown(htmlTemplate, { key: 'ArrowRight' });
     expect(document.activeElement).toBe(jsTemplate);
 
-    fireEvent.keyDown(jsTemplate, { key: 'ArrowLeft' });
+    fireEvent.keyDown(selector, { key: 'End' });
+    expect(document.activeElement).toBe(cellsApplication);
+
+    fireEvent.keyDown(selector, { key: 'ArrowLeft' });
+    expect(document.activeElement).toBe(cellsComponent);
+
+    fireEvent.keyDown(selector, { key: 'Home' });
     expect(document.activeElement).toBe(htmlTemplate);
   });
 
