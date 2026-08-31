@@ -546,6 +546,13 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
           : keys.length === 1
             ? `Catálogos actualizados: 1 clave localizada (${keys[0]}).`
             : `Catálogos actualizados: ${keys.length} claves localizadas (${keys.join(', ')}).`);
+      } else if (result.type === 'documentation:generated') {
+        applyWorkspace(result.payload.workspace, result.generation);
+        await ensureRepository().save(
+          workspaceStorageKeyRef.current,
+          createVersionedCellsWorkspace(result.payload.workspace, result.generation),
+        );
+        setTerminalOutput('Documentación actualizada: custom-elements.json refleja la entrada pública del componente.');
       } else {
         setTerminalOutput(`Comando completado: ${command}`);
       }

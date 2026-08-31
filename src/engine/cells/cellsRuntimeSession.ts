@@ -65,6 +65,51 @@ function generateLocaleCatalogs(workspace: VersionedCellsWorkspace, application:
   return createVersionedCellsWorkspace({ ...workspace.snapshot, files }, workspace.generation + 1, workspace.limits);
 }
 
+function generateComponentDocumentation(workspace: VersionedCellsWorkspace): VersionedCellsWorkspace {
+  const definition = Object.entries(workspace.snapshot.files)
+    .filter(([path, file]) => !path.includes('/') && file.language === 'javascript')
+    .map(([path, file]) => ({
+      path,
+      match: file.content.match(/customElements\.define\(\s*['"]([^'"]+)['"]\s*,\s*([A-Za-z_$][\w$]*)\s*\)/),
+    }))
+    .find(({ match }) => Boolean(match));
+  if (!definition?.match) {
+    throw { code: 'COMMAND_FAILED', message: 'No se encontró una definición pública con customElements.define().' };
+  }
+  const [, tagName, className] = definition.match;
+  const sourcePath = `src/${tagName}.js`;
+  if (!workspace.snapshot.files[sourcePath]) {
+    throw { code: 'COMMAND_FAILED', message: `No existe la implementación pública ${sourcePath}.`, filePath: sourcePath };
+  }
+  const metadataFile = workspace.snapshot.files['custom-elements.json'];
+  if (!metadataFile) throw { code: 'COMMAND_FAILED', message: 'No existe custom-elements.json.' };
+
+  let metadata: any;
+  try {
+    metadata = JSON.parse(metadataFile.content);
+  } catch {
+    throw { code: 'COMMAND_FAILED', message: 'custom-elements.json no contiene JSON válido.', filePath: 'custom-elements.json' };
+  }
+  const module = metadata?.modules?.[0];
+  const declaration = module?.declarations?.[0];
+  if (!module || !declaration || !Array.isArray(module.exports)) {
+    throw { code: 'COMMAND_FAILED', message: 'custom-elements.json no contiene una declaración pública regenerable.', filePath: 'custom-elements.json' };
+  }
+  module.path = sourcePath;
+  declaration.name = className;
+  declaration.tagName = tagName;
+  module.exports = [{
+    kind: 'custom-element-definition',
+    name: tagName,
+    declaration: { name: className, module: sourcePath },
+  }];
+  const files = {
+    ...workspace.snapshot.files,
+    'custom-elements.json': { ...metadataFile, content: `${JSON.stringify(metadata, null, 2)}\n` },
+  };
+  return createVersionedCellsWorkspace({ ...workspace.snapshot, files }, workspace.generation + 1, workspace.limits);
+}
+
 function packageName(workspace: VersionedCellsWorkspace): string {
   try {
     const manifest = JSON.parse(workspace.snapshot.files['package.json']?.content ?? '{}');
@@ -128,7 +173,8 @@ export class CellsRuntimeSession {
       return response(request, 'locales:generated', { workspace: this.workspace.snapshot, keys }, this.workspace.generation);
     }
     if (parsed.runtimeAction === 'generate-documentation') {
-      return response(request, 'documentation:generated', { workspace: workspace.snapshot });
+      this.workspace = generateComponentDocumentation(workspace);
+      return response(request, 'documentation:generated', { workspace: this.workspace.snapshot }, this.workspace.generation);
     }
     throw { code: 'COMMAND_FAILED', message: `La acción ${parsed.runtimeAction} no está implementada.` };
   }

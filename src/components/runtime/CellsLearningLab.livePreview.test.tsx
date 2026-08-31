@@ -220,6 +220,37 @@ describe('CellsLearningLab live preview', () => {
     );
   });
 
+  it('aplica y persiste la documentación regenerada', async () => {
+    const generatedWorkspace: WorkspaceSnapshot = {
+      files: {
+        'custom-elements.json': {
+          path: 'custom-elements.json',
+          name: 'custom-elements.json',
+          language: 'json',
+          content: '{"schemaVersion":"1.0.0","modules":[]}\n',
+        },
+      },
+      activeFilePath: 'custom-elements.json',
+    };
+    runtime.commandResult = {
+      type: 'documentation:generated',
+      generation: 1,
+      payload: { workspace: generatedWorkspace },
+    };
+    render(<CellsLearningLab lessonId="cells-documentation-command" />);
+    await waitFor(() => expect(runtime.builds).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Terminal' }));
+    fireEvent.change(screen.getByLabelText('Comando Cells'), { target: { value: 'cells component:documentation' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ejecutar' }));
+
+    expect(await screen.findByText('Documentación actualizada: custom-elements.json refleja la entrada pública del componente.')).toBeTruthy();
+    expect(repository.save).toHaveBeenCalledWith(
+      'course-open-cells:v2:component:cells-documentation-command',
+      expect.objectContaining({ generation: 1, snapshot: generatedWorkspace }),
+    );
+  });
+
   it('reconstruye la vista previa al reiniciar sin exigir otro clic', async () => {
     render(<CellsLearningLab lessonId="cells-reset" componentStage="composition" />);
 

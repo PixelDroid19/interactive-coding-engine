@@ -95,4 +95,35 @@ describe('CellsRuntimeSession', () => {
     expect(catalog.es['home.extra']).toBe('home.extra');
     expect(catalog.en['home.extra']).toBe('home.extra');
   });
+
+  it('regenera la metadata pública desde la entrada real del componente', async () => {
+    const session = new CellsRuntimeSession('session-1');
+    const created = await session.handle(request('project:create', { scaffold: { name: 'academy-learning-card' } }, 0));
+    if (created.type !== 'workspace:updated') throw new Error('No se creó el proyecto de prueba.');
+    const metadata = JSON.parse(created.payload.workspace.files['custom-elements.json'].content);
+    metadata.modules[0].path = 'src/archivo-inexistente.js';
+    metadata.modules[0].declarations[0].name = 'ClaseInexistente';
+    metadata.modules[0].declarations[0].tagName = 'academy-tag-inexistente';
+    metadata.modules[0].exports[0].name = 'academy-tag-inexistente';
+
+    await session.handle(request('file:write', {
+      path: 'custom-elements.json',
+      content: `${JSON.stringify(metadata, null, 2)}\n`,
+    }, 1));
+    const generated = await session.handle(request('command:run', { command: 'cells component:documentation' }, 1));
+
+    expect(generated.type).toBe('documentation:generated');
+    expect(generated.generation).toBe(2);
+    if (generated.type !== 'documentation:generated') return;
+    const repaired = JSON.parse(generated.payload.workspace.files['custom-elements.json'].content);
+    expect(repaired.modules[0].path).toBe('src/academy-learning-card.js');
+    expect(repaired.modules[0].declarations[0]).toMatchObject({
+      name: 'AcademyLearningCard',
+      tagName: 'academy-learning-card',
+    });
+    expect(repaired.modules[0].exports[0]).toMatchObject({
+      name: 'academy-learning-card',
+      declaration: { name: 'AcademyLearningCard', module: 'src/academy-learning-card.js' },
+    });
+  });
 });
