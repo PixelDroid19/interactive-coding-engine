@@ -215,6 +215,9 @@ export function LiveHelpProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => () => disconnectSocket(), [disconnectSocket]);
 
   const registerWorkspace = useCallback((adapter: LiveHelpWorkspaceAdapter) => {
+    // A route change creates a new workspace. Do not carry a transient error
+    // from the previous activity into the next surface as a floating toast.
+    setError(null);
     workspaceRef.current = adapter;
     setWorkspace(adapter);
     setWorkspaceRegistrationVersion((version) => version + 1);
@@ -223,6 +226,7 @@ export function LiveHelpProvider({ children }: { children: React.ReactNode }) {
         workspaceRef.current = null;
         setWorkspace(null);
         setWorkspaceRegistrationVersion((version) => version + 1);
+        setError(null);
       }
     };
   }, []);

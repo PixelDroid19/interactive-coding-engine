@@ -18,7 +18,7 @@
 }
 
 .app-screen .socratic-tutor {
-  bottom: calc(56px + 1.25rem);
+  bottom: var(--assist-dock-bottom, calc(56px + 1.25rem));
 }
 
 /* Reading keeps its assistant action in the topbar so it never floats over

@@ -33,7 +33,7 @@
   user-select: none;
 }
 .app-screen .live-help-launcher {
-  bottom: calc(56px + 1.25rem + var(--assist-ai-height) + var(--assist-dock-gap));
+  bottom: calc(var(--assist-dock-bottom, calc(56px + 1.25rem)) + var(--assist-ai-height) + var(--assist-dock-gap));
 }
 
 @media (min-width: 1025px) {
