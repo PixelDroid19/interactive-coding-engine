@@ -149,7 +149,7 @@ describe('App navigation persistence', () => {
 
     expect(await screen.findByRole('button', { name: 'Empezar la clase' })).toBeTruthy();
     expect(screen.queryByText(/No se encontró la lección/)).toBeNull();
-    expect(screen.getByText(/La revisión publicada aún no está disponible/)).toBeTruthy();
+    expect(await screen.findByText(/La revisión publicada aún no está disponible/)).toBeTruthy();
   });
 
   it('explica el modo sin conexión sin exponer el error técnico del navegador', async () => {
