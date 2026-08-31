@@ -71,6 +71,24 @@ describe('CellsRuntimeClient', () => {
     await expect(pending).resolves.toMatchObject({ type: 'locales:generated', generation: 5 });
   });
 
+  it('acepta que un comando de creación reemplace el workspace en una generación posterior', async () => {
+    const worker = new FakeWorker();
+    const client = new CellsRuntimeClient(() => worker, 'sesion-reemplazo');
+    const pending = client.runCommand(`cells app:create --scaffold '{"name":"academy-store-app"}'`, 4);
+    const sent = worker.messages[0];
+
+    worker.emit(response({
+      type: 'command:completed', requestId: sent.requestId, sessionId: 'sesion-reemplazo', generation: 5,
+      payload: {
+        command: `cells app:create --scaffold '{"name":"academy-store-app"}'`,
+        output: 'Proyecto academy-store-app creado dentro del navegador.',
+        workspace: { files: {}, activeFilePath: '' },
+      },
+    }));
+
+    await expect(pending).resolves.toMatchObject({ type: 'command:completed', generation: 5 });
+  });
+
   it('cancela una petición sin fingir que finalizó', async () => {
     const worker = new FakeWorker();
     const client = new CellsRuntimeClient(() => worker, 'sesion-3');

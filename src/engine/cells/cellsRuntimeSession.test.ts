@@ -85,11 +85,11 @@ describe('CellsRuntimeSession', () => {
     await session.handle(request('file:write', {
       path: sourcePath,
       content: `${created.payload.workspace.files[sourcePath].content}\nthis.t('home.extra');\n`,
-    }, 1));
-    const generated = await session.handle(request('command:run', { command: 'cells app:locales -c dev.js' }, 1));
+    }, 2));
+    const generated = await session.handle(request('command:run', { command: 'cells app:locales -c dev.js' }, 2));
 
     expect(generated.type).toBe('locales:generated');
-    expect(generated.generation).toBe(2);
+    expect(generated.generation).toBe(3);
     if (generated.type !== 'locales:generated') return;
     const catalog = JSON.parse(generated.payload.workspace.files['app/locales-app/locales.json'].content);
     expect(catalog.es['home.extra']).toBe('home.extra');
@@ -125,5 +125,20 @@ describe('CellsRuntimeSession', () => {
       name: 'academy-learning-card',
       declaration: { name: 'AcademyLearningCard', module: 'src/academy-learning-card.js' },
     });
+  });
+
+  it('reemplaza un proyecto editado sin desincronizar la generación', async () => {
+    const session = new CellsRuntimeSession('session-1');
+    await session.handle(request('project:create', { scaffold: { name: 'academy-learning-card' } }, 0));
+    await session.handle(request('file:write', { path: 'README.md', content: '# Proyecto editado\n' }, 1));
+
+    const replaced = await session.handle(request('command:run', {
+      command: `cells app:create --scaffold '{"name":"academy-store-app"}'`,
+    }, 1));
+
+    expect(replaced.type).toBe('command:completed');
+    expect(replaced.generation).toBe(2);
+    const preview = await session.handle(request('preview:build', {}, 2));
+    expect(preview.type).toBe('preview:built');
   });
 });

@@ -141,14 +141,19 @@ export class CellsRuntimeSession {
     const parsed = parseCellsCommand(commandText);
     if (parsed.runtimeAction === 'create-component' || parsed.runtimeAction === 'create-application') {
       const scaffold = parsed.options.scaffold as { name: string; namespace?: '@open-cells-learning' };
-      this.workspace = parsed.runtimeAction === 'create-application'
+      const created = parsed.runtimeAction === 'create-application'
         ? createCellsAppWorkspace(scaffold)
         : createCellsComponentWorkspace(scaffold);
+      this.workspace = createVersionedCellsWorkspace(
+        created.snapshot,
+        request.generation + 1,
+        created.limits,
+      );
       return response(request, 'command:completed', {
         command: commandText,
         output: `Proyecto ${scaffold.name} creado dentro del navegador.`,
         workspace: this.workspace.snapshot,
-      });
+      }, this.workspace.generation);
     }
     const workspace = this.requireWorkspace(request);
     if (parsed.runtimeAction === 'build-preview') {
