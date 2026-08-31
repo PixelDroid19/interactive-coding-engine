@@ -181,4 +181,32 @@ describe('contrato seguro de ayuda en vivo', () => {
       expect(() => parseServerFrame(JSON.stringify({ type: 'event', event }))).toThrow('frame');
     }
   });
+
+  it('permite snapshots Cells de hasta 40 archivos, sin ampliar los parches', () => {
+    const files = Array.from({ length: 36 }, (_, index) => ({
+      path: `src/componente-${index}.ts`, content: `export const componente${index} = ${index};`,
+    }));
+
+    const snapshot = { type: 'snapshot' as const, revision: 12, activeFile: files[0].path, files };
+    const serialized = serializeClientFrame(snapshot);
+    expect(parseServerFrame(JSON.stringify({
+      type: 'event',
+      event: {
+        seq: 9, type: 'snapshot', actorRole: 'student', createdAt: '2026-08-30T12:01:00.000Z', payload: snapshot,
+      },
+    }))).toMatchObject({ type: 'event', event: { payload: { revision: 12, files } } });
+    expect(JSON.parse(serialized)).toMatchObject(snapshot);
+
+    expect(() => serializeClientFrame({
+      ...snapshot,
+      files: Array.from({ length: 41 }, (_, index) => ({ path: `src/exceso-${index}.ts`, content: '' })),
+    })).toThrow('frame');
+    expect(() => serializeClientFrame({
+      type: 'patch-proposal', proposalId: '30000000-0000-4000-8000-000000000003', summary: 'Cambio acotado',
+      patch: {
+        baseRevision: 12,
+        files: Array.from({ length: 21 }, (_, index) => ({ path: `src/parche-${index}.ts`, content: '' })),
+      },
+    })).toThrow('frame');
+  });
 });

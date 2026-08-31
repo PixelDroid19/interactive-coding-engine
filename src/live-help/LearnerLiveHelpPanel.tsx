@@ -97,6 +97,10 @@ export function LearnerLiveHelpPanel({
       setNotice('El código cambió desde que llegó esta propuesta. Pide una propuesta actualizada antes de aplicarla.');
       return;
     }
+    if (outcome.outcome === 'blocked') {
+      setNotice(outcome.message);
+      return;
+    }
     void confirmDecision(event.proposalId, 'accepted');
   };
   const reject = (event: ProposalEvent) => {

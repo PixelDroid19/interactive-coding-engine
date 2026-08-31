@@ -72,6 +72,15 @@ describe('panel de ayuda en vivo de la alumna', () => {
     expect(onDecision).not.toHaveBeenCalled();
   });
 
+  it('muestra un bloqueo temporal sin confirmar una decisión', () => {
+    const onDecision = vi.fn();
+    render(<ThemeProvider><LearnerLiveHelpPanel {...baseProps} onDecision={onDecision} onApplyProposal={() => ({ outcome: 'blocked', message: 'El entorno está ocupado.' })} /></ThemeProvider>);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar cambio' }));
+    expect(screen.getByRole('alert').textContent).toContain('El entorno está ocupado.');
+    expect(onDecision).not.toHaveBeenCalled();
+  });
+
   it('permite reintentar la confirmación si aplicar localmente funcionó pero la decisión no salió', async () => {
     const onDecision = vi.fn().mockRejectedValueOnce(new Error('Sin conexión')).mockResolvedValueOnce(undefined);
     const onApplyProposal = vi.fn().mockReturnValue({ outcome: 'applied', revision: 1 });

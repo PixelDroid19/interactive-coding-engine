@@ -27,6 +27,7 @@ import { ThemeToggle } from '../ThemeToggle';
 import { useTheme } from '../../themes/ThemeProvider';
 import { LearningDiagram } from './LearningDiagram';
 import { highlightReadingCode } from './readingCodeHighlight';
+import type { LiveHelpContext } from '../../live-help/protocol';
 
 interface ReadingViewProps {
   reading: ReadingItem;
@@ -35,6 +36,7 @@ interface ReadingViewProps {
   onPrevious?: () => void;
   onNext?: () => void;
   navigationState?: NavigationState;
+  liveHelpContext?: LiveHelpContext;
 }
 
 export const ReadingView: React.FC<ReadingViewProps> = ({
@@ -44,6 +46,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
   onPrevious,
   onNext,
   navigationState,
+  liveHelpContext,
 }) => {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -415,6 +418,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                     componentStage={cellsComponentLab.stage}
                     componentArtifactId={componentArtifact?.id}
                     lessonId={reading.relatedLessonId ?? reading.id.replace(/-lectura$/, '')}
+                    liveHelpContext={liveHelpContext}
                   />
                 </section>
               )}
@@ -434,6 +438,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                     stage={cellsAppLab.stage}
                     project={cellsAppLab.project}
                     lessonId={reading.relatedLessonId ?? reading.id.replace(/-lectura$/, '')}
+                    liveHelpContext={liveHelpContext}
                   />
                 </section>
               )}
@@ -576,4 +581,3 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
     </div>
   );
 };
-

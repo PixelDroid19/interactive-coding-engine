@@ -5,6 +5,7 @@ const MAX_TEXT_LENGTH = 4_000;
 const MAX_PATH_LENGTH = 512;
 const MAX_FILE_CONTENT_LENGTH = 64 * 1024;
 const MAX_PATCH_FILES = 20;
+const MAX_SNAPSHOT_FILES = 40;
 const RESERVED_PATH_SEGMENTS = new Set(['__proto__', 'prototype', 'constructor']);
 
 export type LiveHelpSurface = 'lesson' | 'challenge' | 'debug' | 'editor' | 'roadmap';
@@ -219,7 +220,7 @@ export function parsePatch(value: unknown, kind: 'frame' | 'session' = 'frame'):
 
 function parseSnapshot(value: unknown): LiveHelpSnapshotPayload {
   const source = asRecord(value);
-  if (!Array.isArray(source.files) || source.files.length === 0 || source.files.length > MAX_PATCH_FILES) invalid();
+  if (!Array.isArray(source.files) || source.files.length === 0 || source.files.length > MAX_SNAPSHOT_FILES) invalid();
   const files = source.files.map((file) => {
     const item = asRecord(file);
     return {

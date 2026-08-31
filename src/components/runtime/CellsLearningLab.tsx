@@ -23,6 +23,8 @@ import { CodeEditor } from '../editor/CodeEditor';
 import { WorkspaceTree } from '../editor/WorkspaceTree';
 import { CellsPreviewWorkbench } from './CellsPreviewWorkbench';
 import type { CellsPreviewBuild } from '../../engine/cells/cellsPreviewCompiler';
+import { LiveHelpWorkspaceBridge } from '../../live-help/LiveHelpWorkspaceBridge';
+import type { LiveHelpContext } from '../../live-help/protocol';
 
 function messageFor(error: unknown): string {
   if (error instanceof CellsRuntimeClientError) {
@@ -38,7 +40,10 @@ interface CellsLearningLabProps {
   componentArtifactId?: string;
   project?: CellsAppProject;
   lessonId?: string;
+  liveHelpContext?: LiveHelpContext;
 }
+
+type CellsLabStatus = 'loading' | 'ready' | 'running' | 'error';
 
 const APP_MISSIONS: Record<CellsAppPracticeStage, string> = {
   lifecycle: 'La página conserva una suscripción al salir y tampoco navega al detalle. Completa cleanup y navegación por nombre sin acoplar la tarjeta al router.',
@@ -80,11 +85,13 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
   componentArtifactId = 'action-button',
   project = 'store',
   lessonId,
+  liveHelpContext,
 }) => {
   const componentArtifact = OPEN_CELLS_ARTIFACTS[componentArtifactId] ?? OPEN_CELLS_ARTIFACTS['action-button'];
   const runtimeRef = useRef<CellsRuntimeClient | null>(null);
   const repositoryRef = useRef<CellsWorkspaceRepository | null>(null);
   const dirtyPathsRef = useRef(new Set<string>());
+  const autoSyncInFlightRef = useRef(false);
   const previewRequestRef = useRef(0);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const ensureRuntime = () => {
@@ -109,7 +116,12 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
   const [previewState, setPreviewState] = useState<'idle' | 'building' | 'fresh' | 'stale' | 'error'>('idle');
   const [tests, setTests] = useState<CellsTestResult[]>([]);
   const [coverage, setCoverage] = useState<CellsCoverageResult | null>(null);
-  const [status, setStatus] = useState<'loading' | 'ready' | 'running' | 'error'>('loading');
+  const [status, setStatusState] = useState<CellsLabStatus>('loading');
+  const statusRef = useRef<CellsLabStatus>('loading');
+  const setStatus = (next: CellsLabStatus) => {
+    statusRef.current = next;
+    setStatusState(next);
+  };
   const [error, setError] = useState('');
   const [workspaceRecovery, setWorkspaceRecovery] = useState<CellsWorkspaceRecovery | null>(null);
   const [workspaceRecoveryInspection, setWorkspaceRecoveryInspection] = useState<CellsWorkspaceRecoveryInspection | null>(null);
@@ -163,6 +175,46 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
     setSyncedWorkspace(nextWorkspace);
     setGeneration(nextGeneration);
     dirtyPathsRef.current.clear();
+  };
+
+  const applyLiveHelpWorkspace = (nextWorkspace: WorkspaceSnapshot) => {
+    const previousWorkspace = workspaceRef.current;
+    const changedPaths = Object.keys(nextWorkspace.files).filter((path) => (
+      previousWorkspace.files[path]?.content !== nextWorkspace.files[path].content
+    ));
+    const versioned = createVersionedCellsWorkspace(nextWorkspace, generationRef.current);
+    changedPaths.forEach((path) => dirtyPathsRef.current.add(path));
+    if (changedPaths.length > 0) {
+      previewRequestRef.current += 1;
+      setPreviewState('stale');
+    }
+    setWorkspace(nextWorkspace);
+    void ensureRepository().save(workspaceStorageKeyRef.current, versioned).catch((caught) => setError(messageFor(caught)));
+  };
+
+  const liveHelpProposalGuard = (): string | null => {
+    if (!sessionHydrated || statusRef.current === 'loading') {
+      return 'El laboratorio todavía se está preparando. Espera a que el Worker esté listo antes de aplicar el cambio.';
+    }
+    if (statusRef.current === 'running' || autoSyncInFlightRef.current) {
+      return 'Cells está ejecutando una operación. Espera a que termine antes de aplicar el cambio.';
+    }
+    if (statusRef.current === 'error') {
+      return 'El laboratorio necesita atención antes de aplicar cambios del formador.';
+    }
+    if (dirtyPathsRef.current.size > 0) {
+      return 'Cells está sincronizando tus cambios locales. Espera un momento antes de aplicar la propuesta.';
+    }
+    return null;
+  };
+
+  const validateLiveHelpProposal = (nextWorkspace: WorkspaceSnapshot): string | null => {
+    try {
+      createVersionedCellsWorkspace(nextWorkspace, generationRef.current);
+      return null;
+    } catch (caught) {
+      return `La propuesta no cumple la estructura de archivos de Cells: ${messageFor(caught)}`;
+    }
   };
 
   const beginPreviewBuild = (): number => {
@@ -281,7 +333,6 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
           ? savedSession?.terminalOutput ?? 'Continuaste desde el último cambio guardado en este navegador.'
           : 'Proyecto abierto en memoria. No se inició ningún servidor ni proceso Node.');
         setSessionHydrated(true);
-        setStatus('ready');
 
         // Auto-build preview immediately on load so the student sees the live component without clicking
         try {
@@ -289,6 +340,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
           const previewRes = await ensureRuntime().buildPreview(initial.generation);
           if (!cancelled && previewRes.type === 'preview:built') {
             applyPreviewBuild(request, previewRes.payload);
+            setStatus('ready');
           }
         } catch (caught) {
           if (!cancelled) {
@@ -318,6 +370,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
     if (!sessionHydrated) return;
     if (dirtyPathsRef.current.size === 0) return;
     const timer = window.setTimeout(async () => {
+      autoSyncInFlightRef.current = true;
       const request = beginPreviewBuild();
       try {
         const currentGeneration = await syncDirtyFiles();
@@ -329,7 +382,10 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
         if (request === previewRequestRef.current) {
           setPreviewState('error');
           setError(`Vista previa desactualizada: ${messageFor(caught)}`);
+          setStatus('error');
         }
+      } finally {
+        autoSyncInFlightRef.current = false;
       }
     }, 450);
     return () => window.clearTimeout(timer);
@@ -1015,6 +1071,15 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
           </div>
         </div>
       </div>
+      {liveHelpContext && (
+        <LiveHelpWorkspaceBridge
+          context={liveHelpContext}
+          workspace={workspace}
+          onWorkspaceChange={applyLiveHelpWorkspace}
+          proposalGuard={liveHelpProposalGuard}
+          validateProposal={validateLiveHelpProposal}
+        />
+      )}
     </div>
   );
 };

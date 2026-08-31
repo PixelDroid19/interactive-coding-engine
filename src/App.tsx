@@ -859,6 +859,7 @@ export default function App() {
           onPrevious={navigationState.hasPrevious ? handlePrevious : undefined}
           onNext={navigationState.hasNext ? handleNext : handleBackToRoadmap}
           navigationState={navigationState}
+          liveHelpContext={{ courseSlug: course.slug, lessonKey: activeItem.id, surface: 'lesson' }}
         />
       )}
 

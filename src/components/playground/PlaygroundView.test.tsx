@@ -2,15 +2,24 @@
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import type { LiveHelpContext } from '../../live-help/protocol';
 import { PlaygroundView } from './PlaygroundView';
 
+const cellsLab = vi.hoisted(() => ({
+  props: null as null | { variant?: string; liveHelpContext?: LiveHelpContext },
+}));
+
 vi.mock('../runtime/CellsLearningLab', () => ({
-  CellsLearningLab: ({ variant }: { variant?: string }) => <div data-testid="cells-runtime">Runtime Cells {variant}</div>,
+  CellsLearningLab: (props: { variant?: string; liveHelpContext?: LiveHelpContext }) => {
+    cellsLab.props = props;
+    return <div data-testid="cells-runtime">Runtime Cells {props.variant}</div>;
+  },
 }));
 
 describe('PlaygroundView', () => {
   beforeEach(() => {
     localStorage.clear();
+    cellsLab.props = null;
   });
 
   afterEach(() => {
@@ -81,6 +90,17 @@ describe('PlaygroundView', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Aplicación Cells' }));
     expect(screen.getByTestId('cells-runtime').textContent).toContain('application');
+  });
+
+  it('aísla la sesión de ayuda por cada plantilla Cells', () => {
+    const context: LiveHelpContext = { courseSlug: 'open-cells', lessonKey: 'playground', surface: 'editor' };
+    render(<PlaygroundView onBack={() => {}} liveHelpContext={context} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Componente Cells' }));
+    expect(cellsLab.props?.liveHelpContext).toEqual({ ...context, lessonKey: 'playground:cells-component' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicación Cells' }));
+    expect(cellsLab.props?.liveHelpContext).toEqual({ ...context, lessonKey: 'playground:cells-application' });
   });
 
   it('permite ocultar y volver a mostrar el explorador de archivos', () => {

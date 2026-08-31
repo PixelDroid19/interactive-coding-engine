@@ -2,10 +2,12 @@
 import React from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { LiveHelpContext } from '../../live-help/protocol';
+import type { WorkspaceSnapshot } from '../../types/scrim';
 import { CellsLearningLab } from './CellsLearningLab';
 
 const runtime = vi.hoisted(() => {
-  const builds: Array<{ resolve: (value: unknown) => void }> = [];
+  const builds: Array<{ resolve: (value: unknown) => void; reject: (reason?: unknown) => void }> = [];
   return { builds, failLoad: false };
 });
 
@@ -20,6 +22,23 @@ const repository = vi.hoisted(() => ({
   exportRecovery: vi.fn(),
   restoreRecovery: vi.fn(),
   discardRecovery: vi.fn(),
+}));
+
+const liveHelpBridge = vi.hoisted(() => ({
+  props: null as null | {
+    context: LiveHelpContext;
+    workspace: WorkspaceSnapshot;
+    onWorkspaceChange(next: WorkspaceSnapshot): void;
+    proposalGuard?(): string | null;
+    validateProposal?(next: WorkspaceSnapshot): string | null;
+  },
+}));
+
+vi.mock('../../live-help/LiveHelpWorkspaceBridge', () => ({
+  LiveHelpWorkspaceBridge: (props: NonNullable<typeof liveHelpBridge.props>) => {
+    liveHelpBridge.props = props;
+    return <div data-testid="cells-live-help-bridge" />;
+  },
 }));
 
 vi.mock('../../engine/cells/cellsRuntimeClient', () => ({
@@ -42,7 +61,7 @@ vi.mock('../../engine/cells/cellsRuntimeClient', () => ({
       };
     }
     buildPreview() {
-      return new Promise((resolve) => runtime.builds.push({ resolve }));
+      return new Promise((resolve, reject) => runtime.builds.push({ resolve, reject }));
     }
     dispose() {}
   },
@@ -92,6 +111,7 @@ describe('CellsLearningLab live preview', () => {
     repository.exportRecovery.mockResolvedValue({ fileName: 'cells-recovery.json', content: '{"workspace":{"generation":-1}}' });
     repository.restoreRecovery.mockReset();
     repository.discardRecovery.mockResolvedValue(undefined);
+    liveHelpBridge.props = null;
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:cells-recovery');
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined);
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
@@ -148,6 +168,147 @@ describe('CellsLearningLab live preview', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Reiniciar práctica' }));
     await waitFor(() => expect(runtime.builds).toHaveLength(2));
+  });
+
+  it('expone un workspace Cells persistente y bloquea propuestas mientras aún no está sincronizado', async () => {
+    const context: LiveHelpContext = {
+      courseSlug: 'open-cells',
+      lessonKey: 'open-cells-18',
+      surface: 'lesson',
+    };
+    render(<CellsLearningLab lessonId="open-cells-18" componentStage="composition" liveHelpContext={context} />);
+
+    await waitFor(() => expect(runtime.builds).toHaveLength(1));
+    expect(liveHelpBridge.props?.proposalGuard?.()).toContain('preparando');
+    await act(async () => {
+      runtime.builds[0].resolve({
+        type: 'preview:built',
+        payload: { html: 'PREVIEW INICIAL', warnings: [], componentDemo: { cases: [] } },
+      });
+    });
+    await waitFor(() => expect(liveHelpBridge.props?.proposalGuard?.()).toBeNull());
+    expect(liveHelpBridge.props?.context).toEqual(context);
+
+    const current = liveHelpBridge.props!.workspace;
+    const activePath = current.activeFilePath;
+    const next: WorkspaceSnapshot = {
+      ...current,
+      files: {
+        ...current.files,
+        [activePath]: {
+          ...current.files[activePath],
+          content: 'export const cambioDelFormador = true;',
+        },
+      },
+    };
+    act(() => liveHelpBridge.props!.onWorkspaceChange(next));
+
+    await waitFor(() => expect(repository.save).toHaveBeenCalledWith(
+      'course-open-cells:v2:component:open-cells-18',
+      expect.objectContaining({
+        snapshot: expect.objectContaining({
+          files: expect.objectContaining({
+            [activePath]: expect.objectContaining({ content: 'export const cambioDelFormador = true;' }),
+          }),
+        }),
+      }),
+    ));
+    expect(liveHelpBridge.props?.workspace.files[activePath].content).toBe('export const cambioDelFormador = true;');
+    expect(liveHelpBridge.props?.proposalGuard?.()).toContain('sincronizando');
+  });
+
+  it('rechaza una propuesta con colisión archivo/carpeta antes de entregarla al runtime Cells', async () => {
+    const context: LiveHelpContext = {
+      courseSlug: 'open-cells',
+      lessonKey: 'open-cells-19',
+      surface: 'lesson',
+    };
+    render(<CellsLearningLab lessonId="open-cells-19" componentStage="composition" liveHelpContext={context} />);
+
+    await waitFor(() => expect(runtime.builds).toHaveLength(1));
+    await act(async () => {
+      runtime.builds[0].resolve({
+        type: 'preview:built',
+        payload: { html: 'PREVIEW INICIAL', warnings: [], componentDemo: { cases: [] } },
+      });
+    });
+    const current = liveHelpBridge.props!.workspace;
+    expect(current.files['package.json']).toBeTruthy();
+    const colliding: WorkspaceSnapshot = {
+      ...current,
+      files: {
+        ...current.files,
+        'package.json/nuevo.js': { path: 'package.json/nuevo.js', name: 'nuevo.js', language: 'javascript', content: '' },
+      },
+    };
+
+    expect(liveHelpBridge.props?.validateProposal?.(colliding)).toContain('estructura de archivos');
+  });
+
+  it('mantiene bloqueada la propuesta durante la compilación automática aunque ya vació los archivos pendientes', async () => {
+    const context: LiveHelpContext = {
+      courseSlug: 'open-cells',
+      lessonKey: 'open-cells-20',
+      surface: 'lesson',
+    };
+    render(<CellsLearningLab lessonId="open-cells-20" componentStage="composition" liveHelpContext={context} />);
+
+    await waitFor(() => expect(runtime.builds).toHaveLength(1));
+    await act(async () => {
+      runtime.builds[0].resolve({
+        type: 'preview:built',
+        payload: { html: 'PREVIEW INICIAL', warnings: [], componentDemo: { cases: [] } },
+      });
+    });
+    await waitFor(() => expect(liveHelpBridge.props?.proposalGuard?.()).toBeNull());
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: 'Editar componente' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(runtime.builds).toHaveLength(2);
+    expect(liveHelpBridge.props?.proposalGuard?.()).toContain('ejecutando');
+
+    await act(async () => {
+      runtime.builds[1].resolve({
+        type: 'preview:built',
+        payload: { html: 'PREVIEW SINCRONIZADA', warnings: [], componentDemo: { cases: [] } },
+      });
+    });
+    expect(liveHelpBridge.props?.proposalGuard?.()).toBeNull();
+  });
+
+  it('mantiene bloqueadas las propuestas si la sincronización automática termina en error', async () => {
+    const context: LiveHelpContext = {
+      courseSlug: 'open-cells',
+      lessonKey: 'open-cells-21',
+      surface: 'lesson',
+    };
+    render(<CellsLearningLab lessonId="open-cells-21" componentStage="composition" liveHelpContext={context} />);
+
+    await waitFor(() => expect(runtime.builds).toHaveLength(1));
+    await act(async () => {
+      runtime.builds[0].resolve({
+        type: 'preview:built',
+        payload: { html: 'PREVIEW INICIAL', warnings: [], componentDemo: { cases: [] } },
+      });
+    });
+    await waitFor(() => expect(liveHelpBridge.props?.proposalGuard?.()).toBeNull());
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole('button', { name: 'Editar componente' }));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    expect(runtime.builds).toHaveLength(2);
+
+    await act(async () => {
+      runtime.builds[1].reject(new Error('package.json inválido'));
+    });
+
+    expect(liveHelpBridge.props?.proposalGuard?.()).toContain('necesita atención');
+    expect(screen.getByRole('alert').textContent).toContain('package.json inválido');
   });
 
   it('explica el estado de error en lugar de mostrar el mensaje de éxito', async () => {

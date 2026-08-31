@@ -147,6 +147,10 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack, liveHelp
           <CellsLearningLab
             key={`${selectedTemplateId}:${cellsResetKey}`}
             variant={selectedTemplateId === 'cells-application' ? 'application' : 'component'}
+            liveHelpContext={liveHelpContext ? {
+              ...liveHelpContext,
+              lessonKey: `${liveHelpContext.lessonKey ?? 'playground'}:${selectedTemplateId}`,
+            } : undefined}
           />
         </main>
       ) : (

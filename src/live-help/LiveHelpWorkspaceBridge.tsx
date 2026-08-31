@@ -2,10 +2,10 @@ import React, { useEffect, useRef } from 'react';
 import { Headphones } from 'lucide-react';
 import type { WorkspaceSnapshot } from '../types/scrim';
 import { useTheme } from '../themes/ThemeProvider';
-import { liveHelpContextKey, type LiveHelpContext, type LiveHelpProposalEvent, type LiveHelpSnapshotPayload } from './protocol';
+import { liveHelpContextKey, serializeClientFrame, type LiveHelpContext, type LiveHelpProposalEvent, type LiveHelpSnapshotPayload } from './protocol';
 import type { LiveHelpWorkspaceAdapter } from './LiveHelpProvider';
 import { useOptionalLiveHelp } from './LiveHelpProvider';
-import { applyPatchProposal, type PatchProposalOutcome } from './workspace';
+import { applyPatchProposal, liveHelpWorkspaceRevision, type PatchProposalOutcome } from './workspace';
 
 export interface LiveHelpWorkspaceBridgeProps {
   context: LiveHelpContext;
@@ -13,17 +13,21 @@ export interface LiveHelpWorkspaceBridgeProps {
   onWorkspaceChange(next: WorkspaceSnapshot): void;
   onProposalApplied?(next: WorkspaceSnapshot): void;
   pause?(): void;
+  proposalGuard?(): string | null;
+  validateProposal?(next: WorkspaceSnapshot): string | null;
 }
 
-function snapshotFromWorkspace(workspace: WorkspaceSnapshot, revision: number): LiveHelpSnapshotPayload {
+function snapshotFromWorkspace(workspace: WorkspaceSnapshot): LiveHelpSnapshotPayload {
   return {
-    revision,
+    revision: liveHelpWorkspaceRevision(workspace),
     activeFile: workspace.activeFilePath,
-    files: Object.values(workspace.files).map((file) => ({ path: file.path, content: file.content })),
+    files: Object.values(workspace.files)
+      .sort((left, right) => left.path.localeCompare(right.path))
+      .map((file) => ({ path: file.path, content: file.content })),
   };
 }
 
-export function LiveHelpWorkspaceBridge({ context, workspace, onWorkspaceChange, onProposalApplied, pause }: LiveHelpWorkspaceBridgeProps) {
+export function LiveHelpWorkspaceBridge({ context, workspace, onWorkspaceChange, onProposalApplied, pause, proposalGuard, validateProposal }: LiveHelpWorkspaceBridgeProps) {
   const liveHelp = useOptionalLiveHelp();
   const { themeId } = useTheme();
   const contextKey = liveHelpContextKey(context);
@@ -32,9 +36,8 @@ export function LiveHelpWorkspaceBridge({ context, workspace, onWorkspaceChange,
   const changeRef = useRef(onWorkspaceChange);
   const proposalChangeRef = useRef(onProposalApplied);
   const pauseRef = useRef(pause);
-  const revisionRef = useRef(0);
-  const previousWorkspaceRef = useRef(workspace);
-  const appliedWorkspaceRef = useRef<WorkspaceSnapshot | null>(null);
+  const proposalGuardRef = useRef(proposalGuard);
+  const proposalValidatorRef = useRef(validateProposal);
   const adapterRef = useRef<LiveHelpWorkspaceAdapter | null>(null);
 
   workspaceRef.current = workspace;
@@ -42,40 +45,43 @@ export function LiveHelpWorkspaceBridge({ context, workspace, onWorkspaceChange,
   changeRef.current = onWorkspaceChange;
   proposalChangeRef.current = onProposalApplied;
   pauseRef.current = pause;
-
-  useEffect(() => {
-    revisionRef.current = 0;
-    previousWorkspaceRef.current = workspace;
-    appliedWorkspaceRef.current = null;
-  }, [contextKey]);
-
-  useEffect(() => {
-    if (previousWorkspaceRef.current === workspace) return;
-    previousWorkspaceRef.current = workspace;
-    if (appliedWorkspaceRef.current === workspace) {
-      appliedWorkspaceRef.current = null;
-      return;
-    }
-    revisionRef.current += 1;
-  }, [workspace]);
+  proposalGuardRef.current = proposalGuard;
+  proposalValidatorRef.current = validateProposal;
 
   if (!adapterRef.current) {
     adapterRef.current = {
       getContext: () => contextRef.current,
-      captureSnapshot: () => snapshotFromWorkspace(workspaceRef.current, revisionRef.current),
+      captureSnapshot: () => snapshotFromWorkspace(workspaceRef.current),
       applyProposal: (event: LiveHelpProposalEvent): PatchProposalOutcome => {
-        const result = applyPatchProposal({
-          workspace: workspaceRef.current,
-          revision: revisionRef.current,
-          patch: event.payload.patch,
-          pause: pauseRef.current,
-          commit: (next) => {
-            appliedWorkspaceRef.current = next;
-            (proposalChangeRef.current ?? changeRef.current)(next);
-          },
-        });
-        if (result.outcome === 'applied') revisionRef.current = result.revision;
-        return result;
+        const blockedMessage = proposalGuardRef.current?.();
+        if (blockedMessage) return { outcome: 'blocked', message: blockedMessage };
+        const previousWorkspace = workspaceRef.current;
+        const currentRevision = liveHelpWorkspaceRevision(workspaceRef.current);
+        try {
+          return applyPatchProposal({
+            workspace: workspaceRef.current,
+            revision: currentRevision,
+            patch: event.payload.patch,
+            pause: pauseRef.current,
+            validate: (next) => {
+              const runtimeMessage = proposalValidatorRef.current?.(next);
+              if (runtimeMessage) return runtimeMessage;
+              try {
+                serializeClientFrame({ type: 'snapshot', ...snapshotFromWorkspace(next) });
+                return null;
+              } catch {
+                return 'La propuesta dejaría un proyecto demasiado grande para compartir de forma segura.';
+              }
+            },
+            commit: (next) => {
+              (proposalChangeRef.current ?? changeRef.current)(next);
+              workspaceRef.current = next;
+            },
+          });
+        } catch {
+          workspaceRef.current = previousWorkspace;
+          return { outcome: 'blocked', message: 'No pudimos aplicar la propuesta al editor. El código se conserva sin cambios.' };
+        }
       },
     };
   }
