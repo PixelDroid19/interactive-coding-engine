@@ -177,6 +177,14 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
     dirtyPathsRef.current.clear();
   };
 
+  const invalidateDerivedResults = () => {
+    previewRequestRef.current += 1;
+    setPreviewState('stale');
+    setTests([]);
+    setCoverage(null);
+    setTerminalOutput('El código cambió. Vuelve a ejecutar las comprobaciones para obtener resultados actuales.');
+  };
+
   const applyLiveHelpWorkspace = (nextWorkspace: WorkspaceSnapshot) => {
     const previousWorkspace = workspaceRef.current;
     const changedPaths = Object.keys(nextWorkspace.files).filter((path) => (
@@ -185,8 +193,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
     const versioned = createVersionedCellsWorkspace(nextWorkspace, generationRef.current);
     changedPaths.forEach((path) => dirtyPathsRef.current.add(path));
     if (changedPaths.length > 0) {
-      previewRequestRef.current += 1;
-      setPreviewState('stale');
+      invalidateDerivedResults();
     }
     setWorkspace(nextWorkspace);
     void ensureRepository().save(workspaceStorageKeyRef.current, versioned).catch((caught) => setError(messageFor(caught)));
@@ -826,8 +833,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
                     files: { ...current.files, [activeFile.path]: { ...activeFile, content } },
                   };
                   dirtyPathsRef.current.add(activeFile.path);
-                  previewRequestRef.current += 1;
-                  setPreviewState('stale');
+                  invalidateDerivedResults();
                   void ensureRepository().save(workspaceStorageKeyRef.current, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
                   return next;
                 })}
@@ -836,8 +842,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
                   if (!target) return current;
                   const next = { ...current, files: { ...current.files, [path]: { ...target, content } } };
                   dirtyPathsRef.current.add(path);
-                  previewRequestRef.current += 1;
-                  setPreviewState('stale');
+                  invalidateDerivedResults();
                   void ensureRepository().save(workspaceStorageKeyRef.current, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
                   return next;
                 })}

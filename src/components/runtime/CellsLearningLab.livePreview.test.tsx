@@ -13,6 +13,7 @@ const runtime = vi.hoisted(() => {
 
 const repository = vi.hoisted(() => ({
   loadResult: { status: 'missing' } as unknown,
+  sessionResult: null as unknown,
   recoveryInfo: { exportable: true, restorable: false },
   save: vi.fn(),
   saveSession: vi.fn(),
@@ -70,7 +71,7 @@ vi.mock('../../engine/cells/cellsRuntimeClient', () => ({
 vi.mock('../../engine/cells/cellsWorkspaceRepository', () => ({
   CellsWorkspaceRepository: class CellsWorkspaceRepository {
     async load() { return repository.loadResult; }
-    async loadSession() { return null; }
+    async loadSession() { return repository.sessionResult; }
     async save(key: string, workspace: unknown) { return repository.save(key, workspace); }
     async saveSession(key: string, session: unknown) { return repository.saveSession(key, session); }
     async remove() { repository.remove(); }
@@ -102,6 +103,7 @@ describe('CellsLearningLab live preview', () => {
     runtime.builds.length = 0;
     runtime.failLoad = false;
     repository.loadResult = { status: 'missing' };
+    repository.sessionResult = null;
     repository.recoveryInfo = { exportable: true, restorable: false };
     repository.save.mockClear();
     repository.saveSession.mockClear();
@@ -153,6 +155,35 @@ describe('CellsLearningLab live preview', () => {
     });
     expect(screen.getByTestId('compiled-preview').textContent).toBe('PREVIEW NUEVA');
     expect(screen.getByText('Vista sincronizada con el proyecto')).toBeTruthy();
+  });
+
+  it('invalida resultados y coverage guardados cuando cambia el código', async () => {
+    repository.sessionResult = {
+      version: 1,
+      activePanel: 'tests',
+      expandedFolders: [],
+      command: 'cells component:test --coverage',
+      previewLocale: 'es',
+      tests: [{ id: 'saved-pass', title: 'Contrato guardado', passed: true, message: 'Superado antes de editar.' }],
+      coverage: {
+        statements: { covered: 1, total: 1, percentage: 100 },
+        behaviors: { covered: 1, total: 1, percentage: 100 },
+      },
+      terminalOutput: '1 de 1 contratos superados.',
+      savedAt: Date.now(),
+    };
+
+    render(<CellsLearningLab lessonId="cells-stale-tests" componentStage="composition" />);
+
+    await waitFor(() => expect(runtime.builds).toHaveLength(1));
+    expect(await screen.findByText('Contrato guardado')).toBeTruthy();
+    expect(screen.getByText('S')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Editar componente' }));
+
+    expect(screen.getByText('Sin comprobaciones ejecutadas')).toBeTruthy();
+    expect(screen.queryByText('Contrato guardado')).toBeNull();
+    expect(screen.queryByText('100%')).toBeNull();
   });
 
   it('reconstruye la vista previa al reiniciar sin exigir otro clic', async () => {
