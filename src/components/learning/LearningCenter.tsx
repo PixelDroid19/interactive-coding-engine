@@ -1,14 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { BookOpenText, Brain, ClipboardCheck, Cloud, CloudOff, LoaderCircle, LockKeyhole, MessagesSquare, Route, X } from 'lucide-react';
-import { useTheme } from '../../themes/ThemeProvider';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BookOpenText, Brain, Cloud, CloudOff, LoaderCircle, LogIn, Route, X } from 'lucide-react';
+import { useAuthSession } from '../../auth/AuthSessionProvider';
 import type { Course } from '../../types/curriculum';
-import type { ExamEvaluation, ExamQuestion } from '../../learning/exam';
-import type { LearningProfile, NotebookEntry, ReviewRating } from '../../learning/types';
-import { ReviewQueue } from './ReviewQueue';
-import { LearningNotebook } from './LearningNotebook';
-import { ExamMode } from './ExamMode';
-import { TechnologyPath } from './TechnologyPath';
+import type { LearningEvidence, LearningProfile, NotebookEntry, ReviewRating } from '../../learning/types';
+import { useTheme } from '../../themes/ThemeProvider';
 import { useModalDialog } from '../useModalDialog';
+import { LearningNotebook } from './LearningNotebook';
+import { LiveHelpSlot, type LiveHelpIntegration } from './LiveHelpSlot';
+import { ReviewQueue } from './ReviewQueue';
+import { TechnologyPath } from './TechnologyPath';
+import type { AuthSession } from '../../services/authSessionApi';
 import {
   cacheLearningCenterSnapshot,
   fetchLearningCenter,
@@ -21,7 +22,7 @@ import {
   withSavedNotebook,
 } from '../../services/learningCenterApi';
 
-type LearningTab = 'review' | 'notebook' | 'exam' | 'leader' | 'path';
+type LearningTab = 'review' | 'notebook' | 'path';
 
 interface LearningCenterProps {
   course: Course;
@@ -29,28 +30,36 @@ interface LearningCenterProps {
   onClose: () => void;
   onRateReview: (reviewId: string, rating: ReviewRating) => Promise<void>;
   onSaveNotebook: (entry: Omit<NotebookEntry, 'id' | 'updatedAt'>) => Promise<void>;
-  onCompleteExam: (questions: ExamQuestion[], result: ExamEvaluation) => Promise<void>;
   onReviewReinforcement: (reinforcementId: string) => Promise<void>;
   onSummaryChange?: (summary: LearningCenterSnapshot['summary']) => void;
+  liveHelpIntegration?: LiveHelpIntegration;
 }
 
-const TABS: Array<{ id: LearningTab; label: string; icon: React.ReactNode; disabled?: boolean; note?: string }> = [
+const TABS: ReadonlyArray<Readonly<{ id: LearningTab; label: string; icon: React.ReactNode }>> = [
   { id: 'review', label: 'Repaso', icon: <Brain size={16} /> },
-  { id: 'notebook', label: 'Cuaderno', icon: <BookOpenText size={16} /> },
-  { id: 'exam', label: 'Examen', icon: <ClipboardCheck size={16} /> },
-  { id: 'leader', label: 'Líder', icon: <MessagesSquare size={16} />, disabled: true, note: 'Requiere revisión externa' },
-  { id: 'path', label: 'Ruta', icon: <Route size={16} /> },
+  { id: 'notebook', label: 'Mis notas', icon: <BookOpenText size={16} /> },
+  { id: 'path', label: 'Mi ruta', icon: <Route size={16} /> },
 ];
 
-function mergeRemoteProfile(profile: LearningProfile, course: Course, snapshot: LearningCenterSnapshot | null): LearningProfile {
-  if (!snapshot) return profile;
-  const remoteSkills = new Set([
+const LOGIN_LABEL: Record<'google' | 'microsoft', string> = {
+  google: 'Continuar con Google',
+  microsoft: 'Continuar con Microsoft',
+};
+
+function getAnonymousSession(session: AuthSession): Extract<AuthSession, { authenticated: false }> | null {
+  return 'providers' in session ? session : null;
+}
+
+function toRemoteEvidence(course: Course, snapshot: LearningCenterSnapshot): LearningEvidence[] {
+  const skillKeys = new Set([
     ...snapshot.reviews.map((entry) => entry.skillKey),
     ...snapshot.notes.map((entry) => entry.skillKey),
     ...snapshot.reinforcements.map((entry) => entry.skillKey),
     ...snapshot.skillGaps.map((entry) => entry.skillKey),
   ]);
-  const syntheticEvidence = [...remoteSkills].map((skillId, index) => ({
+  const timestamp = Date.parse(snapshot.generatedAt);
+
+  return [...skillKeys].map((skillId, index) => ({
     id: `remote:${snapshot.courseSlug}:${skillId}`,
     courseId: course.id,
     itemId: snapshot.skillGaps.find((entry) => entry.skillKey === skillId)?.skillKey ?? `remote-${index}`,
@@ -58,31 +67,98 @@ function mergeRemoteProfile(profile: LearningProfile, course: Course, snapshot: 
     capability: 'recognize' as const,
     result: 'partial' as const,
     source: 'review' as const,
-    timestamp: Date.parse(snapshot.generatedAt),
+    timestamp: Number.isFinite(timestamp) ? timestamp : Date.now(),
   }));
+}
+
+function mergeRemoteProfile(profile: LearningProfile, course: Course, snapshot: LearningCenterSnapshot | null): LearningProfile {
+  if (!snapshot) return profile;
+
+  const evidence = new Map(profile.evidence.map((entry) => [entry.id, entry]));
+  toRemoteEvidence(course, snapshot).forEach((entry) => evidence.set(entry.id, entry));
+
+  const reviews = new Map(profile.reviews.map((entry) => [entry.id, entry]));
+  snapshot.reviews.forEach((entry) => {
+    reviews.set(entry.id, {
+      id: entry.id,
+      courseId: course.id,
+      itemId: entry.itemKey,
+      skillId: entry.skillKey,
+      prompt: entry.prompt,
+      intervalIndex: entry.intervalIndex,
+      dueAt: Date.parse(entry.dueAt),
+      lastReviewedAt: entry.lastReviewedAt ? Date.parse(entry.lastReviewedAt) : 0,
+      repetitions: entry.repetitions,
+    });
+  });
+
+  const notebook = new Map(profile.notebook.map((entry) => [`${entry.courseId}:${entry.skillId}`, entry]));
+  snapshot.notes.forEach((entry) => {
+    notebook.set(`${course.id}:${entry.skillKey}`, {
+      id: entry.id,
+      courseId: course.id,
+      skillId: entry.skillKey,
+      concept: entry.concept,
+      mentalModel: entry.mentalModel,
+      pattern: entry.pattern,
+      ownExample: entry.ownExample,
+      personalMistake: entry.personalMistake,
+      updatedAt: Date.parse(entry.updatedAt),
+    });
+  });
+
+  const reinforcements = new Map(profile.tutor.reinforcements.map((entry) => [entry.id, entry]));
+  snapshot.reinforcements.forEach((entry) => {
+    reinforcements.set(entry.id, {
+      id: entry.id,
+      courseId: course.id,
+      itemId: entry.itemKey,
+      skillId: entry.skillKey,
+      note: entry.note,
+      evidence: entry.evidence,
+      occurrences: entry.occurrences,
+      reviewed: Boolean(entry.reviewedAt),
+      createdAt: Date.parse(entry.createdAt),
+      updatedAt: Date.parse(entry.updatedAt),
+    });
+  });
+
   return {
     ...profile,
-    evidence: [
-      ...profile.evidence.filter((entry) => entry.courseId !== course.id),
-      ...syntheticEvidence,
-    ],
-    reviews: [
-      ...profile.reviews.filter((entry) => entry.courseId !== course.id),
-      ...snapshot.reviews.map((entry) => ({
-        id: entry.id,
-        courseId: course.id,
-        itemId: entry.itemKey,
-        skillId: entry.skillKey,
-        prompt: entry.prompt,
-        intervalIndex: entry.intervalIndex,
-        dueAt: Date.parse(entry.dueAt),
-        lastReviewedAt: entry.lastReviewedAt ? Date.parse(entry.lastReviewedAt) : 0,
-        repetitions: entry.repetitions,
-      })),
-    ],
+    evidence: [...evidence.values()],
+    reviews: [...reviews.values()],
+    notebook: [...notebook.values()],
+    tutor: { ...profile.tutor, reinforcements: [...reinforcements.values()] },
+  };
+}
+
+function notesStillAwaitingRemoteConfirmation(
+  remoteNotes: RemoteNotebookEntry[],
+  confirmedNotes: RemoteNotebookEntry[],
+): RemoteNotebookEntry[] {
+  return confirmedNotes.filter((confirmed) => {
+    const remote = remoteNotes.find((candidate) => candidate.skillKey === confirmed.skillKey);
+    if (!remote) return true;
+
+    const remoteUpdatedAt = Date.parse(remote.updatedAt);
+    const confirmedUpdatedAt = Date.parse(confirmed.updatedAt);
+    return !Number.isFinite(remoteUpdatedAt) || !Number.isFinite(confirmedUpdatedAt) || remoteUpdatedAt < confirmedUpdatedAt;
+  });
+}
+
+function mergeConfirmedNotes(
+  profile: LearningProfile,
+  course: Course,
+  confirmedNotes: RemoteNotebookEntry[],
+): LearningProfile {
+  if (!confirmedNotes.length) return profile;
+
+  const confirmedSkillIds = new Set(confirmedNotes.map((entry) => entry.skillKey));
+  return {
+    ...profile,
     notebook: [
-      ...profile.notebook.filter((entry) => entry.courseId !== course.id),
-      ...snapshot.notes.map((entry) => ({
+      ...profile.notebook.filter((entry) => entry.courseId !== course.id || !confirmedSkillIds.has(entry.skillId)),
+      ...confirmedNotes.map((entry) => ({
         id: entry.id,
         courseId: course.id,
         skillId: entry.skillKey,
@@ -94,45 +170,47 @@ function mergeRemoteProfile(profile: LearningProfile, course: Course, snapshot: 
         updatedAt: Date.parse(entry.updatedAt),
       })),
     ],
-    tutor: {
-      ...profile.tutor,
-      reinforcements: [
-        ...profile.tutor.reinforcements.filter((entry) => entry.courseId !== course.id),
-        ...snapshot.reinforcements.map((entry) => ({
-          id: entry.id,
-          courseId: course.id,
-          itemId: entry.itemKey,
-          skillId: entry.skillKey,
-          note: entry.note,
-          evidence: entry.evidence,
-          occurrences: entry.occurrences,
-          reviewed: Boolean(entry.reviewedAt),
-          createdAt: Date.parse(entry.createdAt),
-          updatedAt: Date.parse(entry.updatedAt),
-        })),
-      ],
-    },
   };
 }
 
-function notesStillAwaitingRemoteConfirmation(
-  remoteNotes: RemoteNotebookEntry[],
-  confirmedNotes: RemoteNotebookEntry[],
-): RemoteNotebookEntry[] {
-  return confirmedNotes.filter((confirmed) => {
-    const remote = remoteNotes.find((candidate) => candidate.skillKey === confirmed.skillKey);
-    if (!remote) return true;
-    const remoteUpdatedAt = Date.parse(remote.updatedAt);
-    const confirmedUpdatedAt = Date.parse(confirmed.updatedAt);
-    if (!Number.isFinite(remoteUpdatedAt) || !Number.isFinite(confirmedUpdatedAt)) return true;
-    return remoteUpdatedAt < confirmedUpdatedAt;
-  });
+function AccessState({
+  title,
+  description,
+  action,
+}: Readonly<{
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}>) {
+  return (
+    <main className="learning-center__access-state">
+      <section className="learning-empty" aria-live="polite">
+        <h3>{title}</h3>
+        <p>{description}</p>
+        {action}
+      </section>
+    </main>
+  );
 }
 
-export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile, onClose, onRateReview, onSaveNotebook, onCompleteExam, onReviewReinforcement, onSummaryChange }) => {
+export const LearningCenter: React.FC<LearningCenterProps> = ({
+  course,
+  profile,
+  onClose,
+  onRateReview,
+  onSaveNotebook,
+  onReviewReinforcement,
+  onSummaryChange,
+  liveHelpIntegration,
+}) => {
   const dialogRef = useModalDialog<HTMLElement>({ open: true, onClose });
+  const auth = useAuthSession();
+  const { themeId } = useTheme();
+  const isStudent = auth.status === 'ready'
+    && auth.session.authenticated
+    && auth.session.user.roles.includes('student');
+  const cached = useMemo(() => (isStudent ? getCachedLearningCenter(course.slug) : null), [course.slug, isStudent]);
   const [tab, setTab] = useState<LearningTab>('review');
-  const cached = useMemo(() => getCachedLearningCenter(course.slug), [course.slug]);
   const [snapshot, setSnapshot] = useState<LearningCenterSnapshot | null>(cached?.snapshot ?? null);
   const snapshotRef = useRef<LearningCenterSnapshot | null>(snapshot);
   const [confirmedNotes, setConfirmedNotes] = useState<RemoteNotebookEntry[]>([]);
@@ -140,33 +218,7 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
   const onSummaryChangeRef = useRef(onSummaryChange);
   const [remoteStatus, setRemoteStatus] = useState<'loading' | 'ready' | 'cached' | 'error'>(cached ? (cached.fresh ? 'ready' : 'cached') : 'loading');
   const [remoteMessage, setRemoteMessage] = useState('');
-  const { themeId } = useTheme();
   const isCyber = themeId === 'cyber';
-  const effectiveProfile = useMemo(() => {
-    const merged = mergeRemoteProfile(profile, course, snapshot);
-    if (!confirmedNotes.length) return merged;
-    const confirmedSkills = new Set(confirmedNotes.map((entry) => entry.skillKey));
-    return {
-      ...merged,
-      notebook: [
-        ...merged.notebook.filter((entry) => entry.courseId !== course.id || !confirmedSkills.has(entry.skillId)),
-        ...confirmedNotes.map((entry) => ({
-          id: entry.id,
-          courseId: course.id,
-          skillId: entry.skillKey,
-          concept: entry.concept,
-          mentalModel: entry.mentalModel,
-          pattern: entry.pattern,
-          ownExample: entry.ownExample,
-          personalMistake: entry.personalMistake,
-          updatedAt: Date.parse(entry.updatedAt),
-        })),
-      ],
-    };
-  }, [confirmedNotes, course, profile, snapshot]);
-  const dueCount = snapshot?.summary.dueReviews ?? effectiveProfile.reviews.filter((entry) => entry.courseId === course.id && entry.dueAt <= Date.now()).length;
-  const reinforcementCount = snapshot?.summary.reinforcements ?? effectiveProfile.tutor.reinforcements.filter((entry) => entry.courseId === course.id && !entry.reviewed).length;
-  const noteCount = snapshot?.summary.notes ?? effectiveProfile.notebook.filter((entry) => entry.courseId === course.id).length;
 
   useEffect(() => {
     onSummaryChangeRef.current = onSummaryChange;
@@ -176,7 +228,17 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
     if (snapshot) onSummaryChangeRef.current?.(snapshot.summary);
   }, [snapshot]);
 
-  const refresh = async (signal?: AbortSignal) => {
+  useEffect(() => {
+    confirmedNotesRef.current = [];
+    setConfirmedNotes([]);
+    const nextSnapshot = isStudent ? cached?.snapshot ?? null : null;
+    snapshotRef.current = nextSnapshot;
+    setSnapshot(nextSnapshot);
+    setRemoteStatus(nextSnapshot ? (cached?.fresh ? 'ready' : 'cached') : 'loading');
+    setRemoteMessage('');
+  }, [cached?.fresh, cached?.snapshot, course.slug, isStudent]);
+
+  const refresh = useCallback(async (signal?: AbortSignal) => {
     try {
       const remote = await fetchLearningCenter(course.slug, signal);
       const pendingConfirmations = notesStillAwaitingRemoteConfirmation(remote.notes, confirmedNotesRef.current);
@@ -193,27 +255,25 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
       setRemoteStatus(snapshotRef.current ? 'cached' : 'error');
       setRemoteMessage(error instanceof Error ? error.message : 'No se pudo sincronizar tu aprendizaje.');
     }
-  };
-
-  useEffect(() => {
-    confirmedNotesRef.current = [];
-    setConfirmedNotes([]);
   }, [course.slug]);
 
   useEffect(() => {
-    if (cached?.fresh) {
-      return;
-    }
+    if (!isStudent || cached?.fresh) return;
     const controller = new AbortController();
     void refresh(controller.signal);
     return () => controller.abort();
-  // cached se calcula por curso y no debe reiniciar la consulta por cada render.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [course.slug]);
+  }, [cached?.fresh, isStudent, refresh]);
+
+  const effectiveProfile = useMemo(
+    () => mergeConfirmedNotes(mergeRemoteProfile(profile, course, snapshot), course, confirmedNotes),
+    [confirmedNotes, course, profile, snapshot],
+  );
+  const dueCount = snapshot?.summary.dueReviews ?? effectiveProfile.reviews.filter((entry) => entry.courseId === course.id && entry.dueAt <= Date.now()).length;
+  const reinforcementCount = snapshot?.summary.reinforcements ?? effectiveProfile.tutor.reinforcements.filter((entry) => entry.courseId === course.id && !entry.reviewed).length;
+  const noteCount = snapshot?.summary.notes ?? effectiveProfile.notebook.filter((entry) => entry.courseId === course.id).length;
 
   const rateReview = async (reviewId: string, rating: ReviewRating) => {
-    const isRemote = Boolean(snapshot?.reviews.some((entry) => entry.id === reviewId));
-    if (isRemote) {
+    if (snapshot?.reviews.some((entry) => entry.id === reviewId)) {
       await rateRemoteReview(reviewId, rating);
       await refresh();
       return;
@@ -231,15 +291,15 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
       personalMistake: entry.personalMistake,
     });
     await onSaveNotebook(entry);
+
     const nextConfirmed = [
       ...confirmedNotesRef.current.filter((candidate) => candidate.skillKey !== savedEntry.skillKey),
       savedEntry,
     ];
     confirmedNotesRef.current = nextConfirmed;
     setConfirmedNotes(nextConfirmed);
-    const currentSnapshot = snapshotRef.current;
-    if (currentSnapshot) {
-      const next = withSavedNotebook(currentSnapshot, savedEntry);
+    if (snapshotRef.current) {
+      const next = withSavedNotebook(snapshotRef.current, savedEntry);
       snapshotRef.current = next;
       setSnapshot(next);
       cacheLearningCenterSnapshot(next);
@@ -247,46 +307,125 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
   };
 
   const reviewReinforcement = async (reinforcementId: string) => {
-    const isRemote = Boolean(snapshot?.reinforcements.some((entry) => entry.id === reinforcementId));
-    if (isRemote) {
+    if (snapshot?.reinforcements.some((entry) => entry.id === reinforcementId)) {
       await markRemoteReinforcementReviewed(reinforcementId);
       await refresh();
       return;
     }
     await onReviewReinforcement(reinforcementId);
   };
+
+  const selectTabFromKeyboard = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const key = event.key;
+    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End'].includes(key)) {
+      if (key === 'Enter' || key === ' ') setTab(TABS[index].id);
+      return;
+    }
+    event.preventDefault();
+    const direction = key === 'ArrowDown' || key === 'ArrowRight' ? 1 : key === 'ArrowUp' || key === 'ArrowLeft' ? -1 : 0;
+    const nextIndex = key === 'Home' ? 0 : key === 'End' ? TABS.length - 1 : (index + direction + TABS.length) % TABS.length;
+    const tabs = event.currentTarget.closest('[role="tablist"]')?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
+    tabs?.[nextIndex]?.focus();
+  };
+
+  const renderStudentContent = () => (
+    <>
+      <div className="learning-center__summary" role="group" aria-label="Resumen de aprendizaje">
+        <span><strong>{dueCount}</strong> {dueCount === 1 ? 'repaso pendiente' : 'repasos pendientes'}</span>
+        <span><strong>{reinforcementCount}</strong> por reforzar</span>
+        <span><strong>{noteCount}</strong> {noteCount === 1 ? 'nota propia' : 'notas propias'}</span>
+      </div>
+      <nav role="tablist" aria-label="Secciones de aprendizaje">
+        {TABS.map((candidate, index) => {
+          const selected = tab === candidate.id;
+          return (
+            <button
+              key={candidate.id}
+              id={`learning-tab-${candidate.id}`}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              aria-controls={`learning-panel-${candidate.id}`}
+              tabIndex={selected ? 0 : -1}
+              className={selected ? 'is-active' : ''}
+              onClick={() => setTab(candidate.id)}
+              onKeyDown={(event) => selectTabFromKeyboard(event, index)}
+            >
+              {candidate.icon}<span>{candidate.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+      <main
+        id={`learning-panel-${tab}`}
+        role="tabpanel"
+        aria-label={TABS.find((candidate) => candidate.id === tab)?.label}
+        aria-labelledby={`learning-tab-${tab}`}
+        tabIndex={0}
+      >
+        {tab === 'review' && <>
+          <ReviewQueue courseId={course.id} profile={effectiveProfile} onRate={rateReview} onReviewReinforcement={reviewReinforcement} />
+          {liveHelpIntegration && <LiveHelpSlot integration={liveHelpIntegration} />}
+        </>}
+        {tab === 'notebook' && <LearningNotebook courseId={course.id} profile={effectiveProfile} onSave={saveNotebook} />}
+        {tab === 'path' && <TechnologyPath currentCourseId={course.id} />}
+      </main>
+    </>
+  );
+
+  const renderAccessContent = () => {
+    if (auth.status === 'loading') {
+      return <AccessState title="Comprobando tu sesión" description="Tus cursos y prácticas seguirán disponibles mientras verificamos el acceso." />;
+    }
+    if (auth.status === 'error') {
+      return <AccessState title="No pudimos comprobar tu sesión" description={auth.error} />;
+    }
+    const anonymousSession = getAnonymousSession(auth.session);
+    if (anonymousSession) {
+      return (
+        <AccessState
+          title="Inicia sesión para ver tu aprendizaje"
+          description="Tus cursos y prácticas siguen disponibles; inicia sesión para recuperar tus repasos y notas personales."
+          action={anonymousSession.providers.length > 0 ? (
+            <div className="learning-center__login-actions">
+              {anonymousSession.providers.map((provider) => (
+                <button key={provider} type="button" className="learning-primary" disabled={auth.busy} onClick={() => auth.login(provider)}>
+                  <LogIn size={16} aria-hidden="true" />{LOGIN_LABEL[provider]}
+                </button>
+              ))}
+            </div>
+          ) : undefined}
+        />
+      );
+    }
+    return <AccessState title="Esta cuenta no tiene acceso de alumno" description="El Centro de aprendizaje solo muestra datos personales a cuentas con el rol de alumno." />;
+  };
+
   return (
     <div className="learning-center-backdrop" onClick={onClose}>
       <section
         ref={dialogRef}
-        className="learning-center"
+        className={`learning-center${isStudent ? '' : ' learning-center--access'}`}
         role="dialog"
         aria-modal="true"
         aria-label="Centro de aprendizaje"
         onClick={(event) => event.stopPropagation()}
-        data-augmented-ui={isCyber ? "learning-center-modal tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
+        data-augmented-ui={isCyber ? 'learning-center-modal tl-clip tr-clip br-clip bl-clip border inlay' : undefined}
       >
-        <header><div><span>TU PROGRESO</span><h2>Centro de aprendizaje</h2><p>Repasa, explica y organiza lo que estás aprendiendo en {course.title}.</p><div className={`learning-center__sync is-${remoteStatus}`} role="status">{remoteStatus === 'loading' ? <LoaderCircle size={13} className="animate-spin" /> : remoteStatus === 'ready' ? <Cloud size={13} /> : <CloudOff size={13} />}<span>{remoteStatus === 'loading' ? 'Sincronizando tu progreso…' : remoteStatus === 'ready' ? 'Progreso sincronizado' : remoteStatus === 'cached' ? 'Mostrando la última copia disponible' : 'No pudimos recuperar tu progreso'}</span>{remoteMessage && <small>{remoteMessage}</small>}</div></div><button type="button" data-dialog-initial-focus onClick={onClose} aria-label="Cerrar centro de aprendizaje"><X size={19} /></button></header>
-        <div className="learning-center__summary" role="group" aria-label="Resumen de aprendizaje">
-          <span><strong>{dueCount}</strong> {dueCount === 1 ? 'repaso pendiente' : 'repasos pendientes'}</span>
-          <span><strong>{reinforcementCount}</strong> por reforzar</span>
-          <span><strong>{noteCount}</strong> {noteCount === 1 ? 'nota propia' : 'notas propias'}</span>
-        </div>
-        <nav aria-label="Herramientas de aprendizaje">{TABS.map((candidate) => <button key={candidate.id} type="button" className={tab === candidate.id ? 'is-active' : ''} disabled={candidate.disabled} aria-label={candidate.disabled ? `${candidate.label} · ${candidate.note}` : candidate.label} title={candidate.note} onClick={() => setTab(candidate.id)}>{candidate.disabled ? <LockKeyhole size={15} /> : candidate.icon}<span>{candidate.label}{candidate.note && <small>Próximamente</small>}</span></button>)}</nav>
-        <main>
-          {tab === 'review' && <ReviewQueue courseId={course.id} profile={effectiveProfile} onRate={rateReview} onReviewReinforcement={reviewReinforcement} />}
-          {tab === 'notebook' && <LearningNotebook courseId={course.id} profile={effectiveProfile} onSave={saveNotebook} />}
-          {tab === 'exam' && <ExamMode
-            courseId={course.id}
-            profile={effectiveProfile}
-            fallbackConcepts={course.tags.map((label) => ({
-              skillId: label.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-              label,
-            }))}
-            onComplete={onCompleteExam}
-          />}
-          {tab === 'path' && <TechnologyPath currentCourseId={course.id} />}
-        </main>
+        <header>
+          <div>
+            <span>TU APRENDIZAJE</span>
+            <h2>Centro de aprendizaje</h2>
+            <p>Repasa, explica y organiza lo que estás aprendiendo en {course.title}.</p>
+            {isStudent && <div className={`learning-center__sync is-${remoteStatus}`} role="status">
+              {remoteStatus === 'loading' ? <LoaderCircle size={13} className="animate-spin" /> : remoteStatus === 'ready' ? <Cloud size={13} /> : <CloudOff size={13} />}
+              <span>{remoteStatus === 'loading' ? 'Sincronizando tu progreso…' : remoteStatus === 'ready' ? 'Progreso sincronizado' : remoteStatus === 'cached' ? 'Mostrando la última copia disponible' : 'No pudimos recuperar tu progreso'}</span>
+              {remoteMessage && <small>{remoteMessage}</small>}
+            </div>}
+          </div>
+          <button type="button" data-dialog-initial-focus onClick={onClose} aria-label="Cerrar centro de aprendizaje"><X size={19} /></button>
+        </header>
+        {isStudent ? renderStudentContent() : renderAccessContent()}
       </section>
     </div>
   );

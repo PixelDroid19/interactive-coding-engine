@@ -22,6 +22,9 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
   const [saving, setSaving] = useState(false);
   const active = due[0];
   const reinforcements = profile.tutor.reinforcements.filter((entry) => entry.courseId === courseId && !entry.reviewed).sort((left, right) => right.updatedAt - left.updatedAt);
+  const hasObservedActivity = profile.evidence.some((entry) => entry.courseId === courseId)
+    || profile.notebook.some((entry) => entry.courseId === courseId)
+    || reinforcements.length > 0;
 
   const reinforcementCards = reinforcements.length > 0 && (
     <section className="tutor-reinforcements" aria-labelledby="tutor-reinforcements-title">
@@ -42,8 +45,8 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
       <div className="review-overview">
         {reinforcementCards}
         <div className="learning-empty">
-          <strong>Tu repaso programado está al día.</strong>
-          <p>{upcoming ? `El próximo llega ${new Date(upcoming.dueAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}.` : 'Completa una lectura o práctica para crear tu primera tarjeta.'}</p>
+          <strong>{upcoming ? 'Tu repaso programado está al día.' : hasObservedActivity ? 'Tu actividad todavía no generó un repaso programado.' : 'Aún no tienes actividad para repasar.'}</strong>
+          <p>{upcoming ? `El próximo llega ${new Date(upcoming.dueAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'long' })}.` : hasObservedActivity ? 'Tu siguiente tarjeta aparecerá cuando haya evidencia suficiente para programarla.' : 'Completa una lectura, práctica o desafío para que aparezca tu primer repaso.'}</p>
         </div>
       </div>
     );

@@ -4,305 +4,217 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FUNDAMENTOS_COURSE } from '../../curriculum/fundamentos/course';
 import { createEmptyLearningProfile } from '../../learning/mastery';
+import type { LearningProfile } from '../../learning/types';
 import { LearningCenter } from './LearningCenter';
 
+const auth = vi.hoisted(() => ({ useAuthSession: vi.fn() }));
+
+vi.mock('../../auth/AuthSessionProvider', () => ({ useAuthSession: auth.useAuthSession }));
+
+const STUDENT_AUTH = {
+  status: 'ready' as const,
+  session: {
+    authenticated: true as const,
+    user: { id: 'student-1', email: 'alumna@example.com', displayName: 'Alumna', roles: ['student'] },
+    csrfToken: 'csrf-token-de-alumna-seguro',
+  },
+  error: null,
+  busy: false,
+  login: vi.fn(),
+  logout: vi.fn(),
+  refresh: vi.fn(),
+  verification: { open: false, emailHint: '', deliveryFailed: false, error: null, busy: false, resendReadyAt: 0 },
+  verifyEmail: vi.fn(),
+  resendCode: vi.fn(),
+  dismissVerification: vi.fn(),
+};
+
+const emptySnapshot = {
+  courseSlug: 'fundamentos',
+  generatedAt: new Date(0).toISOString(),
+  summary: { dueReviews: 0, reinforcements: 0, notes: 0, averageMastery: null, activeSkills: 0 },
+  reviews: [], notes: [], skillGaps: [], recentItems: [], reinforcements: [],
+};
+
+function profileWithSkill(skillId = 'return-values'): LearningProfile {
+  const profile = createEmptyLearningProfile(0);
+  profile.evidence.push({
+    id: `evidence:${skillId}`,
+    courseId: FUNDAMENTOS_COURSE.id,
+    itemId: 'fundamentos-07',
+    skillId,
+    capability: 'explain',
+    result: 'partial',
+    source: 'challenge',
+    timestamp: 1,
+  });
+  return profile;
+}
+
+function renderCenter(profile = createEmptyLearningProfile(0)) {
+  return render(
+    <LearningCenter
+      course={FUNDAMENTOS_COURSE}
+      profile={profile}
+      onClose={vi.fn()}
+      onRateReview={vi.fn(async () => undefined)}
+      onSaveNotebook={vi.fn(async () => undefined)}
+      onReviewReinforcement={vi.fn(async () => undefined)}
+    />,
+  );
+}
+
 describe('LearningCenter', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
+    auth.useAuthSession.mockReturnValue(STUDENT_AUTH);
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(emptySnapshot), {
+      status: 200, headers: { 'content-type': 'application/json' },
+    }));
+  });
+
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
   });
-  beforeEach(() => {
-    localStorage.clear();
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
-      courseSlug: 'fundamentos',
-      generatedAt: new Date(0).toISOString(),
-      summary: { dueReviews: 0, reinforcements: 1, notes: 0, averageMastery: null, activeSkills: 1 },
-      reviews: [], notes: [], skillGaps: [], recentItems: [],
+
+  it('solo ofrece Repaso, Mis notas y Mi ruta a una alumna autenticada, con teclado', async () => {
+    renderCenter();
+
+    await screen.findByText('Progreso sincronizado');
+    const tablist = screen.getByRole('tablist', { name: 'Secciones de aprendizaje' });
+    expect(tablist).toBeTruthy();
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Repaso', 'Mis notas', 'Mi ruta']);
+    expect(screen.queryByRole('tab', { name: 'Examen' })).toBeNull();
+    expect(screen.queryByRole('tab', { name: 'Líder' })).toBeNull();
+
+    const review = screen.getByRole('tab', { name: 'Repaso' });
+    fireEvent.keyDown(review, { key: 'ArrowDown' });
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Mis notas' }));
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Mis notas' }), { key: 'Enter' });
+    expect(screen.getByRole('tab', { name: 'Mis notas' }).getAttribute('aria-selected')).toBe('true');
+    expect(screen.getByRole('tabpanel', { name: 'Mis notas' })).toBeTruthy();
+  });
+
+  it('no muestra evaluaciones inventadas ni las deriva de las etiquetas del curso', async () => {
+    renderCenter();
+
+    await screen.findByText('Progreso sincronizado');
+    expect(screen.queryByRole('heading', { name: 'Sin evaluación asignada' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Evaluar respuestas' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Examen mixto' })).toBeNull();
+  });
+
+  it('muestra estados vacíos de repaso y notas sin crear un concepto de relleno', async () => {
+    renderCenter();
+
+    await screen.findByText('Progreso sincronizado');
+    expect(screen.getByText('Aún no tienes actividad para repasar.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('tab', { name: 'Mis notas' }));
+    expect(screen.getByRole('heading', { name: 'Aún no hay conceptos para anotar' })).toBeTruthy();
+    expect(screen.queryByDisplayValue('primer-concepto')).toBeNull();
+  });
+
+  it('deriva los conceptos por reforzar de eventos remotos reales sin mostrar ayuda en vivo inerte', async () => {
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(new Response(JSON.stringify({
+      ...emptySnapshot,
+      summary: { ...emptySnapshot.summary, reinforcements: 1, activeSkills: 1 },
       reinforcements: [{
-        id: 'a32b923e-1f3d-45f7-b2e7-cf86a1956136', itemKey: 'fundamentos-07', skillKey: 'return-values',
-        note: 'Distingue mostrar un dato de devolverlo.', evidence: 'El mismo error apareció en tres intentos.',
+        id: 'reinforcement-1', itemKey: 'fundamentos-07', skillKey: 'return-values',
+        note: 'Distingue mostrar un dato de devolverlo.', evidence: 'El mismo error apareció tres veces.',
         occurrences: 3, reviewedAt: null, createdAt: new Date(1).toISOString(), updatedAt: new Date(2).toISOString(),
       }],
     }), { status: 200, headers: { 'content-type': 'application/json' } }));
-  });
 
-  it('reúne repaso, cuaderno, examen, entrevista y ruta sin salir del curso', () => {
-    const profile = createEmptyLearningProfile(0);
-    profile.tutor.reinforcements.push({
-      id: 'tutor:course-fundamentos:return-values',
-      courseId: FUNDAMENTOS_COURSE.id,
-      itemId: 'fundamentos-07',
-      skillId: 'return-values',
-      note: 'Distingue mostrar un dato de devolverlo.',
-      evidence: 'El mismo error apareció en tres intentos.',
-      occurrences: 3,
-      reviewed: false,
-      createdAt: 1,
-      updatedAt: 2,
-    });
-    const onReviewReinforcement = vi.fn(async () => undefined);
-    render(
-      <LearningCenter
-        course={FUNDAMENTOS_COURSE}
-        profile={profile}
-        onClose={vi.fn()}
-        onRateReview={vi.fn(async () => undefined)}
-        onSaveNotebook={vi.fn(async () => undefined)}
-        onCompleteExam={vi.fn(async () => undefined)}
-        onReviewReinforcement={onReviewReinforcement}
-      />,
-    );
+    renderCenter();
 
-    expect(screen.getByRole('dialog', { name: 'Centro de aprendizaje' })).toBeTruthy();
-    const summary = screen.getByRole('group', { name: 'Resumen de aprendizaje' });
-    expect(summary.textContent).toContain('1 por reforzar');
-    expect(summary.textContent).toContain('0 notas propias');
-    expect(screen.getByRole('heading', { name: 'Conceptos para reforzar' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'Conceptos para reforzar' })).toBeTruthy();
     expect(screen.getByText('Distingue mostrar un dato de devolverlo.')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Marcar return values como repasado' }));
-    expect(onReviewReinforcement).toHaveBeenCalledWith('tutor:course-fundamentos:return-values');
-
-    fireEvent.click(screen.getByRole('button', { name: /^Cuaderno$/ }));
-    expect(screen.getByRole('heading', { name: 'Tu explicación corta, no otra documentación' })).toBeTruthy();
-
-    fireEvent.click(screen.getByRole('button', { name: /^Examen$/ }));
-    expect(screen.getByRole('heading', { name: 'Examen mixto' })).toBeTruthy();
-    expect(screen.queryByText(/fundamentos del curso/i)).toBeNull();
-    expect(screen.getByText(/Define JavaScript/i)).toBeTruthy();
-
-    const leader = screen.getByRole('button', { name: /Líder.*requiere revisión externa/i });
-    expect((leader as HTMLButtonElement).disabled).toBe(true);
-    expect(screen.queryByRole('heading', { name: 'Defiende tus decisiones' })).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: /^Ruta$/ }));
-    expect(screen.getByRole('heading', { name: 'De una instrucción a una aplicación Cells' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Ayuda en vivo' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /solicitar ayuda/i })).toBeNull();
   });
 
-  it('actualiza el contador de notas con la escritura confirmada sin esperar otra lectura', async () => {
-    const onSummaryChange = vi.fn();
-    const emptySnapshot = {
-      courseSlug: 'fundamentos',
-      generatedAt: new Date(0).toISOString(),
-      summary: { dueReviews: 0, reinforcements: 0, notes: 0, averageMastery: null, activeSkills: 0 },
-      reviews: [], notes: [], skillGaps: [], recentItems: [], reinforcements: [],
-    };
-    const savedEntry = {
-      id: '2f36b5d7-a34a-413a-9b61-6aad4dca32e2',
-      skillKey: 'primer-concepto',
-      concept: 'primer concepto',
-      mentalModel: 'Una secuencia de pasos observables.',
-      pattern: '',
-      ownExample: '',
-      personalMistake: '',
-      updatedAt: new Date(1).toISOString(),
-    };
+  it('pide iniciar sesión sin consultar ni inventar progreso para una persona anónima', async () => {
+    const login = vi.fn();
+    auth.useAuthSession.mockReturnValue({
+      ...STUDENT_AUTH,
+      session: { authenticated: false, providers: ['google'] },
+      login,
+    });
+
+    renderCenter();
+
+    expect(await screen.findByRole('heading', { name: 'Inicia sesión para ver tu aprendizaje' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar con Google' }));
+    expect(login).toHaveBeenCalledWith('google');
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(screen.queryByRole('tablist', { name: 'Secciones de aprendizaje' })).toBeNull();
+  });
+
+  it('no expone datos de estudiante a una cuenta autenticada sin el rol alumno', async () => {
+    auth.useAuthSession.mockReturnValue({
+      ...STUDENT_AUTH,
+      session: {
+        ...STUDENT_AUTH.session,
+        user: { ...STUDENT_AUTH.session.user, roles: ['tutor'] },
+      },
+    });
+
+    renderCenter();
+
+    expect(await screen.findByRole('heading', { name: 'Esta cuenta no tiene acceso de alumno' })).toBeTruthy();
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('guarda una nota de un concepto observado, conserva el borrador y permite reintentar ante un error remoto', async () => {
     vi.mocked(globalThis.fetch)
       .mockReset()
       .mockResolvedValueOnce(new Response(JSON.stringify(emptySnapshot), { status: 200, headers: { 'content-type': 'application/json' } }))
-      .mockResolvedValueOnce(new Response(JSON.stringify(savedEntry), { status: 200, headers: { 'content-type': 'application/json' } }));
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: { message: 'Base de datos no disponible' } }), { status: 503, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        id: 'saved-after-retry', skillKey: 'return-values', concept: 'return values',
+        mentalModel: 'Un valor debe salir de la función para reutilizarlo.', pattern: '', ownExample: '', personalMistake: '',
+        updatedAt: new Date(3).toISOString(),
+      }), { status: 200, headers: { 'content-type': 'application/json' } }));
 
-    render(
-      <LearningCenter
-        course={FUNDAMENTOS_COURSE}
-        profile={createEmptyLearningProfile(0)}
-        onClose={vi.fn()}
-        onRateReview={vi.fn(async () => undefined)}
-        onSaveNotebook={vi.fn(async () => undefined)}
-        onCompleteExam={vi.fn(async () => undefined)}
-        onReviewReinforcement={vi.fn(async () => undefined)}
-        onSummaryChange={onSummaryChange}
-      />,
-    );
+    renderCenter(profileWithSkill());
 
-    await waitFor(() => expect(screen.getByLabelText('Resumen de aprendizaje').textContent).toContain('0 notas propias'));
-    fireEvent.click(screen.getByRole('button', { name: /^Cuaderno$/ }));
-    fireEvent.change(screen.getByLabelText('Modelo mental'), { target: { value: savedEntry.mentalModel } });
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar ficha' }));
-
-    await waitFor(() => expect(screen.getByLabelText('Resumen de aprendizaje').textContent).toContain('1 nota propia'));
-    expect(screen.getByRole('button', { name: 'Guardado' })).toBeTruthy();
-    expect(onSummaryChange).toHaveBeenLastCalledWith(expect.objectContaining({ notes: 1 }));
-    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
-  });
-
-  it('conserva el borrador y permite reintentar si el guardado remoto falla', async () => {
-    const emptySnapshot = {
-      courseSlug: 'fundamentos',
-      generatedAt: new Date(0).toISOString(),
-      summary: { dueReviews: 0, reinforcements: 0, notes: 0, averageMastery: null, activeSkills: 0 },
-      reviews: [], notes: [], skillGaps: [], recentItems: [], reinforcements: [],
-    };
-    vi.mocked(globalThis.fetch)
-      .mockReset()
-      .mockResolvedValueOnce(new Response(JSON.stringify(emptySnapshot), { status: 200, headers: { 'content-type': 'application/json' } }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ error: 'Base de datos no disponible' }), { status: 503, headers: { 'content-type': 'application/json' } }));
-
-    render(
-      <LearningCenter
-        course={FUNDAMENTOS_COURSE}
-        profile={createEmptyLearningProfile(0)}
-        onClose={vi.fn()}
-        onRateReview={vi.fn(async () => undefined)}
-        onSaveNotebook={vi.fn(async () => undefined)}
-        onCompleteExam={vi.fn(async () => undefined)}
-        onReviewReinforcement={vi.fn(async () => undefined)}
-      />,
-    );
-
-    await waitFor(() => expect(screen.getByText('Progreso sincronizado')).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: /^Cuaderno$/ }));
+    await screen.findByText('Progreso sincronizado');
+    fireEvent.click(screen.getByRole('tab', { name: 'Mis notas' }));
     const mentalModel = screen.getByLabelText('Modelo mental') as HTMLTextAreaElement;
-    fireEvent.change(mentalModel, { target: { value: 'Este borrador no debe desaparecer.' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar ficha' }));
+    fireEvent.change(mentalModel, { target: { value: 'Un valor debe salir de la función para reutilizarlo.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain('No se pudo guardar');
-    expect(mentalModel.value).toBe('Este borrador no debe desaparecer.');
-    expect(screen.getByRole('button', { name: 'Reintentar guardado' })).toBeTruthy();
-    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
-  });
-
-  it('congela el borrador mientras el backend confirma exactamente esa versión', async () => {
-    const emptySnapshot = {
-      courseSlug: 'fundamentos',
-      generatedAt: new Date(0).toISOString(),
-      summary: { dueReviews: 0, reinforcements: 0, notes: 0, averageMastery: null, activeSkills: 0 },
-      reviews: [], notes: [], skillGaps: [], recentItems: [], reinforcements: [],
-    };
-    let finishSave!: (response: Response) => void;
-    const pendingSave = new Promise<Response>((resolve) => { finishSave = resolve; });
-    vi.mocked(globalThis.fetch)
-      .mockReset()
-      .mockResolvedValueOnce(new Response(JSON.stringify(emptySnapshot), { status: 200, headers: { 'content-type': 'application/json' } }))
-      .mockReturnValueOnce(pendingSave);
-
-    render(
-      <LearningCenter
-        course={FUNDAMENTOS_COURSE}
-        profile={createEmptyLearningProfile(0)}
-        onClose={vi.fn()}
-        onRateReview={vi.fn(async () => undefined)}
-        onSaveNotebook={vi.fn(async () => undefined)}
-        onCompleteExam={vi.fn(async () => undefined)}
-        onReviewReinforcement={vi.fn(async () => undefined)}
-      />,
-    );
-
-    await waitFor(() => expect(screen.getByText('Progreso sincronizado')).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: /^Cuaderno$/ }));
-    fireEvent.change(screen.getByLabelText('Modelo mental'), { target: { value: 'Versión que se está guardando.' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar ficha' }));
-
-    expect((screen.getByLabelText('Concepto') as HTMLSelectElement).disabled).toBe(true);
-    screen.getAllByRole('textbox').forEach((field) => expect((field as HTMLTextAreaElement).disabled).toBe(true));
-
-    finishSave(new Response(JSON.stringify({
-      id: 'saved-1', skillKey: 'primer-concepto', concept: 'primer concepto',
-      mentalModel: 'Versión que se está guardando.', pattern: '', ownExample: '', personalMistake: '',
-      updatedAt: new Date(1).toISOString(),
-    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    expect(mentalModel.value).toBe('Un valor debe salir de la función para reutilizarlo.');
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar guardado' }));
     expect(await screen.findByRole('button', { name: 'Guardado' })).toBeTruthy();
+    expect(mentalModel.value).toBe('Un valor debe salir de la función para reutilizarlo.');
   });
 
-  it('no deja que una lectura anterior borre una nota confirmada después', async () => {
-    const staleSnapshot = {
-      courseSlug: 'fundamentos',
-      generatedAt: new Date(0).toISOString(),
-      summary: { dueReviews: 0, reinforcements: 0, notes: 0, averageMastery: null, activeSkills: 0 },
-      reviews: [], notes: [], skillGaps: [], recentItems: [], reinforcements: [],
-    };
+  it('mantiene la nota confirmada si una lectura anterior llega después del guardado', async () => {
     let finishInitialRead!: (response: Response) => void;
     const pendingInitialRead = new Promise<Response>((resolve) => { finishInitialRead = resolve; });
+    const savedEntry = {
+      id: 'saved-race', skillKey: 'return-values', concept: 'return values',
+      mentalModel: 'Confirmada después de iniciar la lectura.', pattern: '', ownExample: '', personalMistake: '',
+      updatedAt: new Date(2).toISOString(),
+    };
     vi.mocked(globalThis.fetch)
       .mockReset()
       .mockReturnValueOnce(pendingInitialRead)
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        id: 'saved-race', skillKey: 'primer-concepto', concept: 'primer concepto',
-        mentalModel: 'Confirmada después de iniciar la lectura.', pattern: '', ownExample: '', personalMistake: '',
-        updatedAt: new Date(2).toISOString(),
-      }), { status: 200, headers: { 'content-type': 'application/json' } }));
+      .mockResolvedValueOnce(new Response(JSON.stringify(savedEntry), { status: 200, headers: { 'content-type': 'application/json' } }));
 
-    render(
-      <LearningCenter
-        course={FUNDAMENTOS_COURSE}
-        profile={createEmptyLearningProfile(0)}
-        onClose={vi.fn()}
-        onRateReview={vi.fn(async () => undefined)}
-        onSaveNotebook={vi.fn(async () => undefined)}
-        onCompleteExam={vi.fn(async () => undefined)}
-        onReviewReinforcement={vi.fn(async () => undefined)}
-      />,
-    );
+    renderCenter(profileWithSkill());
 
-    fireEvent.click(screen.getByRole('button', { name: /^Cuaderno$/ }));
-    fireEvent.change(screen.getByLabelText('Modelo mental'), { target: { value: 'Confirmada después de iniciar la lectura.' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar ficha' }));
-    await waitFor(() => expect(screen.getByLabelText('Resumen de aprendizaje').textContent).toContain('1 nota propia'));
-
-    finishInitialRead(new Response(JSON.stringify(staleSnapshot), { status: 200, headers: { 'content-type': 'application/json' } }));
-    await waitFor(() => expect(screen.getByText('Progreso sincronizado')).toBeTruthy());
-    expect(screen.getByLabelText('Resumen de aprendizaje').textContent).toContain('1 nota propia');
-    expect((screen.getByLabelText('Modelo mental') as HTMLTextAreaElement).value).toBe('Confirmada después de iniciar la lectura.');
-  });
-
-  it('deja de superponer una nota local cuando el servidor entrega una versión más nueva', async () => {
-    const reinforcement = {
-      id: 'remote-reinforcement', itemKey: 'fundamentos-07', skillKey: 'return-values',
-      note: 'Distingue mostrar un dato de devolverlo.', evidence: 'El mismo error apareció en tres intentos.',
-      occurrences: 3, reviewedAt: null, createdAt: new Date(0).toISOString(), updatedAt: new Date(0).toISOString(),
-    };
-    const savedEntry = {
-      id: 'saved-a', skillKey: 'primer-concepto', concept: 'primer concepto',
-      mentalModel: 'Versión A confirmada aquí.', pattern: '', ownExample: '', personalMistake: '',
-      updatedAt: new Date(1).toISOString(),
-    };
-    const newerEntry = {
-      ...savedEntry,
-      id: 'saved-b',
-      mentalModel: 'Versión B más nueva del servidor.',
-      updatedAt: new Date(2).toISOString(),
-    };
-    const initialSnapshot = {
-      courseSlug: 'fundamentos', generatedAt: new Date(0).toISOString(),
-      summary: { dueReviews: 0, reinforcements: 1, notes: 0, averageMastery: null, activeSkills: 1 },
-      reviews: [], notes: [], skillGaps: [], recentItems: [], reinforcements: [reinforcement],
-    };
-    const newerSnapshot = {
-      ...initialSnapshot,
-      generatedAt: new Date(3).toISOString(),
-      summary: { ...initialSnapshot.summary, reinforcements: 0, notes: 1 },
-      notes: [newerEntry],
-      reinforcements: [{ ...reinforcement, reviewedAt: new Date(3).toISOString() }],
-    };
-    vi.mocked(globalThis.fetch)
-      .mockReset()
-      .mockResolvedValueOnce(new Response(JSON.stringify(initialSnapshot), { status: 200, headers: { 'content-type': 'application/json' } }))
-      .mockResolvedValueOnce(new Response(JSON.stringify(savedEntry), { status: 200, headers: { 'content-type': 'application/json' } }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ reviewedAt: new Date(3).toISOString() }), { status: 200, headers: { 'content-type': 'application/json' } }))
-      .mockResolvedValueOnce(new Response(JSON.stringify(newerSnapshot), { status: 200, headers: { 'content-type': 'application/json' } }));
-
-    render(
-      <LearningCenter
-        course={FUNDAMENTOS_COURSE}
-        profile={createEmptyLearningProfile(0)}
-        onClose={vi.fn()}
-        onRateReview={vi.fn(async () => undefined)}
-        onSaveNotebook={vi.fn(async () => undefined)}
-        onCompleteExam={vi.fn(async () => undefined)}
-        onReviewReinforcement={vi.fn(async () => undefined)}
-      />,
-    );
-
-    await waitFor(() => expect(screen.getByText('Progreso sincronizado')).toBeTruthy());
-    fireEvent.click(screen.getByRole('button', { name: /^Cuaderno$/ }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Mis notas' }));
     fireEvent.change(screen.getByLabelText('Modelo mental'), { target: { value: savedEntry.mentalModel } });
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar ficha' }));
-    expect(await screen.findByRole('button', { name: 'Guardado' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Guardado' })).toBeTruthy());
 
-    fireEvent.click(screen.getByRole('button', { name: /^Repaso$/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Marcar return values como repasado' }));
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(4));
-    fireEvent.click(screen.getByRole('button', { name: /^Cuaderno$/ }));
-
-    await waitFor(() => expect((screen.getByLabelText('Modelo mental') as HTMLTextAreaElement).value).toBe(newerEntry.mentalModel));
+    finishInitialRead(new Response(JSON.stringify(emptySnapshot), { status: 200, headers: { 'content-type': 'application/json' } }));
+    await screen.findByText('Progreso sincronizado');
+    expect((screen.getByLabelText('Modelo mental') as HTMLTextAreaElement).value).toBe(savedEntry.mentalModel);
   });
 });

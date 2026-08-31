@@ -16,7 +16,6 @@ import { getCurriculumSkillIndex } from '../../learning/curriculumEvidence';
 import {
   rateCurriculumReview,
   markTutorReinforcementReviewed,
-  saveExamEvaluation,
   saveNotebookEntry,
 } from '../../learning/curriculumEvidence';
 import { LearningCenter } from '../learning/LearningCenter';
@@ -460,7 +459,6 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
           onClose={() => setShowLearningCenter(false)}
           onRateReview={async (reviewId, rating) => onLearningProfileChange(await rateCurriculumReview(reviewId, rating))}
           onSaveNotebook={async (entry) => onLearningProfileChange(await saveNotebookEntry(entry))}
-          onCompleteExam={async (questions, result) => onLearningProfileChange(await saveExamEvaluation(course.id, questions, result))}
           onReviewReinforcement={async (reinforcementId) => onLearningProfileChange(await markTutorReinforcementReviewed(reinforcementId))}
           onSummaryChange={setRemoteLearningSummary}
         />
