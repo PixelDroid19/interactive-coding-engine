@@ -5,6 +5,8 @@ import { runPythonChallengeValidation } from './python/pythonChallengeValidator'
 import { evaluationValuesEqual } from './evaluationEquality';
 import { evaluateConsoleIsolated, evaluateFunctionIsolated } from './isolatedJavaScriptEvaluator';
 
+const IFRAME_VALIDATION_TIMEOUT_MS = 3_000;
+
 function normalizeForMatch(str: string, opts: { caseInsensitive?: boolean; normalizeSpaces?: boolean; ignorePunctuation?: boolean }): string {
   let s = str;
   if (opts.normalizeSpaces) {
@@ -145,7 +147,7 @@ async function requestIframeValidation(iframe: HTMLIFrameElement, script: string
     };
     const timeoutId = hostWindow.setTimeout(() => {
       finish(() => reject(new Error('la comprobación superó el tiempo de espera; revisa que el programa termine de actualizar')));
-    }, 1_500);
+    }, IFRAME_VALIDATION_TIMEOUT_MS);
     hostWindow.addEventListener('message', onMessage);
     frameWindow.postMessage({ source: 'aula-validator', type: 'run', validationId, script, awaitedTags }, '*');
   });
@@ -428,7 +430,7 @@ async function evaluateSingleTest(
           };
           const timeoutId = hostWindow.setTimeout(() => {
             finish(() => reject(new Error('la comprobación superó el tiempo de espera; revisa que el elemento se registre y termine de actualizar')));
-          }, 1200);
+          }, IFRAME_VALIDATION_TIMEOUT_MS);
           hostWindow.addEventListener('message', onMessage);
           frameWindow.postMessage({
             source: 'aula-validator', type: 'run', validationId,

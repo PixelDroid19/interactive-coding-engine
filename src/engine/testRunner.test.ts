@@ -29,17 +29,20 @@ const retoLeccion1: ScrimChallenge = LESSON_01.challenges[0];
 function validatorIframe(
   response?: Readonly<{ type: 'result'; result: unknown } | { type: 'missing-tag'; tag: string }>,
   generation = 1,
+  responseDelayMs = 0,
 ): HTMLIFrameElement {
   const hostWindow = new Window();
   const frameWindow = {
     postMessage(message: { validationId: string }) {
       if (!response) return;
-      queueMicrotask(() => {
+      const answer = () => {
         hostWindow.dispatchEvent(new hostWindow.MessageEvent('message', {
           source: frameWindow as any,
           data: { source: 'aula-validator', validationId: message.validationId, ...response },
         }));
-      });
+      };
+      if (responseDelayMs > 0) hostWindow.setTimeout(answer, responseDelayMs);
+      else queueMicrotask(answer);
     },
   };
   return {
@@ -624,6 +627,28 @@ describe('testRunner para componentes ejecutados en navegador', () => {
     expect(result.tests[0].status).toBe('failed');
     expect(result.tests[0].isEvaluationError).not.toBe(true);
     expect(result.tests[0].errorMessage).toContain('status-badge');
+  });
+
+  it('espera el diagnóstico de etiqueta ausente sin convertirlo en un timeout técnico', async () => {
+    const iframe = validatorIframe({ type: 'missing-tag', tag: 'alerta-app' }, 5, 1_300);
+    const challenge = {
+      id: 'registro-lento', title: 'Registra la etiqueta', timestamp: 0, instructions: '', hints: [],
+      tests: [{
+        id: 'registro-alerta',
+        description: 'Registra alerta-app',
+        validatorType: 'browser-script',
+        customValidatorScript: `async ({ customElements }) => {
+          await customElements.whenDefined('alerta-app');
+          return true;
+        }`,
+      }],
+    } as any;
+
+    const result = await runChallengeValidation(challenge, wsFromJs('// etiqueta incorrecta'), iframe, 5);
+
+    expect(result.tests[0].status).toBe('failed');
+    expect(result.tests[0].isEvaluationError).not.toBe(true);
+    expect(result.tests[0].errorMessage).toContain('alerta-app');
   });
 
   it('distingue esperar undefined de no declarar un resultado esperado', async () => {
