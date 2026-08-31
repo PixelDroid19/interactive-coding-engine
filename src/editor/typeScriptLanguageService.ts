@@ -99,12 +99,15 @@ function isCallable(kind: LanguageCompletion['kind']): boolean {
 
 export class TypeScriptLanguageService {
   private readonly files = new Map<string, VersionedFile>();
+  private readonly libraryPaths = new Set<string>();
   private projectVersion = 0;
   private readonly service: ts.LanguageService;
 
   constructor(libraries: Record<string, string>) {
     for (const [path, content] of Object.entries(libraries)) {
-      this.files.set(normalizePath(path), { content, version: 1 });
+      const normalized = normalizePath(path);
+      this.files.set(normalized, { content, version: 1 });
+      this.libraryPaths.add(normalized);
     }
 
     const compilerOptions: ts.CompilerOptions = {
@@ -115,6 +118,7 @@ export class TypeScriptLanguageService {
       target: ts.ScriptTarget.ES2022,
       module: ts.ModuleKind.ESNext,
       moduleResolution: ts.ModuleResolutionKind.Bundler,
+      resolveJsonModule: true,
       jsx: ts.JsxEmit.ReactJSX,
       allowNonTsExtensions: true,
       strict: false,
@@ -148,7 +152,7 @@ export class TypeScriptLanguageService {
     const nextPaths = new Set(files.map((file) => normalizePath(file.path)));
 
     for (const path of [...this.files.keys()]) {
-      if (path.endsWith('.d.ts')) continue;
+      if (this.libraryPaths.has(path)) continue;
       if (!nextPaths.has(path)) this.files.delete(path);
     }
 

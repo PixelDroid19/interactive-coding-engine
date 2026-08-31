@@ -13,6 +13,16 @@ export interface CellsWorkspaceRecovery {
   message: string;
 }
 
+export interface CellsWorkspaceRecoveryInspection {
+  exportable: boolean;
+  restorable: boolean;
+}
+
+export interface CellsWorkspaceRecoveryExport {
+  fileName: string;
+  content: string;
+}
+
 export type CellsWorkspaceLoadResult =
   | Readonly<{ status: 'missing' }>
   | Readonly<{ status: 'loaded'; workspace: VersionedCellsWorkspace }>
@@ -46,6 +56,54 @@ function isCellsLabSession(value: unknown): value is CellsLabSession {
     && typeof session.terminalOutput === 'string'
     && session.terminalOutput.length <= 4_000
     && typeof session.savedAt === 'number';
+}
+
+interface StoredCellsWorkspaceRecovery {
+  version: 1;
+  sourceKey: string;
+  capturedAt: number;
+  message: string;
+  value: unknown;
+}
+
+interface CellsWorkspaceRecoveryPayload {
+  sourceKey: string;
+  capturedAt: number | null;
+  message: string;
+  value: unknown;
+}
+
+function isStoredCellsWorkspaceRecovery(value: unknown): value is StoredCellsWorkspaceRecovery {
+  if (!value || typeof value !== 'object') return false;
+  const recovery = value as Partial<StoredCellsWorkspaceRecovery>;
+  return recovery.version === 1
+    && typeof recovery.sourceKey === 'string'
+    && recovery.sourceKey.length > 0
+    && typeof recovery.capturedAt === 'number'
+    && Number.isFinite(recovery.capturedAt)
+    && typeof recovery.message === 'string'
+    && Object.prototype.hasOwnProperty.call(recovery, 'value');
+}
+
+function validateWorkspace(value: unknown): VersionedCellsWorkspace {
+  const stored = value as VersionedCellsWorkspace;
+  return createVersionedCellsWorkspace(stored.snapshot, stored.generation, stored.limits);
+}
+
+function canSerializeRecovery(value: unknown): boolean {
+  try {
+    return typeof JSON.stringify(value) === 'string';
+  } catch {
+    return false;
+  }
+}
+
+function recoveryFileName(sourceKey: string): string {
+  const safeName = sourceKey
+    .replace(/[^a-z0-9_-]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'workspace';
+  return `cells-recovery-${safeName}.json`;
 }
 
 export class CellsWorkspaceRepository {
@@ -108,20 +166,119 @@ export class CellsWorkspaceRepository {
     }
   }
 
-  async load(key: string): Promise<CellsWorkspaceLoadResult> {
-    const database = await this.open();
-    const value = await new Promise<unknown>((resolve, reject) => {
+  private async readWorkspaceValue(database: IDBDatabase, key: string): Promise<unknown> {
+    return new Promise((resolve, reject) => {
       const request = database.transaction(WORKSPACE_STORE, 'readonly').objectStore(WORKSPACE_STORE).get(key);
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(new Error('No se pudo recuperar el proyecto Cells guardado.'));
     });
+  }
+
+  private async readRecoveryPayload(recovery: CellsWorkspaceRecovery): Promise<CellsWorkspaceRecoveryPayload> {
+    if (!recovery || typeof recovery.sourceKey !== 'string' || recovery.sourceKey.length === 0
+      || typeof recovery.recoveryKey !== 'string' || recovery.recoveryKey.length === 0
+      || typeof recovery.message !== 'string'
+      || recovery.sourceKey === recovery.recoveryKey) {
+      throw new Error('La referencia de recuperación del proyecto Cells no es válida.');
+    }
+
+    const database = await this.open();
+    const quarantined = await this.readWorkspaceValue(database, recovery.recoveryKey);
+    if (quarantined !== undefined) {
+      if (!isStoredCellsWorkspaceRecovery(quarantined) || quarantined.sourceKey !== recovery.sourceKey) {
+        throw new Error('La copia preservada del proyecto Cells no tiene una estructura válida.');
+      }
+      return quarantined;
+    }
+
+    const original = await this.readWorkspaceValue(database, recovery.sourceKey);
+    if (original === undefined) {
+      throw new Error('No se encontró la copia preservada del proyecto Cells.');
+    }
+    return {
+      sourceKey: recovery.sourceKey,
+      capturedAt: null,
+      message: recovery.message,
+      value: original,
+    };
+  }
+
+  async load(key: string): Promise<CellsWorkspaceLoadResult> {
+    const database = await this.open();
+    const value = await this.readWorkspaceValue(database, key);
     if (value === undefined) return { status: 'missing' };
     try {
-      const stored = value as VersionedCellsWorkspace;
-      return { status: 'loaded', workspace: createVersionedCellsWorkspace(stored.snapshot, stored.generation, stored.limits) };
+      return { status: 'loaded', workspace: validateWorkspace(value) };
     } catch (error) {
       return { status: 'corrupt', recovery: await this.quarantineWorkspace(database, key, value, error) };
     }
+  }
+
+  async inspectRecovery(recovery: CellsWorkspaceRecovery): Promise<CellsWorkspaceRecoveryInspection> {
+    const payload = await this.readRecoveryPayload(recovery);
+    let restorable = true;
+    try {
+      validateWorkspace(payload.value);
+    } catch {
+      restorable = false;
+    }
+    return {
+      exportable: canSerializeRecovery({
+        format: 'cells-workspace-recovery-v1',
+        sourceKey: payload.sourceKey,
+        capturedAt: payload.capturedAt,
+        message: payload.message,
+        workspace: payload.value,
+      }),
+      restorable,
+    };
+  }
+
+  async exportRecovery(recovery: CellsWorkspaceRecovery): Promise<CellsWorkspaceRecoveryExport> {
+    const payload = await this.readRecoveryPayload(recovery);
+    let content: string | undefined;
+    try {
+      content = JSON.stringify({
+        format: 'cells-workspace-recovery-v1',
+        sourceKey: payload.sourceKey,
+        capturedAt: payload.capturedAt,
+        message: payload.message,
+        workspace: payload.value,
+      }, null, 2);
+    } catch {
+      throw new Error('La copia preservada no se puede exportar como JSON.');
+    }
+    if (typeof content !== 'string') {
+      throw new Error('La copia preservada no se puede exportar como JSON.');
+    }
+    return { fileName: recoveryFileName(payload.sourceKey), content };
+  }
+
+  async restoreRecovery(recovery: CellsWorkspaceRecovery): Promise<VersionedCellsWorkspace> {
+    const payload = await this.readRecoveryPayload(recovery);
+    let workspace: VersionedCellsWorkspace;
+    try {
+      workspace = validateWorkspace(payload.value);
+    } catch {
+      throw new Error('La copia preservada sigue siendo inválida y no se puede restaurar.');
+    }
+    await this.save(payload.sourceKey, workspace);
+    return workspace;
+  }
+
+  async discardRecovery(recovery: CellsWorkspaceRecovery): Promise<void> {
+    const payload = await this.readRecoveryPayload(recovery);
+    const database = await this.open();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = database.transaction([WORKSPACE_STORE, SESSION_STORE], 'readwrite');
+      const store = transaction.objectStore(WORKSPACE_STORE);
+      store.delete(payload.sourceKey);
+      store.delete(recovery.recoveryKey);
+      transaction.objectStore(SESSION_STORE).delete(payload.sourceKey);
+      transaction.oncomplete = () => resolve();
+      transaction.onabort = () => reject(transaction.error ?? new Error('Se canceló el descarte del proyecto Cells.'));
+      transaction.onerror = () => reject(new Error('No se pudo descartar el proyecto Cells preservado.'));
+    });
   }
 
   async save(key: string, workspace: VersionedCellsWorkspace): Promise<void> {

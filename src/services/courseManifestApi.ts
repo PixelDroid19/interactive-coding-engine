@@ -37,6 +37,10 @@ export interface PublishedCourseManifest {
 
 type CachedManifest = Readonly<{ cachedAt: number; manifest: PublishedCourseManifest }>;
 
+export type PublishedManifestApplication =
+  | Readonly<{ status: 'applied'; course: Course }>
+  | Readonly<{ status: 'rejected'; course: Course; issue: string }>;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value));
 }
@@ -102,10 +106,27 @@ export async function fetchPublishedManifest(courseSlug: string, signal?: AbortS
   return manifest;
 }
 
-export function applyPublishedManifest(course: Course, manifest: PublishedCourseManifest): Course {
-  if (manifest.slug !== course.slug) return course;
+export function applyPublishedManifest(course: Course, manifest: PublishedCourseManifest): PublishedManifestApplication {
+  if (manifest.slug !== course.slug) {
+    return { status: 'rejected', course, issue: 'El manifiesto publicado no corresponde a este curso.' };
+  }
   const localItems = new Map(course.modules.flatMap((module) => module.items).map((item) => [item.id, item]));
   const localModules = new Map(course.modules.map((module) => [module.id, module]));
+  const publishedModules = new Map(manifest.modules.map((module) => [module.id, module]));
+  const incompleteModule = course.modules.find((localModule) => {
+    const publishedModule = publishedModules.get(localModule.id);
+    return !publishedModule || !publishedModule.items.some((publishedItem) => {
+      const localItem = localItems.get(publishedItem.id);
+      return localItem?.type === publishedItem.type;
+    });
+  });
+  if (incompleteModule) {
+    return {
+      status: 'rejected',
+      course,
+      issue: `El manifiesto publicado está incompleto: falta contenido navegable para «${incompleteModule.title}».`,
+    };
+  }
   const modules: CourseModule[] = manifest.modules.flatMap((remoteModule) => {
     const publishedItems = remoteModule.items.flatMap((remoteItem) => {
       const localItem = localItems.get(remoteItem.id);
@@ -128,5 +149,5 @@ export function applyPublishedManifest(course: Course, manifest: PublishedCourse
       items,
     }] : [];
   });
-  return { ...course, modules };
+  return { status: 'applied', course: { ...course, modules } };
 }

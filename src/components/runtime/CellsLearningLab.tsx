@@ -11,7 +11,11 @@ import {
   type CellsAppPracticeStage,
   type CellsAppProject,
 } from '../../engine/cells/cellsAppRecipes';
-import { CellsWorkspaceRepository, type CellsWorkspaceRecovery } from '../../engine/cells/cellsWorkspaceRepository';
+import {
+  CellsWorkspaceRepository,
+  type CellsWorkspaceRecovery,
+  type CellsWorkspaceRecoveryInspection,
+} from '../../engine/cells/cellsWorkspaceRepository';
 import { createVersionedCellsWorkspace } from '../../engine/cells/cellsVirtualFileSystem';
 import { waitForCellsBrowserTests } from '../../engine/cells/cellsBrowserRunner';
 import { createCellsCoverageReport, createIstanbulCoverageReport, mergeCellsCoverageReports } from '../../engine/cells/cellsCoverage';
@@ -108,6 +112,8 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
   const [status, setStatus] = useState<'loading' | 'ready' | 'running' | 'error'>('loading');
   const [error, setError] = useState('');
   const [workspaceRecovery, setWorkspaceRecovery] = useState<CellsWorkspaceRecovery | null>(null);
+  const [workspaceRecoveryInspection, setWorkspaceRecoveryInspection] = useState<CellsWorkspaceRecoveryInspection | null>(null);
+  const [discardConfirmationOpen, setDiscardConfirmationOpen] = useState(false);
   const [command, setCommand] = useState(defaultCellsCommand(variant));
   const [terminalOutput, setTerminalOutput] = useState('Runtime detenido. El Worker se iniciará al abrir el proyecto.');
   const [activeInspectorTab, setActiveInspectorTab] = useState<'preview' | 'tests' | 'terminal'>('preview');
@@ -118,10 +124,18 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
   const [sessionHydrated, setSessionHydrated] = useState(false);
   const labIdentity = lessonId ?? (variant === 'application' ? `${project}:${stage}` : componentStage);
   const draftKey = `course-open-cells:v2:${variant}:${labIdentity}`;
+  const starterDraftKey = `${draftKey}:starter`;
+  const [workspaceStorageKey, setWorkspaceStorageKey] = useState(draftKey);
   const workspaceRef = useRef(workspace);
   const generationRef = useRef(generation);
+  const workspaceStorageKeyRef = useRef(draftKey);
   workspaceRef.current = workspace;
   generationRef.current = generation;
+
+  const selectWorkspaceStorageKey = (key: string) => {
+    workspaceStorageKeyRef.current = key;
+    setWorkspaceStorageKey(key);
+  };
 
   useEffect(() => {
     const onPreviewMessage = (event: MessageEvent) => {
@@ -166,7 +180,13 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
     return true;
   };
 
-  const loadStarter = async (removeSaved = true) => {
+  const loadStarter = async ({
+    removeSaved = true,
+    storageKey = workspaceStorageKeyRef.current,
+  }: {
+    removeSaved?: boolean;
+    storageKey?: string;
+  } = {}) => {
     setStatus('loading');
     setError('');
     setTests([]);
@@ -177,8 +197,8 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
         : createCellsCurriculumPracticeWorkspace(componentArtifact, componentStage);
       if (removeSaved) {
         await Promise.all([
-          ensureRepository().remove(draftKey),
-          ensureRepository().removeSession(draftKey),
+          ensureRepository().remove(storageKey),
+          ensureRepository().removeSession(storageKey),
         ]);
       }
       const result = await ensureRuntime().loadProject(initial.snapshot, 0);
@@ -194,6 +214,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
       setPreviewLocale('es');
       setTerminalOutput('Proyecto abierto en memoria. No se inició ningún servidor ni proceso Node.');
       setExpandedFolders([]);
+      selectWorkspaceStorageKey(storageKey);
 
       const request = beginPreviewBuild();
       const previewResult = await ensureRuntime().buildPreview(0);
@@ -202,6 +223,9 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
       }
       applyPreviewBuild(request, previewResult.payload);
       setWorkspaceRecovery(null);
+      setWorkspaceRecoveryInspection(null);
+      setDiscardConfirmationOpen(false);
+      setSessionHydrated(true);
       setStatus('ready');
     } catch (caught) {
       setError(messageFor(caught));
@@ -220,8 +244,17 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
         ]);
         if (cancelled) return;
         if (savedResult.status === 'corrupt') {
+          let inspection: CellsWorkspaceRecoveryInspection | null = null;
+          let recoveryError = '';
+          try {
+            inspection = await ensureRepository().inspectRecovery(savedResult.recovery);
+          } catch (caught) {
+            recoveryError = ` ${messageFor(caught)}`;
+          }
+          if (cancelled) return;
           setWorkspaceRecovery(savedResult.recovery);
-          setError('No pudimos abrir el proyecto Cells guardado porque sus datos son inválidos. No se reemplazó por el proyecto inicial.');
+          setWorkspaceRecoveryInspection(inspection);
+          setError(recoveryError.trim());
           setStatus('error');
           return;
         }
@@ -305,7 +338,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
   useEffect(() => {
     if (!sessionHydrated) return;
     const timer = window.setTimeout(() => {
-      void ensureRepository().saveSession(draftKey, {
+      void ensureRepository().saveSession(workspaceStorageKey, {
         version: 1,
         activePanel: activeInspectorTab,
         expandedFolders,
@@ -318,7 +351,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
       }).catch((caught) => setError(messageFor(caught)));
     }, 120);
     return () => window.clearTimeout(timer);
-  }, [activeInspectorTab, command, coverage, draftKey, expandedFolders, previewLocale, sessionHydrated, terminalOutput, tests]);
+  }, [activeInspectorTab, command, coverage, expandedFolders, previewLocale, sessionHydrated, terminalOutput, tests, workspaceStorageKey]);
 
   const syncDirtyFiles = async (): Promise<number> => {
     let currentGeneration = generationRef.current;
@@ -334,7 +367,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
     }
     if (currentGeneration !== generationRef.current) {
       applyWorkspace(currentSnapshot, currentGeneration);
-      await ensureRepository().save(draftKey, createVersionedCellsWorkspace(currentSnapshot, currentGeneration));
+      await ensureRepository().save(workspaceStorageKeyRef.current, createVersionedCellsWorkspace(currentSnapshot, currentGeneration));
     }
     return currentGeneration;
   };
@@ -435,7 +468,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
       } else if (result.type === 'command:completed') {
         if (result.payload.workspace) {
           applyWorkspace(result.payload.workspace, result.generation);
-          await ensureRepository().save(draftKey, createVersionedCellsWorkspace(result.payload.workspace, result.generation));
+          await ensureRepository().save(workspaceStorageKeyRef.current, createVersionedCellsWorkspace(result.payload.workspace, result.generation));
         }
         setTerminalOutput(result.payload.output);
       } else {
@@ -461,6 +494,70 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
     } catch (caught) { setError(messageFor(caught)); setStatus('error'); }
   };
 
+  const downloadWorkspaceRecovery = async () => {
+    if (!workspaceRecovery) return;
+    setStatus('running');
+    setError('');
+    try {
+      const recoveryExport = await ensureRepository().exportRecovery(workspaceRecovery);
+      const blob = new Blob([recoveryExport.content], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = recoveryExport.fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+      setTerminalOutput(`${recoveryExport.fileName} descargado. Conserva esta copia antes de probar otras acciones.`);
+      setStatus('ready');
+    } catch (caught) {
+      setError(messageFor(caught));
+      setStatus('error');
+    }
+  };
+
+  const restoreWorkspaceRecovery = async () => {
+    if (!workspaceRecovery || !workspaceRecoveryInspection?.restorable) return;
+    setStatus('loading');
+    setError('');
+    try {
+      const restored = await ensureRepository().restoreRecovery(workspaceRecovery);
+      const result = await ensureRuntime().loadProject(restored.snapshot, restored.generation);
+      if (result.type !== 'workspace:updated') throw new Error('El Worker no devolvió el proyecto restaurado.');
+      selectWorkspaceStorageKey(draftKey);
+      applyWorkspace(result.payload.workspace, restored.generation);
+      setWorkspaceRecovery(null);
+      setWorkspaceRecoveryInspection(null);
+      setDiscardConfirmationOpen(false);
+      setSessionHydrated(true);
+      const request = beginPreviewBuild();
+      const previewResult = await ensureRuntime().buildPreview(restored.generation);
+      if (previewResult.type !== 'preview:built') throw new Error('El runtime no pudo reconstruir la vista previa restaurada.');
+      applyPreviewBuild(request, previewResult.payload);
+      setTerminalOutput('Se restauró una copia validada del proyecto. La cuarentena se conserva como respaldo.');
+      setStatus('ready');
+    } catch (caught) {
+      setError(messageFor(caught));
+      setStatus('error');
+    }
+  };
+
+  const discardWorkspaceRecovery = async () => {
+    if (!workspaceRecovery) return;
+    setStatus('loading');
+    setError('');
+    try {
+      await ensureRepository().discardRecovery(workspaceRecovery);
+      selectWorkspaceStorageKey(draftKey);
+      setWorkspaceRecovery(null);
+      setWorkspaceRecoveryInspection(null);
+      setDiscardConfirmationOpen(false);
+      await loadStarter({ removeSaved: false, storageKey: draftKey });
+    } catch (caught) {
+      setError(messageFor(caught));
+      setStatus('error');
+    }
+  };
+
   const passedTestsCount = tests.filter((test) => test.passed).length;
   const allTestsPassed = tests.length > 0 && passedTestsCount === tests.length;
 
@@ -482,14 +579,66 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
           <h4>No pudimos abrir tu proyecto guardado</h4>
           <p>No se reemplazó por el proyecto inicial. La copia inválida queda preservada para que puedas recuperarla.</p>
           <small>{workspaceRecovery.message}</small>
+          {error && <p>{error}</p>}
+          {workspaceRecoveryInspection && !workspaceRecoveryInspection.exportable && (
+            <small>Esta copia no se puede descargar como JSON desde el navegador.</small>
+          )}
+          {workspaceRecoveryInspection && !workspaceRecoveryInspection.restorable && (
+            <small>La copia no supera la validación del workspace y no se restaurará automáticamente.</small>
+          )}
+          {workspaceRecoveryInspection?.exportable && (
+            <button
+              type="button"
+              className="cells-lab__empty-btn"
+              onClick={() => void downloadWorkspaceRecovery()}
+              disabled={status === 'running' || status === 'loading'}
+            >
+              <Download size={14} /> Descargar copia preservada
+            </button>
+          )}
+          {workspaceRecoveryInspection?.restorable && (
+            <button
+              type="button"
+              className="cells-lab__empty-btn"
+              onClick={() => void restoreWorkspaceRecovery()}
+              disabled={status === 'running' || status === 'loading'}
+            >
+              <RotateCcw size={14} /> Restaurar copia válida
+            </button>
+          )}
           <button
             type="button"
             className="cells-lab__empty-btn"
-            onClick={() => void loadStarter(true)}
+            onClick={() => void loadStarter({ removeSaved: false, storageKey: starterDraftKey })}
             disabled={status === 'running' || status === 'loading'}
           >
-            <RotateCcw size={14} /> Crear un proyecto nuevo
+            <RotateCcw size={14} /> Abrir plantilla sin borrar el borrador
           </button>
+          {!discardConfirmationOpen ? (
+            <button
+              type="button"
+              className="cells-lab__empty-btn"
+              onClick={() => setDiscardConfirmationOpen(true)}
+              disabled={status === 'running' || status === 'loading'}
+            >
+              <XCircle size={14} /> Descartar borrador y copia preservada
+            </button>
+          ) : (
+            <section role="alertdialog" aria-modal="true" aria-labelledby="cells-recovery-discard-title">
+              <h5 id="cells-recovery-discard-title">¿Eliminar definitivamente este proyecto?</h5>
+              <p>Se eliminarán el borrador dañado, su copia preservada y las preferencias de esta práctica. Esta acción no se puede deshacer.</p>
+              <button type="button" onClick={() => setDiscardConfirmationOpen(false)}>
+                Conservar el borrador
+              </button>
+              <button
+                type="button"
+                onClick={() => void discardWorkspaceRecovery()}
+                disabled={status === 'running' || status === 'loading'}
+              >
+                Eliminar definitivamente
+              </button>
+            </section>
+          )}
         </section>
       </div>
     );
@@ -522,7 +671,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
           <button type="button" onClick={exportProject} disabled={status === 'running'}>
             <Download size={15} /> Exportar ZIP
           </button>
-          <button type="button" onClick={() => void loadStarter(true)} disabled={status === 'running'} aria-label="Reiniciar práctica">
+          <button type="button" onClick={() => void loadStarter()} disabled={status === 'running'} aria-label="Reiniciar práctica">
             <RotateCcw size={15} />
           </button>
         </div>
@@ -588,7 +737,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
                 onFileSelect={(path) => setWorkspace((current) => {
                   setActiveMobilePanel('editor');
                   const next = { ...current, activeFilePath: path };
-                  void ensureRepository().save(draftKey, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
+                  void ensureRepository().save(workspaceStorageKeyRef.current, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
                   return next;
                 })}
                 renderFileActions={(file) => file.path === activeFile?.path && dirty
@@ -620,7 +769,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
                   dirtyPathsRef.current.add(activeFile.path);
                   previewRequestRef.current += 1;
                   setPreviewState('stale');
-                  void ensureRepository().save(draftKey, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
+                  void ensureRepository().save(workspaceStorageKeyRef.current, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
                   return next;
                 })}
                 onWorkspaceFileChange={(path, content) => setWorkspace((current) => {
@@ -630,7 +779,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
                   dirtyPathsRef.current.add(path);
                   previewRequestRef.current += 1;
                   setPreviewState('stale');
-                  void ensureRepository().save(draftKey, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
+                  void ensureRepository().save(workspaceStorageKeyRef.current, createVersionedCellsWorkspace(next, generationRef.current)).catch((caught) => setError(messageFor(caught)));
                   return next;
                 })}
                 onTutorRunChecks={async () => {

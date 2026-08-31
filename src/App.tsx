@@ -353,26 +353,35 @@ export default function App() {
   }, [identityRevision]);
 
   useEffect(() => {
-    const applyManifest = (manifest: Parameters<typeof applyPublishedManifest>[1]) => {
+    const applyManifest = (manifest: Parameters<typeof applyPublishedManifest>[1]): boolean => {
       const base = initialCourses.find((candidate) => candidate.slug === manifest.slug);
-      if (!base) return;
+      if (!base) return false;
       const currentPublished = courses.find((candidate) => candidate.slug === manifest.slug) ?? base;
-      const hydrated = applyPublishedManifest({ ...base, ...currentPublished, modules: base.modules }, manifest);
+      const application = applyPublishedManifest({ ...base, ...currentPublished, modules: base.modules }, manifest);
+      if (application.status === 'rejected') {
+        setCanonicalDataIssues((current) => ({
+          ...current,
+          manifest: `${application.issue} Se conserva el contenido local y el acceso puede estar desactualizado.`,
+        }));
+        return false;
+      }
+      const { course: hydrated } = application;
       setCourses((current) => current.map((candidate) => candidate.slug === hydrated.slug ? hydrated : candidate));
       setCourse((current) => current.slug === hydrated.slug ? hydrated : current);
+      return true;
     };
     const cached = identityRevision === 0 ? getCachedPublishedManifest(course.slug) : null;
     setCanonicalDataIssues((current) => ({ ...current, manifest: null }));
     if (cached) {
-      applyManifest(cached.manifest);
-      if (cached.fresh) return;
+      if (applyManifest(cached.manifest) && cached.fresh) return;
     }
     const controller = new AbortController();
     void fetchPublishedManifest(course.slug, controller.signal)
       .then((manifest) => {
         if (controller.signal.aborted) return;
-        applyManifest(manifest);
-        setCanonicalDataIssues((current) => ({ ...current, manifest: null }));
+        if (applyManifest(manifest)) {
+          setCanonicalDataIssues((current) => ({ ...current, manifest: null }));
+        }
       })
       .catch(() => {
         if (controller.signal.aborted) return;

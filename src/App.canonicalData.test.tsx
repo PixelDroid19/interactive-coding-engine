@@ -76,7 +76,19 @@ const publishedManifest = {
   slug: FUNDAMENTOS_COURSE.slug,
   version: 1,
   publishedAt: '2026-08-30T00:00:00.000Z',
-  modules: [],
+  modules: FUNDAMENTOS_COURSE.modules.map((module) => ({
+    id: module.id,
+    title: module.title,
+    items: module.items.slice(0, 1).map((item) => ({
+      id: item.id,
+      title: item.title,
+      type: item.type,
+      estimatedMinutes: item.estimatedMinutes,
+      lessonKey: item.id,
+      availability: 'available' as const,
+      availabilityReason: null,
+    })),
+  })),
   lessons: [],
 };
 
@@ -186,6 +198,17 @@ describe('datos canónicos del catálogo', () => {
     expect((await screen.findByRole('alert', { name: 'Estado de datos publicados' })).textContent).toContain(
       'No pudimos actualizar la estructura publicada de este curso. Estás viendo el contenido local y el acceso puede estar desactualizado.',
     );
+  });
+
+  it('rechaza un manifiesto HTTP correcto pero incompleto y conserva el currículo local', async () => {
+    canonicalDataMocks.fetchPublishedManifest.mockResolvedValue({ ...publishedManifest, modules: [] });
+
+    renderApp();
+
+    expect((await screen.findByRole('alert', { name: 'Estado de datos publicados' })).textContent).toContain(
+      'El manifiesto publicado está incompleto:',
+    );
+    expect(screen.getByRole('button', { name: `Ver recorrido: ${FUNDAMENTOS_COURSE.title}` })).toBeTruthy();
   });
 
   it('advierte cuando no puede actualizar el progreso remoto', async () => {

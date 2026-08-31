@@ -12,7 +12,7 @@ import type {
   LanguageWorkerResponse,
   LanguageWorkerResult,
 } from './typeScriptWorkerProtocol';
-import { buildWorkspaceDomDeclarations, WORKSPACE_DOM_TYPES_PATH } from './workspaceTypeDeclarations';
+import { buildWorkspaceSemanticFiles } from './workspaceSemanticFiles';
 
 export interface LanguageWorkerLike {
   addEventListener(type: 'message', listener: (event: MessageEvent<LanguageWorkerResponse>) => void): void;
@@ -63,14 +63,7 @@ export class TypeScriptWorkerClient {
   }
 
   replaceWorkspace(files: Array<Pick<WorkspaceFile, 'path' | 'content' | 'language'>>): void {
-    const semanticFiles = files
-      .filter(isJavaScriptLike)
-      .map(({ path, content }) => ({ path, content }));
-    const domDeclarations = buildWorkspaceDomDeclarations(files);
-    if (domDeclarations) {
-      semanticFiles.push({ path: WORKSPACE_DOM_TYPES_PATH, content: domDeclarations });
-    }
-    this.getWorker().postMessage({ type: 'workspace/replace', files: semanticFiles });
+    this.getWorker().postMessage({ type: 'workspace/replace', files: buildWorkspaceSemanticFiles(files) });
   }
 
   updateFile(path: string, content: string): void {

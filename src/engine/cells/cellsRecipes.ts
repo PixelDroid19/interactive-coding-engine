@@ -16,7 +16,7 @@ function classNameFor(tagName: string): string {
 
 export function widgetMixinSource(): string {
   return `function academyWidgetError(code) {
-  const error = new Error('Academy widget error: ' + code);
+  const error = /** @type {Error & { code: string }} */ (new Error('Academy widget error: ' + code));
   error.code = code;
   return error;
 }
@@ -61,6 +61,11 @@ export const WidgetMixin = (Base) => {
       return intlMsg.t(key, values);
     }
 
+    /**
+     * @param {string} type
+     * @param {unknown} [detail]
+     * @param {CustomEventInit} [options]
+     */
     emitEvent(type, detail = {}, options = {}) {
       if (typeof type !== 'string' || type.trim().length === 0) throw academyWidgetError('ACADEMY_WIDGET_EVENT_NAME_REQUIRED');
       if (!options || typeof options !== 'object' || Array.isArray(options)) throw academyWidgetError('ACADEMY_WIDGET_INVALID_EVENT_OPTIONS');
@@ -83,7 +88,7 @@ export function intlMsgRuntimeSource(): string {
   return `const LANGUAGE_UPDATE_EVENT = 'language-update';
 
 function academyI18nError(code) {
-  const error = new Error('Academy i18n error: ' + code);
+  const error = /** @type {Error & { code: string }} */ (new Error('Academy i18n error: ' + code));
   error.code = code;
   return error;
 }
