@@ -307,7 +307,7 @@ export function createSignatureHelpExtension(
         const position = this.view.state.selection.main.head;
         const help = path ? await client.signatureHelp(path, position).catch(() => null) : null;
         if (requestVersion !== this.requestVersion) return;
-        this.view.dispatch({ effects: setSignatureHelp.of(help) });
+        this.view.dispatch({ effects: setSignatureHelp.of(this.view.hasFocus ? help : null) });
       }, 160);
     }
 
@@ -317,5 +317,14 @@ export function createSignatureHelpExtension(
     }
   });
 
-  return [signatureHelpField, plugin];
+  const focusLifecycle = EditorView.domEventHandlers({
+    focus(_event, view) {
+      view.dispatch({ selection: view.state.selection });
+    },
+    blur(_event, view) {
+      view.dispatch({ effects: setSignatureHelp.of(null) });
+    },
+  });
+
+  return [signatureHelpField, plugin, focusLifecycle];
 }

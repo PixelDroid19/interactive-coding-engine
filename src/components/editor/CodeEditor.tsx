@@ -205,6 +205,11 @@ const editorTheme = EditorView.theme({
   '.cm-signature-label': { color: '#f8fafc', fontWeight: '700' },
   '.cm-signature-parameter': { color: '#fde047', marginTop: '4px' },
   '.cm-signature-documentation': { color: '#cbd5e1', marginTop: '5px' },
+  '.cm-signature-help': {
+    maxHeight: 'min(240px, 35vh)',
+    overflowY: 'auto',
+    pointerEvents: 'none',
+  },
   '.cm-diagnosticText': { color: '#e4e4e7' },
   '.cm-diagnosticSource': { color: '#94a3b8' },
 });

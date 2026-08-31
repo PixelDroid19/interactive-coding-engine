@@ -7,6 +7,7 @@ import { EditorView } from '@codemirror/view';
 import {
   completionToCodeMirror,
   collectCodeMirrorSyntaxDiagnostics,
+  createSignatureHelpExtension,
   createSemanticCompletionSource,
   languageDiagnosticsToCodeMirror,
   type SemanticLanguageClient,
@@ -85,5 +86,38 @@ describe('adaptador semántico de CodeMirror', () => {
     const diagnostics = collectCodeMirrorSyntaxDiagnostics(state);
     expect(diagnostics).toHaveLength(1);
     expect(diagnostics[0]?.message).toContain('llave');
+  });
+
+  it('cierra la ayuda de firma cuando el editor pierde el foco', async () => {
+    const parent = document.createElement('div');
+    document.body.append(parent);
+    const signatureClient: SemanticLanguageClient = {
+      ...client,
+      signatureHelp: async () => ({
+        from: 0,
+        label: 'addEventListener(type, listener)',
+        documentation: 'Registra una función para responder a un evento.',
+        activeParameter: 0,
+        parameters: [{ label: 'type', documentation: 'Nombre del evento.' }],
+      }),
+    };
+    const view = new EditorView({
+      state: EditorState.create({
+        doc: "button.addEventListener('",
+        selection: { anchor: 25 },
+        extensions: [createSignatureHelpExtension(signatureClient, () => 'app.js')],
+      }),
+      parent,
+    });
+    view.focus();
+
+    await new Promise((resolve) => setTimeout(resolve, 190));
+    expect(parent.querySelector('.cm-signature-help')).not.toBeNull();
+
+    view.contentDOM.dispatchEvent(new FocusEvent('blur', { bubbles: true }));
+
+    expect(parent.querySelector('.cm-signature-help')).toBeNull();
+    view.destroy();
+    parent.remove();
   });
 });

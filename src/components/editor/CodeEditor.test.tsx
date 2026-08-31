@@ -105,6 +105,33 @@ describe('CodeEditor', () => {
     await waitFor(() => expect(screen.getByRole('status').textContent).toContain('1 error'));
   });
 
+  it('mantiene la ayuda de firma acotada y sin bloquear controles externos', async () => {
+    const client = languageClient();
+    client.signatureHelp = async () => ({
+      from: 0,
+      label: 'addEventListener(type, listener)',
+      documentation: 'Documentación extensa de la firma.'.repeat(40),
+      activeParameter: 0,
+      parameters: [{ label: 'type', documentation: 'Nombre del evento.' }],
+    });
+    const { container } = render(
+      <CodeEditor
+        file={appFile}
+        workspaceFiles={{ 'app.js': appFile }}
+        languageClient={client}
+      />,
+    );
+
+    screen.getByRole('textbox', { name: 'Editor de app.js' }).focus();
+    await waitFor(() => expect(container.querySelector('.cm-signature-help')).not.toBeNull());
+
+    const signature = container.querySelector<HTMLElement>('.cm-signature-help');
+    const styles = getComputedStyle(signature!);
+    expect(styles.pointerEvents).toBe('none');
+    expect(styles.maxHeight).toMatch(/^min\(240px, /);
+    expect(styles.overflowY).toBe('auto');
+  });
+
   it('activa la sintaxis y el autocompletado propio de Python', async () => {
     const { container } = render(
       <CodeEditor file={pythonFile} workspaceFiles={{ 'main.py': pythonFile }} />,
