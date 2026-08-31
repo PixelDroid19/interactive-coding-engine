@@ -34,6 +34,8 @@ import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
 import { useTheme } from '../../themes/ThemeProvider';
 import type { ExerciseCompletion } from '../../services/learningSync';
 import { useModalDialog } from '../useModalDialog';
+import { LiveHelpWorkspaceBridge } from '../../live-help/LiveHelpWorkspaceBridge';
+import type { LiveHelpContext } from '../../live-help/protocol';
 
 interface DebuggingViewProps {
   exercise: DebuggingExerciseItem;
@@ -47,6 +49,7 @@ interface DebuggingViewProps {
   onLanguageChange?: (language: CourseLanguage) => void;
   onCompleted?: (completion?: ExerciseCompletion) => void;
   onAttempt?: (result: 'success' | 'partial' | 'failure', completion: ExerciseCompletion) => void;
+  liveHelpContext?: LiveHelpContext;
 }
 
 function inferValidator(test: ChallengeTest): ChallengeTest['validatorType'] {
@@ -91,6 +94,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   onLanguageChange,
   onCompleted,
   onAttempt,
+  liveHelpContext,
 }) => {
   const { themeId } = useTheme();
   const isCyber = themeId === 'cyber';
@@ -822,6 +826,15 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
           </div>
         </div>
       </div>
+      {liveHelpContext && <LiveHelpWorkspaceBridge
+        context={liveHelpContext}
+        workspace={workspace}
+        onWorkspaceChange={(next) => {
+          setWorkspace(next);
+          setValidationResult(null);
+          setPostSolveComplete(false);
+        }}
+      />}
     </div>
   );
 };

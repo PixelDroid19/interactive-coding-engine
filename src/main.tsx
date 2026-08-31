@@ -6,9 +6,10 @@ import './styles/tailwind.css';
 import './styles/main.scss';
 import {ThemeProvider} from './themes/ThemeProvider.tsx';
 import {AuthSessionProvider} from './auth/AuthSessionProvider.tsx';
+import {LiveHelpProvider} from './live-help/LiveHelpProvider.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ThemeProvider><AuthSessionProvider><App /></AuthSessionProvider></ThemeProvider>
+    <ThemeProvider><AuthSessionProvider><LiveHelpProvider><App /></LiveHelpProvider></AuthSessionProvider></ThemeProvider>
   </StrictMode>,
 );

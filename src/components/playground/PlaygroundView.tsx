@@ -9,6 +9,8 @@ import { loadPlaygroundDraft, savePlaygroundDraft } from '../../engine/persisten
 import { TemplateDefinition } from '../../types/runtime';
 import { CellsLearningLab } from '../runtime/CellsLearningLab';
 import { ThemeToggle } from '../ThemeToggle';
+import { LiveHelpWorkspaceBridge } from '../../live-help/LiveHelpWorkspaceBridge';
+import type { LiveHelpContext } from '../../live-help/protocol';
 import {
   ArrowLeft,
   FolderTree,
@@ -18,6 +20,7 @@ import {
 
 interface PlaygroundViewProps {
   onBack: () => void;
+  liveHelpContext?: LiveHelpContext;
 }
 
 const CELLS_TEMPLATES: Array<Pick<TemplateDefinition, 'id' | 'name'>> = [
@@ -29,7 +32,7 @@ function isCellsTemplate(id: TemplateDefinition['id']): id is 'cells-component' 
   return id === 'cells-component' || id === 'cells-application';
 }
 
-export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
+export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack, liveHelpContext }) => {
   const [initialDraft] = useState(() => loadPlaygroundDraft());
   const [selectedTemplateId, setSelectedTemplateId] = useState<TemplateDefinition['id']>(initialDraft?.templateId ?? 'vanilla-js');
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() => {
@@ -259,6 +262,11 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
         </div>
       </div>
       )}
+      {!isCellsTemplate(selectedTemplateId) && liveHelpContext && <LiveHelpWorkspaceBridge
+        context={liveHelpContext}
+        workspace={workspace}
+        onWorkspaceChange={setWorkspace}
+      />}
     </div>
   );
 };

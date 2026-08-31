@@ -30,6 +30,7 @@ export function AccountMenu() {
   const [staffOpen, setStaffOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
+  const staffIdentityRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -46,6 +47,17 @@ export function AccountMenu() {
       document.removeEventListener('keydown', escape);
     };
   }, [open]);
+
+  const staffSession = auth.status === 'ready' && auth.session.authenticated ? auth.session : null;
+  const staffIdentity = staffSession?.user.roles.some((role) => role === 'tutor' || role === 'admin')
+    ? { userId: staffSession.user.id, roles: staffSession.user.roles }
+    : null;
+  const staffIdentityKey = staffIdentity ? `${staffIdentity.userId}\u0000${staffIdentity.roles.slice().sort().join(',')}` : null;
+  useEffect(() => {
+    const previousIdentity = staffIdentityRef.current;
+    staffIdentityRef.current = staffIdentityKey;
+    if (staffOpen && (!staffIdentityKey || (previousIdentity !== null && previousIdentity !== staffIdentityKey))) setStaffOpen(false);
+  }, [staffIdentityKey, staffOpen]);
 
   if (auth.status === 'loading') {
     return <span className="account-trigger account-trigger--loading" role="status" aria-label="Comprobando sesión"><i /></span>;
@@ -66,7 +78,7 @@ export function AccountMenu() {
   const noProviders = !authenticated && providers.length === 0;
   const displayName = signedInSession ? signedInSession.user.displayName || signedInSession.user.email.split('@')[0]! : '';
   const triggerLabel = authenticated ? `Cuenta de ${displayName}` : noProviders ? 'Sesión local' : 'Entrar';
-  const isStaff = Boolean(signedInSession?.user.roles.some((role) => role === 'tutor' || role === 'admin'));
+  const isStaff = Boolean(staffIdentity);
   const isAdmin = Boolean(signedInSession?.user.roles.includes('admin'));
 
   return (
@@ -128,7 +140,7 @@ export function AccountMenu() {
           )}
         </section>
       )}
-      {staffOpen && createPortal(<StaffDashboard canAdmin={isAdmin} onClose={() => setStaffOpen(false)} />, document.body)}
+      {staffOpen && staffIdentity && createPortal(<StaffDashboard canAdmin={isAdmin} staffIdentity={staffIdentity} onClose={() => setStaffOpen(false)} />, document.body)}
       {supportOpen && signedInSession && createPortal(<LearnerSupportPanel userId={signedInSession.user.id} onClose={() => setSupportOpen(false)} />, document.body)}
     </div>
   );

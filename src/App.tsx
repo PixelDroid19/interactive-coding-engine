@@ -823,6 +823,7 @@ export default function App() {
             );
           }}
           onFeedback={(kind) => submitLessonFeedback(course.slug, activeItem.id, kind)}
+          liveHelpContext={{ courseSlug: course.slug, lessonKey: activeItem.id, surface: 'lesson' }}
         />
         </>
       )}
@@ -846,6 +847,7 @@ export default function App() {
             refreshProgress();
           }}
           onAttempt={(result, completion) => queueExerciseAttempt(course.slug, activeItem.id, 'debugging', result, completion)}
+          liveHelpContext={{ courseSlug: course.slug, lessonKey: activeItem.id, surface: 'debug' }}
         />
       )}
 
@@ -898,11 +900,13 @@ export default function App() {
             refreshProgress();
           }}
           onAttempt={(result, completion) => queueExerciseAttempt(course.slug, activeItem.id, 'project', result, completion)}
+          liveHelpContext={{ courseSlug: course.slug, lessonKey: activeItem.id, surface: 'challenge' }}
         />
       )}
 
       {currentView === 'playground' && (
         <PlaygroundView
+          liveHelpContext={{ courseSlug: course.slug, lessonKey: 'playground', surface: 'editor' }}
           onBack={() => {
             refreshProgress();
             if (playgroundReturnView === 'home') {

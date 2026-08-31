@@ -35,6 +35,8 @@ import { NavigationState } from '../../engine/navigation';
 import { ThemeToggle } from '../ThemeToggle';
 import { useTheme } from '../../themes/ThemeProvider';
 import { LanguageSelector } from '../runtime/LanguageSelector';
+import { LiveHelpWorkspaceBridge } from '../../live-help/LiveHelpWorkspaceBridge';
+import type { LiveHelpContext } from '../../live-help/protocol';
 
 interface ScrimPlayerProps {
   lessonData: ScrimLessonData;
@@ -52,6 +54,7 @@ interface ScrimPlayerProps {
   onLanguageChange?: (language: CourseLanguage) => void;
   onCompleted?: () => void;
   onFeedback?: (kind: 'positive' | 'negative') => Promise<'sent' | 'queued'>;
+  liveHelpContext?: LiveHelpContext;
 }
 
 export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
@@ -70,6 +73,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   onLanguageChange,
   onCompleted,
   onFeedback,
+  liveHelpContext,
 }) => {
   const { themeId } = useTheme();
   const isCyber = themeId === 'cyber';
@@ -175,6 +179,56 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     saveLearnerBranch(branch);
     publishInstructorPointer(undefined);
     dispatch({ type: 'FORK', baseTime });
+  }, [branchScopeId]);
+
+  const handleLiveHelpProposalApplied = useCallback((next: WorkspaceSnapshot) => {
+    // Una propuesta aceptada es una edición explícita de la alumna: debe salir
+    // de la cinta antes de publicar el workspace para que un beat posterior no
+    // pueda escribir encima del cambio aprobado.
+    const patchedWorkspace = cloneWorkspace(next);
+    const baseTime = timeRef.current;
+    setValidationResult(null);
+    workspaceRef.current = patchedWorkspace;
+    previewReloadAfterWorkspaceRef.current = true;
+
+    if (!isForkedRef.current) {
+      isForkedRef.current = true;
+      const branch: LearnerBranch = {
+        id: `branch-${branchScopeId}-${Date.now()}`,
+        lessonId: branchScopeId,
+        baseTime,
+        baseSequence: 0,
+        workspace: cloneWorkspace(patchedWorkspace),
+        isForked: true,
+        lastSavedAt: Date.now(),
+        executionCount: 0,
+      };
+      setLearnerBranch(branch);
+      saveLearnerBranch(branch);
+      publishInstructorPointer(undefined);
+      dispatch({ type: 'FORK', baseTime });
+    } else {
+      setLearnerBranch((current) => {
+        const branch: LearnerBranch = current
+          ? { ...current, workspace: cloneWorkspace(patchedWorkspace), lastSavedAt: Date.now() }
+          : {
+            id: `branch-${branchScopeId}-${Date.now()}`,
+            lessonId: branchScopeId,
+            baseTime,
+            baseSequence: 0,
+            workspace: cloneWorkspace(patchedWorkspace),
+            isForked: true,
+            lastSavedAt: Date.now(),
+            executionCount: 0,
+          };
+        saveLearnerBranch(branch);
+        return branch;
+      });
+    }
+
+    setHasPendingEdits(true);
+    dispatch({ type: 'EDIT' });
+    setWorkspace(patchedWorkspace);
   }, [branchScopeId]);
 
   // Branch recovery on mount
@@ -1409,6 +1463,17 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         }}
       />
       </div>
+      {liveHelpContext && <LiveHelpWorkspaceBridge
+        context={liveHelpContext}
+        workspace={workspace}
+        onWorkspaceChange={(next) => {
+          workspaceRef.current = next;
+          previewReloadAfterWorkspaceRef.current = true;
+          setWorkspace(next);
+        }}
+        onProposalApplied={handleLiveHelpProposalApplied}
+        pause={() => engineRef.current?.pause()}
+      />}
       </div>
     </div>
   );

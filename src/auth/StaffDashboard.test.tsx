@@ -11,11 +11,19 @@ const api = vi.hoisted(() => ({
   deleteAccessRule: vi.fn(), setCourseAvailability: vi.fn(), courseAccess: vi.fn(),
   lockCourseForUser: vi.fn(), unlockCourseForUser: vi.fn(), updateCourseContent: vi.fn(),
 }));
+const liveHelpQueue = vi.hoisted(() => ({ props: [] as any[] }));
 
 vi.mock('../services/staffDashboardApi', async () => {
   const actual = await vi.importActual('../services/staffDashboardApi');
   return { ...actual, staffDashboardApi: api };
 });
+
+vi.mock('../live-help/StaffLiveHelpQueue', () => ({
+  StaffLiveHelpQueue: (props: any) => {
+    liveHelpQueue.props.push(props);
+    return <section aria-label="Ayuda en vivo de prueba">Cola de ayuda montada</section>;
+  },
+}));
 
 const learner = {
   id: 'learner-1', email: 'persona@example.com', displayName: 'Persona Ejemplo', status: 'active',
@@ -25,6 +33,7 @@ const learner = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  liveHelpQueue.props.length = 0;
   api.overview.mockResolvedValue({
     learners: 1, anonymousLearners: 2, active30d: 3, active7d: 2, completedItems: 4,
     anonymousCompletedItems: 5, needsSupport: 1, openThreads: 0, verifiedLearners: 1,
@@ -61,7 +70,7 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 function renderDashboard(canAdmin: boolean) {
-  return render(<ThemeProvider><StaffDashboard canAdmin={canAdmin} onClose={vi.fn()} /></ThemeProvider>);
+  return render(<ThemeProvider><StaffDashboard canAdmin={canAdmin} staffIdentity={{ userId: canAdmin ? 'admin-1' : 'tutor-1', roles: canAdmin ? ['admin'] : ['tutor'] }} onClose={vi.fn()} /></ThemeProvider>);
 }
 
 describe('panel de seguimiento', () => {
@@ -86,6 +95,30 @@ describe('panel de seguimiento', () => {
     expect(api.users).not.toHaveBeenCalled();
     expect(api.accessRules).not.toHaveBeenCalled();
     expect(api.courses).not.toHaveBeenCalled();
+  });
+
+  it('abre la cola de ayuda en vivo para el formador sin cargar controles administrativos', async () => {
+    renderDashboard(false);
+    await screen.findByText('Personas registradas');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ayuda en vivo' }));
+
+    expect(screen.getByLabelText('Ayuda en vivo de prueba')).toBeTruthy();
+    expect(api.users).not.toHaveBeenCalled();
+    expect(api.accessRules).not.toHaveBeenCalled();
+  });
+
+  it('cierra el portal y desmonta la cola si cambia o desaparece la identidad staff', async () => {
+    const onClose = vi.fn();
+    const view = render(<ThemeProvider><StaffDashboard canAdmin={false} staffIdentity={{ userId: 'tutor-a', roles: ['tutor'] }} onClose={onClose} /></ThemeProvider>);
+    await screen.findByText('Personas registradas');
+    fireEvent.click(screen.getByRole('button', { name: 'Ayuda en vivo' }));
+
+    expect(liveHelpQueue.props.at(-1)).toMatchObject({ staffUserId: 'tutor-a', staffRoles: ['tutor'] });
+    view.rerender(<ThemeProvider><StaffDashboard canAdmin={false} staffIdentity={{ userId: 'tutor-b', roles: ['tutor'] }} onClose={onClose} /></ThemeProvider>);
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(screen.queryByLabelText('Ayuda en vivo de prueba')).toBeNull();
   });
 
   it('mantiene disponible el seguimiento si falla una sección administrativa secundaria', async () => {

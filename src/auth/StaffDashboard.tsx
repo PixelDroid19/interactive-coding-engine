@@ -1,10 +1,12 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Activity, ArrowLeft, BookOpenCheck, CheckCircle2, Clock3, Inbox, LibraryBig, MessageSquareText, RefreshCw, Search, ShieldCheck, Trash2, TriangleAlert, Users, X } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Activity, ArrowLeft, BookOpenCheck, CheckCircle2, Clock3, Headphones, Inbox, LibraryBig, MessageSquareText, RefreshCw, Search, ShieldCheck, Trash2, TriangleAlert, Users, X } from 'lucide-react';
 import { staffDashboardApi, type AdminCourse, type IdentityAccessRule, type LearnerDetail, type StaffAdminUser, type StaffLearner, type StaffOverview, type StaffThread, type UserCourseAccess } from '../services/staffDashboardApi';
 import { useTheme } from '../themes/ThemeProvider';
 import { useModalDialog } from '../components/useModalDialog';
+import { StaffLiveHelpQueue } from '../live-help/StaffLiveHelpQueue';
+import type { UserRole } from '../services/authSessionApi';
 
-type Tab = 'overview' | 'learners' | 'inbox' | 'access' | 'content';
+type Tab = 'overview' | 'learners' | 'inbox' | 'live-help' | 'access' | 'content';
 
 function date(value: unknown): string {
   if (typeof value !== 'string') return 'Sin actividad';
@@ -22,9 +24,25 @@ function duration(milliseconds: number): string {
   return `${minutes} min`;
 }
 
-export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClose(): void }) {
+export interface StaffDashboardIdentity {
+  userId: string;
+  roles: readonly UserRole[];
+}
+
+export function StaffDashboard({ canAdmin, staffIdentity, onClose }: { canAdmin: boolean; staffIdentity: StaffDashboardIdentity | null; onClose(): void }) {
   const { themeId } = useTheme();
-  const dialogRef = useModalDialog<HTMLDivElement>({ open: true, onClose });
+  const canUseDashboard = Boolean(staffIdentity?.roles.some((role) => role === 'tutor' || role === 'admin'));
+  const effectiveCanAdmin = canUseDashboard && canAdmin && Boolean(staffIdentity?.roles.includes('admin'));
+  const staffIdentityKey = staffIdentity ? `${staffIdentity.userId}\u0000${staffIdentity.roles.slice().sort().join(',')}` : 'no-staff';
+  const initialIdentityRef = useRef(staffIdentityKey);
+  const shouldCloseDashboard = !canUseDashboard || initialIdentityRef.current !== staffIdentityKey;
+  const identityRef = useRef(staffIdentityKey);
+  const identityEpochRef = useRef(0);
+  if (identityRef.current !== staffIdentityKey) {
+    identityRef.current = staffIdentityKey;
+    identityEpochRef.current += 1;
+  }
+  const dialogRef = useModalDialog<HTMLDivElement>({ open: canUseDashboard, onClose });
   const [tab, setTab] = useState<Tab>('overview');
   const [overview, setOverview] = useState<StaffOverview | null>(null);
   const [learners, setLearners] = useState<StaffLearner[]>([]);
@@ -49,15 +67,23 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
   const [activeThread, setActiveThread] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const isCurrentIdentity = useCallback((expectedIdentity: string, expectedEpoch: number) => (
+    !shouldCloseDashboard && identityRef.current === expectedIdentity && identityEpochRef.current === expectedEpoch
+  ), [shouldCloseDashboard]);
+
   const load = useCallback(async () => {
+    if (shouldCloseDashboard) return;
+    const expectedIdentity = identityRef.current;
+    const expectedEpoch = identityEpochRef.current;
     setLoading(true);
     setError(null);
     const results = await Promise.allSettled([
         staffDashboardApi.overview(), staffDashboardApi.learners(), staffDashboardApi.threads(),
-        canAdmin ? staffDashboardApi.users() : Promise.resolve([]),
-        canAdmin ? staffDashboardApi.accessRules() : Promise.resolve([]),
-        canAdmin ? staffDashboardApi.courses() : Promise.resolve([]),
+        effectiveCanAdmin ? staffDashboardApi.users() : Promise.resolve([]),
+        effectiveCanAdmin ? staffDashboardApi.accessRules() : Promise.resolve([]),
+        effectiveCanAdmin ? staffDashboardApi.courses() : Promise.resolve([]),
       ] as const);
+    if (!isCurrentIdentity(expectedIdentity, expectedEpoch)) return;
     const [nextOverview, nextLearners, nextThreads, nextUsers, nextRules, nextCourses] = results;
     if (nextOverview.status === 'fulfilled') setOverview(nextOverview.value);
     if (nextLearners.status === 'fulfilled') setLearners(nextLearners.value);
@@ -71,24 +97,32 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
       setError(`${failed.length === 1 ? 'Una sección no respondió' : `${failed.length} secciones no respondieron`}. ${first instanceof Error ? first.message : 'Puedes actualizar para reintentarlo.'}`);
     }
     setLoading(false);
-  }, [canAdmin]);
+  }, [effectiveCanAdmin, isCurrentIdentity, shouldCloseDashboard]);
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
-    if (tab !== 'learners' || loading) return;
+    if (shouldCloseDashboard) onClose();
+  }, [onClose, shouldCloseDashboard]);
+  useEffect(() => {
+    if (tab !== 'learners' || loading || shouldCloseDashboard) return;
+    const expectedIdentity = identityRef.current;
+    const expectedEpoch = identityEpochRef.current;
     let active = true;
     const timer = window.setTimeout(() => {
       setSearching(true);
       void staffDashboardApi.learners(query).then((items) => {
-        if (active) setLearners(items);
+        if (active && isCurrentIdentity(expectedIdentity, expectedEpoch)) setLearners(items);
       }).catch((searchError) => {
-        if (active) setError(searchError instanceof Error ? searchError.message : 'No pudimos completar la búsqueda.');
-      }).finally(() => { if (active) setSearching(false); });
+        if (active && isCurrentIdentity(expectedIdentity, expectedEpoch)) setError(searchError instanceof Error ? searchError.message : 'No pudimos completar la búsqueda.');
+      }).finally(() => { if (active && isCurrentIdentity(expectedIdentity, expectedEpoch)) setSearching(false); });
     }, 300);
     return () => { active = false; window.clearTimeout(timer); };
-  }, [loading, query, tab]);
+  }, [isCurrentIdentity, loading, query, shouldCloseDashboard, tab]);
 
   const openLearner = async (id: string) => {
+    if (shouldCloseDashboard) return;
+    const expectedIdentity = identityRef.current;
+    const expectedEpoch = identityEpochRef.current;
     setSelectedId(id);
     setSelected(null);
     setSelectedLoading(true);
@@ -97,17 +131,20 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
     try {
       const [detail, access] = await Promise.all([
         staffDashboardApi.learner(id),
-        canAdmin ? staffDashboardApi.courseAccess(id) : Promise.resolve([]),
+        effectiveCanAdmin ? staffDashboardApi.courseAccess(id) : Promise.resolve([]),
       ]);
+      if (!isCurrentIdentity(expectedIdentity, expectedEpoch)) return;
       setSelected(detail);
       setSelectedCourseAccess(access);
     }
-    catch (loadError) { setSelectedError(loadError instanceof Error ? loadError.message : 'No pudimos abrir el seguimiento.'); }
-    finally { setSelectedLoading(false); }
+    catch (loadError) { if (isCurrentIdentity(expectedIdentity, expectedEpoch)) setSelectedError(loadError instanceof Error ? loadError.message : 'No pudimos abrir el seguimiento.'); }
+    finally { if (isCurrentIdentity(expectedIdentity, expectedEpoch)) setSelectedLoading(false); }
   };
 
   const sendFeedback = async () => {
-    if (!selectedId || !feedback.trim()) return;
+    if (!selectedId || !feedback.trim() || shouldCloseDashboard) return;
+    const expectedIdentity = identityRef.current;
+    const expectedEpoch = identityEpochRef.current;
     setSaving(true);
     setError(null);
     try {
@@ -118,22 +155,30 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
         ...(skillKey ? { skillKey } : {}),
         message: feedback.trim(),
       });
+      if (!isCurrentIdentity(expectedIdentity, expectedEpoch)) return;
       setFeedback('');
-      setSelected(await staffDashboardApi.learner(selectedId));
-    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : 'No pudimos guardar el feedback.'); }
-    finally { setSaving(false); }
+      const refreshed = await staffDashboardApi.learner(selectedId);
+      if (isCurrentIdentity(expectedIdentity, expectedEpoch)) setSelected(refreshed);
+    } catch (saveError) { if (isCurrentIdentity(expectedIdentity, expectedEpoch)) setError(saveError instanceof Error ? saveError.message : 'No pudimos guardar el feedback.'); }
+    finally { if (isCurrentIdentity(expectedIdentity, expectedEpoch)) setSaving(false); }
   };
 
   const sendReply = async (thread: StaffThread, status: 'waiting_student' | 'resolved') => {
-    if (!reply.trim()) return;
+    if (!reply.trim() || shouldCloseDashboard) return;
+    const expectedIdentity = identityRef.current;
+    const expectedEpoch = identityEpochRef.current;
     setSaving(true);
     try {
       await staffDashboardApi.reply(thread.id, reply.trim(), status);
+      if (!isCurrentIdentity(expectedIdentity, expectedEpoch)) return;
       setReply('');
-      setThreads(await staffDashboardApi.threads());
-    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : 'No pudimos enviar la respuesta.'); }
-    finally { setSaving(false); }
+      const refreshed = await staffDashboardApi.threads();
+      if (isCurrentIdentity(expectedIdentity, expectedEpoch)) setThreads(refreshed);
+    } catch (saveError) { if (isCurrentIdentity(expectedIdentity, expectedEpoch)) setError(saveError instanceof Error ? saveError.message : 'No pudimos enviar la respuesta.'); }
+    finally { if (isCurrentIdentity(expectedIdentity, expectedEpoch)) setSaving(false); }
   };
+
+  if (shouldCloseDashboard) return null;
 
   return (
     <div ref={dialogRef} className={`staff-dashboard${themeId === 'cyber' ? ' staff-dashboard--cyber' : ''}`} role="dialog" aria-modal="true" aria-label="Panel de seguimiento">
@@ -143,14 +188,15 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
           <button className={tab === 'overview' ? 'is-active' : ''} onClick={() => setTab('overview')}><Activity size={18} />Resumen</button>
           <button className={tab === 'learners' ? 'is-active' : ''} onClick={() => setTab('learners')}><Users size={18} />Personas</button>
           <button className={tab === 'inbox' ? 'is-active' : ''} onClick={() => setTab('inbox')}><Inbox size={18} />Mensajes{overview?.openThreads ? <b>{overview.openThreads}</b> : null}</button>
-          {canAdmin && <button className={tab === 'access' ? 'is-active' : ''} onClick={() => setTab('access')}><ShieldCheck size={18} />Permisos</button>}
-          {canAdmin && <button className={tab === 'content' ? 'is-active' : ''} onClick={() => setTab('content')}><LibraryBig size={18} />Cursos</button>}
+          <button className={tab === 'live-help' ? 'is-active' : ''} onClick={() => setTab('live-help')}><Headphones size={18} />Ayuda en vivo</button>
+          {effectiveCanAdmin && <button className={tab === 'access' ? 'is-active' : ''} onClick={() => setTab('access')}><ShieldCheck size={18} />Permisos</button>}
+          {effectiveCanAdmin && <button className={tab === 'content' ? 'is-active' : ''} onClick={() => setTab('content')}><LibraryBig size={18} />Cursos</button>}
         </nav>
         <p>Los cursos y prácticas siguen disponibles sin cuenta. Este espacio muestra solo datos vinculados.</p>
       </aside>
       <main className="staff-dashboard__main">
         <header className="staff-dashboard__header">
-          <div><span>{canAdmin ? 'Administración' : 'Formación'}</span><h1>{tab === 'overview' ? 'Pulso de aprendizaje' : tab === 'learners' ? 'Seguimiento individual' : tab === 'inbox' ? 'Bandeja de acompañamiento' : tab === 'content' ? 'Gestión de cursos' : 'Acceso y responsabilidades'}</h1></div>
+          <div><span>{effectiveCanAdmin ? 'Administración' : 'Formación'}</span><h1>{tab === 'overview' ? 'Pulso de aprendizaje' : tab === 'learners' ? 'Seguimiento individual' : tab === 'inbox' ? 'Bandeja de acompañamiento' : tab === 'live-help' ? 'Acompañamiento en vivo' : tab === 'content' ? 'Gestión de cursos' : 'Acceso y responsabilidades'}</h1></div>
           <div className="staff-dashboard__header-actions"><button onClick={() => void load()} aria-label="Actualizar"><RefreshCw size={18} /></button><button data-dialog-initial-focus onClick={onClose} aria-label="Cerrar panel"><X size={20} /></button></div>
         </header>
         {error && <div className="staff-dashboard__error" role="alert">{error}</div>}
@@ -199,7 +245,7 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
                   {!selectedId && <Empty label="Selecciona una persona para revisar su recorrido." />}
                   {selectedId && selectedLoading && <div className="staff-dashboard__loading">Cargando recorrido…</div>}
                   {selectedId && selectedError && <div className="staff-detail-error" role="alert"><TriangleAlert size={20} /><p>{selectedError}</p><button onClick={() => void openLearner(selectedId)}>Reintentar</button></div>}
-                  {selected && <LearnerDetailView detail={selected} feedback={feedback} courseSlug={courseSlug} itemKey={itemKey} skillKey={skillKey} saving={saving} onBack={() => { setSelectedId(null); setSelected(null); setSelectedCourseAccess([]); setSelectedError(null); }} onFeedback={setFeedback} onCourse={setCourseSlug} onItem={setItemKey} onSkill={setSkillKey} onSend={() => void sendFeedback()} adminCourses={canAdmin ? courses : []} courseAccess={selectedCourseAccess} onCourseAccess={setSelectedCourseAccess} setError={setError} />}
+                  {selected && <LearnerDetailView detail={selected} feedback={feedback} courseSlug={courseSlug} itemKey={itemKey} skillKey={skillKey} saving={saving} onBack={() => { setSelectedId(null); setSelected(null); setSelectedCourseAccess([]); setSelectedError(null); }} onFeedback={setFeedback} onCourse={setCourseSlug} onItem={setItemKey} onSkill={setSkillKey} onSend={() => void sendFeedback()} adminCourses={effectiveCanAdmin ? courses : []} courseAccess={selectedCourseAccess} onCourseAccess={setSelectedCourseAccess} setError={setError} />}
                 </div>
               </section>
             )}
@@ -209,8 +255,9 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
                 <div className={`staff-inbox__conversation${activeThread ? ' is-open' : ''}`}>{activeThread ? (() => { const thread = threads.find((candidate) => candidate.id === activeThread); return thread ? <><header><button onClick={() => setActiveThread(null)}><ArrowLeft size={17} /></button><div><h2>{thread.subject}</h2><p>{thread.displayName || thread.email} · {thread.status === 'resolved' ? 'resuelto' : thread.status === 'waiting_student' ? 'esperando estudiante' : 'necesita respuesta'}</p></div></header><div className="staff-messages">{thread.messages.map((message) => <article key={message.id} className={message.authorUserId === thread.learnerId ? 'is-learner' : 'is-staff'}><p>{message.body}</p><time>{date(message.createdAt)}</time></article>)}</div><form onSubmit={(event) => { event.preventDefault(); void sendReply(thread, 'waiting_student'); }}><label htmlFor="staff-reply">Responder con orientación concreta</label><textarea id="staff-reply" value={reply} onChange={(event) => setReply(event.target.value)} maxLength={4000} /><div className="staff-reply-actions"><button disabled={saving || !reply.trim()}>{saving ? 'Enviando…' : 'Enviar y esperar respuesta'}</button><button type="button" className="is-secondary" disabled={saving || !reply.trim()} onClick={() => void sendReply(thread, 'resolved')}>Responder y resolver</button></div></form></> : null; })() : <Empty label="Elige una conversación para responder." />}</div>
               </section>
             )}
-            {tab === 'access' && canAdmin && <AccessView users={users} rules={accessRules} reload={load} setError={setError} />}
-            {tab === 'content' && canAdmin && <ContentView courses={courses} reload={load} setError={setError} />}
+            {tab === 'live-help' && staffIdentity && <StaffLiveHelpQueue key={staffIdentityKey} staffUserId={staffIdentity.userId} staffRoles={staffIdentity.roles} />}
+            {tab === 'access' && effectiveCanAdmin && <AccessView users={users} rules={accessRules} reload={load} setError={setError} />}
+            {tab === 'content' && effectiveCanAdmin && <ContentView courses={courses} reload={load} setError={setError} />}
           </div>
         )}
       </main>

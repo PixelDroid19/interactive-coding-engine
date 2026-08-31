@@ -29,6 +29,8 @@ import type { ChallengeValidationResult } from '../../types/runtime';
 import { PostSolveStudio } from '../learning/PostSolveStudio';
 import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
 import type { ExerciseCompletion } from '../../services/learningSync';
+import { LiveHelpWorkspaceBridge } from '../../live-help/LiveHelpWorkspaceBridge';
+import type { LiveHelpContext } from '../../live-help/protocol';
 
 interface SoloProjectViewProps {
   project: SoloProjectItem;
@@ -42,6 +44,7 @@ interface SoloProjectViewProps {
   onLanguageChange?: (language: CourseLanguage) => void;
   onCompleted?: (completion?: ExerciseCompletion) => void;
   onAttempt?: (result: 'success' | 'partial' | 'failure', completion: ExerciseCompletion) => void;
+  liveHelpContext?: LiveHelpContext;
 }
 
 export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
@@ -56,6 +59,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
   onLanguageChange,
   onCompleted,
   onAttempt,
+  liveHelpContext,
 }) => {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() =>
     loadLanguageWorkspaceDraft(project.id, language) ?? cloneWorkspace(project.initialWorkspace),
@@ -490,6 +494,16 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
           />
         </div>
       </div>
+      {liveHelpContext && <LiveHelpWorkspaceBridge
+        context={liveHelpContext}
+        workspace={workspace}
+        onWorkspaceChange={(next) => {
+          setWorkspace(next);
+          setValidationResult(null);
+          setIsCompleted(false);
+          setPostSolveComplete(false);
+        }}
+      />}
     </div>
   );
 };
