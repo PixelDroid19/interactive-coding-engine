@@ -63,9 +63,9 @@
 }
 
 .tab-btn-active {
-  background: var(--color-text-main);
+  background: #0f172a;
   border: 1.5px solid #38bdf8;
-  color: #38bdf8;
+  color: #7dd3fc;
   font-weight: 600;
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.15);
 }
@@ -209,4 +209,3 @@
   z-index: 0;
   transition: top 0.15s ease-out;
 }
-

@@ -6,9 +6,10 @@ import { html } from '@codemirror/lang-html';
 import { javascript } from '@codemirror/lang-javascript';
 import { json } from '@codemirror/lang-json';
 import { python } from '@codemirror/lang-python';
-import { bracketMatching, foldGutter, indentOnInput, indentUnit } from '@codemirror/language';
+import { bracketMatching, foldGutter, HighlightStyle, indentOnInput, indentUnit, syntaxHighlighting } from '@codemirror/language';
 import { Compartment, EditorState, Transaction, type Extension } from '@codemirror/state';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { tags } from '@lezer/highlight';
 import {
   crosshairCursor,
   drawSelection,
@@ -153,7 +154,7 @@ const editorTheme = EditorView.theme({
     backgroundColor: '#1e1e1e',
   },
   '.cm-scroller': { overflow: 'auto', fontFamily: 'inherit', paddingBottom: '30px' },
-  '.cm-gutters': { backgroundColor: '#151515', color: '#64748b', borderRight: '1px solid #27272a' },
+  '.cm-gutters': { backgroundColor: '#151515', color: '#94a3b8', borderRight: '1px solid #27272a' },
   '.cm-activeLine': { backgroundColor: '#26262655' },
   '.cm-activeLineGutter': { backgroundColor: '#262626', color: '#cbd5e1' },
   '.cm-foldGutter span': { color: '#64748b' },
@@ -207,6 +208,10 @@ const editorTheme = EditorView.theme({
   '.cm-diagnosticText': { color: '#e4e4e7' },
   '.cm-diagnosticSource': { color: '#94a3b8' },
 });
+
+const accessibleSyntaxHighlighting = HighlightStyle.define([
+  { tag: tags.comment, color: '#aeb8c8' },
+]);
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
   file,
@@ -395,6 +400,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         compartments.intelligence.of(intelligenceExtensions(initialFile)),
         spanishEditorPhrases,
         closeBrackets(),
+        syntaxHighlighting(accessibleSyntaxHighlighting),
         oneDark,
         editorTheme,
         EditorView.updateListener.of((update) => {

@@ -65,6 +65,8 @@ describe('ScrimPlayer overlay coordination', () => {
   it('blocks explanation while the start gate is active', () => {
     render(<ScrimPlayer lessonData={lesson} onBack={() => undefined} />);
 
+    expect(screen.getByRole('region', { name: lesson.title })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 1, name: lesson.title })).toBeTruthy();
     expect(screen.getByText('Clase con explicación')).toBeTruthy();
     expect(screen.getAllByRole('button', { name: 'Empezar la clase' })).toHaveLength(1);
     expect(screen.getByRole('button', { name: 'Explicar lección' }).hasAttribute('disabled')).toBe(true);

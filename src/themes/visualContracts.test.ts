@@ -80,6 +80,21 @@ describe('contratos visuales de superficies principales', () => {
     );
   });
 
+  it('mantiene contraste suficiente en las superficies oscuras del reproductor', () => {
+    expect(scssAggregate).toMatch(
+      /\.tab-btn-active\s*\{[^}]*background:\s*#0f172a[^}]*color:\s*#7dd3fc/s,
+    );
+    expect(scssAggregate).toMatch(
+      /\.logic-runner-footer\s*\{[^}]*color:\s*#94a3b8/s,
+    );
+    expect(scssAggregate).toMatch(
+      /\.dark \.category-tag\s*\{[^}]*color:\s*#fef3c7/s,
+    );
+    expect(scssAggregate).toMatch(
+      /\.dark \.btn-explain\s*\{[^}]*color:\s*#fef3c7/s,
+    );
+  });
+
   it('no deja ningún CSS legacy monolítico', () => {
     expect(existsSync(new URL('../index.css', import.meta.url))).toBe(false);
     expect(existsSync(new URL('./hud.css', import.meta.url))).toBe(false);
