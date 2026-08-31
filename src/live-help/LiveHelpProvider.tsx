@@ -173,9 +173,15 @@ export function LiveHelpProvider({ children }: { children: React.ReactNode }) {
       }
       if ((next.status === 'accepted' || next.status === 'active') && socketSessionIdRef.current !== next.id) connectSocket(next);
     } catch (cause) {
-      if (currentStudentRef.current === requesterId && identityEpochRef.current === identityEpoch) setError(cause instanceof Error ? cause.message : 'No pudimos consultar las sesiones de ayuda en vivo.');
+      // Session discovery runs in the background. A local/dev client can be
+      // authenticated in the UI while the optional live-help API is offline;
+      // do not turn that background check into a global toast that covers the
+      // lesson controls. Explicit actions still surface their own errors.
+      if (panelOpen && currentStudentRef.current === requesterId && identityEpochRef.current === identityEpoch) {
+        setError(cause instanceof Error ? cause.message : 'No pudimos consultar las sesiones de ayuda en vivo.');
+      }
     }
-  }, [canUseLiveHelp, connectSocket, disconnectSocket, replaceSession, studentUserId]);
+  }, [canUseLiveHelp, connectSocket, disconnectSocket, panelOpen, replaceSession, studentUserId]);
 
   useEffect(() => {
     if (currentStudentRef.current === studentUserId) return;

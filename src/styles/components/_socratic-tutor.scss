@@ -3,16 +3,52 @@
 // Usa @use '../abstracts' as * para acceder a variables/mixins si lo necesitas.
 // ==========================================================================
 
-/* Ayuda local de la lección: comparte los tokens del producto. */
+/* Ayuda local de la lección: comparte los tokens del producto.
+   z-index rebajado para que los modales (140-150) queden por encima;
+   y offset aumentado para no pisar la barra inferior de Depura/SoloProject */
 .socratic-tutor {
   position: fixed;
-  inset: auto 1rem 1rem auto;
-  z-index: 220;
+  right: var(--assist-dock-right, 1rem);
+  bottom: var(--assist-dock-bottom, 1rem);
+  left: auto;
+  top: auto;
+  z-index: 35;
   color: var(--color-text-main);
   font-family: 'Outfit', sans-serif;
 }
 
-.app-screen .socratic-tutor { bottom: 5.6rem; }
+.app-screen .socratic-tutor {
+  bottom: calc(56px + 1.25rem);
+}
+
+/* En layouts con panel lateral derecho, ancla abajo a la derecha del área del editor para no tapar "Comprobar" */
+@media (min-width: 1025px) {
+  body:has(.debug-new-layout) .socratic-tutor,
+  body:has(.solo-project-shell) .socratic-tutor {
+    right: var(--assist-dock-right);
+    bottom: var(--assist-dock-bottom);
+    top: auto;
+  }
+}
+@media (max-width: 1024px) {
+  body:has(.debug-new-layout) .socratic-tutor,
+  body:has(.solo-project-shell) .socratic-tutor,
+  body:has(.reasoning-screen) .socratic-tutor {
+    right: var(--assist-dock-right, 1rem);
+    bottom: var(--assist-dock-bottom, 7.25rem);
+    top: auto;
+  }
+}
+
+body:has(.learning-center-backdrop) .socratic-tutor,
+body:has(.modal-backdrop) .socratic-tutor,
+body:has(.drawer-backdrop) .socratic-tutor,
+body:has(.modal-dialog) .socratic-tutor,
+body:has(.lesson-start-gate) .socratic-tutor,
+body:has(.scrim-closure-modal) .socratic-tutor,
+body:has(.scrim-completion-banner) .socratic-tutor {
+  display: none !important;
+}
 
 .socratic-tutor__launcher {
   display: inline-flex;
@@ -180,10 +216,15 @@
 .hud .socratic-tutor__error { border-color: #ff3b81; background: #2b0b19; color: #ffacc9; }
 
 @media (max-width: 680px) {
-  .socratic-tutor { inset: auto 0 0 0; }
-  .app-screen .socratic-tutor { bottom: 0; }
-  .socratic-tutor__launcher { position: fixed; right: .75rem; bottom: 5.25rem; }
+  :root { --assist-dock-right: .75rem; --assist-dock-bottom: 5.25rem; }
+  .socratic-tutor { right: var(--assist-dock-right); bottom: var(--assist-dock-bottom); }
+  .app-screen .socratic-tutor { bottom: var(--assist-dock-bottom); }
+  .socratic-tutor__launcher { position: static; }
+  body:has(.debug-new-layout) .socratic-tutor__launcher,
+  body:has(.solo-project-shell) .socratic-tutor__launcher,
+  body:has(.reasoning-screen) .socratic-tutor__launcher {
+    position: static;
+  }
   .socratic-tutor__panel { width: 100%; max-height: 78dvh; border-right: 0; border-bottom: 0; border-left: 0; border-radius: .9rem .9rem 0 0; box-shadow: 0 -4px 0 var(--color-pencil); }
   .socratic-tutor__controls { grid-template-columns: 1fr; }
 }
-

@@ -147,6 +147,16 @@ describe('provider de ayuda en vivo', () => {
     expect(screen.getByRole('alert').textContent).toContain('cuenta de estudiante');
   });
 
+  it('no muestra una alerta global cuando falla el sondeo silencioso sin panel abierto', async () => {
+    auth.useAuthSession.mockReturnValue(studentSession('student-a'));
+    api.mySessions.mockRejectedValue(new Error('Servicio de ayuda no disponible'));
+
+    render(<LiveHelpProvider><SessionProbe /></LiveHelpProvider>);
+
+    await waitFor(() => expect(api.mySessions).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('aísla sesión y eventos cuando cambia la identidad de estudiante A a B', async () => {
     let currentAuth = studentSession('student-a');
     auth.useAuthSession.mockImplementation(() => currentAuth);

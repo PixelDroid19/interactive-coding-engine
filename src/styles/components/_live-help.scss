@@ -1,8 +1,21 @@
+/*
+ * Assistance controls share one reserved dock. Keeping the offsets in one
+ * place prevents live help, the local tutor and transient errors from
+ * competing with lesson actions (especially the debug panel buttons).
+ */
+:root {
+  --assist-dock-gap: 8px;
+  --assist-dock-bottom: 16px;
+  --assist-dock-right: 16px;
+  --assist-ai-height: 49px;
+  --assist-live-height: 38px;
+}
+
 .live-help-launcher {
   position: fixed;
-  z-index: 219;
-  right: 16px;
-  bottom: calc(1rem + 52px);
+  z-index: 34;
+  right: var(--assist-dock-right);
+  bottom: calc(var(--assist-dock-bottom) + var(--assist-ai-height) + var(--assist-dock-gap));
   display: inline-flex;
   min-height: 38px;
   align-items: center;
@@ -19,7 +32,92 @@
   cursor: pointer;
   user-select: none;
 }
-.app-screen .live-help-launcher { bottom: calc(5.4rem + 52px); }
+.app-screen .live-help-launcher {
+  bottom: calc(56px + 1.25rem + var(--assist-ai-height) + var(--assist-dock-gap));
+}
+
+@media (min-width: 1025px) {
+  body:has(.debug-new-layout) {
+    --assist-dock-bottom: 3.25rem;
+    --assist-dock-right: calc(380px + 1rem);
+  }
+  body:has(.solo-project-shell) {
+    --assist-dock-bottom: 3.25rem;
+    --assist-dock-right: calc(420px + 1rem);
+  }
+  body:has(.debug-new-layout) .live-help-launcher {
+    --assist-dock-right: calc(380px + 1rem);
+    top: auto;
+  }
+  body:has(.solo-project-shell) .live-help-launcher {
+    --assist-dock-right: calc(420px + 1rem);
+    top: auto;
+  }
+}
+@media (max-width: 1024px) {
+  body:has(.debug-new-layout),
+  body:has(.solo-project-shell),
+  body:has(.reasoning-screen) {
+    /* Keep the complete two-button dock above the stacked action footer. */
+    --assist-dock-bottom: 8rem;
+  }
+  body:has(.debug-new-layout) .live-help-launcher,
+  body:has(.solo-project-shell) .live-help-launcher,
+  body:has(.reasoning-screen) .live-help-launcher {
+    bottom: calc(var(--assist-dock-bottom) + var(--assist-ai-height) + var(--assist-dock-gap));
+    top: auto;
+  }
+}
+
+/* ScrimPlayer owns a 50–56px timeline at the bottom of the viewport. Keep
+   provider-level notifications in the same dock as the two launchers even
+   though the provider renders outside the player DOM tree. */
+body:has(.player-bar) {
+  --assist-dock-bottom: calc(56px + 1.25rem);
+}
+body:has(.reading-screen),
+body:has(.reasoning-screen) {
+  --assist-dock-bottom: calc(56px + 1.25rem);
+}
+@media (max-width: 768px) {
+  body:has(.player-bar),
+  body:has(.reading-screen),
+  body:has(.reasoning-screen) {
+    --assist-dock-bottom: calc(52px + 1rem);
+  }
+}
+
+body:has(.learning-center-backdrop) .live-help-launcher,
+body:has(.modal-backdrop) .live-help-launcher,
+body:has(.drawer-backdrop) .live-help-launcher,
+body:has(.modal-dialog) .live-help-launcher,
+body:has(.lesson-start-gate) .live-help-launcher,
+body:has(.scrim-closure-modal) .live-help-launcher,
+body:has(.scrim-completion-banner) .live-help-launcher {
+  display: none !important;
+}
+
+body:has(.modal-backdrop) .live-help-global-error,
+body:has(.drawer-backdrop) .live-help-global-error,
+body:has(.modal-dialog) .live-help-global-error,
+body:has(.lesson-start-gate) .live-help-global-error,
+body:has(.scrim-closure-modal) .live-help-global-error,
+body:has(.scrim-completion-banner) .live-help-global-error {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The speed menu opens upward from the timeline. Temporarily remove the
+   launchers from that same corner so the menu remains fully readable and
+   clickable; the controls return as soon as the menu closes. */
+body:has(.player-bar.is-speed-menu-open) .live-help-launcher,
+body:has(.player-bar.is-speed-menu-open) .socratic-tutor:not(.is-open),
+body:has(.player-bar.is-speed-menu-open) .live-help-global-error {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
 .live-help-launcher:hover { border-color: var(--ui-accent); color: var(--ui-text); transform: translateY(-1px); }
 .live-help-launcher:focus-visible,
 .live-help-panel button:focus-visible,
@@ -53,7 +151,15 @@
 .live-help-panel__state.is-connected { color: var(--ui-success); }
 .live-help-panel__state.is-reconnecting, .live-help-panel__state.is-offline { color: var(--ui-warning); }
 .live-help-panel__notice, .live-help-global-error { margin: 0; border-bottom: 1px solid var(--ui-danger); background: var(--ui-danger-soft); padding: 9px 11px; color: var(--ui-danger); font-size: 12px; font-weight: 700; }
-.live-help-global-error { position: fixed; z-index: 120; right: 16px; bottom: 16px; max-width: min(360px, calc(100vw - 32px)); border: var(--ui-panel-border-width) solid var(--ui-danger); box-shadow: var(--ui-shadow); }
+.live-help-global-error {
+  position: fixed;
+  z-index: 120;
+  right: var(--assist-dock-right);
+  bottom: calc(var(--assist-dock-bottom) + var(--assist-ai-height) + var(--assist-live-height) + (var(--assist-dock-gap) * 2));
+  max-width: min(360px, calc(100vw - 32px));
+  border: var(--ui-panel-border-width) solid var(--ui-danger);
+  box-shadow: var(--ui-shadow);
+}
 .live-help-panel__empty, .live-help-panel__consent { display: grid; place-items: start; gap: 10px; padding: 20px; }
 .live-help-panel__empty h2, .live-help-panel__consent h2, .live-help-panel__proposals h2 { margin: 0; font: 800 17px/1.1 var(--font-heading, 'Space Grotesk', sans-serif); }
 .live-help-panel__empty p, .live-help-panel__consent p { margin: 0; font-size: 13px; line-height: 1.5; }
@@ -127,4 +233,16 @@
 .staff-live-help__workspace textarea { min-height: 95px; resize: vertical; }
 
 @media (max-width: 860px) { .staff-live-help__layout, .staff-live-help__columns { grid-template-columns: 1fr; }.staff-live-help__queue { border-right: 0; border-bottom: 1px solid var(--ui-border); } }
-@media (max-width: 680px) { .live-help-panel { top: 54px; right: 7px; bottom: 7px; width: calc(100vw - 14px); }.live-help-launcher { right: 10px; bottom: 12px; }.live-help-panel__chat { max-height: 21vh; }.staff-live-help__heading { padding: 14px; }.staff-live-help__heading h2 { font-size: 20px; }.staff-live-help__session { padding: 10px; } }
+@media (max-width: 680px) {
+  .live-help-panel { top: 54px; right: 7px; bottom: 7px; width: calc(100vw - 14px); }
+  :root { --assist-dock-right: 10px; --assist-dock-bottom: 12px; }
+  body:has(.debug-new-layout) .live-help-launcher,
+  body:has(.solo-project-shell) .live-help-launcher,
+  body:has(.reasoning-screen) .live-help-launcher {
+    top: auto;
+  }
+  .live-help-panel__chat { max-height: 21vh; }
+  .staff-live-help__heading { padding: 14px; }
+  .staff-live-help__heading h2 { font-size: 20px; }
+  .staff-live-help__session { padding: 10px; }
+}
