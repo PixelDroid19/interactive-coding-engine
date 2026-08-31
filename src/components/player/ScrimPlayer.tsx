@@ -918,7 +918,12 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             </button>
           )}
           <div className="topbar-divider hidden sm:block" />
-          <h1 className="topbar-lesson-title truncate">{lessonData.title}</h1>
+          <h1
+            className="topbar-lesson-title truncate"
+            aria-hidden={awaitingStart && !showBranchRecovery && !playerState.isForked && !activeChallenge ? true : undefined}
+          >
+            {lessonData.title}
+          </h1>
         </div>
 
         <div className="window-titlebar-actions flex items-center gap-2 shrink-0 flex-wrap">
@@ -1038,7 +1043,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           <span className="lesson-start-kicker">
             {isSilentLesson ? 'Clase visual guiada' : 'Clase con explicación'}
           </span>
-          <h2 className="lesson-start-title">{lessonData.title}</h2>
+          <h1 className="lesson-start-title">{lessonData.title}</h1>
           <p className="lesson-start-hint">
             {isSilentLesson
               ? 'Lee los subtítulos mientras el editor cambia, señala ideas y construye el ejemplo paso a paso.'
