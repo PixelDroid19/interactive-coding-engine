@@ -219,10 +219,26 @@ body:has(.scrim-completion-banner) .socratic-tutor {
 .hud .rm-mastery-blocker ul { color: #c8d0e0; }
 
 .hud .socratic-tutor { color: #f7f7fb; }
-.hud .socratic-tutor__launcher,
 .hud .socratic-tutor__primary,
 .hud .socratic-tutor__composer button,
 .hud .socratic-tutor__controls select { border-color: #47516a; background: #07080d; color: #f7f7fb; }
+.hud .socratic-tutor__launcher[data-augmented-ui~="ui-button"] {
+  --aug-border-bg: #47516a;
+  --aug-inlay-bg: #07080d;
+  min-width: 10rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #f7f7fb;
+  box-shadow: none;
+  font-family: "Chakra Petch", sans-serif;
+  letter-spacing: .03em;
+}
+.hud .socratic-tutor__launcher[data-augmented-ui~="ui-button"]:hover {
+  --aug-border-bg: var(--hud-yellow);
+  color: var(--hud-yellow);
+  transform: none;
+}
 .hud .socratic-tutor__panel { border-color: #00e7ff; border-radius: 0; background: #090a0f; box-shadow: 6px 6px 0 #dfff00; }
 .hud .socratic-tutor__header { border-color: #dfff00; background: #10131b; }
 .hud .socratic-tutor__header p,

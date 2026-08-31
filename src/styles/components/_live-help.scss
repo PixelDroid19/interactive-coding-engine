@@ -32,6 +32,29 @@
   cursor: pointer;
   user-select: none;
 }
+
+/* The player output remains readable behind the fixed assistance dock,
+   including on short desktop viewports such as split-screen windows. */
+body:has(.player-bar):has(.live-help-launcher) .logic-runner-body {
+  padding-bottom: calc(var(--assist-ai-height) + var(--assist-live-height) + (var(--assist-dock-gap) * 3));
+}
+
+.hud .live-help-launcher[data-augmented-ui~="ui-button"] {
+  --aug-border-bg: var(--hud-cyan);
+  --aug-inlay-bg: #07080d;
+  min-width: 11.25rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--hud-cyan);
+  box-shadow: none;
+  font-family: "Chakra Petch", sans-serif;
+}
+
+.hud .live-help-launcher[data-augmented-ui~="ui-button"]:hover {
+  --aug-border-bg: var(--hud-yellow);
+  color: var(--hud-yellow);
+}
 .app-screen .live-help-launcher {
   bottom: calc(var(--assist-dock-bottom, calc(56px + 1.25rem)) + var(--assist-ai-height) + var(--assist-dock-gap));
 }
@@ -73,7 +96,8 @@
    provider-level notifications in the same dock as the two launchers even
    though the provider renders outside the player DOM tree. */
 body:has(.player-bar) {
-  --assist-dock-bottom: calc(56px + 1.25rem);
+  /* timeline (50px) + output status (34px) + breathing room */
+  --assist-dock-bottom: 96px;
 }
 body:has(.reading-screen),
 body:has(.reasoning-screen) {

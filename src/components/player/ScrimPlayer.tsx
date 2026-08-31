@@ -1517,7 +1517,6 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           onContinue={handleContinueAfterChallenge}
           isOpen={isChallengeDrawerOpen}
           onClose={handleCloseChallengeDrawer}
-          variant="scrim"
         />
       )}
 

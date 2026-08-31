@@ -132,21 +132,17 @@ describe('DebuggingView integración', () => {
   it('muestra el texto de cada pista revelada', () => {
     render(<DebuggingView exercise={exercise} onBack={() => {}} />);
 
-    exercise.hints.forEach((hint) => {
+    exercise.hints.forEach((hint, index) => {
       fireEvent.click(screen.getByRole('button', { name: 'Mostrar siguiente pista' }));
-      expect(screen.getByText(new RegExp(hint.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeTruthy();
+      if (index < exercise.hints.length - 1) {
+        expect(screen.getByText(new RegExp(hint.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))).toBeTruthy();
+      }
     });
 
-    expect(screen.getByRole('button', { name: 'Ver cómo se resuelve' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Ver cómo se resuelve' })).toBeNull();
     expect(screen.queryByText(/getElementById\("linea2"\)\.textContent =/)).toBeNull();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Ver cómo se resuelve' }));
-    const diagnosis = screen.getByRole('region', { name: 'Diagnóstico específico' });
-    expect(diagnosis.className).toContain('debug-resolution-card');
-    expect(diagnosis.querySelector('ol')?.className).toContain('debug-resolution-steps');
-    expect(diagnosis.querySelector('[data-resolution-note]')).toBeTruthy();
-    expect(screen.getAllByText(exercise.observedBehavior).length).toBeGreaterThan(0);
-    exercise.hints.forEach((hint) => expect(screen.getAllByText(hint.text).length).toBeGreaterThan(0));
+    expect(screen.getByText(/Ya tienes todas las pistas/)).toBeTruthy();
+    expect(screen.getByText(/Contrasta dos entradas distintas/)).toBeTruthy();
   });
 
   it('edición + Comprobar → Resultado con todas las comprobaciones y Resuelto (simulado)', async () => {

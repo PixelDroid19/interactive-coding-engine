@@ -8,6 +8,8 @@ import { type TutorMode } from '../../learning/tutor/tutorPrompt';
 import { type TutorActivityContext, useTutorWorkspace } from '../../learning/tutor/tutorContext';
 import type { TutorToolActivity } from '../../learning/tutor/tutorTools';
 import { loadLearningProfile, saveTutorConversation, saveTutorModelPreference, saveTutorReinforcement } from '../../learning/curriculumEvidence';
+import { useTheme } from '../../themes/ThemeProvider';
+import { buttonAugmentation } from '../ui/uiAugmentation';
 
 interface TutorMessage {
   id: string;
@@ -78,6 +80,7 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
   initialModelReady = false,
   placement = 'fixed',
 }) => {
+  const { themeId } = useTheme();
   const workspace = useTutorWorkspace();
   const [open, setOpen] = useState(false);
   const [models, setModels] = useState<LocalModelOption[]>([]);
@@ -260,7 +263,7 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
   return (
     <div className={`socratic-tutor ${placement === 'reading' ? 'socratic-tutor--reading' : ''} ${open ? 'is-open' : ''}`}>
       {!open && (
-        <button ref={launcherRef} type="button" className="socratic-tutor__launcher" onClick={() => setOpen(true)} aria-label="Abrir ayuda de IA">
+        <button ref={launcherRef} type="button" className="socratic-tutor__launcher" data-augmented-ui={buttonAugmentation(themeId, 'secondary')} onClick={() => setOpen(true)} aria-label="Abrir ayuda de IA">
           <Bot size={19} aria-hidden="true" />
           <span>Ayuda IA</span>
         </button>

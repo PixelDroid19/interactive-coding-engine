@@ -110,6 +110,12 @@
   margin: 0;
 }
 
+/* Conceptos and narration are independent learning aids, but they share the
+   lower editor edge. Give each one a stable row instead of letting two
+   absolute overlays occupy the same coordinates. */
+.concept-inset-wrapper,
+.concept-inset-wrapper.is-open { bottom: 8.25rem; }
+
 .player-bar {
   position: relative;
   z-index: 30;
@@ -332,4 +338,3 @@
   color: var(--color-text-main);
   white-space: nowrap;
 }
-

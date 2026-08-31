@@ -5,6 +5,8 @@ import { liveHelpContextKey, serializeClientFrame, type LiveHelpContext, type Li
 import type { LiveHelpWorkspaceAdapter } from './LiveHelpProvider';
 import { useOptionalLiveHelp } from './LiveHelpProvider';
 import { applyPatchProposal, liveHelpWorkspaceRevision, type PatchProposalOutcome } from './workspace';
+import { useTheme } from '../themes/ThemeProvider';
+import { buttonAugmentation } from '../components/ui/uiAugmentation';
 
 export interface LiveHelpWorkspaceBridgeProps {
   context: LiveHelpContext;
@@ -28,6 +30,7 @@ function snapshotFromWorkspace(workspace: WorkspaceSnapshot): LiveHelpSnapshotPa
 
 export function LiveHelpWorkspaceBridge({ context, workspace, onWorkspaceChange, onProposalApplied, pause, proposalGuard, validateProposal }: LiveHelpWorkspaceBridgeProps) {
   const liveHelp = useOptionalLiveHelp();
+  const { themeId } = useTheme();
   const contextKey = liveHelpContextKey(context);
   const workspaceRef = useRef(workspace);
   const contextRef = useRef(context);
@@ -89,5 +92,5 @@ export function LiveHelpWorkspaceBridge({ context, workspace, onWorkspaceChange,
   if (!liveHelp?.canUseLiveHelp) return null;
 
   const status = liveHelp.session?.status === 'active' ? 'Sesión activa' : liveHelp.session?.status === 'accepted' ? 'Conectando' : liveHelp.session?.status === 'claimed' ? 'Consentimiento' : liveHelp.session?.status === 'requested' ? 'Esperando' : 'Ayuda en vivo';
-  return <button type="button" className="live-help-launcher" aria-label="Abrir ayuda en vivo" onClick={liveHelp.openPanel}><Headphones size={16} aria-hidden="true" /><span>{status}</span></button>;
+  return <button type="button" className="live-help-launcher" data-augmented-ui={buttonAugmentation(themeId, 'secondary')} aria-label="Abrir ayuda en vivo" onClick={liveHelp.openPanel}><Headphones size={16} aria-hidden="true" /><span>{status}</span></button>;
 }

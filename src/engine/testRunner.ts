@@ -337,8 +337,8 @@ export async function runChallengeValidation(
       if (firstFailed.receivedValue !== undefined) {
         feedbackMessage += ` (recibido: ${JSON.stringify(firstFailed.receivedValue)})`;
       }
-    } else if (firstFailed?.hint) {
-      feedbackMessage = `${firstFailed.description} no coincide. Pista: ${firstFailed.hint}`;
+    } else if (firstFailed) {
+      feedbackMessage = `${firstFailed.description} todavía no coincide. Compara dos entradas, cambia una sola causa y vuelve a comprobar.`;
     } else {
       feedbackMessage = `Sigue. ${passedCount} de ${challenge.tests.length} pruebas pasaron. Revisa lo que falta.`;
     }

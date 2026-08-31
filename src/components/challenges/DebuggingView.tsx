@@ -11,8 +11,6 @@ import {
   RotateCcw,
   XCircle,
   Eye,
-  BookOpen,
-  Undo2,
   AlertTriangle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -20,7 +18,7 @@ import { DebuggingExerciseItem } from '../../types/curriculum';
 import { type CourseLanguage, ChallengeTest, WorkspaceFile, WorkspaceSnapshot } from '../../types/scrim';
 import { ChallengeValidationResult } from '../../types/runtime';
 import { cloneWorkspace } from '../../engine/eventLog';
-import { createDebuggingDraftVersion, loadDebuggingDraft, markItemCompleted, markChallengeSkipped, markChallengeSolutionViewed, saveDebuggingDraft } from '../../engine/persistence';
+import { createDebuggingDraftVersion, loadDebuggingDraft, markItemCompleted, markChallengeSkipped, saveDebuggingDraft } from '../../engine/persistence';
 import { runChallengeValidation } from '../../engine/testRunner';
 import { CodeEditor } from '../editor/CodeEditor';
 import { FileTree } from '../editor/FileTree';
@@ -36,6 +34,7 @@ import type { ExerciseCompletion } from '../../services/learningSync';
 import { useModalDialog } from '../useModalDialog';
 import { LiveHelpWorkspaceBridge } from '../../live-help/LiveHelpWorkspaceBridge';
 import type { LiveHelpContext } from '../../live-help/protocol';
+import { learnerHintText } from '../../learning/learnerHints';
 
 interface DebuggingViewProps {
   exercise: DebuggingExerciseItem;
@@ -112,7 +111,6 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   const [validationResult, setValidationResult] = useState<ChallengeValidationResult | null>(null);
   const [revealedHints, setRevealedHints] = useState(initialDraft?.revealedHints ?? 0);
   const [showFileTree, setShowFileTree] = useState(false);
-  const [showResolution, setShowResolution] = useState(false);
   const [activeTab, setActiveTab] = useState<'reto' | 'resultado' | 'preview'>('reto');
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [postSolveComplete, setPostSolveComplete] = useState(false);
@@ -219,7 +217,6 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   const handleReset = () => {
     setWorkspace(normalizeWorkspace(exercise, exercise.initialWorkspace));
     setValidationResult(null);
-    setShowResolution(false);
     setActiveTab('reto');
     setPostSolveComplete(false);
   };
@@ -228,7 +225,6 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
     setWorkspace(normalizeWorkspace(exercise, exercise.initialWorkspace));
     setRevealedHints(0);
     setValidationResult(null);
-    setShowResolution(false);
     setActiveTab('reto');
     setShowDraftChoice(false);
     setPostSolveComplete(false);
@@ -237,16 +233,6 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   const handleSkipForNow = () => {
     markChallengeSkipped(exercise.id);
     handleRoadmap();
-  };
-
-  const handleViewSolution = () => {
-    setShowResolution(true);
-    markChallengeSolutionViewed(exercise.id);
-  };
-
-  const handleReturnToAttempt = () => {
-    setShowResolution(false);
-    setActiveTab('reto');
   };
 
   const handleExecutePreview = async () => {
@@ -589,31 +575,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                       </details>
                     )}
 
-                    {showResolution ? (
-                      <section className="debug-resolution-card" aria-labelledby="debug-resolution-title">
-                        <h4 id="debug-resolution-title" className="debug-resolution-title">
-                          <BookOpen className="h-3.5 w-3.5" />
-                          Diagnóstico específico
-                        </h4>
-                        <p className="debug-resolution-lead">Ver la resolución no equivale a haber resuelto el reto. Tu código se conserva.</p>
-                        <ol className="debug-resolution-steps">
-                          <li><strong>Causa observada:</strong> {exercise.observedBehavior}</li>
-                          <li><strong>Dónde mirar:</strong> {exercise.hints[0]?.text ?? 'Compara la primera diferencia entre esperado y observado.'}</li>
-                          <li><strong>Concepto que corrige la causa:</strong> {exercise.hints[1]?.text ?? 'Vuelve al modelo mental de la lección.'}</li>
-                          <li><strong>Próximo cambio:</strong> {exercise.hints[2]?.text ?? 'Cambia una sola causa y vuelve a ejecutar.'}</li>
-                          <li><strong>Cómo verificar:</strong> {exercise.expectedBehavior}</li>
-                        </ol>
-                        <p className="debug-resolution-note" data-resolution-note>La guía revela el razonamiento completo sin reemplazar tu código. Aplica el cambio y usa todas las comprobaciones, no solo el ejemplo visible.</p>
-                        <div className="flex gap-2">
-                          <button type="button" onClick={handleReturnToAttempt} className="flex-1 neu-pill-btn bg-slate-100 text-slate-900" aria-label="Volver a intentarlo">
-                            <Undo2 size={13} />
-                            Volver a intentarlo
-                          </button>
-                          <button type="button" onClick={handleSkipForNow} className="flex-1 neu-pill-btn bg-amber-100" aria-label="Saltar por ahora">Saltar por ahora</button>
-                        </div>
-                      </section>
-                    ) : (
-                      exercise.hints.length > 0 && (
+                    {exercise.hints.length > 0 && (
                         <div className="mt-3">
                           <div className="flex items-center justify-between mb-2">
                             <span className="debug-kicker" style={{ marginBottom: 0 }}>
@@ -631,24 +593,22 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                               </button>
                             )}
                           </div>
-                          {exercise.hints.slice(0, revealedHints).map((hint) => (
+                          {exercise.hints.slice(0, revealedHints).map((hint, index) => (
                             <div key={hint.level} className="debug-hint" style={{ marginBottom: 6 }}>
-                              <strong>Pista {hint.level}.</strong> {hint.text}
+                              <strong>Pista {hint.level}.</strong> {learnerHintText({
+                                text: hint.text,
+                                index,
+                                total: exercise.hints.length,
+                                criteria: exercise.tests.map((test) => test.description),
+                              })}
                             </div>
                           ))}
                           {revealedHints >= exercise.hints.length && (
-                            <button
-                              type="button"
-                              onClick={handleViewSolution}
-                              className="w-full mt-1 flex items-center justify-center gap-1.5 rounded border border-amber-300 bg-amber-50 hover:bg-amber-100 py-1.5 text-amber-900 text-[11px] font-bold"
-                              aria-label="Ver cómo se resuelve"
-                            >
-                              <Eye className="h-3 w-3" />
-                              Ver cómo se resuelve
-                            </button>
+                            <p className="debug-hint" style={{ marginTop: 6 }}>
+                              Ya tienes todas las pistas. Formula una hipótesis, cambia una sola causa y vuelve a comprobar.
+                            </p>
                           )}
                         </div>
-                      )
                     )}
                   </div>
 

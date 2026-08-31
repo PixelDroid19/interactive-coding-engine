@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ScrimChallenge } from '../../types/scrim';
 import { ChallengeValidationResult } from '../../types/runtime';
-import { CheckCircle2, XCircle, Lightbulb, Play, RotateCcw, X, ChevronDown, ChevronUp, Eye, BookOpen, Undo2, Check } from 'lucide-react';
+import { CheckCircle2, XCircle, Lightbulb, Play, RotateCcw, X, ChevronDown, ChevronUp } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { markChallengeSolutionViewed, markChallengeSkipped } from '../../engine/persistence';
+import { markChallengeSkipped } from '../../engine/persistence';
 import { PostSolveStudio } from '../learning/PostSolveStudio';
 import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
+import { learnerHintText } from '../../learning/learnerHints';
 
 interface ChallengeDrawerProps {
   challenge: ScrimChallenge;
@@ -14,16 +15,9 @@ interface ChallengeDrawerProps {
   onReset: () => void;
   onSkip?: () => void;
   onSkipForNow?: () => void;
-  onViewSolution?: () => void;
-  onReturnToAttempt?: () => void;
-  onApplySolution?: () => void;
   onContinue: () => void;
   onClose?: () => void;
   isOpen: boolean;
-  variant?: 'scrim' | 'debug';
-  // For before/after display
-  beforeCode?: string;
-  afterCode?: string;
 }
 
 const INSTRUCTION_HEADINGS = ['Antes de empezar', 'Punto de partida', 'Cómo comprobarlo', 'Si te atascas'] as const;
@@ -47,92 +41,6 @@ export function splitChallengeInstructions(instructions: string): Array<{ headin
   });
 }
 
-export function getResolutionContent(challenge: ScrimChallenge, variant: 'scrim' | 'debug') {
-  // Generic resolution based on challenge id
-  const id = challenge.id;
-  if (variant === 'debug') {
-    return {
-      cause: 'El programa hace menos de lo que el problema pide o usa el operador equivocado.',
-      locate: 'Relee el comportamiento esperado y compáralo con lo que hace ahora. Usa los casos de prueba como pistas.',
-      concept: challenge.solutionExplanation || 'Revisa el concepto de la lección asociada.',
-      verify: 'Pulsa Comprobar y verifica que todos los casos de prueba cambien a verde.',
-      showCode: false,
-    };
-  }
-  // Scrim retos: provide before/after for known challenges
-  const map: Record<string, { before: string; after: string; why: string }> = {
-    'reto-tu-nombre': {
-      before: 'let nombre = "Alex";',
-      after: 'let nombre = "Ana"; // tu nombre entre comillas',
-      why: 'Solo el texto entre comillas debe cambiar. Las comillas indican que es texto.',
-    },
-    'reto-fahrenheit': {
-      before: 'const fahrenheit = celsius;',
-      after: 'const fahrenheit = celsius * 9 / 5 + 32;',
-      why: 'Sin la cuenta, el programa copia el número. Con ella, convierte de verdad para cualquier valor.',
-    },
-    'reto-tres-datos': {
-      before: '// falta nombre/edad/listo',
-      after: 'const nombre = "Ana";\nlet edad = 25;\nconst listo = true;',
-      why: 'Cada dato tiene su forma: texto con comillas, número sin, booleano true/false.',
-    },
-    'reto-espar-entrar': {
-      before: 'function esPar(n){ return n; }',
-      after: 'function esPar(n){ return n % 2 === 0; }',
-      why: '% da el resto. Si es 0 al dividir entre 2, es par.',
-    },
-    'reto-letra': {
-      before: 'if (nota >= 70) { letra = "C"; }',
-      after: 'Pregunta primero por 90, después por 80 y al final por 70.',
-      why: 'El primer sí gana. Pregunta de la nota más alta a la más baja.',
-    },
-    'reto-limite-bucle': {
-      before: 'for (let i = 1; i < 5; i++)',
-      after: 'Haz que la condición también acepte el valor cinco.',
-      why: 'Menor que excluye el límite; menor o igual lo incluye.',
-    },
-    'reto-area': {
-      before: 'return 3 * 4;',
-      after: 'return ancho * alto;',
-      why: 'La función debe usar los parámetros que recibe, no números fijos.',
-    },
-    'reto-suma': {
-      before: 'for(...){}',
-      after: 'let total=0;\nfor(let i=0;i<numeros.length;i++) total+=numeros[i];\nreturn total;',
-      why: 'Un acumulador empieza en 0 y suma cada posición del array.',
-    },
-    'reto-producto': {
-      before: 'return item[0] + " — " + item[1];',
-      after: 'return item.nombre + " — " + item.precio;',
-      why: 'Un objeto se lee con punto y nombre del campo, no con [0].',
-    },
-    'reto-contador': {
-      before: 'n = 0;',
-      after: 'let n = 0; // dentro de crearContador',
-      why: 'Sin let, n es global y todos los contadores comparten el mismo número.',
-    },
-  };
-  const entry = map[id];
-  if (entry) {
-    return {
-      cause: `El código actual no produce el resultado visible esperado.`,
-      locate: `Revisa el archivo y la línea que manipula ${id.includes('nombre') ? 'el nombre' : id.includes('fahrenheit') ? 'fahrenheit' : 'la función'}.`,
-      concept: entry.why,
-      verify: 'Pulsa Comprobar y verifica que la vista previa muestre el resultado correcto.',
-      before: entry.before,
-      after: entry.after,
-      showCode: true,
-    };
-  }
-  return {
-    cause: 'El resultado no coincide con lo esperado.',
-    locate: 'Revisa la instrucción y localiza la línea que debe cambiar.',
-    concept: challenge.solutionExplanation || 'Aplica el concepto de la lección.',
-    verify: 'Pulsa Comprobar para validar.',
-    showCode: false,
-  };
-}
-
 export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
   challenge,
   validationResult,
@@ -140,40 +48,22 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
   onReset,
   onSkip,
   onSkipForNow,
-  onViewSolution,
-  onReturnToAttempt,
-  onApplySolution,
   onContinue,
   onClose,
   isOpen,
-  variant = 'scrim',
-  beforeCode,
-  afterCode,
 }) => {
   const [hintIndex, setHintIndex] = useState(0);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [showResolution, setShowResolution] = useState(false);
-  const [hasViewedSolution, setHasViewedSolution] = useState(false);
-  const [showApplyConfirm, setShowApplyConfirm] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const testsFunctionDirectly = challenge.tests.some((test) => test.validatorType === 'function-call');
   const instructionParts = splitChallengeInstructions(challenge.instructions);
 
   const handleSkipForNow = onSkipForNow || onSkip;
-  const effectiveOnViewSolution = onViewSolution || (() => {
-    setHasViewedSolution(true);
-    setShowResolution(true);
-    markChallengeSolutionViewed(challenge.id);
-  });
-
   // Reset hints when challenge changes
   useEffect(() => {
     setHintIndex(0);
     setIsMinimized(false);
-    setShowResolution(false);
-    setHasViewedSolution(false);
-    setShowApplyConfirm(false);
   }, [challenge.id]);
 
   useEffect(() => {
@@ -203,7 +93,6 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
 
   const handleReset = () => {
     setHintIndex(0);
-    setShowResolution(false);
     onReset();
   };
 
@@ -214,32 +103,13 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
     }
   };
 
-  const handleViewSolutionClick = () => {
-    setHasViewedSolution(true);
-    setShowResolution(true);
-    markChallengeSolutionViewed(challenge.id);
-    if (onViewSolution) onViewSolution();
-  };
-
-  const handleReturnToAttempt = () => {
-    setShowResolution(false);
-    if (onReturnToAttempt) onReturnToAttempt();
-  };
-
-  const handleApplySolution = () => {
-    setShowApplyConfirm(true);
-  };
-
-  const confirmApply = () => {
-    setShowApplyConfirm(false);
-    setShowResolution(false);
-    if (onApplySolution) onApplySolution();
-    else if (onContinue) onContinue();
-  };
-
   const currentHint = challenge.hints && challenge.hints[hintIndex] ? challenge.hints[hintIndex] : null;
-  const canShowViewSolution = hintIndex >= challenge.hints.length - 1 || hasViewedSolution || challenge.hints.length === 0;
-  const resolution = getResolutionContent(challenge, variant);
+  const currentHintText = currentHint ? learnerHintText({
+    text: currentHint.text,
+    index: hintIndex,
+    total: challenge.hints.length,
+    criteria: challenge.tests.map((test) => test.description),
+  }) : null;
 
   if (!isOpen) return null;
 
@@ -255,9 +125,6 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
       <div className="modal-header">
         <div className="flex items-center gap-2" style={{ fontFamily: 'Patrick Hand, cursive', fontWeight: 700 }}>
           <span className="truncate">{challenge.title}</span>
-          {hasViewedSolution && !validationResult?.allPassed && (
-            <span className="text-[10px] bg-amber-900/50 text-amber-200 border border-amber-700 px-1.5 py-0.5 rounded">Viste la resolución</span>
-          )}
         </div>
 
         <div className="flex items-center gap-1">
@@ -285,91 +152,7 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
 
       {!isMinimized && (
         <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs font-sans text-zinc-200">
-          {/* Resolution view */}
-          {showResolution ? (
-            <div className="space-y-3">
-              <div className="rounded-lg bg-amber-950/30 border border-amber-800 p-3 space-y-2">
-                <h4 className="flex items-center gap-1.5 text-amber-200 font-bold text-xs">
-                  <BookOpen className="h-3.5 w-3.5" />
-                  Cómo se resuelve
-                </h4>
-                <p className="text-[11px] text-amber-100/80">Ver la solución no equivale a haber resuelto el reto. Tu código se conserva. Puedes volver a intentarlo.</p>
-              </div>
-
-              <div className="space-y-2">
-                <h5 className="text-[11px] font-bold text-zinc-200">Paso a paso</h5>
-                <ol className="list-decimal list-inside space-y-1 text-[11px] text-zinc-300">
-                  <li><strong>Qué estaba mal:</strong> {resolution.cause}</li>
-                  <li><strong>Dónde mirar:</strong> {resolution.locate}</li>
-                  <li><strong>Concepto:</strong> {resolution.concept}</li>
-                  <li><strong>Cómo verificar:</strong> {resolution.verify}</li>
-                </ol>
-              </div>
-
-              {resolution.showCode && (resolution.before || beforeCode) && (resolution.after || afterCode) && (
-                <div className="space-y-1.5">
-                  <h5 className="text-[11px] font-bold text-zinc-200">Cambio relevante</h5>
-                  <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
-                    <div className="bg-rose-950/30 border border-rose-800 p-2 rounded">
-                      <div className="text-rose-300 font-bold mb-1">Antes</div>
-                      <pre className="whitespace-pre-wrap text-rose-200">{resolution.before || beforeCode}</pre>
-                    </div>
-                    <div className="bg-emerald-950/30 border border-emerald-800 p-2 rounded">
-                      <div className="text-emerald-300 font-bold mb-1">Después</div>
-                      <pre className="whitespace-pre-wrap text-emerald-200">{resolution.after || afterCode}</pre>
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-zinc-400">No se reemplaza automáticamente. Usa Volver a intentarlo para editar tú mismo.</p>
-                </div>
-              )}
-
-              {variant === 'debug' && (
-                <div className="rounded bg-zinc-900 border border-zinc-700 p-2 text-[11px] text-zinc-300">
-                  <div className="font-bold">Guía sin copiar:</div>
-                  <p>Causa del fallo → cómo localizarlo con la pista 1 → qué concepto aplicar (pista 2) → próximo paso (pista 3) → verifica con Comprobar. La resolución explica el razonamiento, no es una línea para pegar.</p>
-                </div>
-              )}
-
-              <div className="pt-2 border-t border-zinc-800 flex flex-col gap-2">
-                <button
-                  onClick={handleReturnToAttempt}
-                  className="w-full flex items-center justify-center gap-1.5 rounded bg-zinc-100 hover:bg-white py-2 text-zinc-900 font-bold text-xs"
-                  aria-label="Volver a intentarlo"
-                >
-                  <Undo2 className="h-3.5 w-3.5" />
-                  <span>Volver a intentarlo</span>
-                </button>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleSkipForNowClick}
-                    className="flex-1 rounded border border-zinc-700 py-1.5 text-[11px] text-zinc-400 hover:text-zinc-200"
-                    aria-label="Saltar por ahora"
-                  >
-                    Saltar por ahora
-                  </button>
-                  {onApplySolution && (
-                    <button
-                      onClick={handleApplySolution}
-                      className="flex-1 rounded bg-amber-500 hover:bg-amber-400 py-1.5 text-[11px] font-bold text-zinc-900"
-                      aria-label="Aplicar y continuar"
-                    >
-                      Aplicar y continuar
-                    </button>
-                  )}
-                </div>
-                {showApplyConfirm && (
-                  <div className="rounded bg-zinc-900 border border-amber-700 p-2 space-y-1">
-                    <p className="text-[11px] text-amber-200">¿Aplicar la resolución? Esto reemplazará tu código actual por el ejemplo resuelto.</p>
-                    <div className="flex gap-1">
-                      <button onClick={confirmApply} className="flex-1 py-1 text-[11px] bg-amber-500 text-zinc-900 font-bold rounded" aria-label="Confirmar aplicar">Confirmar</button>
-                      <button onClick={() => setShowApplyConfirm(false)} className="flex-1 py-1 text-[11px] border border-zinc-700 rounded" aria-label="Cancelar aplicar">Cancelar</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <>
+          <>
               {/* Instructions */}
               <div className="space-y-1.5">
                 <h4 className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Instrucciones</h4>
@@ -493,18 +276,13 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
                   {currentHint && (
                     <div className="text-zinc-300 text-xs leading-relaxed">
                       <div className="font-semibold text-zinc-200 mb-1">{currentHint.title}</div>
-                      <p>{currentHint.text}</p>
+                      <p>{currentHintText}</p>
                     </div>
                   )}
-                  {hintIndex >= challenge.hints.length - 1 && canShowViewSolution && !validationResult?.allPassed && (
-                    <button
-                      onClick={handleViewSolutionClick}
-                      className="mt-1 w-full flex items-center justify-center gap-1.5 rounded border border-amber-700 bg-amber-950/30 hover:bg-amber-900/40 py-1.5 text-amber-200 text-[11px] font-bold"
-                      aria-label="Ver cómo se resuelve"
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      Ver cómo se resuelve
-                    </button>
+                  {hintIndex >= challenge.hints.length - 1 && !validationResult?.allPassed && (
+                    <p className="mt-1 border-t border-zinc-800 pt-2 text-[11px] text-zinc-400">
+                      Ya tienes todas las pistas. Cambia una sola causa, ejecuta y usa el resultado de las pruebas como nueva evidencia.
+                    </p>
                   )}
                 </div>
               )}
@@ -554,21 +332,10 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
                     >
                       Saltar por ahora
                     </button>
-                    {canShowViewSolution && (
-                      <button
-                        onClick={handleViewSolutionClick}
-                        className="flex-1 text-center text-[11px] border border-amber-700 bg-amber-950/20 rounded py-1.5 text-amber-300 hover:bg-amber-900/30 transition-colors flex items-center justify-center gap-1"
-                        aria-label="Ver cómo se resuelve"
-                      >
-                        <BookOpen className="h-3 w-3" />
-                        Ver resolución
-                      </button>
-                    )}
                   </div>
                 )}
               </div>
             </>
-          )}
         </div>
       )}
     </div>

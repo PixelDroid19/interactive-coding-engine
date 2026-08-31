@@ -16,7 +16,7 @@ export const ConceptSlideInset: React.FC<ConceptSlideInsetProps> = ({
   const isCyber = themeId === 'cyber';
 
   return (
-    <div className="concept-inset-wrapper absolute bottom-14 left-3 z-30 select-none max-w-xs transition-all duration-200">
+    <div className={`concept-inset-wrapper absolute left-3 z-30 select-none max-w-xs transition-all duration-200${isOpen ? ' is-open' : ''}`}>
       {isOpen ? (
         <div
           className="concept-inset-card rounded-xl border border-zinc-700/80 bg-[#141416]/95 backdrop-blur-md p-3.5 shadow-2xl text-xs space-y-2.5 animate-in fade-in zoom-in-95"

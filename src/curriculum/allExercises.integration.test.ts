@@ -7,6 +7,7 @@ import { JAVASCRIPT_COURSE, JAVASCRIPT_SCRIMS } from './javascript/course';
 import { COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS } from './web-components-lit/course';
 import { AI_ENGINEER_COURSE, AI_ENGINEER_SCRIMS } from './ai-engineer/course';
 import { OPEN_CELLS_COURSE, OPEN_CELLS_SCRIMS } from './open-cells/course';
+import { learnerHintText } from '../learning/learnerHints';
 
 interface AuditedExercise {
   id: string;
@@ -110,6 +111,23 @@ describe('auditoría integrada de todos los ejercicios', () => {
           expect(test.customValidatorScript?.trim().length, `${exercise.id}/${test.id} no ejecuta una comprobación real`).toBeGreaterThan(20);
         }
       }
+    }
+  });
+
+  it('la última ayuda visible nunca entrega el paso final de ninguno de los cinco cursos', () => {
+    for (const exercise of exercises) {
+      const original = exercise.hints.at(-1) ?? '';
+      const visible = learnerHintText({
+        text: original,
+        index: Math.max(0, exercise.hints.length - 1),
+        total: exercise.hints.length,
+        criteria: exercise.tests.map((test) => test.description),
+      });
+
+      expect(visible, `${exercise.id} deja visible la pista-solución original`).not.toBe(original);
+      expect(visible, `${exercise.id} muestra código copiable en la última pista`).not.toMatch(/```|\breturn\b|=>|===|\b(?:const|let|var|if|for|while)\s*[\s({]/i);
+      expect(visible, `${exercise.id} no exige investigar antes de cambiar`).toMatch(/dos entradas|dos casos/i);
+      expect(visible, `${exercise.id} no limita el cambio`).toMatch(/una sola causa/i);
     }
   });
 

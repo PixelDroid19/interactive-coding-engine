@@ -1,7 +1,7 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, it, expect } from 'vitest';
-import { ChallengeDrawer, getResolutionContent, splitChallengeInstructions } from './ChallengeDrawer';
+import { ChallengeDrawer, splitChallengeInstructions } from './ChallengeDrawer';
 import { markChallengeCompleted, markChallengeSkipped, markChallengeSolutionViewed, getChallengeState, clearChallengeState } from '../../engine/persistence';
 
 const makeChallenge = () => ({
@@ -66,15 +66,15 @@ describe('ChallengeDrawer', () => {
     expect(markup).not.toContain('Saltar y ver la solución');
   });
 
-  it('separa acciones: Ver cómo se resuelve aparece tras pistas', () => {
+  it('no ofrece una resolución ni código para copiar al agotar las pistas', () => {
     const challenge = makeChallenge();
-    // With 1 hint, after showing first hint, the button to view solution should not yet appear? But with our logic, after last hint it appears
-    // For 1 hint, hintIndex 0 is last, so it should appear
     const markup = renderToStaticMarkup(
       <ChallengeDrawer challenge={challenge as any} validationResult={null} onValidate={() => {}} onReset={() => {}} onSkip={() => {}} onContinue={() => {}} isOpen={true} />
     );
-    expect(markup).toContain('Ver cómo se resuelve');
-    expect(markup).toContain('Ver resolución');
+    expect(markup).toContain('Ya tienes todas las pistas');
+    expect(markup).not.toContain('Ver cómo se resuelve');
+    expect(markup).not.toContain('Ver resolución');
+    expect(markup).not.toContain('Aplicar y continuar');
   });
 
   it('textos en español y aria-labels', () => {
@@ -124,25 +124,6 @@ describe('ChallengeDrawer', () => {
       <ChallengeDrawer challenge={challenge as any} validationResult={validation as any} onValidate={() => {}} onReset={() => {}} onContinue={() => {}} isOpen={true} />
     );
     expect(markup).toContain('Pista');
-  });
-
-  it('resolución explica paso a paso y antes/después para scrim', () => {
-    const challenge = makeChallenge();
-    const res = getResolutionContent(challenge as any, 'scrim');
-    expect(res.cause).toBeTruthy();
-    expect(res.locate).toBeTruthy();
-    expect(res.concept).toBeTruthy();
-    expect(res.verify).toBeTruthy();
-    expect(res.showCode).toBe(true);
-    expect(res.before).toContain('Alex');
-    expect(res.after).toContain('Ana');
-  });
-
-  it('resolución debug no muestra código exacto', () => {
-    const challenge = makeChallenge();
-    const res = getResolutionContent(challenge as any, 'debug');
-    expect(res.showCode).toBe(false);
-    expect(res.cause).toContain('programa');
   });
 
   it('distingue skipped, solutionViewed y completed', () => {
