@@ -574,7 +574,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
             </span>
           </div>
         </header>
-        <section className="cells-lab__empty" role="alert">
+        <section className="cells-lab__empty cells-lab__recovery" role="alert">
           <XCircle size={28} />
           <h4>No pudimos abrir tu proyecto guardado</h4>
           <p>No se reemplazó por el proyecto inicial. La copia inválida queda preservada para que puedas recuperarla.</p>
@@ -624,19 +624,22 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
               <XCircle size={14} /> Descartar borrador y copia preservada
             </button>
           ) : (
-            <section role="alertdialog" aria-modal="true" aria-labelledby="cells-recovery-discard-title">
+            <section className="cells-lab__recovery-dialog" role="alertdialog" aria-modal="true" aria-labelledby="cells-recovery-discard-title">
               <h5 id="cells-recovery-discard-title">¿Eliminar definitivamente este proyecto?</h5>
               <p>Se eliminarán el borrador dañado, su copia preservada y las preferencias de esta práctica. Esta acción no se puede deshacer.</p>
-              <button type="button" onClick={() => setDiscardConfirmationOpen(false)}>
-                Conservar el borrador
-              </button>
-              <button
-                type="button"
-                onClick={() => void discardWorkspaceRecovery()}
-                disabled={status === 'running' || status === 'loading'}
-              >
-                Eliminar definitivamente
-              </button>
+              <div className="cells-lab__recovery-dialog-actions">
+                <button className="cells-lab__recovery-dialog-btn" type="button" onClick={() => setDiscardConfirmationOpen(false)}>
+                  Conservar el borrador
+                </button>
+                <button
+                  className="cells-lab__recovery-dialog-btn is-danger"
+                  type="button"
+                  onClick={() => void discardWorkspaceRecovery()}
+                  disabled={status === 'running' || status === 'loading'}
+                >
+                  Eliminar definitivamente
+                </button>
+              </div>
             </section>
           )}
         </section>

@@ -677,6 +677,63 @@
   background: #383010;
 }
 
+.cells-lab__recovery {
+  width: min(100%, 44rem);
+  min-height: 28rem;
+}
+
+.cells-lab__recovery > small {
+  max-width: 58ch;
+  line-height: 1.45;
+}
+
+.cells-lab__recovery-dialog {
+  width: min(100%, 34rem);
+  margin-top: 0.75rem;
+  border: 1px solid #9f1239;
+  padding: 1rem;
+  background: #2a1115;
+  color: #fecdd3;
+  text-align: left;
+}
+
+.cells-lab__recovery-dialog h5 {
+  margin: 0 0 0.4rem;
+  color: #fff1f2;
+  font: 750 0.95rem/1.3 'Space Grotesk', sans-serif;
+}
+
+.cells-lab__recovery-dialog p {
+  max-width: none;
+}
+
+.cells-lab__recovery-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.cells-lab__recovery-dialog-btn {
+  min-height: 2.35rem;
+  border: 1px solid #52525b;
+  padding: 0.45rem 0.75rem;
+  background: #18181b;
+  color: #f4f4f5;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.cells-lab__recovery-dialog-btn.is-danger {
+  border-color: #fb7185;
+  background: #881337;
+  color: #fff1f2;
+}
+
+.cells-lab__recovery-dialog-btn:hover:not(:disabled) {
+  border-color: #fde047;
+}
+
 /* HUD Theme Support */
 html.hud .playground-cells-shell__intro {
   border-color: #d7ff00;
@@ -825,4 +882,3 @@ html.hud .cells-lab__mobile-nav button.is-active { border-color: #d7ff00; backgr
   .cells-lab__pane--preview iframe { min-height: 0; }
   .cells-lab__coverage dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-
