@@ -37,6 +37,7 @@ interface ReadingViewProps {
   onNext?: () => void;
   navigationState?: NavigationState;
   liveHelpContext?: LiveHelpContext;
+  assistant?: React.ReactNode;
 }
 
 export const ReadingView: React.FC<ReadingViewProps> = ({
@@ -47,6 +48,7 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
   onNext,
   navigationState,
   liveHelpContext,
+  assistant,
 }) => {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const mainRef = useRef<HTMLElement>(null);
@@ -144,7 +146,8 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
               <span className="topbar-lesson-title truncate">{reading.title}</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="reading-topbar__actions flex items-center gap-3">
+            {assistant && <div className="reading-topbar__assistant">{assistant}</div>}
             <div className="reading-time-pill hidden md:flex items-center gap-1.5 font-mono text-[11px]">
               <Clock size={12} className="reading-time-icon" />
               <span>~{reading.estimatedMinutes || 4} min</span>

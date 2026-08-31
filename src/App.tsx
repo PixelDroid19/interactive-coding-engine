@@ -860,6 +860,9 @@ export default function App() {
           onNext={navigationState.hasNext ? handleNext : handleBackToRoadmap}
           navigationState={navigationState}
           liveHelpContext={{ courseSlug: course.slug, lessonKey: activeItem.id, surface: 'lesson' }}
+          assistant={tutorActivity && tutorEnabled ? (
+            <SocraticTutor enabled={tutorEnabled} activity={tutorActivity} placement="reading" />
+          ) : undefined}
         />
       )}
 
@@ -932,7 +935,7 @@ export default function App() {
         />
       )}
 
-      {tutorActivity && (
+      {tutorActivity && currentView !== 'reading' && (
         <SocraticTutor enabled={tutorEnabled} activity={tutorActivity} />
       )}
     </div>

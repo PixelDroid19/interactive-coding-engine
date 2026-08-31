@@ -522,7 +522,7 @@
 .reasoning-connection-choices { display: grid; gap: 8px; margin-top: 18px; border-top: 1px dashed #52525b; padding-top: 16px; }
 .reasoning-connection-choices legend { padding-right: 8px; font-weight: 900; }
 .reasoning-connection-choices label { display: flex; align-items: center; gap: 10px; border: 1px solid #3f3f46; border-radius: 8px; padding: 10px; }
-.reasoning-footer { position: fixed; z-index: 30; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; border-top: 2px solid #384152; padding: 14px 24px; background: #131720; box-shadow: 0 -4px 12px rgba(0,0,0,0.4); }
+.reasoning-footer { position: relative; z-index: 30; flex-shrink: 0; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; border-top: 2px solid #384152; padding: 14px 24px; background: #131720; box-shadow: 0 -4px 12px rgba(0,0,0,0.4); }
 .reasoning-footer span { text-align: center; color: #94a3b8; font-size: 13px; font-weight: 600; }
 
 .reasoning-table-wrap { overflow-x: auto; }
@@ -541,7 +541,7 @@
 .reasoning-connection-choices { display: grid; gap: 8px; margin-top: 18px; border-top: 1px dashed #52525b; padding-top: 16px; }
 .reasoning-connection-choices legend { padding-right: 8px; font-weight: 900; }
 .reasoning-connection-choices label { display: flex; align-items: center; gap: 10px; border: 1px solid #3f3f46; border-radius: 8px; padding: 10px; }
-.reasoning-footer { position: fixed; z-index: 30; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; border-top: 2px solid #384152; padding: 14px 24px; background: #131720; box-shadow: 0 -4px 12px rgba(0,0,0,0.4); }
+.reasoning-footer { position: relative; z-index: 30; flex-shrink: 0; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; border-top: 2px solid #384152; padding: 14px 24px; background: #131720; box-shadow: 0 -4px 12px rgba(0,0,0,0.4); }
 .reasoning-footer span { text-align: center; color: #94a3b8; font-size: 13px; font-weight: 600; }
 
 @media (max-width: 640px) {

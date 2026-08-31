@@ -21,6 +21,28 @@
   bottom: calc(56px + 1.25rem);
 }
 
+/* Reading keeps its assistant action in the topbar so it never floats over
+   the article while the learner scrolls. Once opened, the panel leaves the
+   topbar and uses the same fixed dock as the other surfaces. */
+.socratic-tutor--reading {
+  position: static;
+}
+
+.socratic-tutor--reading.is-open {
+  position: fixed;
+  right: var(--assist-dock-right, 1rem);
+  bottom: 1rem;
+  z-index: 89;
+}
+
+.socratic-tutor--reading .socratic-tutor__launcher {
+  min-height: 2.25rem;
+  border-radius: .35rem;
+  padding: .4rem .65rem;
+  box-shadow: 2px 2px 0 var(--color-pencil);
+  font-size: .72rem;
+}
+
 /* En layouts con panel lateral derecho, ancla abajo a la derecha del área del editor para no tapar "Comprobar" */
 @media (min-width: 1025px) {
   body:has(.debug-new-layout) .socratic-tutor,

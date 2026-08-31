@@ -21,6 +21,8 @@ interface SocraticTutorProps {
   activity: TutorActivityContext;
   service?: LocalGenerationService;
   initialModelReady?: boolean;
+  /** Render the closed launcher in a host layout (for example the reading topbar). */
+  placement?: 'fixed' | 'reading';
 }
 
 const MODE_OPTIONS: Array<{ id: TutorMode; label: string; description: string }> = [
@@ -74,6 +76,7 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
   activity,
   service = getLocalGenerationSession(),
   initialModelReady = false,
+  placement = 'fixed',
 }) => {
   const workspace = useTutorWorkspace();
   const [open, setOpen] = useState(false);
@@ -255,7 +258,7 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
   };
 
   return (
-    <div className={`socratic-tutor ${open ? 'is-open' : ''}`}>
+    <div className={`socratic-tutor ${placement === 'reading' ? 'socratic-tutor--reading' : ''} ${open ? 'is-open' : ''}`}>
       {!open && (
         <button ref={launcherRef} type="button" className="socratic-tutor__launcher" onClick={() => setOpen(true)} aria-label="Abrir ayuda de IA">
           <Bot size={19} aria-hidden="true" />
