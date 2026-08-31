@@ -1050,7 +1050,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
               : 'El instructor escribe, señala y explica. Para oírlo y ver el código moverse, pulsa aquí.'}
           </p>
           <section className="lesson-start-objectives" aria-labelledby="lesson-objectives-title">
-            <h3 id="lesson-objectives-title">Al terminar podrás</h3>
+            <h2 id="lesson-objectives-title">Al terminar podrás</h2>
             <ul>
               {lessonData.learningObjectives.map((objective) => (
                 <li key={objective}>{objective}</li>

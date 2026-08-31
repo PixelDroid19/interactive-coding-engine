@@ -76,6 +76,32 @@ describe('TypeScriptWorkerClient', () => {
     expect(message.files.some((file) => file.path.endsWith('.html'))).toBe(false);
   });
 
+  it('conserva catálogos JSON y contratos Cells para el análisis semántico', () => {
+    const worker = new FakeWorker();
+    const client = new TypeScriptWorkerClient(() => worker);
+
+    client.replaceWorkspace([
+      { path: 'src/mixins/WidgetMixin.js', content: 'export const WidgetMixin = (Base) => class extends Base {};', language: 'javascript' },
+      { path: 'academy-learning-card.js', content: [
+        "import { AcademyLearningCard } from './src/AcademyLearningCard.js';",
+        "customElements.define('academy-learning-card', AcademyLearningCard);",
+      ].join('\n'), language: 'javascript' },
+      { path: 'src/AcademyLearningCard.js', content: 'export class AcademyLearningCard extends HTMLElement {}', language: 'javascript' },
+      { path: 'locales/locales.json', content: '{"es":{"title":"Hola"}}', language: 'json' },
+    ]);
+
+    const message = worker.messages[0] as { files: Array<{ path: string; content: string }> };
+    const cellsDeclarations = message.files.find((file) => file.path === '/__aula_cells__.d.ts');
+
+    expect(message.files.map((file) => file.path)).toEqual(expect.arrayContaining([
+      'locales/locales.json',
+      'src/mixins/WidgetMixin.d.ts',
+      '/__aula_cells__.d.ts',
+    ]));
+    expect(cellsDeclarations?.content).toContain('"academy-learning-card"');
+    expect(cellsDeclarations?.content).toContain('AcademyLearningCard');
+  });
+
   it('termina el worker y rechaza respuestas pendientes al desmontar el editor', async () => {
     const worker = new FakeWorker();
     const client = new TypeScriptWorkerClient(() => worker);

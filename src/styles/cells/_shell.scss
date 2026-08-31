@@ -188,7 +188,38 @@
   line-height: 1.55;
 }
 
+.cells-lab__runtime-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #7f1d1d;
+  background: #2a1115;
+  color: #fecaca;
+}
+
+.cells-lab__runtime-error > svg {
+  flex: 0 0 auto;
+  margin-top: 0.1rem;
+  color: #fb7185;
+}
+
+.cells-lab__runtime-error > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.cells-lab__runtime-error strong {
+  color: #fff1f2;
+  font-size: 0.82rem;
+}
+
+.cells-lab__runtime-error span {
+  overflow-wrap: anywhere;
+  font: 0.78rem/1.45 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
 .cells-lab__mobile-nav {
   display: none;
 }
-

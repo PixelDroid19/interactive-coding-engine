@@ -174,7 +174,8 @@ describe('datos canónicos del catálogo', () => {
     expect(alert.textContent).toContain(
       'No pudimos consultar el catálogo publicado. Se muestra el contenido local y su disponibilidad puede estar desactualizada.',
     );
-    expect(alert.className).toContain('pointer-events-none');
+    expect(alert.querySelector('details')?.open).toBe(false);
+    expect(screen.getByText(/Modo local · datos sin actualizar/)).toBeTruthy();
   });
 
   it('advierte cuando no puede actualizar la estructura publicada del curso', async () => {

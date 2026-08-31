@@ -428,6 +428,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       ],
     });
     const view = new EditorView({ state: startState, parent: container });
+    view.scrollDOM.tabIndex = 0;
+    view.scrollDOM.setAttribute('aria-label', 'Área desplazable del editor');
     viewRef.current = view;
     return () => {
       view.destroy();

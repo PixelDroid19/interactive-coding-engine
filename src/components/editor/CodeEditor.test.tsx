@@ -73,6 +73,8 @@ describe('CodeEditor', () => {
     );
 
     expect(container.querySelector('.cm-content')?.getAttribute('contenteditable')).toBe('false');
+    expect(container.querySelector('.cm-scroller')?.getAttribute('tabindex')).toBe('0');
+    expect(container.querySelector('.cm-scroller')?.getAttribute('aria-label')).toBe('Área desplazable del editor');
   });
 
   it('cambia de archivo sin destruir la instancia visible del editor', () => {

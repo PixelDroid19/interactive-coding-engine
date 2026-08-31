@@ -664,14 +664,24 @@ export default function App() {
     <div className={currentView === 'scrim' ? 'app-screen' : undefined}>
       {canonicalDataMessages.length > 0 && (
         <aside
-          className="pointer-events-none fixed right-4 top-4 z-[120] max-w-md border-2 border-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-[4px_4px_0_#111]"
+          className="fixed bottom-3 right-3 z-[120] w-[min(22rem,calc(100vw-1.5rem))] border-2 border-amber-700 bg-amber-50 text-xs text-amber-950 shadow-[3px_3px_0_#111]"
           role="alert"
           aria-label="Estado de datos publicados"
         >
-          <p className="font-bold">Datos publicados sin actualizar</p>
-          <ul className="mt-1 list-disc pl-5">
-            {canonicalDataMessages.map((message) => <li key={message}>{message}</li>)}
-          </ul>
+          <details>
+            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-800">
+              <span>Modo local · datos sin actualizar</span>
+              <span className="rounded-full border border-amber-700 px-2 py-0.5" aria-label={`${canonicalDataMessages.length} avisos`}>
+                {canonicalDataMessages.length}
+              </span>
+            </summary>
+            <div className="max-h-44 overflow-y-auto border-t border-amber-700 px-3 py-2">
+              <p className="font-bold">Datos publicados sin actualizar</p>
+              <ul className="mt-1 list-disc space-y-1 pl-4">
+                {canonicalDataMessages.map((message) => <li key={message}>{message}</li>)}
+              </ul>
+            </div>
+          </details>
         </aside>
       )}
       {currentView === 'catalog' && (

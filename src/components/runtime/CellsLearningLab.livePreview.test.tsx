@@ -130,6 +130,7 @@ describe('CellsLearningLab live preview', () => {
     render(<CellsLearningLab lessonId="cells-load-error" componentStage="composition" />);
 
     expect(await screen.findByText('El laboratorio necesita atención')).toBeTruthy();
+    expect(screen.getByRole('alert').textContent).toContain('No se pudo preparar el proyecto.');
     expect(screen.queryByText('Todo ocurre en este navegador')).toBeNull();
   });
 

@@ -257,8 +257,12 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
           if (!cancelled && previewRes.type === 'preview:built') {
             applyPreviewBuild(request, previewRes.payload);
           }
-        } catch {
-          if (!cancelled) setPreviewState('error');
+        } catch (caught) {
+          if (!cancelled) {
+            setPreviewState('error');
+            setError(`Vista previa: ${messageFor(caught)}`);
+            setStatus('error');
+          }
         }
       } catch (caught) {
         if (!cancelled) { setError(messageFor(caught)); setStatus('error'); }
@@ -530,6 +534,16 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
           ? APP_MISSIONS[stage]
           : componentMission(componentStage, componentArtifact)}</p>
       </div>
+
+      {error && (
+        <div className="cells-lab__runtime-error" role="alert" aria-live="assertive">
+          <XCircle size={18} aria-hidden="true" />
+          <div>
+            <strong>No se pudo completar la operación Cells</strong>
+            <span>{error}</span>
+          </div>
+        </div>
+      )}
 
       <nav className="cells-lab__mobile-nav" role="tablist" aria-label="Área de trabajo en móvil">
         {([

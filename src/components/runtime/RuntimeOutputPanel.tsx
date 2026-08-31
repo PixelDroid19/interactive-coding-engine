@@ -40,7 +40,12 @@ export function RuntimeOutputPanel({ language, result, isRunning, onRun }: Runti
         </button>
       </header>
 
-      <div className="logic-runner-body" aria-live="polite">
+      <div
+        className="logic-runner-body"
+        aria-label="Historial de salida"
+        aria-live="polite"
+        tabIndex={0}
+      >
         {!result && !isRunning && (
           <div className="logic-runner-empty">
             <Play size={20} />

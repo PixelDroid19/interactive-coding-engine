@@ -93,7 +93,7 @@ describe('ScrimPlayer overlay coordination', () => {
   it('explica qué aprenderá el estudiante antes de iniciar la cinta', () => {
     render(<ScrimPlayer lessonData={lesson} onBack={() => undefined} />);
 
-    expect(screen.getByRole('heading', { name: 'Al terminar podrás' })).toBeTruthy();
+    expect(screen.getByRole('heading', { level: 2, name: 'Al terminar podrás' })).toBeTruthy();
     lesson.learningObjectives.forEach((objective) => {
       expect(screen.getByText(objective)).toBeTruthy();
     });
@@ -119,6 +119,7 @@ describe('ScrimPlayer overlay coordination', () => {
 
     expect(screen.getByRole('region', { name: 'Salida de JavaScript' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Ejecutar lógica' })).toBeTruthy();
+    expect(document.querySelector('.logic-runner-body')?.getAttribute('tabindex')).toBe('0');
     expect(screen.queryByRole('toolbar', { name: 'Barra de vista previa, usa flechas para mover' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Fijar vista al lado' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Abrir index.html' })).toBeNull();

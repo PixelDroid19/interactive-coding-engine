@@ -114,4 +114,21 @@ describe('TypeScriptLanguageService', () => {
     expect(signature?.label).toContain('doble(numero');
     expect(signature?.activeParameter).toBe(0);
   });
+
+  it('retira las declaraciones del workspace anterior al cargar uno nuevo', () => {
+    const languageService = new TypeScriptLanguageService(TEST_LIBS);
+    const code = 'cursoAnterior;';
+
+    languageService.replaceWorkspace([
+      { path: 'app.js', content: code },
+      { path: 'types/curso-anterior.d.ts', content: 'declare const cursoAnterior: string;' },
+    ]);
+    expect(languageService.diagnostics('app.js')).toEqual([]);
+
+    languageService.replaceWorkspace([{ path: 'app.js', content: code }]);
+
+    expect(languageService.diagnostics('app.js')).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 2304 }),
+    ]));
+  });
 });
