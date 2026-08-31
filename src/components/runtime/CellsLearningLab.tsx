@@ -534,6 +534,18 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
           await ensureRepository().save(workspaceStorageKeyRef.current, createVersionedCellsWorkspace(result.payload.workspace, result.generation));
         }
         setTerminalOutput(result.payload.output);
+      } else if (result.type === 'locales:generated') {
+        applyWorkspace(result.payload.workspace, result.generation);
+        await ensureRepository().save(
+          workspaceStorageKeyRef.current,
+          createVersionedCellsWorkspace(result.payload.workspace, result.generation),
+        );
+        const keys = result.payload.keys;
+        setTerminalOutput(keys.length === 0
+          ? 'Catálogos actualizados: no se encontraron llamadas de traducción.'
+          : keys.length === 1
+            ? `Catálogos actualizados: 1 clave localizada (${keys[0]}).`
+            : `Catálogos actualizados: ${keys.length} claves localizadas (${keys.join(', ')}).`);
       } else {
         setTerminalOutput(`Comando completado: ${command}`);
       }

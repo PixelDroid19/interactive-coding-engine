@@ -60,7 +60,9 @@ export class CellsRuntimeClient {
     const response = event.data;
     if (response.sessionId !== this.sessionId || response.type === 'runtime:progress') return;
     const pending = this.pending.get(response.requestId);
-    if (!pending || response.generation !== pending.generation) return;
+    if (!pending || response.generation < pending.generation) return;
+    const generationMayAdvance = response.type === 'locales:generated' || response.type === 'documentation:generated';
+    if (!generationMayAdvance && response.generation !== pending.generation) return;
     this.pending.delete(response.requestId);
     if (response.type === 'runtime:error') {
       pending.reject(new CellsRuntimeClientError(response.payload.error));

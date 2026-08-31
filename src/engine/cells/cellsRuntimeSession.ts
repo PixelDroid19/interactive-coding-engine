@@ -14,14 +14,55 @@ function response<T extends CellsWorkerResponse['type']>(
   request: CellsWorkerRequest,
   type: T,
   payload: Extract<CellsWorkerResponse, { type: T }>['payload'],
+  generation = request.generation,
 ): Extract<CellsWorkerResponse, { type: T }> {
   return {
     type,
     payload,
     requestId: request.requestId,
     sessionId: request.sessionId,
-    generation: request.generation,
+    generation,
   } as Extract<CellsWorkerResponse, { type: T }>;
+}
+
+function translationKeys(workspace: VersionedCellsWorkspace): string[] {
+  const keys = Object.values(workspace.snapshot.files).flatMap((file) => (
+    /^(?:javascript|typescript)$/.test(file.language)
+      ? Array.from(file.content.matchAll(/\b(?:this|intlMsg|appIntlMsg)\.t\(\s*['"]([^'"]+)['"]/g), (match) => match[1])
+      : []
+  ));
+  return [...new Set(keys)].sort();
+}
+
+function generateLocaleCatalogs(workspace: VersionedCellsWorkspace, application: boolean): VersionedCellsWorkspace {
+  const keys = translationKeys(workspace);
+  const targetPaths = application
+    ? ['app/locales-app/locales.json']
+    : ['locales/locales.json', 'demo/locales/locales.json', 'test/unit/locales/locales.json'];
+  const files = { ...workspace.snapshot.files };
+
+  for (const path of targetPaths) {
+    const current = files[path];
+    if (!current) throw { code: 'COMMAND_FAILED', message: `No existe el catálogo ${path}.` };
+    let catalog: Record<string, Record<string, string>>;
+    try {
+      catalog = JSON.parse(current.content) as Record<string, Record<string, string>>;
+    } catch {
+      throw { code: 'COMMAND_FAILED', message: `El catálogo ${path} no contiene JSON válido.`, filePath: path };
+    }
+    const languages = Object.keys(catalog);
+    if (languages.length === 0 || languages.some((language) => !catalog[language] || typeof catalog[language] !== 'object')) {
+      throw { code: 'COMMAND_FAILED', message: `El catálogo ${path} no contiene idiomas válidos.`, filePath: path };
+    }
+    for (const language of languages) {
+      for (const key of keys) {
+        if (typeof catalog[language][key] !== 'string') catalog[language][key] = key;
+      }
+    }
+    files[path] = { ...current, content: `${JSON.stringify(catalog, null, 2)}\n` };
+  }
+
+  return createVersionedCellsWorkspace({ ...workspace.snapshot, files }, workspace.generation + 1, workspace.limits);
 }
 
 function packageName(workspace: VersionedCellsWorkspace): string {
@@ -77,10 +118,14 @@ export class CellsRuntimeSession {
       });
     }
     if (parsed.runtimeAction === 'generate-locales') {
-      const sourcePath = Object.keys(workspace.snapshot.files).find((path) => /^src\/[^/]+\.js$/.test(path));
-      const source = sourcePath ? workspace.snapshot.files[sourcePath].content : '';
-      const keys = [...new Set(Array.from(source.matchAll(/this\.t\(['"]([^'"]+)['"]/g), (match) => match[1]))];
-      return response(request, 'locales:generated', { workspace: workspace.snapshot, keys });
+      const keys = translationKeys(workspace);
+      this.workspace = generateLocaleCatalogs(workspace, false);
+      return response(request, 'locales:generated', { workspace: this.workspace.snapshot, keys }, this.workspace.generation);
+    }
+    if (parsed.runtimeAction === 'generate-app-locales') {
+      const keys = translationKeys(workspace);
+      this.workspace = generateLocaleCatalogs(workspace, true);
+      return response(request, 'locales:generated', { workspace: this.workspace.snapshot, keys }, this.workspace.generation);
     }
     if (parsed.runtimeAction === 'generate-documentation') {
       return response(request, 'documentation:generated', { workspace: workspace.snapshot });

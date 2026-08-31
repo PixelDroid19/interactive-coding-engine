@@ -53,6 +53,24 @@ describe('CellsRuntimeClient', () => {
     await expect(pending).resolves.toMatchObject({ payload: { html: '<p>actual</p>' } });
   });
 
+  it('acepta que un comando generador entregue una generación posterior', async () => {
+    const worker = new FakeWorker();
+    const client = new CellsRuntimeClient(() => worker, 'sesion-generador');
+    const pending = client.runCommand('cells component:locales', 4);
+    const sent = worker.messages[0];
+    let settled = false;
+    void pending.then(() => { settled = true; });
+
+    worker.emit(response({
+      type: 'locales:generated', requestId: sent.requestId, sessionId: 'sesion-generador', generation: 5,
+      payload: { workspace: { files: {}, activeFilePath: '' }, keys: ['learningCard.title'] },
+    }));
+    await Promise.resolve();
+
+    expect(settled).toBe(true);
+    await expect(pending).resolves.toMatchObject({ type: 'locales:generated', generation: 5 });
+  });
+
   it('cancela una petición sin fingir que finalizó', async () => {
     const worker = new FakeWorker();
     const client = new CellsRuntimeClient(() => worker, 'sesion-3');

@@ -8,7 +8,7 @@ import { CellsLearningLab } from './CellsLearningLab';
 
 const runtime = vi.hoisted(() => {
   const builds: Array<{ resolve: (value: unknown) => void; reject: (reason?: unknown) => void }> = [];
-  return { builds, failLoad: false };
+  return { builds, failLoad: false, commandResult: null as unknown };
 });
 
 const repository = vi.hoisted(() => ({
@@ -64,6 +64,7 @@ vi.mock('../../engine/cells/cellsRuntimeClient', () => ({
     buildPreview() {
       return new Promise((resolve, reject) => runtime.builds.push({ resolve, reject }));
     }
+    async runCommand() { return runtime.commandResult; }
     dispose() {}
   },
 }));
@@ -102,6 +103,7 @@ describe('CellsLearningLab live preview', () => {
   beforeEach(() => {
     runtime.builds.length = 0;
     runtime.failLoad = false;
+    runtime.commandResult = null;
     repository.loadResult = { status: 'missing' };
     repository.sessionResult = null;
     repository.recoveryInfo = { exportable: true, restorable: false };
@@ -184,6 +186,38 @@ describe('CellsLearningLab live preview', () => {
     expect(screen.getByText('Sin comprobaciones ejecutadas')).toBeTruthy();
     expect(screen.queryByText('Contrato guardado')).toBeNull();
     expect(screen.queryByText('100%')).toBeNull();
+  });
+
+  it('aplica y describe los catálogos generados en vez de fingir un comando genérico', async () => {
+    const generatedWorkspace: WorkspaceSnapshot = {
+      files: {
+        'app/locales-app/locales.json': {
+          path: 'app/locales-app/locales.json',
+          name: 'locales.json',
+          language: 'json',
+          content: '{"es":{"home.title":"Inicio"},"en":{"home.title":"Home"}}\n',
+        },
+      },
+      activeFilePath: 'app/locales-app/locales.json',
+    };
+    runtime.commandResult = {
+      type: 'locales:generated',
+      generation: 1,
+      payload: { workspace: generatedWorkspace, keys: ['home.title'] },
+    };
+    render(<CellsLearningLab lessonId="cells-locales-command" variant="application" />);
+    await waitFor(() => expect(runtime.builds).toHaveLength(1));
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Terminal' }));
+    fireEvent.change(screen.getByLabelText('Comando Cells'), { target: { value: 'cells app:locales -c dev.js' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Ejecutar' }));
+
+    expect(await screen.findByText('Catálogos actualizados: 1 clave localizada (home.title).')).toBeTruthy();
+    expect(screen.queryByText('Comando completado: cells app:locales -c dev.js')).toBeNull();
+    expect(repository.save).toHaveBeenCalledWith(
+      'course-open-cells:v2:application:cells-locales-command',
+      expect.objectContaining({ generation: 1, snapshot: generatedWorkspace }),
+    );
   });
 
   it('reconstruye la vista previa al reiniciar sin exigir otro clic', async () => {

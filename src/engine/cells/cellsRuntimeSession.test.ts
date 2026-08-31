@@ -45,4 +45,54 @@ describe('CellsRuntimeSession', () => {
     const result = await session.handle(request('file:write', { path: 'README.md', content: '# Cambio' }, 0));
     expect(result).toMatchObject({ type: 'runtime:error', payload: { error: { code: 'INVALID_WORKSPACE' } } });
   });
+
+  it('genera los catálogos del componente y continúa desde la nueva generación', async () => {
+    const session = new CellsRuntimeSession('session-1');
+    const created = await session.handle(request('project:create', { scaffold: { name: 'academy-learning-card' } }, 0));
+    if (created.type !== 'workspace:updated') throw new Error('No se creó el proyecto de prueba.');
+    const sourcePath = Object.keys(created.payload.workspace.files).find((path) => /^src\/academy-learning-card\.js$/.test(path));
+    if (!sourcePath) throw new Error('No se encontró el componente de prueba.');
+
+    const edited = await session.handle(request('file:write', {
+      path: sourcePath,
+      content: `${created.payload.workspace.files[sourcePath].content}\nthis.t('learningCard.extra');\n`,
+    }, 1));
+    expect(edited.type).toBe('workspace:updated');
+
+    const generated = await session.handle(request('command:run', { command: 'cells component:locales' }, 1));
+    expect(generated.type).toBe('locales:generated');
+    expect(generated.generation).toBe(2);
+    if (generated.type !== 'locales:generated') return;
+    expect(generated.payload.keys).toContain('learningCard.extra');
+    for (const path of ['locales/locales.json', 'demo/locales/locales.json', 'test/unit/locales/locales.json']) {
+      const catalog = JSON.parse(generated.payload.workspace.files[path].content);
+      expect(catalog.es['learningCard.extra']).toBe('learningCard.extra');
+      expect(catalog.en['learningCard.extra']).toBe('learningCard.extra');
+    }
+
+    const preview = await session.handle(request('preview:build', {}, 2));
+    expect(preview.type).toBe('preview:built');
+  });
+
+  it('genera el catálogo consolidado de una aplicación', async () => {
+    const session = new CellsRuntimeSession('session-1');
+    const created = await session.handle(request('command:run', {
+      command: `cells app:create --scaffold '{"name":"academy-store-app"}'`,
+    }, 0));
+    if (created.type !== 'command:completed' || !created.payload.workspace) throw new Error('No se creó la aplicación de prueba.');
+    const sourcePath = 'app/pages/academy-home-page/academy-home-page.js';
+
+    await session.handle(request('file:write', {
+      path: sourcePath,
+      content: `${created.payload.workspace.files[sourcePath].content}\nthis.t('home.extra');\n`,
+    }, 1));
+    const generated = await session.handle(request('command:run', { command: 'cells app:locales -c dev.js' }, 1));
+
+    expect(generated.type).toBe('locales:generated');
+    expect(generated.generation).toBe(2);
+    if (generated.type !== 'locales:generated') return;
+    const catalog = JSON.parse(generated.payload.workspace.files['app/locales-app/locales.json'].content);
+    expect(catalog.es['home.extra']).toBe('home.extra');
+    expect(catalog.en['home.extra']).toBe('home.extra');
+  });
 });
