@@ -15,6 +15,16 @@
   box-shadow: none !important;
 }
 
+/*
+ * The speed popover opens upward from the timeline. The augmented-ui clip
+ * path on the footer would otherwise clip the popover against the editor
+ * surface, leaving only its lower edge clickable. The open state keeps the
+ * footer's own surface/border but allows the menu to paint outside it.
+ */
+.hud .player-bar.is-speed-menu-open {
+  clip-path: none !important;
+}
+
 .hud .player-bar-hud-surface {
   position: absolute;
   inset: 0;

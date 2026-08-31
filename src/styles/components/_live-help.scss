@@ -79,6 +79,25 @@ body:has(.reading-screen),
 body:has(.reasoning-screen) {
   --assist-dock-bottom: calc(56px + 1.25rem);
 }
+
+/* Piensa has no media timeline. At compact desktop widths the assistant
+   dock must sit above its own footer rather than over the exercise content.
+   Keep this after the generic screen rule so it wins in the cascade. */
+@media (max-width: 1024px) {
+  body:has(.reasoning-screen) {
+    --assist-dock-bottom: 8rem;
+  }
+}
+
+/* Depura stacks its contextual panel below the editor at compact desktop
+   widths. Keep the fixed assistance dock in a reserved right rail so it
+   cannot cover the expected/observed cards or the investigation hints. */
+@media (min-width: 641px) and (max-width: 1024px) {
+  body:has(.debug-new-layout) .debug-panel-scroll {
+    padding-right: clamp(148px, 19vw, 174px);
+  }
+}
+
 @media (max-width: 768px) {
   body:has(.player-bar),
   body:has(.reading-screen),

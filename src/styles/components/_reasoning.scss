@@ -595,6 +595,15 @@
   .reasoning-footer button:last-child { grid-column: 3; }
 }
 
+/* Reserve a narrow assistant rail on compact desktop widths. Without it,
+   the fixed Ayuda IA/Ayuda en vivo dock sits over the right edge of the
+   reorder and decision cards even though the footer is in normal flow. */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .reasoning-main {
+    padding-right: clamp(148px, 19vw, 174px);
+  }
+}
+
 @media (max-width: 480px) {
   .neu-pill-btn {
     padding: 6px 10px;
