@@ -4,7 +4,7 @@
   align-items: center;
   justify-content: center;
   gap: .55rem;
-  border: 1.5px solid var(--ui-border);
+  border: var(--ui-control-border-width) solid var(--ui-border);
   border-radius: var(--ui-radius-md);
   padding: .65rem 1rem;
   background: var(--ui-surface-raised);
@@ -22,11 +22,44 @@
 .ui-button--danger { border-color: var(--ui-danger); color: var(--ui-danger); box-shadow: none; }
 .ui-button--icon { width: 2.6rem; padding: 0; }
 
+.ui-surface {
+  min-width: 0;
+  border: var(--ui-panel-border-width) solid var(--ui-border);
+  border-radius: var(--ui-panel-radius);
+  background: var(--ui-canvas);
+  color: var(--ui-text);
+  box-shadow: var(--ui-panel-shadow);
+}
+.ui-surface--soft { background: var(--ui-surface-soft); }
+.ui-surface--accent { border-top-color: var(--ui-accent); }
+.ui-surface--metric { padding: 1.15rem; }
+
+.ui-nav { display: grid; gap: .35rem; }
+.ui-nav > button {
+  display: flex;
+  min-height: 2.75rem;
+  width: 100%;
+  align-items: center;
+  gap: .7rem;
+  border: var(--ui-control-border-width) solid transparent;
+  border-radius: var(--ui-radius-md);
+  background: transparent;
+  padding: .65rem .75rem;
+  color: var(--ui-muted);
+  font: 750 .9rem/1 var(--font-body, "Outfit", sans-serif);
+  text-align: left;
+  cursor: pointer;
+}
+.ui-nav > button > span { min-width: 0; }
+.ui-nav > button > b { margin-left: auto; border: 1px solid currentColor; padding: .12rem .4rem; font-size: .66rem; }
+.ui-nav > button[aria-current="page"] { border-color: var(--ui-border); background: var(--ui-accent); color: var(--ui-accent-contrast); box-shadow: var(--ui-shadow); }
+.ui-nav > button:focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 2px; }
+
 .ui-field { display: grid; gap: .4rem; }
 .ui-field > label { font-weight: 750; }
 .ui-field > :is(input, textarea, select) {
   width: 100%;
-  border: 1.5px solid var(--ui-border-subtle);
+  border: var(--ui-control-border-width) solid var(--ui-border-subtle);
   border-radius: var(--ui-radius-md);
   padding: .75rem .85rem;
   background: var(--ui-surface-raised);

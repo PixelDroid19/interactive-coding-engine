@@ -24,6 +24,8 @@ import {
 } from '../../services/learningCenterApi';
 import type { NotebookSaveInput } from './LearningNotebook';
 import { UiTabs } from '../ui/UiTabs';
+import { UiButton } from '../ui/UiButton';
+import { UiSurface } from '../ui/UiSurface';
 
 type LearningTab = 'review' | 'notebook';
 type RemoteStatus = 'loading' | 'ready' | 'cached' | 'error';
@@ -230,11 +232,11 @@ function summaryWithPending(snapshot: LearningCenterSnapshot | null, pending: Pe
 function AccessState({ title, description, action }: Readonly<{ title: string; description: string; action?: React.ReactNode }>) {
   return (
     <main className="learning-center__access-state">
-      <section className="learning-empty" aria-live="polite">
+      <UiSurface className="learning-empty" aria-live="polite">
         <h3>{title}</h3>
         <p>{description}</p>
         {action}
-      </section>
+      </UiSurface>
     </main>
   );
 }
@@ -500,16 +502,16 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
             anonymousSession.providers.length > 0 ? (
               <div className="learning-center__login-actions">
                 {anonymousSession.providers.map((provider) => (
-                  <button
+                  <UiButton
                     key={provider}
-                    type="button"
-                    className={`learning-primary learning-login-btn learning-login-btn--${provider}`}
+                    variant={provider === 'google' ? 'primary' : 'secondary'}
+                    className={`learning-login-btn learning-login-btn--${provider}`}
                     disabled={auth.busy}
                     onClick={() => auth.login(provider)}
                   >
                     <LogIn size={16} aria-hidden="true" className="learning-login-btn__icon" />
                     <span className="learning-login-btn__label">{LOGIN_LABEL[provider]}</span>
-                  </button>
+                  </UiButton>
                 ))}
               </div>
             ) : undefined
@@ -562,9 +564,9 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
               </div>
             )}
           </div>
-          <button type="button" data-dialog-initial-focus onClick={onClose} aria-label="Cerrar centro de aprendizaje">
+          <UiButton variant="icon" data-dialog-initial-focus onClick={onClose} aria-label="Cerrar centro de aprendizaje">
             <X size={19} />
-          </button>
+          </UiButton>
         </header>
         {isStudent ? renderStudentContent() : renderAccessContent()}
       </section>

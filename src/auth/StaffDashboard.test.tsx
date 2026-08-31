@@ -79,6 +79,9 @@ describe('panel de seguimiento', () => {
 
     expect(await screen.findByText('Personas registradas')).toBeTruthy();
     expect(screen.getByText('Necesitan refuerzo')).toBeTruthy();
+    expect(screen.getByRole('navigation', { name: 'Secciones del panel' }).classList.contains('ui-nav')).toBe(true);
+    expect(document.querySelectorAll('.staff-metrics .ui-surface--metric')).toHaveLength(4);
+    expect(screen.getByRole('button', { name: 'Actualizar' }).classList.contains('ui-button--icon')).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Cursos' }));
     expect((await screen.findByLabelText('Título de fundamentos') as HTMLInputElement).value).toBe('Fundamentos');
     expect(api.users).toHaveBeenCalledOnce();

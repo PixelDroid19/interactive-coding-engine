@@ -165,7 +165,8 @@ describe('panel de ayuda en vivo de la alumna', () => {
     localStorage.setItem('theme', 'cyber');
     const { container } = render(<ThemeProvider><LearnerLiveHelpPanel {...baseProps} onApplyProposal={() => ({ outcome: 'applied', revision: 1 })} /></ThemeProvider>);
 
-    expect(container.querySelector('.live-help-panel--cyber')).toBeTruthy();
+    expect(container.querySelector('.live-help-panel')).toBeTruthy();
+    expect(container.querySelector('.live-help-panel--cyber')).toBeNull();
     expect(screen.getByLabelText('Escribe un mensaje al formador')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Cerrar ayuda en vivo' })).toBeTruthy();
   });

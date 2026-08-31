@@ -38,11 +38,21 @@ html[data-theme="cyber"] {
   --ui-success: #52d6a2;
   --ui-warning: #f4c95d;
   --ui-danger: #ff5c85;
-  --ui-shadow: 3px 3px 0 #050609;
-  --ui-shadow-raised: 6px 6px 0 #050609;
+  --ui-shadow: none;
+  --ui-shadow-raised: none;
+  --ui-panel-shadow: none;
+  --ui-panel-border-width: 1px;
+  --ui-control-border-width: 1px;
+  --ui-label: #ffe600;
+  --ui-accent-soft: #151508;
+  --ui-danger-soft: #241019;
+  --ui-success-soft: #0a1d18;
+  --ui-warning-soft: #211b0b;
+  --ui-overlay: rgb(2 3 6 / 88%);
   --ui-radius-sm: 2px;
   --ui-radius-md: 3px;
   --ui-radius-lg: 4px;
+  --ui-panel-radius: 2px;
 }
 
 .hud body,

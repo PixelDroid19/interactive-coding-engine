@@ -102,7 +102,17 @@
   --ui-danger: #a3163a;
   --ui-shadow: 4px 4px 0 #232733;
   --ui-shadow-raised: 8px 8px 0 #111318;
+  --ui-panel-shadow: 5px 5px 0 #232733;
+  --ui-panel-border-width: 2px;
+  --ui-control-border-width: 1.5px;
+  --ui-label: #796400;
+  --ui-accent-soft: color-mix(in srgb, #ffe600 20%, #ffffff);
+  --ui-danger-soft: #fff1f2;
+  --ui-success-soft: #dcfce7;
+  --ui-warning-soft: #fef3c7;
+  --ui-overlay: rgb(10 12 18 / 76%);
   --ui-radius-sm: 7px;
   --ui-radius-md: 10px;
   --ui-radius-lg: 16px;
+  --ui-panel-radius: 12px;
 }

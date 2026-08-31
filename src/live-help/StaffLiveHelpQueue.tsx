@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CheckCircle2, FileCode2, Headphones, RefreshCw, Send, UserRound } from 'lucide-react';
 import { drainLiveHelpEvents, liveHelpApi } from '../services/liveHelpApi';
-import { useTheme } from '../themes/ThemeProvider';
 import type { LiveHelpConnectionState } from './socket';
 import { LiveHelpSocket } from './socket';
 import { isLiveHelpStaffRole, type LiveHelpActorRole, type LiveHelpEvent, type LiveHelpSession, type LiveHelpSnapshotPayload } from './protocol';
@@ -49,7 +48,6 @@ function identityKey(userId: string | null, roles: readonly LiveHelpActorRole[])
 }
 
 export function StaffLiveHelpQueue({ staffUserId, staffRoles }: StaffLiveHelpQueueProps) {
-  const { themeId } = useTheme();
   const currentStaffRole = staffRole(staffRoles);
   const staffIdentityKey = identityKey(staffUserId, staffRoles);
   const canUseQueue = Boolean(staffUserId && currentStaffRole);
@@ -346,7 +344,7 @@ export function StaffLiveHelpQueue({ staffUserId, staffRoles }: StaffLiveHelpQue
 
   if (!canUseQueue || identityChanged) return null;
 
-  return <section className={`staff-live-help${themeId === 'cyber' ? ' staff-live-help--cyber' : ''}`} aria-label="Ayuda en vivo">
+  return <section className="staff-live-help" aria-label="Ayuda en vivo">
     <header className="staff-live-help__heading"><div><span>Ayuda en vivo</span><h2>Solicitudes de ayuda</h2><p>Reclama una sesión y trabaja sobre una copia. Las propuestas nunca escriben en el editor de la alumna por sí solas.</p></div><button type="button" onClick={() => void load()} aria-label="Actualizar cola de ayuda" disabled={loading || busy}><RefreshCw size={16} /></button></header>
     {error && <p className="staff-live-help__error" role="alert">{error}</p>}
     <div className="staff-live-help__layout">

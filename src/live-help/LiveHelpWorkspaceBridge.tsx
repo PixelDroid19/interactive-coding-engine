@@ -1,7 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Headphones } from 'lucide-react';
 import type { WorkspaceSnapshot } from '../types/scrim';
-import { useTheme } from '../themes/ThemeProvider';
 import { liveHelpContextKey, serializeClientFrame, type LiveHelpContext, type LiveHelpProposalEvent, type LiveHelpSnapshotPayload } from './protocol';
 import type { LiveHelpWorkspaceAdapter } from './LiveHelpProvider';
 import { useOptionalLiveHelp } from './LiveHelpProvider';
@@ -29,7 +28,6 @@ function snapshotFromWorkspace(workspace: WorkspaceSnapshot): LiveHelpSnapshotPa
 
 export function LiveHelpWorkspaceBridge({ context, workspace, onWorkspaceChange, onProposalApplied, pause, proposalGuard, validateProposal }: LiveHelpWorkspaceBridgeProps) {
   const liveHelp = useOptionalLiveHelp();
-  const { themeId } = useTheme();
   const contextKey = liveHelpContextKey(context);
   const workspaceRef = useRef(workspace);
   const contextRef = useRef(context);
@@ -91,5 +89,5 @@ export function LiveHelpWorkspaceBridge({ context, workspace, onWorkspaceChange,
   if (!liveHelp?.canUseLiveHelp) return null;
 
   const status = liveHelp.session?.status === 'active' ? 'Sesión activa' : liveHelp.session?.status === 'accepted' ? 'Conectando' : liveHelp.session?.status === 'claimed' ? 'Consentimiento' : liveHelp.session?.status === 'requested' ? 'Esperando' : 'Ayuda en vivo';
-  return <button type="button" className={`live-help-launcher${themeId === 'cyber' ? ' live-help-launcher--cyber' : ''}`} aria-label="Abrir ayuda en vivo" onClick={liveHelp.openPanel}><Headphones size={16} aria-hidden="true" /><span>{status}</span></button>;
+  return <button type="button" className="live-help-launcher" aria-label="Abrir ayuda en vivo" onClick={liveHelp.openPanel}><Headphones size={16} aria-hidden="true" /><span>{status}</span></button>;
 }

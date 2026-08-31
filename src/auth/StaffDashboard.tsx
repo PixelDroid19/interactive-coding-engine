@@ -4,6 +4,9 @@ import { staffDashboardApi, type AdminCourse, type IdentityAccessRule, type Lear
 import { useModalDialog } from '../components/useModalDialog';
 import { StaffLiveHelpQueue } from '../live-help/StaffLiveHelpQueue';
 import type { UserRole } from '../services/authSessionApi';
+import { UiButton } from '../components/ui/UiButton';
+import { UiNav } from '../components/ui/UiNav';
+import { UiSurface } from '../components/ui/UiSurface';
 
 type Tab = 'overview' | 'learners' | 'inbox' | 'live-help' | 'access' | 'content';
 
@@ -178,6 +181,17 @@ export function StaffDashboard({ canAdmin, staffIdentity, onClose }: { canAdmin:
 
   if (shouldCloseDashboard) return null;
 
+  const navigationItems = [
+    { id: 'overview', label: 'Resumen', icon: <Activity size={18} /> },
+    { id: 'learners', label: 'Personas', icon: <Users size={18} /> },
+    { id: 'inbox', label: 'Mensajes', icon: <Inbox size={18} />, badge: overview?.openThreads || undefined },
+    { id: 'live-help', label: 'Ayuda en vivo', icon: <Headphones size={18} /> },
+    ...(effectiveCanAdmin ? [
+      { id: 'access', label: 'Permisos', icon: <ShieldCheck size={18} /> },
+      { id: 'content', label: 'Cursos', icon: <LibraryBig size={18} /> },
+    ] : []),
+  ];
+
   return (
     <div
       ref={dialogRef}
@@ -188,20 +202,13 @@ export function StaffDashboard({ canAdmin, staffIdentity, onClose }: { canAdmin:
     >
       <aside className="staff-dashboard__rail">
         <div className="staff-dashboard__brand"><ShieldCheck size={22} /><span>Seguimiento</span></div>
-        <nav aria-label="Secciones del panel">
-          <button className={tab === 'overview' ? 'is-active' : ''} onClick={() => setTab('overview')}><Activity size={18} />Resumen</button>
-          <button className={tab === 'learners' ? 'is-active' : ''} onClick={() => setTab('learners')}><Users size={18} />Personas</button>
-          <button className={tab === 'inbox' ? 'is-active' : ''} onClick={() => setTab('inbox')}><Inbox size={18} />Mensajes{overview?.openThreads ? <b>{overview.openThreads}</b> : null}</button>
-          <button className={tab === 'live-help' ? 'is-active' : ''} onClick={() => setTab('live-help')}><Headphones size={18} />Ayuda en vivo</button>
-          {effectiveCanAdmin && <button className={tab === 'access' ? 'is-active' : ''} onClick={() => setTab('access')}><ShieldCheck size={18} />Permisos</button>}
-          {effectiveCanAdmin && <button className={tab === 'content' ? 'is-active' : ''} onClick={() => setTab('content')}><LibraryBig size={18} />Cursos</button>}
-        </nav>
+        <UiNav ariaLabel="Secciones del panel" activeId={tab} items={navigationItems} onChange={(next) => setTab(next as Tab)} />
         <p>Los cursos y prácticas siguen disponibles sin cuenta. Este espacio muestra solo datos vinculados.</p>
       </aside>
       <main className="staff-dashboard__main">
         <header className="staff-dashboard__header">
           <div><span>{effectiveCanAdmin ? 'Administración' : 'Formación'}</span><h1>{tab === 'overview' ? 'Pulso de aprendizaje' : tab === 'learners' ? 'Seguimiento individual' : tab === 'inbox' ? 'Bandeja de acompañamiento' : tab === 'live-help' ? 'Acompañamiento en vivo' : tab === 'content' ? 'Gestión de cursos' : 'Acceso y responsabilidades'}</h1></div>
-          <div className="staff-dashboard__header-actions"><button onClick={() => void load()} aria-label="Actualizar"><RefreshCw size={18} /></button><button data-dialog-initial-focus onClick={onClose} aria-label="Cerrar panel"><X size={20} /></button></div>
+          <div className="staff-dashboard__header-actions"><UiButton variant="icon" onClick={() => void load()} aria-label="Actualizar"><RefreshCw size={18} /></UiButton><UiButton variant="icon" data-dialog-initial-focus onClick={onClose} aria-label="Cerrar panel"><X size={20} /></UiButton></div>
         </header>
         {error && <div className="staff-dashboard__error" role="alert">{error}</div>}
         {loading ? <div className="staff-dashboard__loading" role="status">Preparando datos de seguimiento…</div> : (
@@ -209,10 +216,10 @@ export function StaffDashboard({ canAdmin, staffIdentity, onClose }: { canAdmin:
             {tab === 'overview' && overview && (
               <>
                 <section className="staff-metrics" aria-label="Indicadores">
-                  <article><span>Personas registradas</span><strong>{overview.learners}</strong><small>cuentas activas</small></article>
-                  <article><span>Actividad reciente</span><strong>{overview.active7d}</strong><small>personas y visitas · 7 días</small></article>
-                  <article><span>Avances cerrados</span><strong>{overview.completedItems}</strong><small>registrados · {overview.anonymousCompletedItems} anónimos</small></article>
-                  <article className={overview.needsSupport ? 'is-alert' : ''}><span>Necesitan refuerzo</span><strong>{overview.needsSupport}</strong><small>patrones repetidos</small></article>
+                  <UiSurface as="article" tone="metric"><span>Personas registradas</span><strong>{overview.learners}</strong><small>cuentas activas</small></UiSurface>
+                  <UiSurface as="article" tone="metric"><span>Actividad reciente</span><strong>{overview.active7d}</strong><small>personas y visitas · 7 días</small></UiSurface>
+                  <UiSurface as="article" tone="metric"><span>Avances cerrados</span><strong>{overview.completedItems}</strong><small>registrados · {overview.anonymousCompletedItems} anónimos</small></UiSurface>
+                  <UiSurface as="article" tone="metric" className={overview.needsSupport ? 'is-alert' : ''}><span>Necesitan refuerzo</span><strong>{overview.needsSupport}</strong><small>patrones repetidos</small></UiSurface>
                 </section>
                 <section className="staff-operations" aria-label="Estado operativo">
                   <span><CheckCircle2 size={16} /><b>{overview.verifiedLearners}</b> correos verificados</span>
@@ -222,18 +229,18 @@ export function StaffDashboard({ canAdmin, staffIdentity, onClose }: { canAdmin:
                   <small>Último dato recibido: {date(overview.latestActivityAt)}</small>
                 </section>
                 <section className="staff-dashboard__insights">
-                  <article className="staff-panel staff-activity-panel">
+                  <UiSurface as="article" className="staff-panel staff-activity-panel">
                     <div className="staff-panel__heading"><div><span>Últimos 7 días</span><h2>Actividad registrada</h2></div><small>{overview.attempts30d} intentos en 30 días</small></div>
                     <ActivityBars points={overview.activity7d} />
-                  </article>
-                  <article className="staff-panel staff-course-health">
+                  </UiSurface>
+                  <UiSurface as="article" className="staff-panel staff-course-health">
                     <div className="staff-panel__heading"><div><span>Por curso</span><h2>Avance y dificultad</h2></div></div>
                     <div className="staff-course-health__rows">{overview.courses.slice(0, 6).map((course) => <div key={course.courseSlug}><span><strong>{course.title}</strong><small>{course.learners} personas · {course.completedItems}/{course.progressItems} avances cerrados</small></span><span className={course.attemptsToReview ? 'is-warning' : ''}><b>{course.attemptsToReview}</b><small>por revisar</small></span></div>)}{overview.courses.length === 0 && <Empty label="Aún no hay actividad por curso." />}</div>
-                  </article>
+                  </UiSurface>
                 </section>
                 <section className="staff-dashboard__split">
-                  <article className="staff-panel"><div className="staff-panel__heading"><h2>Prioridad de acompañamiento</h2><button onClick={() => setTab('learners')}>Ver todas</button></div>{learners.slice(0, 6).map((learner) => <LearnerRow key={learner.id} learner={learner} onOpen={() => { setTab('learners'); void openLearner(learner.id); }} />)}{learners.length === 0 && <Empty label="Todavía no hay personas registradas." />}</article>
-                  <article className="staff-panel"><div className="staff-panel__heading"><h2>Conversaciones abiertas</h2><button onClick={() => setTab('inbox')}>Abrir bandeja</button></div>{threads.filter((thread) => thread.status !== 'resolved').slice(0, 5).map((thread) => <button className="staff-thread-preview" key={thread.id} onClick={() => { setTab('inbox'); setActiveThread(thread.id); }}><span>{thread.displayName || thread.email}</span><strong>{thread.subject}</strong><small>{date(thread.updatedAt)}</small></button>)}{threads.length === 0 && <Empty label="No hay mensajes pendientes." />}</article>
+                  <UiSurface as="article" className="staff-panel"><div className="staff-panel__heading"><h2>Prioridad de acompañamiento</h2><UiButton variant="quiet" onClick={() => setTab('learners')}>Ver todas</UiButton></div>{learners.slice(0, 6).map((learner) => <LearnerRow key={learner.id} learner={learner} onOpen={() => { setTab('learners'); void openLearner(learner.id); }} />)}{learners.length === 0 && <Empty label="Todavía no hay personas registradas." />}</UiSurface>
+                  <UiSurface as="article" className="staff-panel"><div className="staff-panel__heading"><h2>Conversaciones abiertas</h2><UiButton variant="quiet" onClick={() => setTab('inbox')}>Abrir bandeja</UiButton></div>{threads.filter((thread) => thread.status !== 'resolved').slice(0, 5).map((thread) => <button className="staff-thread-preview" key={thread.id} onClick={() => { setTab('inbox'); setActiveThread(thread.id); }}><span>{thread.displayName || thread.email}</span><strong>{thread.subject}</strong><small>{date(thread.updatedAt)}</small></button>)}{threads.length === 0 && <Empty label="No hay mensajes pendientes." />}</UiSurface>
                 </section>
               </>
             )}
@@ -248,7 +255,7 @@ export function StaffDashboard({ canAdmin, staffIdentity, onClose }: { canAdmin:
                 <div className={`staff-learners__detail${selectedId ? ' is-open' : ''}`}>
                   {!selectedId && <Empty label="Selecciona una persona para revisar su recorrido." />}
                   {selectedId && selectedLoading && <div className="staff-dashboard__loading">Cargando recorrido…</div>}
-                  {selectedId && selectedError && <div className="staff-detail-error" role="alert"><TriangleAlert size={20} /><p>{selectedError}</p><button onClick={() => void openLearner(selectedId)}>Reintentar</button></div>}
+                  {selectedId && selectedError && <div className="staff-detail-error" role="alert"><TriangleAlert size={20} /><p>{selectedError}</p><UiButton variant="quiet" onClick={() => void openLearner(selectedId)}>Reintentar</UiButton></div>}
                   {selected && <LearnerDetailView detail={selected} feedback={feedback} courseSlug={courseSlug} itemKey={itemKey} skillKey={skillKey} saving={saving} onBack={() => { setSelectedId(null); setSelected(null); setSelectedCourseAccess([]); setSelectedError(null); }} onFeedback={setFeedback} onCourse={setCourseSlug} onItem={setItemKey} onSkill={setSkillKey} onSend={() => void sendFeedback()} adminCourses={effectiveCanAdmin ? courses : []} courseAccess={selectedCourseAccess} onCourseAccess={setSelectedCourseAccess} setError={setError} />}
                 </div>
               </section>
@@ -307,7 +314,7 @@ function LearnerDetailView({ detail, feedback, courseSlug, itemKey, skillKey, sa
   const selectCourse = (value: string) => { onCourse(value); onItem(''); onSkill(''); };
 
   return <>
-    <button className="staff-detail-back" onClick={onBack}><ArrowLeft size={17} /> Volver a personas</button>
+    <UiButton variant="quiet" className="staff-detail-back" onClick={onBack}><ArrowLeft size={17} /> Volver a personas</UiButton>
     <header className="staff-detail-header"><span className="staff-avatar is-large">{String(user.displayName || user.email).slice(0, 2).toUpperCase()}</span><div><h2>{String(user.displayName || user.email)}</h2><p>{String(user.email)} · última actividad {date(user.lastSeenAt)}</p></div></header>
     <section className="staff-detail-stats"><span><b>{detail.progress.length}</b> avances</span><span><b>{detail.attempts.length}</b> intentos</span><span><b>{detail.skills.filter((skill) => skill.score < .55).length}</b> refuerzos</span><span><b>{detail.progress.filter((item) => item.status === 'completed').length}</b> completados</span></section>
 
@@ -318,7 +325,7 @@ function LearnerDetailView({ detail, feedback, courseSlug, itemKey, skillKey, sa
       <div className="staff-detail-section"><h3>Intentos recientes</h3>{detail.attempts.slice(0, 8).map((attempt) => <button className="staff-attempt-row" key={attempt.id} onClick={() => { selectCourse(attempt.courseSlug); onItem(attempt.itemKey); }}><span><strong>{attempt.itemKey}</strong><small>{attempt.courseSlug} · {attempt.kind} · {date(attempt.occurredAt)}</small></span><b className={`is-${attempt.result}`}>{attempt.score === null ? attempt.result : `${attempt.score}/100`}</b></button>)}{detail.attempts.length === 0 && <Empty label="No hay intentos registrados." />}</div>
     </section>
 
-    <section className="staff-feedback-compose"><h3><MessageSquareText size={17} /> Dejar feedback contextual</h3><div className="staff-feedback-context"><label>Curso<select value={courseSlug} onChange={(event) => selectCourse(event.target.value)}><option value="">General</option>{courses.map((course) => <option key={course} value={course}>{course}</option>)}</select></label><label>Actividad<select value={itemKey} onChange={(event) => onItem(event.target.value)}><option value="">Sin actividad concreta</option>{items.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label>Concepto<select value={skillKey} onChange={(event) => onSkill(event.target.value)}><option value="">Sin concepto concreto</option>{skills.map((skill) => <option key={skill} value={skill}>{skill}</option>)}</select></label></div><textarea value={feedback} onChange={(event) => onFeedback(event.target.value)} maxLength={4000} placeholder="Explica qué hizo bien, qué patrón debe revisar y cuál es el siguiente paso concreto." /><div className="staff-feedback-compose__footer"><small>{feedback.length}/4000 · llegará al centro de mensajes de la persona</small><button disabled={saving || !feedback.trim()} onClick={onSend}>{saving ? 'Guardando…' : 'Enviar feedback'}</button></div></section>
+    <section className="staff-feedback-compose"><h3><MessageSquareText size={17} /> Dejar feedback contextual</h3><div className="staff-feedback-context"><label>Curso<select value={courseSlug} onChange={(event) => selectCourse(event.target.value)}><option value="">General</option>{courses.map((course) => <option key={course} value={course}>{course}</option>)}</select></label><label>Actividad<select value={itemKey} onChange={(event) => onItem(event.target.value)}><option value="">Sin actividad concreta</option>{items.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label>Concepto<select value={skillKey} onChange={(event) => onSkill(event.target.value)}><option value="">Sin concepto concreto</option>{skills.map((skill) => <option key={skill} value={skill}>{skill}</option>)}</select></label></div><textarea value={feedback} onChange={(event) => onFeedback(event.target.value)} maxLength={4000} placeholder="Explica qué hizo bien, qué patrón debe revisar y cuál es el siguiente paso concreto." /><div className="staff-feedback-compose__footer"><small>{feedback.length}/4000 · llegará al centro de mensajes de la persona</small><UiButton variant="primary" disabled={saving || !feedback.trim()} onClick={onSend}>{saving ? 'Guardando…' : 'Enviar feedback'}</UiButton></div></section>
     {adminCourses.length > 0 && <LearnerCourseAccess userId={user.id} courses={adminCourses} access={courseAccess} onChange={onCourseAccess} setError={setError} />}
     {detail.feedback.length > 0 && <section className="staff-detail-section"><h3>Feedback anterior</h3>{detail.feedback.slice(0, 8).map((item) => <article className="staff-feedback-history" key={item.id}><p>{item.message}</p><small>{date(item.createdAt)} · {item.status}{item.courseSlug ? ` · ${item.courseSlug}` : ''}{item.itemKey ? ` · ${item.itemKey}` : ''}</small></article>)}</section>}
   </>;
@@ -348,7 +355,7 @@ function LearnerCourseAccess({ userId, courses, access, onChange, setError }: {
     catch (error) { setError(error instanceof Error ? error.message : 'No pudimos restaurar el acceso.'); }
     finally { setBusy(''); }
   };
-  return <section className="staff-detail-section staff-personal-access"><div className="staff-detail-section__heading"><h3>Acceso individual a cursos</h3><small>Solo afecta a esta persona; el bloqueo general se administra en Cursos.</small></div><div className="staff-personal-access__form"><label>Curso a restringir<select value={courseSlug} onChange={(event) => setCourseSlug(event.target.value)}><option value="">Selecciona un curso</option>{available.map((course) => <option key={course.slug} value={course.slug}>{course.title}</option>)}</select></label><label>Motivo para esta persona<input value={reason} maxLength={500} onChange={(event) => setReason(event.target.value)} placeholder="Explica qué debe ocurrir antes de continuar" /></label><button disabled={Boolean(busy) || !courseSlug || !reason.trim()} onClick={() => void lock()}>Bloquear solo para esta persona</button></div><div className="staff-personal-access__list">{access.map((item) => <article key={item.courseSlug}><span><strong>{item.title}</strong><small>{item.reason}</small></span><button disabled={Boolean(busy)} aria-label={`Restaurar acceso a ${item.title}`} onClick={() => void unlock(item)}>Restaurar acceso</button></article>)}{access.length === 0 && <p>No hay cursos restringidos para esta persona.</p>}</div></section>;
+  return <section className="staff-detail-section staff-personal-access"><div className="staff-detail-section__heading"><h3>Acceso individual a cursos</h3><small>Solo afecta a esta persona; el bloqueo general se administra en Cursos.</small></div><div className="staff-personal-access__form"><label>Curso a restringir<select value={courseSlug} onChange={(event) => setCourseSlug(event.target.value)}><option value="">Selecciona un curso</option>{available.map((course) => <option key={course.slug} value={course.slug}>{course.title}</option>)}</select></label><label>Motivo para esta persona<input value={reason} maxLength={500} onChange={(event) => setReason(event.target.value)} placeholder="Explica qué debe ocurrir antes de continuar" /></label><UiButton variant="danger" disabled={Boolean(busy) || !courseSlug || !reason.trim()} onClick={() => void lock()}>Bloquear solo para esta persona</UiButton></div><div className="staff-personal-access__list">{access.map((item) => <article key={item.courseSlug}><span><strong>{item.title}</strong><small>{item.reason}</small></span><UiButton variant="secondary" disabled={Boolean(busy)} aria-label={`Restaurar acceso a ${item.title}`} onClick={() => void unlock(item)}>Restaurar acceso</UiButton></article>)}{access.length === 0 && <p>No hay cursos restringidos para esta persona.</p>}</div></section>;
 }
 
 function AccessView({ users, rules, reload, setError }: { users: StaffAdminUser[]; rules: IdentityAccessRule[]; reload(): Promise<void>; setError(value: string | null): void }) {

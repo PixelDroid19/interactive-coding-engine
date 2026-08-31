@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import type { LearningProfile, ReviewRating } from '../../learning/types';
+import { UiButton } from '../ui/UiButton';
+import { UiSurface } from '../ui/UiSurface';
 
 interface ReviewQueueProps {
   courseId: string;
@@ -82,7 +84,7 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
       )}
       <div className="tutor-reinforcements__grid">
         {reinforcements.map((entry) => (
-          <article key={entry.id}>
+          <UiSurface as="article" tone="soft" key={entry.id}>
             <div>
               <strong>{entry.skillId.replace(/-/g, ' ')}</strong>
               <span>
@@ -91,15 +93,15 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
             </div>
             <p>{entry.note}</p>
             <small>{entry.evidence}</small>
-            <button
-              type="button"
+            <UiButton
+              variant="quiet"
               disabled={Boolean(reviewingReinforcementId)}
               onClick={() => void reviewReinforcement(entry.id)}
               aria-label={`Marcar ${entry.skillId.replace(/-/g, ' ')} como repasado`}
             >
               {reviewingReinforcementId === entry.id ? 'Marcando…' : 'Ya lo repasé'}
-            </button>
-          </article>
+            </UiButton>
+          </UiSurface>
         ))}
       </div>
     </section>
@@ -110,7 +112,7 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
       <div className="review-overview">
         {introduction}
         {reinforcementCards}
-        <div className="learning-empty">
+        <UiSurface className="learning-empty">
           <strong>
             {upcoming
               ? 'Tu repaso programado está al día.'
@@ -125,7 +127,7 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
                 ? 'Tu siguiente tarjeta aparecerá cuando haya evidencia suficiente para programarla.'
                 : 'Completa una lectura, práctica o desafío para que aparezca tu primer repaso.'}
           </p>
-        </div>
+        </UiSurface>
       </div>
     );
   }
@@ -149,9 +151,9 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
         <textarea value={answer} onChange={(event) => setAnswer(event.target.value)} rows={5} placeholder="Explícalo con tus palabras y un ejemplo propio…" />
       </label>
       {!compare ? (
-        <button type="button" className="learning-primary" onClick={() => setCompare(true)} disabled={answer.trim().length < 18}>
+        <UiButton variant="primary" onClick={() => setCompare(true)} disabled={answer.trim().length < 18}>
           Comparar mi respuesta
-        </button>
+        </UiButton>
       ) : (
         <div className="review-self-check">
           <strong>Comprueba antes de calificarte</strong>
@@ -161,18 +163,18 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
             <li>¿Explicaste cómo observarías si funciona?</li>
           </ul>
           <div className="review-rating" aria-label="Califica tu recuerdo">
-            <button type="button" disabled={saving} onClick={() => void rate('again')}>
+            <UiButton variant="secondary" disabled={saving} onClick={() => void rate('again')}>
               No lo recordé
-            </button>
-            <button type="button" disabled={saving} onClick={() => void rate('hard')}>
+            </UiButton>
+            <UiButton variant="secondary" disabled={saving} onClick={() => void rate('hard')}>
               Con ayuda
-            </button>
-            <button type="button" disabled={saving} onClick={() => void rate('good')}>
+            </UiButton>
+            <UiButton variant="secondary" disabled={saving} onClick={() => void rate('good')}>
               Lo expliqué
-            </button>
-            <button type="button" disabled={saving} onClick={() => void rate('easy')}>
+            </UiButton>
+            <UiButton variant="primary" disabled={saving} onClick={() => void rate('easy')}>
               Puedo enseñarlo
-            </button>
+            </UiButton>
           </div>
           {ratingError && (
             <p className="learning-notebook__error" role="alert">

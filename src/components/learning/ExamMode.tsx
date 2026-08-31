@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { buildExamQuestions, evaluateExamAnswers, type ExamConceptCandidate, type ExamEvaluation, type ExamQuestion } from '../../learning/exam';
 import type { LearningProfile } from '../../learning/types';
+import { UiButton } from '../ui/UiButton';
 
 interface ExamModeProps {
   courseId: string;
@@ -34,7 +35,7 @@ export const ExamMode: React.FC<ExamModeProps> = ({ courseId, profile, fallbackC
       {questions.map((question, index) => (
         <label key={question.id}><span>{index + 1} · {question.capability}</span>{question.prompt}<small>{question.guidance}</small><textarea rows={3} value={answers[question.capability] ?? ''} onChange={(event) => setAnswers((current) => ({ ...current, [question.capability]: event.target.value }))} /></label>
       ))}
-      <button type="button" className="learning-primary" onClick={() => void finish()} disabled={questions.some((question) => (answers[question.capability]?.trim().length ?? 0) < 8)}>Evaluar respuestas</button>
+      <UiButton variant="primary" onClick={() => void finish()} disabled={questions.some((question) => (answers[question.capability]?.trim().length ?? 0) < 8)}>Evaluar respuestas</UiButton>
     </section>
   );
 };

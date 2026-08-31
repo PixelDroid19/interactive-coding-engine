@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, FileCode2, Headphones, MessageCircleMore, Send, X } from 'lucide-react';
-import { useTheme } from '../themes/ThemeProvider';
 import type { LiveHelpConnectionState } from './socket';
 import { isLiveHelpStaffRole, type LiveHelpEvent, type LiveHelpProposalEvent, type LiveHelpSession } from './protocol';
 import type { PatchProposalOutcome } from './workspace';
@@ -35,7 +34,6 @@ function chatBody(event: LiveHelpEvent): string | null {
 export function LearnerLiveHelpPanel({
   session, workspaceMatchesSession = true, connectionState, events, error, onClose, onRequest, onAccept, onSendChat, onSendSnapshot, onDecision, onApplyProposal, onEnd,
 }: LearnerLiveHelpPanelProps) {
-  const { themeId } = useTheme();
   const [message, setMessage] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
   const [pendingDecisions, setPendingDecisions] = useState<Record<string, ProposalDecision>>({});
@@ -113,7 +111,7 @@ export function LearnerLiveHelpPanel({
   };
 
   return (
-    <aside className={`live-help-panel${themeId === 'cyber' ? ' live-help-panel--cyber' : ''}`} aria-label="Ayuda del formador" role="complementary">
+    <aside className="live-help-panel" aria-label="Ayuda del formador" role="complementary">
       <header className="live-help-panel__header">
         <span><Headphones size={16} aria-hidden="true" /> Ayuda del formador</span>
         <div><small className={`live-help-panel__state is-${connectionState}`}>{session?.status === 'active' ? 'Sesión activa' : session?.status === 'accepted' ? 'Conectando' : session?.status === 'claimed' ? 'Esperando consentimiento' : session?.status === 'requested' ? 'Solicitud enviada' : 'Sin sesión'}</small><button type="button" onClick={onClose} aria-label="Cerrar ayuda en vivo"><X size={16} /></button></div>

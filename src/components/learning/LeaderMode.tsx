@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import type { LearningProfile } from '../../learning/types';
+import { UiButton } from '../ui/UiButton';
 
 interface LeaderModeProps {
   courseId: string;
@@ -26,7 +27,7 @@ export const LeaderMode: React.FC<LeaderModeProps> = ({ courseId, profile, onCom
     <section className="leader-mode">
       <div className="learning-notebook__intro"><h3>Defiende tus decisiones</h3><p>Responde como si otra persona fuera a mantener tu código. No buscamos una frase perfecta.</p></div>
       {prompts.map((prompt, index) => <label key={prompt}>{prompt}<textarea rows={3} value={answers[index]} onChange={(event) => setAnswers((current) => current.map((answer, answerIndex) => answerIndex === index ? event.target.value : answer))} /></label>)}
-      <button type="button" className="learning-primary" disabled={answers.some((answer) => answer.trim().length < 20)} onClick={async () => { await onComplete(skillId, answers); setDone(true); }}>Registrar entrevista</button>
+      <UiButton variant="primary" disabled={answers.some((answer) => answer.trim().length < 20)} onClick={async () => { await onComplete(skillId, answers); setDone(true); }}>Registrar entrevista</UiButton>
     </section>
   );
 };

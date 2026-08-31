@@ -1,5 +1,6 @@
 import React from 'react';
 import { Headphones } from 'lucide-react';
+import { UiButton } from '../ui/UiButton';
 
 export type LiveHelpStatus = 'available' | 'waiting' | 'active';
 
@@ -35,8 +36,8 @@ export const LiveHelpSlot: React.FC<LiveHelpSlotProps> = ({ integration }) => {
       <p>{integration.description}</p>
       {(integration.primaryAction || integration.secondaryAction) && (
         <div className="learning-center__live-help-actions">
-          {integration.primaryAction && <button type="button" className="learning-primary" onClick={() => void integration.primaryAction?.onAction()}>{integration.primaryAction.label}</button>}
-          {integration.secondaryAction && <button type="button" className="learning-secondary" onClick={() => void integration.secondaryAction?.onAction()}>{integration.secondaryAction.label}</button>}
+          {integration.primaryAction && <UiButton variant="primary" onClick={() => void integration.primaryAction?.onAction()}>{integration.primaryAction.label}</UiButton>}
+          {integration.secondaryAction && <UiButton variant="secondary" onClick={() => void integration.secondaryAction?.onAction()}>{integration.secondaryAction.label}</UiButton>}
         </div>
       )}
     </section>

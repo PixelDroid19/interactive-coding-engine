@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowRight, GitBranch, ScanSearch } from 'lucide-react';
 import { buildPostSolveVariation } from '../../learning/variation';
+import { UiButton } from '../ui/UiButton';
 
 interface PostSolveStudioProps {
   itemId: string;
@@ -31,13 +32,13 @@ export const PostSolveStudio: React.FC<PostSolveStudioProps> = ({ itemId, title,
         <small>{variation.changedRequirement}</small>
         <textarea rows={3} value={variationAnswer} onChange={(event) => setVariationAnswer(event.target.value)} placeholder={variation.verificationPrompt} />
       </label>
-      <button type="button" className="learning-primary" disabled={!ready || saving} onClick={async () => {
+      <UiButton variant="primary" disabled={!ready || saving} onClick={async () => {
         setSaving(true);
         await onComplete(readingAnswer.trim(), variationAnswer.trim());
         setSaving(false);
       }}>
         {saving ? 'Guardando evidencia…' : continueLabel} <ArrowRight size={15} />
-      </button>
+      </UiButton>
     </section>
   );
 };

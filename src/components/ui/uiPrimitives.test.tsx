@@ -4,6 +4,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { UiButton } from './UiButton';
 import { UiField } from './UiField';
+import { UiNav } from './UiNav';
+import { UiSurface } from './UiSurface';
 import { UiTabs } from './UiTabs';
 
 describe('primitivas visuales compartidas', () => {
@@ -29,5 +31,28 @@ describe('primitivas visuales compartidas', () => {
     expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Mis notas' }));
     fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Enter' });
     expect(onChange).toHaveBeenCalledWith('notes');
+  });
+
+  it('mantiene la misma superficie semántica en cualquier tema', () => {
+    const { container, rerender } = render(<UiSurface as="article" tone="accent">Contenido</UiSurface>);
+    const normalSurface = container.querySelector('article');
+    expect(normalSurface?.className).toContain('ui-surface--accent');
+
+    document.documentElement.dataset.theme = 'cyber';
+    rerender(<UiSurface as="article" tone="accent">Contenido</UiSurface>);
+    expect(container.querySelector('article')?.className).toBe(normalSurface?.className);
+    delete document.documentElement.dataset.theme;
+  });
+
+  it('expone navegación lateral accesible sin estilos propios de la pantalla', () => {
+    const onChange = vi.fn();
+    render(<UiNav ariaLabel="Secciones" activeId="summary" onChange={onChange} items={[
+      { id: 'summary', label: 'Resumen' },
+      { id: 'people', label: 'Personas', badge: 2 },
+    ]} />);
+
+    expect(screen.getByRole('button', { name: 'Resumen' }).getAttribute('aria-current')).toBe('page');
+    fireEvent.click(screen.getByRole('button', { name: 'Personas 2' }));
+    expect(onChange).toHaveBeenCalledWith('people');
   });
 });

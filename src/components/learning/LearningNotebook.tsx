@@ -188,16 +188,16 @@ export const LearningNotebook: React.FC<LearningNotebookProps> = ({ courseId, pr
                       </small>
                     </div>
                     <div className="learning-notebook__note-actions">
-                      <button type="button" aria-label={`Editar ${label}`} onClick={() => beginEdit(note)} disabled={saving || Boolean(deletingId)}><Edit3 size={15} /></button>
-                      <button type="button" aria-label={`Eliminar ${label}`} onClick={() => setPendingDeleteId(note.id)} disabled={saving || Boolean(deletingId)}><Trash2 size={15} /></button>
+                      <UiButton variant="icon" aria-label={`Editar ${label}`} onClick={() => beginEdit(note)} disabled={saving || Boolean(deletingId)}><Edit3 size={15} /></UiButton>
+                      <UiButton variant="icon" aria-label={`Eliminar ${label}`} onClick={() => setPendingDeleteId(note.id)} disabled={saving || Boolean(deletingId)}><Trash2 size={15} /></UiButton>
                     </div>
                   </header>
                   <p>{note.body}</p>
                   {confirmingDelete && (
                     <div className="learning-notebook__delete-confirm" role="group" aria-label={`Confirmar eliminación de ${label}`}>
                       <span>¿Eliminar esta nota?</span>
-                      <button type="button" onClick={() => void remove(note.id)} disabled={Boolean(deletingId)}>Confirmar eliminación</button>
-                      <button type="button" onClick={() => setPendingDeleteId(null)} disabled={Boolean(deletingId)}>Conservar nota</button>
+                      <UiButton variant="danger" onClick={() => void remove(note.id)} disabled={Boolean(deletingId)}>Confirmar eliminación</UiButton>
+                      <UiButton variant="quiet" onClick={() => setPendingDeleteId(null)} disabled={Boolean(deletingId)}>Conservar nota</UiButton>
                     </div>
                   )}
                 </article>
