@@ -90,6 +90,69 @@ describe('ScrimPlayer overlay coordination', () => {
     pause.mockRestore();
   });
 
+  it('persiste la creación, cambio de nombre y eliminación de archivos en la rama del estudiante', async () => {
+    const structuralLesson = {
+      ...lesson,
+      id: 'leccion-rama-con-archivos',
+      teachingFilePaths: undefined,
+    } as typeof lesson;
+    const firstView = render(<ScrimPlayer lessonData={structuralLesson} onBack={() => undefined} />);
+    await waitFor(() => expect(getTutorWorkspace()).not.toBeNull());
+    const initialWorkspace = getTutorWorkspace()!;
+    const initialPath = initialWorkspace.snapshot.activeFilePath;
+
+    await act(async () => {
+      await initialWorkspace.actions.replaceFile(
+        initialPath,
+        `${initialWorkspace.snapshot.files[initialPath]}\n// La rama ya pertenece al estudiante.`,
+      );
+    });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Nuevo archivo' })).toBeTruthy());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Nuevo archivo' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nombre del archivo' }), {
+      target: { value: 'datos.js' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear archivo' }));
+
+    await waitFor(() => {
+      expect(loadLastBranchForLesson(structuralLesson.id)?.workspace.files['datos.js']).toBeDefined();
+    });
+
+    firstView.unmount();
+    expect(loadLastBranchForLesson(structuralLesson.id)?.workspace.files['datos.js']).toBeDefined();
+    const restoredWithFile = render(<ScrimPlayer lessonData={structuralLesson} onBack={() => undefined} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Continuar donde lo dejé' }));
+    await waitFor(() => expect(getTutorWorkspace()?.snapshot.files['datos.js']).toBeDefined());
+    expect((await screen.findAllByRole('button', { name: 'Abrir datos.js' })).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Renombrar datos.js' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nuevo nombre para datos.js' }), {
+      target: { value: 'utilidades.js' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar nombre' }));
+    await waitFor(() => {
+      expect(loadLastBranchForLesson(structuralLesson.id)?.workspace.files['datos.js']).toBeUndefined();
+      expect(loadLastBranchForLesson(structuralLesson.id)?.workspace.files['utilidades.js']).toBeDefined();
+    });
+
+    restoredWithFile.unmount();
+    const restoredWithRenamedFile = render(<ScrimPlayer lessonData={structuralLesson} onBack={() => undefined} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Continuar donde lo dejé' }));
+    expect(screen.queryAllByRole('button', { name: 'Abrir datos.js' })).toHaveLength(0);
+    expect((await screen.findAllByRole('button', { name: 'Abrir utilidades.js' })).length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Eliminar utilidades.js' }));
+    await waitFor(() => {
+      expect(loadLastBranchForLesson(structuralLesson.id)?.workspace.files['utilidades.js']).toBeUndefined();
+    });
+
+    restoredWithRenamedFile.unmount();
+    render(<ScrimPlayer lessonData={structuralLesson} onBack={() => undefined} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Continuar donde lo dejé' }));
+    expect(screen.queryAllByRole('button', { name: 'Abrir utilidades.js' })).toHaveLength(0);
+  });
+
   it('explica qué aprenderá el estudiante antes de iniciar la cinta', () => {
     render(<ScrimPlayer lessonData={lesson} onBack={() => undefined} />);
 

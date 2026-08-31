@@ -647,6 +647,50 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     });
   };
 
+  const commitStructuralWorkspaceChange = (nextWorkspace: WorkspaceSnapshot) => {
+    engineRef.current?.pause();
+    setValidationResult(null);
+    const baseTime = timeRef.current;
+    const wasForked = isForkedRef.current;
+    const persistedWorkspace = cloneWorkspace(nextWorkspace);
+
+    // A pending debounced text edit may still contain the previous file list.
+    // Flush it first so it cannot overwrite this structural mutation on unmount.
+    flushBranchSave(branchScopeId);
+    workspaceRef.current = persistedWorkspace;
+    setWorkspace(persistedWorkspace);
+    setLearnerBranch((current) => {
+      const now = Date.now();
+      const branch: LearnerBranch = current
+        ? {
+          ...current,
+          workspace: cloneWorkspace(persistedWorkspace),
+          lastSavedAt: now,
+        }
+        : {
+          id: `branch-${branchScopeId}-${now}`,
+          lessonId: branchScopeId,
+          baseTime,
+          baseSequence: 0,
+          workspace: cloneWorkspace(persistedWorkspace),
+          isForked: true,
+          ...(activeChallenge ? { activeChallengeId: activeChallenge.id } : {}),
+          lastSavedAt: now,
+          executionCount: 0,
+        };
+      saveLearnerBranch(branch);
+      return branch;
+    });
+
+    if (!wasForked) {
+      isForkedRef.current = true;
+      publishInstructorPointer(undefined);
+      dispatch({ type: 'FORK', baseTime });
+    }
+    setHasPendingEdits(true);
+    dispatch({ type: 'EDIT' });
+  };
+
   const handleCodeChange = (newContent: string) => handleWorkspaceFileChange(workspaceRef.current.activeFilePath, newContent);
 
   const handleManualRun = () => {
@@ -1256,31 +1300,48 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
               onFileCreate={
                 playerState.isForked
                   ? (file) => {
-                      forkLearnerBranch(currentTimeMs);
-                      setValidationResult(null);
-                      setWorkspace((prev) => ({
-                        ...prev,
-                        files: { ...prev.files, [file.path]: file },
+                      const current = workspaceRef.current;
+                      if (current.files[file.path]) return;
+                      commitStructuralWorkspaceChange({
+                        ...current,
+                        files: { ...current.files, [file.path]: file },
                         activeFilePath: file.path,
-                      }));
-                      setHasPendingEdits(true);
+                      });
                     }
                   : undefined
               }
               onFileDelete={(path) => {
-                forkLearnerBranch(currentTimeMs);
-                setValidationResult(null);
-                setWorkspace((prev) => {
-                  const copy = { ...prev.files };
-                  delete copy[path];
-                  const remaining = Object.keys(copy);
-                  return {
-                    ...prev,
-                    files: copy,
-                    activeFilePath: remaining.length > 0 ? remaining[0] : '',
-                  };
+                const current = workspaceRef.current;
+                if (!current.files[path]) return;
+                const files = { ...current.files };
+                delete files[path];
+                const remaining = Object.keys(files);
+                commitStructuralWorkspaceChange({
+                  ...current,
+                  files,
+                  activeFilePath: current.activeFilePath === path
+                    ? remaining[0] ?? ''
+                    : current.activeFilePath,
                 });
-                setHasPendingEdits(true);
+              }}
+              onFileRename={(oldPath, newPath) => {
+                const current = workspaceRef.current;
+                const source = current.files[oldPath];
+                if (!source || current.files[newPath]) return;
+                const files = { ...current.files };
+                delete files[oldPath];
+                files[newPath] = {
+                  ...source,
+                  name: newPath.split('/').pop() ?? newPath,
+                  path: newPath,
+                };
+                commitStructuralWorkspaceChange({
+                  ...current,
+                  files,
+                  activeFilePath: current.activeFilePath === oldPath
+                    ? newPath
+                    : current.activeFilePath,
+                });
               }}
               readOnly={!playerState.isForked && playbackStatus === 'playing'}
             />
