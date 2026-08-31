@@ -29,8 +29,8 @@ html[data-theme="cyber"] {
   --ui-surface-soft: #0a0d13;
   --ui-text: #e8edf5;
   --ui-muted: #98a3b5;
-  --ui-border: #3a4352;
-  --ui-border-subtle: #252c38;
+  --ui-border: #00d9e8;
+  --ui-border-subtle: #273041;
   --ui-accent: #ffe600;
   --ui-accent-hover: #fff04d;
   --ui-accent-contrast: #080a0f;
@@ -44,6 +44,10 @@ html[data-theme="cyber"] {
   --ui-panel-border-width: 1px;
   --ui-control-border-width: 1px;
   --ui-label: #ffe600;
+  --ui-frame: #00d9e8;
+  --ui-frame-muted: #576174;
+  --ui-frame-danger: #ff007f;
+  --ui-inlay: #090b11;
   --ui-accent-soft: #151508;
   --ui-danger-soft: #241019;
   --ui-success-soft: #0a1d18;

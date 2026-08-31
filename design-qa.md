@@ -50,6 +50,51 @@ final result: passed
 
 ---
 
+# QA visual — dashboard administrativo cyber
+
+## Evidencia
+
+- Referencia del lenguaje cyber: `/tmp/codex-clipboard-5102b455-27cc-4344-8ded-063439815553.png`.
+- Implementación final: `/tmp/dashboard-cyber-final.png`.
+- Comparación conjunta: `/tmp/dashboard-cyber-comparison-final.png`.
+- Viewport compartido: 2558 × 1275 CSS px.
+- Estado: sesión local con rol administrador, tema Cyber activo, pestaña Resumen del panel de seguimiento.
+- Estados adicionales: `/tmp/dashboard-cyber-persona-detalle-clean.png`, `/tmp/dashboard-cyber-cursos-final.png` y regresión del tema normal `/tmp/dashboard-normal-regression.png`.
+
+## Comparación de vista completa
+
+El dashboard ya usa la misma gramática visible del editor: fondo negro azulado sin tarjetas grises genéricas, rail lateral con marco amarillo, cabecera compacta con marco cian, tipografía Chakra Petch/Fira Code, cortes angulares y colores funcionales. Amarillo identifica actividad y acciones principales, cian estructura y navegación, magenta seguimiento prioritario y verde estado correcto. Los efectos luminosos se limitan a indicadores pequeños; los paneles no tienen halos ni gradientes decorativos.
+
+La referencia es un editor y el resultado un panel de gestión, por lo que no se copia su distribución de archivos/editor/salida. Se conserva su sistema visual y densidad para la estructura propia del dashboard.
+
+## Historial de iteración
+
+### Iteración 0
+
+- P1: el dashboard anterior era un panel oscuro genérico, con bordes grises, tarjetas redondeadas y sin jerarquía cyber.
+- P1: botones y superficies se estilaban por pantalla, sin reutilizar el contrato de tema.
+
+### Iteración 1
+
+- P1: una dimensión inválida de `augmented-ui` rellenaba por completo el rail y la cabecera.
+- P2: todos los paneles de datos usaban cian y perdían el reparto semántico de amarillo, magenta y verde.
+
+### Iteración 2
+
+- P1 funcional: al abrir el expediente de una persona, el cliente local confundía el endpoint de detalle con la lista y desmontaba React, dejando la pantalla negra.
+- P1 funcional: el endpoint local de acceso individual devolvía usuarios administrativos como si fueran cursos bloqueados.
+- P2: los botones de gestión de cursos seguían siendo barras grandes específicas de la pantalla; se migraron a `UiButton` y se ajustó su anchura.
+
+## Verificación enfocada
+
+No existe una captura fuente equivalente para las vistas Personas y Cursos; por eso no se fuerza una comparación visual inventada. Se verificaron como estados funcionales del mismo sistema: abrir una persona, cargar progreso, intentos, feedback y acceso individual; volver, abrir Cursos, comprobar campos y acciones; cambiar al tema normal y confirmar que mantiene su lenguaje de papel.
+
+No quedan diferencias P0, P1 o P2 respecto a la identidad visual solicitada ni fallos en los recorridos comprobados.
+
+final result: passed
+
+---
+
 # QA visual — Centro de aprendizaje y catálogo cyber
 
 ## Evidencia

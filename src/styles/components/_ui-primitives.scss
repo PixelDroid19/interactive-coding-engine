@@ -75,3 +75,54 @@
 .ui-tabs > button { display: flex; min-height: 2.65rem; align-items: center; justify-content: center; gap: .45rem; border: 1px solid transparent; border-radius: var(--ui-radius-md); background: transparent; color: var(--ui-muted); font-weight: 800; }
 .ui-tabs > button[aria-selected="true"] { border-color: var(--ui-border); background: var(--ui-accent); color: var(--ui-accent-contrast); box-shadow: var(--ui-shadow); }
 .ui-tabs > button:focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 2px; }
+
+/* The cyber geometry lives here so every screen uses the same HUD contract. */
+.hud [data-augmented-ui~="ui-surface"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: var(--ui-frame);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: var(--ui-inlay);
+  --aug-inlay-opacity: 1;
+  --aug-tl: 9px;
+  --aug-br: 9px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.hud [data-augmented-ui~="ui-surface-soft"] { --aug-border-bg: var(--ui-frame-muted); --aug-inlay-bg: var(--ui-surface-soft); }
+.hud [data-augmented-ui~="ui-surface-accent"] { --aug-border-bg: var(--hud-yellow); }
+.hud [data-augmented-ui~="ui-surface-metric"] { --aug-tl: 7px; --aug-br: 7px; }
+
+.hud [data-augmented-ui~="ui-button"] {
+  --aug-border-all: 1.5px;
+  --aug-border-bg: var(--ui-frame-muted);
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: var(--ui-surface-raised);
+  --aug-inlay-opacity: 1;
+  --aug-tl: 6px;
+  --aug-br: 6px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.hud [data-augmented-ui~="ui-button-primary"] { --aug-border-bg: var(--hud-yellow); --aug-inlay-bg: var(--hud-yellow); color: #07090e; }
+.hud [data-augmented-ui~="ui-button-danger"] { --aug-border-bg: var(--ui-frame-danger); --aug-inlay-bg: var(--ui-danger-soft); }
+.hud [data-augmented-ui~="ui-button-icon"] { --aug-border-bg: var(--hud-cyan); }
+.hud [data-augmented-ui~="ui-button"]:hover:not(:disabled) { --aug-border-bg: var(--hud-yellow); transform: none; color: var(--hud-yellow); }
+.hud [data-augmented-ui~="ui-button-primary"]:hover:not(:disabled) { color: #07090e; }
+
+.hud [data-augmented-ui~="ui-nav-item"],
+.hud [data-augmented-ui~="ui-nav-item-active"] {
+  --aug-border-all: 1px;
+  --aug-border-bg: transparent;
+  --aug-inlay-all: 1px;
+  --aug-inlay-bg: transparent;
+  --aug-inlay-opacity: 1;
+  --aug-tl: 5px;
+  --aug-br: 5px;
+  border: 0;
+  border-radius: 0;
+}
+.hud [data-augmented-ui~="ui-nav-item"]:hover { --aug-border-bg: var(--hud-cyan); --aug-inlay-bg: rgb(0 240 255 / 7%); color: var(--hud-cyan); }
+.hud [data-augmented-ui~="ui-nav-item-active"] { --aug-border-all: 1.5px; --aug-border-bg: var(--hud-yellow); --aug-inlay-bg: var(--hud-yellow); color: #07090e; }

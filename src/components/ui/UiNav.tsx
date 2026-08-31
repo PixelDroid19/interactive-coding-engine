@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTheme } from '../../themes/ThemeProvider';
+import { navItemAugmentation } from './uiAugmentation';
 
 interface UiNavItem {
   id: string;
@@ -15,14 +17,16 @@ interface UiNavProps {
   className?: string;
 }
 
-export const UiNav: React.FC<UiNavProps> = ({ ariaLabel, activeId, items, onChange, className = '' }) => (
-  <nav className={`ui-nav${className ? ` ${className}` : ''}`} aria-label={ariaLabel}>
+export const UiNav: React.FC<UiNavProps> = ({ ariaLabel, activeId, items, onChange, className = '' }) => {
+  const { themeId } = useTheme();
+  return <nav className={`ui-nav${className ? ` ${className}` : ''}`} aria-label={ariaLabel}>
     {items.map((item) => {
       const active = item.id === activeId;
       return (
         <button
           key={item.id}
           type="button"
+          data-augmented-ui={navItemAugmentation(themeId, active)}
           aria-current={active ? 'page' : undefined}
           onClick={() => onChange(item.id)}
         >
@@ -32,5 +36,5 @@ export const UiNav: React.FC<UiNavProps> = ({ ariaLabel, activeId, items, onChan
         </button>
       );
     })}
-  </nav>
-);
+  </nav>;
+};

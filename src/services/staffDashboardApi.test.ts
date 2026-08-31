@@ -9,6 +9,28 @@ beforeEach(() => {
 });
 
 describe('cliente del panel administrativo', () => {
+  it('mantiene un expediente completo al usar datos locales de desarrollo', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Backend local no disponible'));
+    const { staffDashboardApi } = await import('./staffDashboardApi');
+
+    const detail = await staffDashboardApi.learner('10000000-0000-4000-8000-000000000002');
+
+    expect(detail.user.email).toBe('damien_monasterios@epam.com');
+    expect(Array.isArray(detail.progress)).toBe(true);
+    expect(Array.isArray(detail.attempts)).toBe(true);
+    expect(Array.isArray(detail.skills)).toBe(true);
+    expect(Array.isArray(detail.feedback)).toBe(true);
+  });
+
+  it('no confunde el acceso individual con la lista administrativa de usuarios', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Backend local no disponible'));
+    const { staffDashboardApi } = await import('./staffDashboardApi');
+
+    const access = await staffDashboardApi.courseAccess('10000000-0000-4000-8000-000000000002');
+
+    expect(access).toEqual([]);
+  });
+
   it('consulta el catálogo administrativo para incluir cursos ocultos', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({ items: [] }), {
       status: 200, headers: { 'content-type': 'application/json' },

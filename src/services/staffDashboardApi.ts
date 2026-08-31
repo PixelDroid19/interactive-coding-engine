@@ -65,12 +65,14 @@ async function json<T>(path: string, init?: RequestInit): Promise<T> {
   } catch (error) {
     if (import.meta.env.DEV) {
       if (path.includes('/v1/staff/dashboard/overview')) return DEV_MOCK_OVERVIEW as unknown as T;
+      const learnerDetailMatch = path.match(/^\/v1\/staff\/learners\/([^/?]+)$/);
+      if (learnerDetailMatch) return devMockLearnerDetail(decodeURIComponent(learnerDetailMatch[1])) as unknown as T;
       if (path.includes('/v1/staff/learners')) return { items: DEV_MOCK_LEARNERS } as unknown as T;
       if (path.includes('/v1/staff/support/threads')) return { items: [] } as unknown as T;
+      if (/^\/v1\/admin\/users\/[^/?]+\/course-access$/.test(path)) return { items: [] } as unknown as T;
       if (path.includes('/v1/admin/users')) return { items: DEV_MOCK_USERS } as unknown as T;
       if (path.includes('/v1/admin/identity/access-rules')) return { items: [] } as unknown as T;
       if (path.includes('/v1/admin/courses')) return { items: DEV_MOCK_COURSES } as unknown as T;
-      if (path.includes('/course-access')) return { items: [] } as unknown as T;
     }
     throw error;
   }
@@ -173,6 +175,28 @@ const DEV_MOCK_LEARNERS: StaffLearner[] = [
   { id: '10000000-0000-4000-8000-000000000002', email: 'damien_monasterios@epam.com', displayName: 'Damien Monasterios', status: 'active', emailVerifiedAt: '2026-08-15T09:00:00Z', lastSeenAt: '2026-08-30T16:00:00Z', progressItems: 6, completed: 4, lowestSkillScore: 0.72, skillsAtRisk: 1 },
   { id: '10000000-0000-4000-8000-000000000003', email: 'estudiante.demo@gmail.com', displayName: 'Estudiante Demo', status: 'active', emailVerifiedAt: '2026-08-28T14:00:00Z', lastSeenAt: '2026-08-31T06:30:00Z', progressItems: 2, completed: 1, lowestSkillScore: 0.6, skillsAtRisk: 2 },
 ];
+
+function devMockLearnerDetail(userId: string): LearnerDetail {
+  const learner = DEV_MOCK_LEARNERS.find((candidate) => candidate.id === userId) ?? DEV_MOCK_LEARNERS[0];
+  return {
+    user: { ...learner, roles: ['student'], actorId: `dev-${learner.id}` },
+    progress: [{
+      courseSlug: 'fundamentos', lessonKey: 'fundamentos-01', status: 'in_progress', playbackMs: 72_000,
+      score: learner.lowestSkillScore, updatedAt: learner.lastSeenAt ?? new Date().toISOString(),
+    }],
+    attempts: [{
+      id: `dev-attempt-${learner.id}`, courseSlug: 'fundamentos', itemKey: 'fundamentos-01-debug', kind: 'debugging',
+      result: learner.skillsAtRisk > 0 ? 'partial' : 'success', score: Math.round(learner.lowestSkillScore * 100),
+      response: {}, diagnostics: {}, occurredAt: learner.lastSeenAt ?? new Date().toISOString(),
+    }],
+    skills: [{
+      courseSlug: 'fundamentos', skillKey: 'flujo-de-ejecucion', capability: 'explicar',
+      score: learner.lowestSkillScore, attempts: Math.max(1, learner.progressItems), successes: learner.completed,
+      lastResult: learner.skillsAtRisk > 0 ? 'partial' : 'success', lastPracticedAt: learner.lastSeenAt ?? new Date().toISOString(),
+    }],
+    feedback: [],
+  };
+}
 
 export const staffDashboardApi = {
   overview: () => json<StaffOverview>('/v1/staff/dashboard/overview'),

@@ -7,6 +7,7 @@ import { UiField } from './UiField';
 import { UiNav } from './UiNav';
 import { UiSurface } from './UiSurface';
 import { UiTabs } from './UiTabs';
+import { buttonAugmentation, navItemAugmentation, surfaceAugmentation } from './uiAugmentation';
 
 describe('primitivas visuales compartidas', () => {
   afterEach(cleanup);
@@ -54,5 +55,12 @@ describe('primitivas visuales compartidas', () => {
     expect(screen.getByRole('button', { name: 'Resumen' }).getAttribute('aria-current')).toBe('page');
     fireEvent.click(screen.getByRole('button', { name: 'Personas 2' }));
     expect(onChange).toHaveBeenCalledWith('people');
+  });
+
+  it('activa la geometría HUD desde las primitivas y no desde cada pantalla', () => {
+    expect(surfaceAugmentation('normal', 'metric')).toBeUndefined();
+    expect(surfaceAugmentation('cyber', 'metric')).toContain('ui-surface-metric');
+    expect(buttonAugmentation('cyber', 'icon')).toContain('ui-button-icon');
+    expect(navItemAugmentation('cyber', true)).toContain('ui-nav-item-active');
   });
 });
