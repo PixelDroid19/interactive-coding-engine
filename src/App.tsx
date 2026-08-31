@@ -664,7 +664,7 @@ export default function App() {
     <div className={currentView === 'scrim' ? 'app-screen' : undefined}>
       {canonicalDataMessages.length > 0 && (
         <aside
-          className="fixed right-4 top-4 z-[120] max-w-md border-2 border-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-[4px_4px_0_#111]"
+          className="pointer-events-none fixed right-4 top-4 z-[120] max-w-md border-2 border-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-[4px_4px_0_#111]"
           role="alert"
           aria-label="Estado de datos publicados"
         >

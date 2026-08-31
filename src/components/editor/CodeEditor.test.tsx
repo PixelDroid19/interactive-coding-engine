@@ -82,11 +82,13 @@ describe('CodeEditor', () => {
       <CodeEditor file={appFile} workspaceFiles={workspaceFiles} languageClient={client} />,
     );
     const firstEditor = container.querySelector('.cm-editor');
+    expect(screen.getByRole('textbox', { name: 'Editor de app.js' })).toBeTruthy();
 
     rerender(<CodeEditor file={cssFile} workspaceFiles={workspaceFiles} languageClient={client} />);
 
     expect(container.querySelector('.cm-editor')).toBe(firstEditor);
     expect(container.querySelector('.cm-content')?.textContent).toContain('body { color: red; }');
+    expect(screen.getByRole('textbox', { name: 'Editor de style.css' })).toBeTruthy();
   });
 
   it('muestra un contador accesible de errores semánticos', async () => {

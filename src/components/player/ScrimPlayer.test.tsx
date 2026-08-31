@@ -141,11 +141,11 @@ describe('ScrimPlayer overlay coordination', () => {
     expect(screen.getAllByRole('button', { name: 'Abrir main.py' }).length).toBeGreaterThan(0);
     const helperTab = screen
       .getAllByRole('button', { name: 'Abrir helpers.py' })
-      .find((button) => button.hasAttribute('aria-selected'));
+      .find((button) => button.classList.contains('tab-btn'));
 
     expect(helperTab).toBeTruthy();
     fireEvent.click(helperTab!);
-    expect(helperTab?.getAttribute('aria-selected')).toBe('true');
+    expect(helperTab?.getAttribute('aria-current')).toBe('page');
   });
 
   it('incluye etiquetas compactas claras para las acciones del encabezado', () => {

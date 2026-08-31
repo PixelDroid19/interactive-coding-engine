@@ -1216,7 +1216,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
                     onClick={() => setWorkspace((prev) => ({ ...prev, activeFilePath: f.path }))}
                     className={`tab-btn ${f.path === workspace.activeFilePath ? 'tab-btn-active' : ''}`}
                     aria-label={`Abrir ${f.name}`}
-                    aria-selected={f.path === workspace.activeFilePath}
+                    aria-current={f.path === workspace.activeFilePath ? 'page' : undefined}
                   >
                     <span>{f.name}</span>
                   </button>

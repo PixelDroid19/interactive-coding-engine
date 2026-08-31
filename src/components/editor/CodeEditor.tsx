@@ -67,6 +67,7 @@ interface DiagnosticDisplay extends Omit<EditorDiagnosticStatus, 'state'> {
 }
 
 interface EditorCompartments {
+  accessibility: Compartment;
   language: Compartment;
   readOnly: Compartment;
   fileFeatures: Compartment;
@@ -290,6 +291,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
 
   if (!compartmentsRef.current) {
     compartmentsRef.current = {
+      accessibility: new Compartment(),
       language: new Compartment(),
       readOnly: new Compartment(),
       fileFeatures: new Compartment(),
@@ -345,6 +347,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   const configurationEffects = useCallback((activeFile: WorkspaceFile) => {
     const compartments = compartmentsRef.current!;
     return [
+      compartments.accessibility.reconfigure(
+        EditorView.contentAttributes.of({ 'aria-label': `Editor de ${activeFile.name}` }),
+      ),
       compartments.language.reconfigure(languageExtension(activeFile)),
       compartments.readOnly.reconfigure(readOnlyExtensions(readOnlyRef.current)),
       compartments.fileFeatures.reconfigure(fileFeatureExtensions(activeFile, readOnlyRef.current)),
@@ -381,6 +386,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         highlightActiveLine(),
         ...(lineWrapping ? [EditorView.lineWrapping] : []),
         keymap.of([...closeBracketsKeymap, ...completionKeymap, ...defaultKeymap, ...historyKeymap]),
+        compartments.accessibility.of(
+          EditorView.contentAttributes.of({ 'aria-label': `Editor de ${initialFile.name}` }),
+        ),
         compartments.language.of(languageExtension(initialFile)),
         compartments.readOnly.of(readOnlyExtensions(readOnlyRef.current)),
         compartments.fileFeatures.of(fileFeatureExtensions(initialFile, readOnlyRef.current)),

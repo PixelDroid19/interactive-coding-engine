@@ -170,9 +170,11 @@ describe('datos canónicos del catálogo', () => {
 
     renderApp();
 
-    expect((await screen.findByRole('alert', { name: 'Estado de datos publicados' })).textContent).toContain(
+    const alert = await screen.findByRole('alert', { name: 'Estado de datos publicados' });
+    expect(alert.textContent).toContain(
       'No pudimos consultar el catálogo publicado. Se muestra el contenido local y su disponibilidad puede estar desactualizada.',
     );
+    expect(alert.className).toContain('pointer-events-none');
   });
 
   it('advierte cuando no puede actualizar la estructura publicada del curso', async () => {
