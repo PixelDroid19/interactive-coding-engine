@@ -1,4 +1,5 @@
 import type { WorkspaceFile, WorkspaceSnapshot } from '../../types/scrim';
+import { intlMsgRuntimeSource, scopedRegistryTestSetupSource, widgetMixinSource } from './cellsRecipes';
 import { createVersionedCellsWorkspace, writeCellsFile, type VersionedCellsWorkspace } from './cellsVirtualFileSystem';
 
 export interface CellsAppScaffold {
@@ -15,6 +16,62 @@ export function createCellsAppWorkspace(scaffold: CellsAppScaffold): VersionedCe
     throw new Error('La aplicación debe comenzar por academy- u open-cells-, terminar en -app y usar kebab-case.');
   }
   const namespace = scaffold.namespace ?? '@open-cells-learning';
+  const globalCatalog = {
+    en: { 'app.title': 'Cells catalog', 'app.back': 'Back' },
+    es: { 'app.title': 'Catálogo Cells', 'app.back': 'Volver' },
+  };
+  const homeCatalog = {
+    en: {
+      'home.eyebrow': 'Cells application',
+      'home.title': 'A catalog made from real boundaries',
+      'home.description': 'Choose a product or explore another page of the application.',
+      'home.viewDetail': 'View details',
+      'home.productLabel': 'Catalog product',
+      'home.favorites': 'Favorites',
+      'home.cart': 'Cart',
+      'home.search': 'Search',
+      'home.language': 'Language',
+      'home.languageEnglish': 'English',
+      'home.languageSpanish': 'Spanish',
+    },
+    es: {
+      'home.eyebrow': 'Aplicación Cells',
+      'home.title': 'Un catálogo hecho de fronteras reales',
+      'home.description': 'Elige un producto o explora otra página de la aplicación.',
+      'home.viewDetail': 'Ver detalle',
+      'home.productLabel': 'Producto del catálogo',
+      'home.favorites': 'Favoritos',
+      'home.cart': 'Carrito',
+      'home.search': 'Buscar',
+      'home.language': 'Idioma',
+      'home.languageEnglish': 'Inglés',
+      'home.languageSpanish': 'Español',
+    },
+  };
+  const detailCatalog = {
+    en: { 'detail.kicker': 'Selected product', 'detail.title': 'Product detail', 'detail.description': 'This page owns route parameters and visit state.', 'detail.back': 'Back to catalog' },
+    es: { 'detail.kicker': 'Producto seleccionado', 'detail.title': 'Detalle del producto', 'detail.description': 'Esta página posee los parámetros de ruta y el estado de la visita.', 'detail.back': 'Volver al catálogo' },
+  };
+  const notFoundCatalog = {
+    en: { 'notFound.title': 'Page not found', 'notFound.description': 'The fallback route keeps the application recoverable.' },
+    es: { 'notFound.title': 'Página no encontrada', 'notFound.description': 'La ruta de respaldo mantiene la aplicación recuperable.' },
+  };
+  const favoritesCatalog = {
+    en: { 'favorites.kicker': 'Your collection', 'favorites.title': 'Saved favorites' },
+    es: { 'favorites.kicker': 'Tu colección', 'favorites.title': 'Favoritos guardados' },
+  };
+  const cartCatalog = {
+    en: { 'cart.title': 'Shopping cart', 'cart.total': 'Total' },
+    es: { 'cart.title': 'Carrito de compra', 'cart.total': 'Total' },
+  };
+  const searchCatalog = {
+    en: { 'search.title': 'Search the catalog', 'search.label': 'What are you looking for?', 'search.results': 'results' },
+    es: { 'search.title': 'Busca en el catálogo', 'search.label': '¿Qué estás buscando?', 'search.results': 'resultados' },
+  };
+  const mergedCatalog = {
+    en: Object.assign({}, globalCatalog.en, homeCatalog.en, detailCatalog.en, notFoundCatalog.en, favoritesCatalog.en, cartCatalog.en, searchCatalog.en),
+    es: Object.assign({}, globalCatalog.es, homeCatalog.es, detailCatalog.es, notFoundCatalog.es, favoritesCatalog.es, cartCatalog.es, searchCatalog.es),
+  };
   const files: Record<string, WorkspaceFile> = {
     '.open-cells-academy-recipe.json': file('.open-cells-academy-recipe.json', `${JSON.stringify({
       schema: 1,
@@ -52,6 +109,7 @@ export function createCellsAppWorkspace(scaffold: CellsAppScaffold): VersionedCe
         '@open-cells/core': '1.2.1',
         '@open-cells/page-mixin': '1.2.4',
         '@open-wc/scoped-elements': '3.0.10',
+        '@webcomponents/scoped-custom-element-registry': '0.0.10',
         lit: '3.3.3',
       },
       devDependencies: {
@@ -73,56 +131,18 @@ export function createCellsAppWorkspace(scaffold: CellsAppScaffold): VersionedCe
 </html>
 `, 'html'),
     'app/scripts/app.js': file('app/scripts/app.js', `
+import '@webcomponents/scoped-custom-element-registry';
 import { startApp } from '@open-cells/core';
 import { ROUTES } from './app-routes.js';
+import { initializeAppMessages } from './app-messages.js';
 
+await initializeAppMessages(document.documentElement.lang || 'es');
 globalThis.__OPEN_CELLS_APP_READY__ = startApp({
   mainNode: 'app',
   routes: ROUTES,
   initialTemplate: 'home',
   debug: false,
 });
-`, 'javascript'),
-    'app/scripts/routes.js': file('app/scripts/routes.js', `
-export const ROUTES = [
-  {
-    path: '/',
-    name: 'home',
-    component: 'academy-home-page',
-    action: async () => import('../pages/academy-home-page/academy-home-page.js'),
-  },
-  {
-    path: '/product/:id',
-    name: 'product-detail',
-    component: 'academy-product-detail-page',
-    action: async () => import('../pages/academy-product-detail-page/academy-product-detail-page.js'),
-  },
-  {
-    path: '/favorites',
-    name: 'favorites',
-    component: 'academy-favorites-page',
-    action: async () => import('../pages/academy-favorites-page/academy-favorites-page.js'),
-  },
-  {
-    path: '/cart',
-    name: 'cart',
-    component: 'academy-cart-page',
-    action: async () => import('../pages/academy-cart-page/academy-cart-page.js'),
-  },
-  {
-    path: '/search',
-    name: 'search',
-    component: 'academy-search-page',
-    action: async () => import('../pages/academy-search-page/academy-search-page.js'),
-  },
-  {
-    path: '/not-found',
-    name: 'not-found',
-    component: 'academy-not-found-page',
-    notFound: true,
-    action: async () => import('../pages/academy-not-found-page/academy-not-found-page.js'),
-  },
-];
 `, 'javascript'),
     'app/scripts/app-routes.js': file('app/scripts/app-routes.js', `
 export const ROUTES = [
@@ -169,6 +189,24 @@ export const ROUTES = [
 export const PRODUCT_SELECTED_CHANNEL = 'academy:store:product:selected';
 export const APP_LIFECYCLE_CHANNEL = 'academy:app:lifecycle';
 `, 'javascript'),
+    'app/scripts/app-messages.js': file('app/scripts/app-messages.js', `
+import { installIntlMsg } from '../runtime/academy-intl-msg.js';
+
+export const appCatalogs = Object.freeze(${JSON.stringify(mergedCatalog, null, 2)});
+export const appIntlMsg = installIntlMsg({ catalogs: appCatalogs, language: 'es' });
+
+export async function switchAppLanguage(language) {
+  await appIntlMsg.setLanguage(language);
+  await appIntlMsg.loadUrlResourcesComplete;
+  document.documentElement.lang = language;
+  document.title = appIntlMsg.t('app.title');
+  return language;
+}
+
+export async function initializeAppMessages(language = 'es') {
+  return switchAppLanguage(language);
+}
+`, 'javascript'),
     'app/bridge/native-adapter.js': file('app/bridge/native-adapter.js', `
 import { APP_LIFECYCLE_CHANNEL } from '../scripts/channels.js';
 
@@ -194,14 +232,25 @@ import { LitElement, css, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { PageMixin } from '@open-cells/page-mixin';
 import { AcademyProductCard } from '../../components/academy-product-card/academy-product-card.js';
+import { WidgetMixin } from '../../runtime/widget-mixin.js';
 import { PRODUCT_SELECTED_CHANNEL } from '../../scripts/channels.js';
+import { switchAppLanguage } from '../../scripts/app-messages.js';
 
-const t = (key, values = {}) => globalThis.IntlMsg?.t?.(key, values) ?? '[' + key + ']';
-
-export class AcademyHomePage extends PageMixin(ScopedElementsMixin(LitElement)) {
+export class AcademyHomePage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-home-page'; }
-  static get scopedElements() { return { 'academy-product-card': AcademyProductCard }; }
-  static properties = { products: { state: true }, lastSelection: { state: true } };
+  static get scopedElements() {
+    return {
+      ...super.scopedElements,
+      'academy-product-card': AcademyProductCard,
+    };
+  }
+  static get properties() {
+    return {
+      ...super.properties,
+      products: { state: true },
+      lastSelection: { state: true },
+    };
+  }
   static styles = css\`
     :host { display: block; min-height: 100vh; background: #eef2f6; color: #102a43; font-family: Inter, system-ui, sans-serif; }
     main { max-width: 64rem; margin: auto; padding: clamp(1.5rem,5vw,4rem); }
@@ -210,6 +259,9 @@ export class AcademyHomePage extends PageMixin(ScopedElementsMixin(LitElement)) 
     h1 { margin: 0; max-width: 12ch; font-size: clamp(2.2rem,7vw,4.5rem); line-height: .95; }
     nav { display: flex; gap: .65rem; flex-wrap: wrap; }
     nav button { border: 1px solid #b8c6d4; border-radius: 999px; padding: .65rem 1rem; background: white; color: #102a43; cursor: pointer; }
+    .language { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+    .language span { font-weight: 800; }
+    .language button[aria-pressed="true"] { border-color: #067a6f; background: #d9f4ed; color: #045c54; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(15rem,1fr)); gap: 1rem; }
   \`;
 
@@ -227,6 +279,11 @@ export class AcademyHomePage extends PageMixin(ScopedElementsMixin(LitElement)) 
     this.unsubscribe(PRODUCT_SELECTED_CHANNEL);
   }
 
+  async setLanguage(language) {
+    await switchAppLanguage(language);
+    await this.updateComplete;
+  }
+
   handleProductSelected(event) {
     const product = event.detail;
     this.publish(PRODUCT_SELECTED_CHANNEL, product);
@@ -237,14 +294,19 @@ export class AcademyHomePage extends PageMixin(ScopedElementsMixin(LitElement)) 
     return html\`
       <main>
         <header>
-          <span class="eyebrow">Cells · aplicación</span>
-          <h1>${'${'}t('home.title')}</h1>
-          <p>${'${'}t('home.description')}</p>
+          <span class="eyebrow">${'${'}this.t('home.eyebrow')}</span>
+          <h1>${'${'}this.t('home.title')}</h1>
+          <p>${'${'}this.t('home.description')}</p>
           <nav>
-            <button @click=${'${'}() => this.navigate('favorites')}>${'${'}t('home.favorites')}</button>
-            <button @click=${'${'}() => this.navigate('cart')}>${'${'}t('home.cart')}</button>
-            <button @click=${'${'}() => this.navigate('search')}>${'${'}t('home.search')}</button>
+            <button @click=${'${'}() => this.navigate('favorites')}>${'${'}this.t('home.favorites')}</button>
+            <button @click=${'${'}() => this.navigate('cart')}>${'${'}this.t('home.cart')}</button>
+            <button @click=${'${'}() => this.navigate('search')}>${'${'}this.t('home.search')}</button>
           </nav>
+          <div class="language" role="group" aria-label=${'${'}this.t('home.language')}>
+            <span>${'${'}this.t('home.language')}:</span>
+            <button aria-pressed=${'${'}globalThis.IntlMsg?.lang === 'es'} @click=${'${'}() => this.setLanguage('es')}>${'${'}this.t('home.languageSpanish')}</button>
+            <button aria-pressed=${'${'}globalThis.IntlMsg?.lang === 'en'} @click=${'${'}() => this.setLanguage('en')}>${'${'}this.t('home.languageEnglish')}</button>
+          </div>
         </header>
         <div class="grid" @academy-product-card-select=${'${'}this.handleProductSelected}>
           ${'${'}this.products.map((product) => html\`<academy-product-card .product=${'${'}product}></academy-product-card>\`)}
@@ -259,12 +321,16 @@ customElements.define(AcademyHomePage.is, AcademyHomePage);
     'app/pages/academy-product-detail-page/academy-product-detail-page.js': file('app/pages/academy-product-detail-page/academy-product-detail-page.js', `
 import { LitElement, css, html } from 'lit';
 import { PageMixin } from '@open-cells/page-mixin';
+import { WidgetMixin } from '../../runtime/widget-mixin.js';
 
-const t = (key, values = {}) => globalThis.IntlMsg?.t?.(key, values) ?? '[' + key + ']';
-
-export class AcademyProductDetailPage extends PageMixin(LitElement) {
+export class AcademyProductDetailPage extends PageMixin(WidgetMixin(LitElement)) {
   static get is() { return 'academy-product-detail-page'; }
-  static properties = { productId: { state: true } };
+  static get properties() {
+    return {
+      ...super.properties,
+      productId: { state: true },
+    };
+  }
   static styles = css\`
     :host { display: grid; min-height: 100vh; place-items: center; background: #e6eff7; color: #102a43; font-family: Inter, system-ui, sans-serif; }
     main { width: min(38rem, calc(100% - 2rem)); padding: 2.5rem; border-radius: 1.5rem; background: white; box-shadow: 0 1.2rem 3rem rgb(16 42 67 / 16%); }
@@ -285,10 +351,10 @@ export class AcademyProductDetailPage extends PageMixin(LitElement) {
     return html\`
       <main>
         <div class="visual" aria-hidden="true">◈</div>
-        <p>${'${'}t('detail.kicker')}</p>
-        <h1>${'${'}t('detail.title')} · ${'${'}this.productId}</h1>
-        <p>${'${'}t('detail.description')}</p>
-        <button @click=${'${'}() => this.navigate('home')}>${'${'}t('detail.back')}</button>
+        <p>${'${'}this.t('detail.kicker')}</p>
+        <h1>${'${'}this.t('detail.title')} · ${'${'}this.productId}</h1>
+        <p>${'${'}this.t('detail.description')}</p>
+        <button @click=${'${'}() => this.navigate('home')}>${'${'}this.t('detail.back')}</button>
       </main>
     \`;
   }
@@ -298,8 +364,8 @@ customElements.define(AcademyProductDetailPage.is, AcademyProductDetailPage);
     'app/pages/academy-not-found-page/academy-not-found-page.js': file('app/pages/academy-not-found-page/academy-not-found-page.js', `
 import { LitElement, css, html } from 'lit';
 import { PageMixin } from '@open-cells/page-mixin';
-const t = (key) => globalThis.IntlMsg?.t?.(key) ?? '[' + key + ']';
-export class AcademyNotFoundPage extends PageMixin(LitElement) {
+import { WidgetMixin } from '../../runtime/widget-mixin.js';
+export class AcademyNotFoundPage extends PageMixin(WidgetMixin(LitElement)) {
   static get is() { return 'academy-not-found-page'; }
   static styles = css\`
     :host { display: grid; min-height: 100vh; place-items: center; background: #102a43; color: white; font-family: Inter, system-ui, sans-serif; text-align: center; }
@@ -312,9 +378,9 @@ export class AcademyNotFoundPage extends PageMixin(LitElement) {
     return html\`
       <main>
         <div class="code">404</div>
-        <h1>${'${'}t('notFound.title')}</h1>
-        <p>${'${'}t('notFound.description')}</p>
-        <button @click=${'${'}() => this.navigate('home')}>${'${'}t('app.back')}</button>
+        <h1>${'${'}this.t('notFound.title')}</h1>
+        <p>${'${'}this.t('notFound.description')}</p>
+        <button @click=${'${'}() => this.navigate('home')}>${'${'}this.t('app.back')}</button>
       </main>
     \`;
   }
@@ -326,11 +392,21 @@ import { LitElement, css, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { PageMixin } from '@open-cells/page-mixin';
 import { AcademyProductCard } from '../../components/academy-product-card/academy-product-card.js';
-const t = (key) => globalThis.IntlMsg?.t?.(key) ?? '[' + key + ']';
-export class AcademyFavoritesPage extends PageMixin(ScopedElementsMixin(LitElement)) {
+import { WidgetMixin } from '../../runtime/widget-mixin.js';
+export class AcademyFavoritesPage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-favorites-page'; }
-  static get scopedElements() { return { 'academy-product-card': AcademyProductCard }; }
-  static properties = { favorites: { state: true } };
+  static get scopedElements() {
+    return {
+      ...super.scopedElements,
+      'academy-product-card': AcademyProductCard,
+    };
+  }
+  static get properties() {
+    return {
+      ...super.properties,
+      favorites: { state: true },
+    };
+  }
   static styles = css\`
     :host { display: block; min-height: 100vh; background: #fff2e2; color: #3f2d20; font-family: Inter, system-ui, sans-serif; }
     main { max-width: 56rem; margin: auto; padding: 3rem 1.5rem; }
@@ -346,9 +422,9 @@ export class AcademyFavoritesPage extends PageMixin(ScopedElementsMixin(LitEleme
   render() {
     return html\`
       <main>
-        <button @click=${'${'}() => this.navigate('home')}>← ${'${'}t('app.back')}</button>
-        <p>${'${'}t('favorites.kicker')}</p>
-        <h1>${'${'}t('favorites.title')}</h1>
+        <button @click=${'${'}() => this.navigate('home')}>← ${'${'}this.t('app.back')}</button>
+        <p>${'${'}this.t('favorites.kicker')}</p>
+        <h1>${'${'}this.t('favorites.title')}</h1>
         <div class="shelf">
           ${'${'}this.favorites.map((product) => html\`
             <academy-product-card .product=${'${'}product}></academy-product-card>
@@ -363,10 +439,15 @@ customElements.define(AcademyFavoritesPage.is, AcademyFavoritesPage);
     'app/pages/academy-cart-page/academy-cart-page.js': file('app/pages/academy-cart-page/academy-cart-page.js', `
 import { LitElement, css, html } from 'lit';
 import { PageMixin } from '@open-cells/page-mixin';
-const t = (key) => globalThis.IntlMsg?.t?.(key) ?? '[' + key + ']';
-export class AcademyCartPage extends PageMixin(LitElement) {
+import { WidgetMixin } from '../../runtime/widget-mixin.js';
+export class AcademyCartPage extends PageMixin(WidgetMixin(LitElement)) {
   static get is() { return 'academy-cart-page'; }
-  static properties = { items: { state: true } };
+  static get properties() {
+    return {
+      ...super.properties,
+      items: { state: true },
+    };
+  }
   static styles = css\`
     :host { display: block; min-height: 100vh; background: #f3f8f4; color: #173b2c; font-family: Inter, system-ui, sans-serif; }
     main { max-width: 46rem; margin: auto; padding: 3rem 1.5rem; }
@@ -391,12 +472,12 @@ export class AcademyCartPage extends PageMixin(LitElement) {
     const total = this.items.reduce((sum, item) => sum + item.price, 0);
     return html\`
       <main>
-        <button @click=${'${'}() => this.navigate('home')}>← ${'${'}t('app.back')}</button>
-        <h1>${'${'}t('cart.title')}</h1>
+        <button @click=${'${'}() => this.navigate('home')}>← ${'${'}this.t('app.back')}</button>
+        <h1>${'${'}this.t('cart.title')}</h1>
         ${'${'}this.items.map((item) => html\`
           <div class="row"><span>${'${'}item.name}</span><strong>${'${'}item.price} €</strong></div>
         \`)}
-        <div class="total"><span>${'${'}t('cart.total')}</span><span>${'${'}total} €</span></div>
+        <div class="total"><span>${'${'}this.t('cart.total')}</span><span>${'${'}total} €</span></div>
       </main>
     \`;
   }
@@ -408,11 +489,22 @@ import { LitElement, css, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { PageMixin } from '@open-cells/page-mixin';
 import { AcademyProductCard } from '../../components/academy-product-card/academy-product-card.js';
-const t = (key) => globalThis.IntlMsg?.t?.(key) ?? '[' + key + ']';
-export class AcademySearchPage extends PageMixin(ScopedElementsMixin(LitElement)) {
+import { WidgetMixin } from '../../runtime/widget-mixin.js';
+export class AcademySearchPage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-search-page'; }
-  static get scopedElements() { return { 'academy-product-card': AcademyProductCard }; }
-  static properties = { query: { state: true }, products: { state: true } };
+  static get scopedElements() {
+    return {
+      ...super.scopedElements,
+      'academy-product-card': AcademyProductCard,
+    };
+  }
+  static get properties() {
+    return {
+      ...super.properties,
+      query: { state: true },
+      products: { state: true },
+    };
+  }
   static styles = css\`
     :host { display: block; min-height: 100vh; background: #eef1ff; color: #20234a; font-family: Inter, system-ui, sans-serif; }
     main { max-width: 58rem; margin: auto; padding: 3rem 1.5rem; }
@@ -441,16 +533,16 @@ export class AcademySearchPage extends PageMixin(ScopedElementsMixin(LitElement)
   render() {
     return html\`
       <main>
-        <button @click=${'${'}() => this.navigate('home')}>← ${'${'}t('app.back')}</button>
-        <h1>${'${'}t('search.title')}</h1>
+        <button @click=${'${'}() => this.navigate('home')}>← ${'${'}this.t('app.back')}</button>
+        <h1>${'${'}this.t('search.title')}</h1>
         <label>
-          ${'${'}t('search.label')}
+          ${'${'}this.t('search.label')}
           <input
             .value=${'${'}this.query}
             @input=${'${'}(event) => { this.query = event.target.value; }}
           >
         </label>
-        <p>${'${'}this.results.length} ${'${'}t('search.results')}</p>
+        <p>${'${'}this.results.length} ${'${'}this.t('search.results')}</p>
         <div class="results">
           ${'${'}this.results.map((product) => html\`
             <academy-product-card .product=${'${'}product}></academy-product-card>
@@ -464,11 +556,20 @@ customElements.define(AcademySearchPage.is, AcademySearchPage);
 `, 'javascript'),
     'app/components/academy-product-card/academy-product-card.js': file('app/components/academy-product-card/academy-product-card.js', `
 import { LitElement, css, html } from 'lit';
+import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { WidgetMixin } from '../../runtime/widget-mixin.js';
 
-export class AcademyProductCard extends WidgetMixin(LitElement) {
+export class AcademyProductCard extends WidgetMixin(ScopedElementsMixin(LitElement)) {
   static get is() { return 'academy-product-card'; }
-  static properties = { product: { type: Object } };
+  static get scopedElements() {
+    return { ...super.scopedElements };
+  }
+  static get properties() {
+    return {
+      ...super.properties,
+      product: { type: Object },
+    };
+  }
   static styles = css\`
     :host { display: block; }
     article { display: grid; gap: .8rem; min-height: 12rem; padding: 1.25rem; border: 1px solid #cbd6e2; border-radius: 1.25rem; background: white; box-shadow: 0 .7rem 1.8rem rgb(16 42 67 / 10%); }
@@ -481,7 +582,7 @@ export class AcademyProductCard extends WidgetMixin(LitElement) {
   render() {
     return html\`
       <article>
-        <span aria-hidden="true">◌ Producto</span>
+        <span>${'${'}this.t('home.productLabel')}</span>
         <h2>${'${'}this.product.name}</h2>
         <p class="price">${'${'}this.product.price} €</p>
         <button @click=${'${'}this.selectProduct}>${'${'}this.t('home.viewDetail')}</button>
@@ -489,32 +590,9 @@ export class AcademyProductCard extends WidgetMixin(LitElement) {
     \`;
   }
 }
-customElements.define(AcademyProductCard.is, AcademyProductCard);
 `, 'javascript'),
-    'app/runtime/widget-mixin.js': file('app/runtime/widget-mixin.js', `
-/**
- * Capacidades de traducción y eventos usadas por los componentes del curso.
- * La aplicación mantiene este adaptador local para no depender de un paquete
- * educativo inexistente ni confundirlo con el runtime público de Cells.
- * @template {new (...args: any[]) => HTMLElement} T
- * @param {T} Base Clase host que conserva su API de HTMLElement.
- */
-export const WidgetMixin = (Base) => class extends Base {
-  t(key, values = {}) {
-    const message = globalThis.IntlMsg?.t?.(key, values);
-    return message ?? '[' + key + ']';
-  }
-
-  emitEvent(type, detail = {}) {
-    return this.dispatchEvent(new CustomEvent(this.tagName.toLowerCase() + '-' + type, {
-      bubbles: true,
-      composed: true,
-      cancelable: true,
-      detail,
-    }));
-  }
-};
-`, 'javascript'),
+    'app/runtime/widget-mixin.js': file('app/runtime/widget-mixin.js', widgetMixinSource(), 'javascript'),
+    'app/runtime/academy-intl-msg.js': file('app/runtime/academy-intl-msg.js', intlMsgRuntimeSource(), 'javascript'),
     'app/data/academy-product-data-manager.js': file('app/data/academy-product-data-manager.js', `
 export class AcademyProductDataManager extends EventTarget {
   constructor() { super(); this.requestId = 0; this.controller = null; }
@@ -575,7 +653,7 @@ const appConfig = {
       languages: ['en', 'es'],
       intlInputFileNames: ['locales'],
       intlFileName: 'locales',
-      forTesting: true,
+      forTesting: false,
     },
   },
   app_properties: {
@@ -592,54 +670,104 @@ const appConfig = {
 
 export default appConfig;
 `, 'javascript'),
-    'app/locales-app/locales.json': file('app/locales-app/locales.json', `${JSON.stringify({
-      en: { 'app.title': 'Cells catalog', 'app.back': 'Back' },
-      es: { 'app.title': 'Catálogo Cells', 'app.back': 'Volver' },
-    }, null, 2)}\n`, 'json'),
-    'app/pages/academy-home-page/locales/locales.json': file('app/pages/academy-home-page/locales/locales.json', `${JSON.stringify({
-      en: { 'home.title': 'A catalog made from real boundaries', 'home.description': 'Choose a product or explore another page of the application.', 'home.viewDetail': 'View details', 'home.favorites': 'Favorites', 'home.cart': 'Cart', 'home.search': 'Search' },
-      es: { 'home.title': 'Un catálogo hecho de fronteras reales', 'home.description': 'Elige un producto o explora otra página de la aplicación.', 'home.viewDetail': 'Ver detalle', 'home.favorites': 'Favoritos', 'home.cart': 'Carrito', 'home.search': 'Buscar' },
-    }, null, 2)}\n`, 'json'),
-    'app/pages/academy-product-detail-page/locales/locales.json': file('app/pages/academy-product-detail-page/locales/locales.json', `${JSON.stringify({
-      en: { 'detail.kicker': 'Selected product', 'detail.title': 'Product detail', 'detail.description': 'This page owns route parameters and visit state.', 'detail.back': 'Back to catalog' },
-      es: { 'detail.kicker': 'Producto seleccionado', 'detail.title': 'Detalle del producto', 'detail.description': 'Esta página posee los parámetros de ruta y el estado de la visita.', 'detail.back': 'Volver al catálogo' },
-    }, null, 2)}\n`, 'json'),
-    'app/pages/academy-not-found-page/locales/locales.json': file('app/pages/academy-not-found-page/locales/locales.json', `${JSON.stringify({
-      en: { 'notFound.title': 'Page not found', 'notFound.description': 'The fallback route keeps the application recoverable.' },
-      es: { 'notFound.title': 'Página no encontrada', 'notFound.description': 'La ruta de respaldo mantiene la aplicación recuperable.' },
-    }, null, 2)}\n`, 'json'),
-    'app/pages/academy-favorites-page/locales/locales.json': file('app/pages/academy-favorites-page/locales/locales.json', `${JSON.stringify({
-      en: { 'favorites.kicker': 'Your collection', 'favorites.title': 'Saved favorites' },
-      es: { 'favorites.kicker': 'Tu colección', 'favorites.title': 'Favoritos guardados' },
-    }, null, 2)}\n`, 'json'),
-    'app/pages/academy-cart-page/locales/locales.json': file('app/pages/academy-cart-page/locales/locales.json', `${JSON.stringify({
-      en: { 'cart.title': 'Shopping cart', 'cart.total': 'Total' },
-      es: { 'cart.title': 'Carrito de compra', 'cart.total': 'Total' },
-    }, null, 2)}\n`, 'json'),
-    'app/pages/academy-search-page/locales/locales.json': file('app/pages/academy-search-page/locales/locales.json', `${JSON.stringify({
-      en: { 'search.title': 'Search the catalog', 'search.label': 'What are you looking for?', 'search.results': 'results' },
-      es: { 'search.title': 'Busca en el catálogo', 'search.label': '¿Qué estás buscando?', 'search.results': 'resultados' },
-    }, null, 2)}\n`, 'json'),
+    'app/locales-app/locales.json': file('app/locales-app/locales.json', `${JSON.stringify(globalCatalog, null, 2)}\n`, 'json'),
+    'app/pages/academy-home-page/locales/locales.json': file('app/pages/academy-home-page/locales/locales.json', `${JSON.stringify(homeCatalog, null, 2)}\n`, 'json'),
+    'app/pages/academy-product-detail-page/locales/locales.json': file('app/pages/academy-product-detail-page/locales/locales.json', `${JSON.stringify(detailCatalog, null, 2)}\n`, 'json'),
+    'app/pages/academy-not-found-page/locales/locales.json': file('app/pages/academy-not-found-page/locales/locales.json', `${JSON.stringify(notFoundCatalog, null, 2)}\n`, 'json'),
+    'app/pages/academy-favorites-page/locales/locales.json': file('app/pages/academy-favorites-page/locales/locales.json', `${JSON.stringify(favoritesCatalog, null, 2)}\n`, 'json'),
+    'app/pages/academy-cart-page/locales/locales.json': file('app/pages/academy-cart-page/locales/locales.json', `${JSON.stringify(cartCatalog, null, 2)}\n`, 'json'),
+    'app/pages/academy-search-page/locales/locales.json': file('app/pages/academy-search-page/locales/locales.json', `${JSON.stringify(searchCatalog, null, 2)}\n`, 'json'),
     'vite.config.js': file('vite.config.js', `
-import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'node:url';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   test: {
     environment: 'happy-dom',
+    globals: true,
     include: ['test/unit/**/*.test.js'],
+    setupFiles: ['test/unit/setup.js'],
+    alias: {
+      '@webcomponents/scoped-custom-element-registry': fileURLToPath(new URL('./test/unit/scoped-registry-polyfill.js', import.meta.url)),
+      '@open-cells/core': fileURLToPath(new URL('./test/unit/open-cells-core-test-adapter.js', import.meta.url)),
+    },
   },
 });
 `, 'javascript'),
+    'test/unit/setup.js': file('test/unit/setup.js', scopedRegistryTestSetupSource(), 'javascript'),
+    'test/unit/scoped-registry-polyfill.js': file('test/unit/scoped-registry-polyfill.js', `export {};\n`, 'javascript'),
+    'test/unit/open-cells-core-test-adapter.js': file('test/unit/open-cells-core-test-adapter.js', `
+export const $bridge = undefined;
+export function enqueueCommand() {}
+export function startApp() {}
+`, 'javascript'),
     'test/unit/app.test.js': file('test/unit/app.test.js', `
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ROUTES } from '../../app/scripts/app-routes.js';
+import { initializeAppMessages, switchAppLanguage } from '../../app/scripts/app-messages.js';
+import { AcademyHomePage } from '../../app/pages/academy-home-page/academy-home-page.js';
+import { AcademyProductCard } from '../../app/components/academy-product-card/academy-product-card.js';
 import { AcademyProductDataManager } from '../../app/data/academy-product-data-manager.js';
 
 describe('academy-store-app', () => {
+  beforeEach(async () => {
+    await initializeAppMessages('es');
+  });
+
+  afterEach(() => {
+    document.body.replaceChildren();
+  });
+
+  async function renderHome() {
+    const page = document.createElement(AcademyHomePage.is);
+    document.body.append(page);
+    await page.updateComplete;
+    return page;
+  }
+
   it('declara rutas lazy por nombre y una única salida desconocida', () => {
     expect(ROUTES.map((route) => route.name)).toEqual(['home', 'product-detail', 'favorites', 'cart', 'search', 'not-found']);
     expect(ROUTES.filter((route) => route.notFound)).toHaveLength(1);
     expect(ROUTES.find((route) => route.name === 'product-detail')?.path).toBe('/product/:id');
+  });
+
+  it('renderiza una dependencia scoped sin registrarla globalmente', async () => {
+    const page = await renderHome();
+    const card = page.shadowRoot.querySelector('academy-product-card');
+    await card.updateComplete;
+
+    expect(AcademyHomePage.scopedElements['academy-product-card']).toBe(AcademyProductCard);
+    expect(card.constructor).toBe(AcademyProductCard);
+    expect(customElements.get('academy-product-card')).toBeUndefined();
+    expect(page.shadowRoot.textContent).toContain('Un catálogo hecho de fronteras reales');
+    expect(card.shadowRoot.textContent).toContain('Producto del catálogo');
+  });
+
+  it('cambia el idioma sobre la misma página después de esperar recursos', async () => {
+    const page = await renderHome();
+    await switchAppLanguage('en');
+    await page.updateComplete;
+
+    expect(page.shadowRoot.textContent).toContain('A catalog made from real boundaries');
+    expect(page.shadowRoot.textContent).toContain('English');
+  });
+
+  it('convierte el evento scoped en publicación y navegación por nombre', async () => {
+    const page = await renderHome();
+    page.publish = vi.fn();
+    page.navigate = vi.fn();
+    const card = page.shadowRoot.querySelector('academy-product-card');
+    await card.updateComplete;
+    const received = new Promise((resolve) => page.addEventListener('academy-product-card-select', resolve, { once: true }));
+
+    card.shadowRoot.querySelector('button').click();
+    const event = await received;
+
+    expect(event.detail).toEqual({ id: 'tea', name: 'Té', price: 4 });
+    expect(event.bubbles).toBe(true);
+    expect(event.composed).toBe(true);
+    expect(page.publish).toHaveBeenCalledWith('academy:store:product:selected', event.detail);
+    expect(page.navigate).toHaveBeenCalledWith('product-detail', { id: 'tea' });
   });
 
   it('publica success y empty como estados diferentes', async () => {

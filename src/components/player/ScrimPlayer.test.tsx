@@ -122,6 +122,41 @@ describe('ScrimPlayer overlay coordination', () => {
     expect(screen.queryByRole('button', { name: 'Abrir index.html' })).toBeNull();
   });
 
+  it('mantiene los archivos Python disponibles y seleccionables en lecciones lógicas', () => {
+    const pythonLogicLesson = {
+      ...lesson,
+      id: 'leccion-logica-python',
+      executionMode: 'logic',
+      initialWorkspace: {
+        activeFilePath: 'main.py',
+        files: {
+          'main.py': { name: 'main.py', path: 'main.py', language: 'python' as const, content: 'print("hola")' },
+          'helpers.py': { name: 'helpers.py', path: 'helpers.py', language: 'python' as const, content: 'def saludar():\n    return "hola"' },
+        },
+      },
+    } as typeof lesson;
+
+    render(<ScrimPlayer lessonData={pythonLogicLesson} onBack={() => undefined} />);
+
+    expect(screen.getAllByRole('button', { name: 'Abrir main.py' }).length).toBeGreaterThan(0);
+    const helperTab = screen
+      .getAllByRole('button', { name: 'Abrir helpers.py' })
+      .find((button) => button.hasAttribute('aria-selected'));
+
+    expect(helperTab).toBeTruthy();
+    fireEvent.click(helperTab!);
+    expect(helperTab?.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('incluye etiquetas compactas claras para las acciones del encabezado', () => {
+    render(<ScrimPlayer lessonData={lesson} onBack={() => undefined} onNextLesson={() => undefined} />);
+
+    expect(screen.getByRole('button', { name: 'Explicar lección' })).toBeTruthy();
+    expect(screen.getByText('Guía')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Siguiente lección' })).toBeTruthy();
+    expect(screen.getByText('Sigue')).toBeTruthy();
+  });
+
   it('conserva el mini-browser cuando la lección enseña DOM', () => {
     const domLesson = FUNDAMENTOS_SCRIMS['fundamentos-10'];
     render(<ScrimPlayer lessonData={{ ...domLesson, executionMode: 'browser' } as typeof domLesson} onBack={() => undefined} />);

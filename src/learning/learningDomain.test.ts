@@ -5,11 +5,13 @@ import { scheduleReview } from './reviewScheduler';
 
 function memoryStorage(seed: Record<string, string> = {}): StorageLike {
   const values = new Map(Object.entries(seed));
-  return {
+  return Object.assign({
     getItem: (key) => values.get(key) ?? null,
     setItem: (key, value) => { values.set(key, value); },
     removeItem: (key) => { values.delete(key); },
-  };
+  }, {
+    entries: () => [...values.entries()],
+  });
 }
 
 describe('dominio de aprendizaje', () => {
@@ -88,7 +90,7 @@ describe('dominio de aprendizaje', () => {
     expect(again.intervalIndex).toBe(0);
   });
 
-  it('persiste detrás de un repositorio y recupera datos corruptos sin romper la app', async () => {
+  it('persiste detrás de un repositorio y recupera datos válidos', async () => {
     const repository = new LocalLearningRepository(memoryStorage());
     const first = await repository.load();
     await repository.update((profile) => recordEvidence(profile, {
@@ -106,8 +108,39 @@ describe('dominio de aprendizaje', () => {
     expect(first.version).toBe(1);
     expect(loaded.skills['web-components'].capabilities.recognize?.score).toBe(1);
 
+  });
+
+  it('cuarentena un perfil corrupto y bloquea actualizaciones que lo reemplazarían', async () => {
+    const storage = memoryStorage({ aula_learning_profile_v1: '{no-json' });
+    const corrupt = new LocalLearningRepository(storage);
+
+    await expect(corrupt.update((profile) => profile)).rejects.toMatchObject({
+      code: 'PERSISTENCE_CORRUPTED',
+    });
+    expect(storage.getItem('aula_learning_profile_v1')).toBe('{no-json');
+    expect((storage as StorageLike & { entries: () => Array<[string, string]> }).entries()).toEqual(expect.arrayContaining([
+      [expect.stringMatching(/^aula_recovery_v1:aula_learning_profile_v1:/), expect.stringContaining('{no-json')],
+    ]));
+  });
+
+  it('devuelve un resultado tipado cuando el perfil guardado está corrupto', async () => {
     const corrupt = new LocalLearningRepository(memoryStorage({ aula_learning_profile_v1: '{no-json' }));
-    await expect(corrupt.load()).resolves.toMatchObject({ version: 1, evidence: [] });
+
+    const result = await (corrupt as unknown as { loadWithStatus?: () => Promise<unknown> }).loadWithStatus?.();
+
+    expect(result).toMatchObject({
+      status: 'corrupt',
+      key: 'aula_learning_profile_v1',
+      recoveryKey: expect.stringContaining('aula_recovery_v1'),
+    });
+  });
+
+  it('no presenta un perfil vacío como una carga correcta cuando el perfil está corrupto', async () => {
+    const corrupt = new LocalLearningRepository(memoryStorage({ aula_learning_profile_v1: '{no-json' }));
+
+    await expect(corrupt.load()).rejects.toMatchObject({
+      code: 'PERSISTENCE_CORRUPTED',
+    });
   });
 
   it('serializa el perfil con un contrato estable que podrá usar un adaptador HTTP', async () => {

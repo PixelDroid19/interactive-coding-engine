@@ -26,11 +26,18 @@ export interface FloatingBrowserRef {
   getGeneration: () => number;
 }
 
-function tryBuildCellsPreview(workspace: WorkspaceSnapshot): CellsPreviewBuild | undefined {
+type CellsPreviewState =
+  | { status: 'ready'; preview: CellsPreviewBuild }
+  | { status: 'error'; error: string };
+
+function buildCellsPreview(workspace: WorkspaceSnapshot): CellsPreviewState {
   try {
-    return buildCellsPreviewDocument(workspace);
-  } catch {
-    return undefined;
+    return { status: 'ready', preview: buildCellsPreviewDocument(workspace) };
+  } catch (error) {
+    return {
+      status: 'error',
+      error: error instanceof Error ? error.message : 'No se pudo compilar la vista previa de Cells.',
+    };
   }
 }
 
@@ -63,10 +70,13 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
   const { themeId } = useTheme();
   const isCyber = themeId === 'cyber';
 
-  const cellsPreview = useMemo(
-    () => previewRuntime === 'cells' ? tryBuildCellsPreview(workspace) : undefined,
+  const cellsPreviewState = useMemo(
+    () => previewRuntime === 'cells' ? buildCellsPreview(workspace) : undefined,
     [previewRuntime, workspace],
   );
+  const cellsPreview = cellsPreviewState?.status === 'ready' ? cellsPreviewState.preview : undefined;
+  const cellsPreviewError = cellsPreviewState?.status === 'error' ? cellsPreviewState.error : undefined;
+  const hasCellsPreviewError = cellsPreviewState?.status === 'error';
 
   const [pos, setPos] = useState({ x: 24, y: 52 });
   const [size, setSize] = useState({ width: 400, height: 480 });
@@ -363,7 +373,10 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
         }
       : isFloating
         ? { position: 'fixed' as const }
-        : undefined;
+      : undefined;
+  const previewBadge = hasCellsPreviewError
+    ? 'Error de compilación'
+    : autoReload ? 'En vivo' : 'Ejecutado';
 
   return (
     <div
@@ -383,7 +396,9 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
       >
         <div className="browser-header-title">
           <span>Vista previa</span>
-          <span className="browser-preview-badge">{autoReload ? 'En vivo' : 'Ejecutado'}</span>
+          <span className={`browser-preview-badge ${hasCellsPreviewError ? 'browser-preview-badge--error' : ''}`}>
+            {previewBadge}
+          </span>
         </div>
         <div className="browser-window-actions">
           <button onClick={compileAndRun} className="browser-btn" aria-label="Recargar vista previa" title="Recargar vista previa">
@@ -397,7 +412,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
         </div>
       </div>
       {/* Browser Navbar (only for full-page standard previews, NOT for native component workbench) */}
-      {!(previewRuntime === 'cells' && cellsPreview?.componentDemo) && (
+      {!hasCellsPreviewError && !(previewRuntime === 'cells' && cellsPreview?.componentDemo) && (
         <div className="browser-navbar">
           <button className="browser-btn" aria-label="Atrás (no disponible)" title="Navegación no disponible" disabled aria-disabled="true" style={{ opacity: 0.4, cursor: 'not-allowed' }}><ArrowLeft size={13} /></button>
           <button className="browser-btn" aria-label="Adelante (no disponible)" title="Navegación no disponible" disabled aria-disabled="true" style={{ opacity: 0.4, cursor: 'not-allowed' }}><ArrowRight size={13} /></button>
@@ -414,7 +429,13 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
           <div className="absolute inset-0 z-30 bg-transparent cursor-move select-none" />
         )}
 
-        {previewRuntime === 'cells' && cellsPreview?.componentDemo ? (
+        {hasCellsPreviewError ? (
+          <section className="cells-preview-error" role="alert" aria-live="assertive">
+            <strong>Error de compilación</strong>
+            <p>{cellsPreviewError}</p>
+            <p className="cells-preview-error__hint">Corrige el proyecto Cells y vuelve a recargar la vista previa.</p>
+          </section>
+        ) : previewRuntime === 'cells' && cellsPreview?.componentDemo ? (
           <CellsPreviewWorkbench
             html={cellsPreview.html}
             demo={cellsPreview.componentDemo}
@@ -437,7 +458,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
       </div>
 
       {/* Embedded Runtime Console Drawer (only for standard previews; CellsPreviewWorkbench has its own native console) */}
-      {!(previewRuntime === 'cells' && cellsPreview?.componentDemo) && (
+      {!hasCellsPreviewError && !(previewRuntime === 'cells' && cellsPreview?.componentDemo) && (
         <RuntimeConsole
           logs={logs}
           onClearLogs={() => setLogs([])}

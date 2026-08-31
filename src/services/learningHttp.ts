@@ -1,25 +1,35 @@
 const DEFAULT_API_URL = 'https://api.devt.lat';
+const isDevelopment = (import.meta.env as { DEV?: boolean }).DEV === true;
 export const LEARNING_API_URL = (import.meta.env.VITE_LEARNING_API_URL || DEFAULT_API_URL).replace(/\/$/, '');
+const LEARNING_API_REQUEST_BASE_URL = isDevelopment ? '/api' : LEARNING_API_URL;
 
 const ACTOR_KEY = 'aula_anonymous_actor_v1';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 let csrfToken: string | null = null;
+let inMemoryActorId: string | null = null;
 
 export function getLearningActorId(): string {
+  if (inMemoryActorId) return inMemoryActorId;
   try {
     const existing = localStorage.getItem(ACTOR_KEY);
-    if (existing && UUID.test(existing)) return existing;
+    if (existing && UUID.test(existing)) {
+      inMemoryActorId = existing;
+      return existing;
+    }
     const created = crypto.randomUUID();
+    inMemoryActorId = created;
     localStorage.setItem(ACTOR_KEY, created);
     return created;
   } catch {
-    return crypto.randomUUID();
+    inMemoryActorId ??= crypto.randomUUID();
+    return inMemoryActorId;
   }
 }
 
 export function rotateLearningActorId(): string {
   const created = crypto.randomUUID();
+  inMemoryActorId = created;
   try {
     localStorage.setItem(ACTOR_KEY, created);
   } catch {
@@ -40,7 +50,7 @@ export async function learningApiRequest(path: string, init: RequestInit = {}): 
   if (init.body && !headers['content-type']) headers['content-type'] = 'application/json';
   if (!SAFE_METHODS.has(method) && csrfToken && !headers['x-csrf-token']) headers['x-csrf-token'] = csrfToken;
   try {
-    return await fetch(`${LEARNING_API_URL}${path}`, {
+    return await fetch(`${LEARNING_API_REQUEST_BASE_URL}${path}`, {
       ...init,
       credentials: 'include',
       headers,

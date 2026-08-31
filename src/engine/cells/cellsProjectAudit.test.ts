@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { auditCellsComponent } from './cellsProjectAudit';
+import { createCellsAppPracticeWorkspace, createCellsAppWorkspace } from './cellsAppRecipes';
+import { auditCellsApplication, auditCellsComponent } from './cellsProjectAudit';
 import { createCellsComponentWorkspace, createCellsPracticeWorkspace } from './cellsRecipes';
 import { writeCellsFile } from './cellsVirtualFileSystem';
 
@@ -24,6 +25,12 @@ describe('auditCellsComponent', () => {
     expect(audit.coverage.behaviors.percentage).toBe(100);
   });
 
+  it('acepta el getter de propiedades documentado por Cells', () => {
+    const workspace = createCellsComponentWorkspace({ name: 'academy-learning-card' });
+    const audit = auditCellsComponent(workspace.snapshot);
+    expect(audit.results.find((result) => result.id === 'public-property')?.passed).toBe(true);
+  });
+
   it('rechaza un componente que conserva los archivos de estilo pero vuelve a incrustar css en la clase', () => {
     const workspace = createCellsComponentWorkspace({ name: 'academy-learning-card' });
     const sourcePath = 'src/academy-learning-card.js';
@@ -34,5 +41,23 @@ describe('auditCellsComponent', () => {
     const changed = writeCellsFile(workspace, sourcePath, source);
 
     expect(auditCellsComponent(changed.snapshot).results.find((result) => result.id === 'style-pair')?.passed).toBe(false);
+  });
+});
+
+describe('auditCellsApplication', () => {
+  it('acepta la aplicación completa con i18n, lifecycle, scopedElements y pruebas conductuales', () => {
+    const audit = auditCellsApplication(createCellsAppWorkspace({ name: 'academy-store-app' }).snapshot);
+    expect(audit.results.filter((result) => !result.passed)).toEqual([]);
+    expect(audit.coverage.behaviors.percentage).toBe(100);
+  });
+
+  it.each([
+    ['lifecycle', ['page-lifecycle', 'named-navigation']],
+    ['channels', ['channel-subscribe', 'channel-publish', 'native-boundary']],
+    ['data', ['data-race', 'data-cleanup']],
+    ['delivery', ['not-found-route', 'environment-config']],
+  ] as const)('mantiene la misión %s visible en los contratos', (stage, expectedFailures) => {
+    const audit = auditCellsApplication(createCellsAppPracticeWorkspace(stage).snapshot);
+    expect(audit.results.filter((result) => !result.passed).map((result) => result.id)).toEqual(expectedFailures);
   });
 });

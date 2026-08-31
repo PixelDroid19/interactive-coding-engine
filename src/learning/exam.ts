@@ -14,25 +14,50 @@ export interface ExamEvaluation {
   feedback: string[];
 }
 
+export type ExamConceptCandidate = string | Readonly<{
+  skillId: string;
+  label: string;
+}>;
+
 const CAPABILITIES: ExamQuestion['capability'][] = ['recognize', 'explain', 'modify', 'debug'];
 
-function weakestSkill(profile: LearningProfile, courseId: string, candidates?: string[]): string {
-  const courseSkills = candidates?.length
-    ? candidates
-    : [...new Set(profile.evidence.filter((evidence) => evidence.courseId === courseId).map((evidence) => evidence.skillId))];
-  if (!courseSkills.length) return 'fundamentos-del-curso';
-  return [...courseSkills].sort((left, right) => {
+function normalizeCandidate(candidate: ExamConceptCandidate): { skillId: string; label: string } {
+  return typeof candidate === 'string'
+    ? { skillId: candidate, label: candidate.replace(/-/g, ' ') }
+    : candidate;
+}
+
+function weakestSkill(
+  profile: LearningProfile,
+  courseId: string,
+  candidates: ExamConceptCandidate[] = [],
+): { skillId: string; label: string } {
+  const normalizedCandidates = candidates.map(normalizeCandidate);
+  const labelsBySkill = new Map(normalizedCandidates.map((candidate) => [candidate.skillId, candidate.label]));
+  const evidencedSkills = [...new Set(
+    profile.evidence
+      .filter((evidence) => evidence.courseId === courseId)
+      .map((evidence) => evidence.skillId),
+  )];
+  if (!evidencedSkills.length) {
+    return normalizedCandidates[0] ?? { skillId: 'fundamentos-del-curso', label: 'fundamentos del curso' };
+  }
+  const skillId = [...evidencedSkills].sort((left, right) => {
     const score = (skill: string) => {
       const values = Object.values(profile.skills[skill]?.capabilities ?? {}).map((capability) => capability.score);
       return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
     };
     return score(left) - score(right);
   })[0];
+  return { skillId, label: labelsBySkill.get(skillId) ?? skillId.replace(/-/g, ' ') };
 }
 
-export function buildExamQuestions(profile: LearningProfile, courseId: string, candidates?: string[]): ExamQuestion[] {
-  const skillId = weakestSkill(profile, courseId, candidates);
-  const concept = skillId.replace(/-/g, ' ');
+export function buildExamQuestions(
+  profile: LearningProfile,
+  courseId: string,
+  candidates?: ExamConceptCandidate[],
+): ExamQuestion[] {
+  const { skillId, label: concept } = weakestSkill(profile, courseId, candidates);
   const prompts: Record<ExamQuestion['capability'], [string, string]> = {
     recognize: [`Define ${concept} sin usar la definición de memoria.`, 'Nombra su propósito y una señal para reconocerlo en código.'],
     explain: [`Explica el flujo de ${concept} con un ejemplo propio.`, 'Incluye entrada, pasos y resultado observable.'],

@@ -157,6 +157,8 @@ function buildWorkspaceModules(
   entryPaths: string | string[],
   instrumentSource?: (source: string, path: string) => string,
 ): Record<string, string> {
+  const workspaceSources = new Map(Object.values(workspace.files).map((file) => [normalizeModulePath(file.path), file.content]));
+  const workspacePaths = new Set(workspaceSources.keys());
   const modules = Object.values(workspace.files).filter((file) => /\.(?:js|mjs|ts)$/.test(file.path) && !file.path.endsWith('.d.ts'));
   const paths = new Set(modules.map((file) => normalizeModulePath(file.path)));
   const sources = new Map(modules.map((file) => [normalizeModulePath(file.path), file.content]));
@@ -192,6 +194,13 @@ function buildWorkspaceModules(
       .replace(/(import\(\s*['"])([^'"]+)(['"]\s*\))/g, (statement, before: string, specifier: string, after: string) => {
         const resolved = resolveWorkspaceImport(path, specifier, paths);
         return resolved ? `${before}workspace:/${resolved}${after}` : statement;
+      })
+      .replace(/new\s+URL\(\s*(['"])([^'"]+\.json)\1\s*,\s*import\.meta\.url\s*\)\.href/g, (statement, _quote: string, specifier: string) => {
+        const resolved = resolveWorkspaceImport(path, specifier, workspacePaths);
+        const assetSource = resolved ? workspaceSources.get(resolved) : undefined;
+        return assetSource === undefined
+          ? statement
+          : JSON.stringify(`data:application/json;charset=utf-8,${encodeURIComponent(assetSource)}`);
       });
     const executable = instrumentSource
       ? instrumentSource(rewritten, path)
@@ -464,7 +473,19 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
   const results = [];
   const check = (id, title, passed, message) => results.push({ id, title, passed: Boolean(passed), message });
   const invokedMethods = [];
-  const initialContractLocale = globalThis.__OPEN_CELLS_LOCALE__;
+  const initialContractLocale = globalThis.IntlMsg?.lang || globalThis.__OPEN_CELLS_LOCALE__ || 'es';
+  const setContractLanguage = async (language) => {
+    const intlMsg = globalThis.IntlMsg;
+    if (typeof intlMsg?.setLanguage === 'function') {
+      await intlMsg.setLanguage(language);
+    } else if (intlMsg && 'lang' in intlMsg) {
+      intlMsg.lang = language;
+    } else {
+      globalThis.__OPEN_CELLS_LOCALE__ = language;
+      globalThis.dispatchEvent(new Event('language-update'));
+    }
+    await globalThis.IntlMsg?.loadUrlResourcesComplete;
+  };
   try {
     const element = document.querySelector('${definedTag}');
     if (!element) throw new Error('La demo no contiene ${definedTag}.');
@@ -475,7 +496,7 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
     if (originalRender) {
       element.render = (...args) => { invokedMethods.push('render'); return originalRender(...args); };
     }
-    globalThis.__OPEN_CELLS_LOCALE__ = 'es';
+    await setContractLanguage('es');
     const propertyName = ${JSON.stringify(contractPropertyName)};
     const propertyValue = ${JSON.stringify(contractPropertyValue)};
     if (propertyName) element[propertyName] = propertyValue;
@@ -489,7 +510,7 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
     invokedMethods.push('scopedElements');
     check('browser-scoped', 'Resuelve sus dependencias scoped', expectedScopedTags.length > 0 && expectedScopedTags.every((tag) => typeof scoped[tag] === 'function'), 'Cada dependencia importada desde components debe resolverse como clase dentro del registro local.');
 
-    globalThis.__OPEN_CELLS_LOCALE__ = 'en';
+    await setContractLanguage('en');
     element.requestUpdate?.();
     await element.updateComplete;
     const englishText = element.shadowRoot?.textContent?.replace(/\\s+/g, ' ').trim() || '';
@@ -506,7 +527,7 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
   } catch (error) {
     check('browser-runner', 'El componente puede probarse en aislamiento', false, error?.message || String(error));
   }
-  globalThis.__OPEN_CELLS_LOCALE__ = initialContractLocale;
+  await setContractLanguage(initialContractLocale);
   for (const element of document.querySelectorAll('*')) element.requestUpdate?.();
   window.parent.postMessage({ source: 'open-cells-tests', type: 'complete', testRunId: ${JSON.stringify(options.testRunId ?? '')}, results, invokedMethods, coverage: globalThis.__cellsCoverage__ || {} }, '*');`;
   const applicationChannel = workspace.files['app/scripts/channels.js']?.content.match(/['"](academy:[^'"]+)['"]/)?.[1] ?? '';
@@ -593,7 +614,7 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' data: https://esm.sh; style-src 'unsafe-inline'; connect-src https://esm.sh; img-src data:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' data: https://esm.sh; style-src 'unsafe-inline'; connect-src data: https://esm.sh; img-src data:;">
   <script type="importmap">${importMap}</script>
   <script>
     globalThis.__OPEN_CELLS_LOCALES__ = ${scriptEscape(localeData)};

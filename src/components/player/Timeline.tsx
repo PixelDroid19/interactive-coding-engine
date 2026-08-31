@@ -235,48 +235,66 @@ export const Timeline: React.FC<TimelineProps> = ({
 
       {/* CENTER: timeline estable, altura fija */}
       <div className="player-center">
-        <div
-          ref={scrubberRef}
-          role="slider"
-          tabIndex={durationMs > 0 ? 0 : -1}
-          aria-label="Progreso de la clase"
-          aria-valuemin={0}
-          aria-valuemax={Math.max(0, durationMs)}
-          aria-valuenow={clampedCurrentTimeMs}
-          aria-valuetext={formatTime(clampedCurrentTimeMs)}
-          aria-orientation="horizontal"
-          onKeyDown={handleScrubberKeyDown}
-          onPointerDown={handleScrubberPointerDown}
-          onPointerMove={handleScrubberPointerMove}
-          onPointerUp={handleScrubberPointerUp}
-          onPointerCancel={handleScrubberPointerUp}
-          onPointerLeave={() => {
-            if (!isScrubbingRef.current) setHoveredTimeMs(null);
-          }}
-          className={`relative w-full rounded-full group ${isScrubbing ? 'cursor-grabbing' : 'cursor-pointer'}`}
-          style={{
-            height: 14,
-            display: 'flex',
-            alignItems: 'center',
-            background: 'transparent',
-            flexShrink: 0,
-          }}
-        >
-          {/* track - CodeSilk papel + lápiz */}
+        <div className="timeline-scrubber relative w-full" style={{ height: 24, minWidth: 0 }}>
           <div
-            className="absolute left-0 right-0 overflow-hidden"
+            ref={scrubberRef}
+            role="slider"
+            tabIndex={durationMs > 0 ? 0 : -1}
+            aria-label="Progreso de la clase"
+            aria-valuemin={0}
+            aria-valuemax={Math.max(0, durationMs)}
+            aria-valuenow={clampedCurrentTimeMs}
+            aria-valuetext={formatTime(clampedCurrentTimeMs)}
+            aria-orientation="horizontal"
+            onKeyDown={handleScrubberKeyDown}
+            onPointerDown={handleScrubberPointerDown}
+            onPointerMove={handleScrubberPointerMove}
+            onPointerUp={handleScrubberPointerUp}
+            onPointerCancel={handleScrubberPointerUp}
+            onPointerLeave={() => {
+              if (!isScrubbingRef.current) setHoveredTimeMs(null);
+            }}
+            className={`relative h-full w-full rounded-full group ${isScrubbing ? 'cursor-grabbing' : 'cursor-pointer'}`}
             style={{
-              height: 8,
-              background: 'var(--bg-surface)',
-              border: '2px solid var(--color-pencil)',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              borderRadius: 'var(--radius-doodle-sm)',
-              boxShadow: '1px 1px 0 var(--color-sketch-shadow)',
+              display: 'flex',
+              alignItems: 'center',
+              background: 'transparent',
+              flexShrink: 0,
             }}
           >
-            <div className="absolute inset-y-0 left-0" style={{ background: 'var(--color-primary)', width: `${progressPercent}%`, borderRadius: 'inherit' }} />
-            {/* chapter notches dentro del track */}
+            {/* track - CodeSilk papel + lápiz */}
+            <div
+              className="absolute left-0 right-0 overflow-hidden"
+              style={{
+                height: 8,
+                background: 'var(--bg-surface)',
+                border: '2px solid var(--color-pencil)',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                borderRadius: 'var(--radius-doodle-sm)',
+                boxShadow: '1px 1px 0 var(--color-sketch-shadow)',
+              }}
+            >
+              <div className="absolute inset-y-0 left-0" style={{ background: 'var(--color-primary)', width: `${progressPercent}%`, borderRadius: 'inherit' }} />
+            </div>
+
+            {/* thumb - sello lápiz */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 z-20"
+              style={{
+                left: `calc(${progressPercent}% - 8px)`,
+                width: 16,
+                height: 16,
+                background: 'var(--color-primary)',
+                border: '2px solid var(--color-pencil)',
+                boxShadow: '1.5px 1.5px 0 var(--color-sketch-shadow)',
+                borderRadius: 'var(--radius-doodle-sm)',
+                transition: isScrubbing ? 'none' : 'left 0.08s linear',
+              }}
+            />
+          </div>
+
+          <div className="timeline-marker-layer absolute inset-0" style={{ pointerEvents: 'none', zIndex: 30 }}>
             {chapters.map((chap, idx) => {
               if (chap.timestamp <= 0) return null;
               const posPercent = durationMs > 0 ? (chap.timestamp / durationMs) * 100 : 0;
@@ -286,73 +304,84 @@ export const Timeline: React.FC<TimelineProps> = ({
                   type="button"
                   key={`chap-${idx}`}
                   aria-label={`Ir al capítulo ${chap.title}`}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onSeek(chap.timestamp);
+                  onClick={() => onSeek(chap.timestamp)}
+                  className="timeline-marker timeline-chapter-marker"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: `${posPercent}%`,
+                    width: 24,
+                    height: 24,
+                    transform: 'translate(-50%, -50%)',
+                    padding: 0,
+                    border: 0,
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    pointerEvents: 'auto',
                   }}
-                  className="absolute top-0 bottom-0 p-0 border-0"
-                  style={{ left: `${posPercent}%`, width: 4, marginLeft: -1, background: 'var(--color-pencil)', opacity: 0.95, cursor: 'pointer' }}
                   title={`Capítulo: ${chap.title} (${formatTime(chap.timestamp)})`}
-                />
+                >
+                  <span aria-hidden="true" style={{ display: 'block', width: 4, height: 12, margin: '0 auto', background: 'var(--color-pencil)', opacity: 0.95 }} />
+                </button>
+              );
+            })}
+
+            {challenges.map((ch) => {
+              const markerPercent = durationMs > 0 ? (ch.timestamp / durationMs) * 100 : 0;
+              const isPassed = currentTimeMs >= ch.timestamp;
+              return (
+                <button
+                  type="button"
+                  key={ch.id}
+                  aria-label={`Ir al reto ${ch.title}`}
+                  onClick={() => {
+                    if (onChallengeSeek) onChallengeSeek(ch);
+                    else onSeek(ch.timestamp);
+                  }}
+                  className="timeline-marker timeline-challenge-marker"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: `${markerPercent}%`,
+                    width: 24,
+                    height: 24,
+                    transform: 'translate(-50%, -50%)',
+                    padding: 0,
+                    border: 0,
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    pointerEvents: 'auto',
+                  }}
+                  title={`Reto: ${ch.title} (${formatTime(ch.timestamp)})`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="timeline-challenge-marker__diamond"
+                    style={{
+                      display: 'block',
+                      width: 12,
+                      height: 12,
+                      margin: '0 auto',
+                      transform: 'rotate(45deg)',
+                      background: isPassed ? 'var(--color-brand)' : '#f59e0b',
+                      border: '1.5px solid var(--color-black)',
+                      boxShadow: '1px 1px 0 var(--color-sketch-shadow)',
+                      borderRadius: 2,
+                    }}
+                  >
+                    {Math.abs(currentTimeMs - ch.timestamp) < 1200 && !prefersReducedMotion && (
+                      <span className="absolute inset-0 bg-[var(--color-brand)] animate-ping opacity-60" style={{ borderRadius: 2 }} />
+                    )}
+                  </span>
+                </button>
               );
             })}
           </div>
 
-          {/* thumb - sello lápiz */}
-          <div
-            className="absolute top-1/2 -translate-y-1/2 z-20"
-            style={{
-              left: `calc(${progressPercent}% - 8px)`,
-              width: 16,
-              height: 16,
-              background: 'var(--color-primary)',
-              border: '2px solid var(--color-pencil)',
-              boxShadow: '1.5px 1.5px 0 var(--color-sketch-shadow)',
-              borderRadius: 'var(--radius-doodle-sm)',
-              transition: isScrubbing ? 'none' : 'left 0.08s linear',
-            }}
-          />
-
-          {/* challenge diamonds */}
-          {challenges.map((ch) => {
-            const markerPercent = durationMs > 0 ? (ch.timestamp / durationMs) * 100 : 0;
-            const isPassed = currentTimeMs >= ch.timestamp;
-            return (
-              <button
-                type="button"
-                key={ch.id}
-                aria-label={`Ir al reto ${ch.title}`}
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onChallengeSeek) onChallengeSeek(ch);
-                  else onSeek(ch.timestamp);
-                }}
-                className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-45"
-                style={{
-                  left: `${markerPercent}%`,
-                  width: 12,
-                  height: 12,
-                  background: isPassed ? 'var(--color-brand)' : '#f59e0b',
-                  border: '1.5px solid var(--color-black)',
-                  boxShadow: '1px 1px 0 var(--color-sketch-shadow)',
-                  zIndex: 10,
-                  borderRadius: 2,
-                }}
-                title={`Reto: ${ch.title} (${formatTime(ch.timestamp)})`}
-              >
-                {Math.abs(currentTimeMs - ch.timestamp) < 1200 && !prefersReducedMotion && (
-                  <span className="absolute inset-0 bg-[var(--color-brand)] animate-ping opacity-60" style={{ borderRadius: 2 }} />
-                )}
-              </button>
-            );
-          })}
-
           {/* hover tooltip */}
           {hoveredTimeMs !== null && (
             <div
-              className="pointer-events-none absolute -top-9 -translate-x-1/2 px-2 py-1 text-[11px] z-30 whitespace-nowrap hidden sm:flex items-center gap-1.5"
+              className="pointer-events-none absolute -top-9 -translate-x-1/2 px-2 py-1 text-[11px] z-40 whitespace-nowrap hidden sm:flex items-center gap-1.5"
               style={{
                 left: `${Math.min(92, Math.max(8, (hoveredTimeMs / durationMs) * 100))}%`,
                 background: 'var(--bg-surface-light)',

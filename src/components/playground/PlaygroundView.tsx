@@ -3,6 +3,7 @@ import { STARTER_TEMPLATES } from '../../templates/starterTemplates';
 import { WorkspaceSnapshot, WorkspaceFile } from '../../types/scrim';
 import { CodeEditor } from '../editor/CodeEditor';
 import { FileTree } from '../editor/FileTree';
+import { moveFocusInHorizontalTabStrip } from '../editor/horizontalTabNavigation';
 import { PreviewPane, PreviewPaneRef } from '../preview/PreviewPane';
 import { loadPlaygroundDraft, savePlaygroundDraft } from '../../engine/persistence';
 import { TemplateDefinition } from '../../types/runtime';
@@ -72,9 +73,9 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
   const activeFile = workspace.files[workspace.activeFilePath] || Object.values(workspace.files)[0] || null;
 
   return (
-    <div className="app-screen">
+    <div className="playground-shell flex w-full flex-col">
       {/* Top Header */}
-      <header className="playground-header flex h-11 items-center justify-between px-4 bg-[#141416] border-b border-zinc-800/80 z-30">
+      <header className="playground-header playground-panel flex h-11 shrink-0 items-center justify-between px-4 bg-[#141416] border-b border-zinc-800/80 z-30">
         <div className="playground-controls flex items-center gap-3">
           <button
             onClick={onBack}
@@ -100,13 +101,17 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
             className="playground-templates flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-0.5 rounded-md text-xs"
             role="group"
             aria-label="Plantilla inicial"
+            onKeyDown={moveFocusInHorizontalTabStrip}
           >
             {[...Object.values(STARTER_TEMPLATES), ...CELLS_TEMPLATES].map((tpl) => (
               <button
                 key={tpl.id}
+                type="button"
                 onClick={() => handleSelectTemplate(tpl.id)}
                 aria-pressed={selectedTemplateId === tpl.id}
-                className={`px-2.5 py-1 rounded text-xs transition-colors ${
+                data-horizontal-tab
+                title={tpl.name}
+                className={`playground-scroll-tab px-2.5 py-1 rounded text-xs transition-colors ${
                   selectedTemplateId === tpl.id
                     ? 'bg-zinc-100 text-zinc-900 font-semibold'
                     : 'text-zinc-400 hover:text-zinc-200'
@@ -131,7 +136,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
       </header>
 
       {isCellsTemplate(selectedTemplateId) ? (
-        <main className="playground-cells-shell flex-1 overflow-auto" aria-label="Proyecto Cells independiente">
+        <main className="playground-cells-shell playground-panel min-h-0 flex-1 overflow-auto" aria-label="Proyecto Cells independiente">
           <div className="playground-cells-shell__intro">
             <span>Proyecto Cells independiente</span>
             <p>Trabaja con el scaffold, los comandos, la vista previa, las pruebas y la exportación del runtime Cells del navegador.</p>
@@ -143,10 +148,10 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
         </main>
       ) : (
       /* Main 3-Pane Workspace */
-      <div className="playground-layout flex flex-1 w-full overflow-hidden">
+      <div className="playground-layout flex min-h-0 flex-1 w-full overflow-hidden">
         {/* File Tree */}
         {showFileTree && (
-          <div className="playground-files w-48 shrink-0 h-full border-r border-zinc-800/80 bg-[#121214]">
+          <div className="playground-files playground-panel w-48 shrink-0 h-full border-r border-zinc-800/80 bg-[#121214]">
             <FileTree
               files={workspace.files}
               activeFilePath={workspace.activeFilePath}
@@ -190,9 +195,14 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
         )}
 
         {/* Code Editor */}
-        <div className="playground-editor flex-1 flex flex-col h-full bg-[#18181b] border-r border-zinc-800/80">
-          <div className="flex h-8 items-center justify-between bg-[#141416] border-b border-zinc-800/80 px-2">
-            <div className="flex items-center gap-1">
+        <div className="playground-editor playground-panel flex-1 flex flex-col h-full bg-[#18181b] border-r border-zinc-800/80">
+          <div
+            className="playground-file-tabs flex h-8 min-w-0 items-center gap-1 bg-[#141416] border-b border-zinc-800/80 px-2"
+            role="group"
+            aria-label="Archivos abiertos"
+            onKeyDown={moveFocusInHorizontalTabStrip}
+          >
+            <div className="flex shrink-0 items-center gap-1">
               <button
                 onClick={() => setShowFileTree(!showFileTree)}
                 aria-label={showFileTree ? 'Ocultar archivos' : 'Mostrar archivos'}
@@ -205,8 +215,12 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
               {(Object.values(workspace.files) as WorkspaceFile[]).map((f) => (
                 <button
                   key={f.path}
+                  type="button"
                   onClick={() => setWorkspace((prev) => ({ ...prev, activeFilePath: f.path }))}
-                  className={`px-3 py-1 text-xs font-mono transition-colors ${
+                  aria-current={f.path === workspace.activeFilePath ? 'page' : undefined}
+                  data-horizontal-tab
+                  title={f.name}
+                  className={`playground-scroll-tab px-3 py-1 text-xs font-mono transition-colors ${
                     f.path === workspace.activeFilePath
                       ? 'bg-[#18181b] text-zinc-100 font-semibold border-t-2 border-zinc-400'
                       : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-200'
@@ -218,7 +232,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
             </div>
           </div>
 
-          <div className="flex-1 w-full h-full bg-[#18181b]">
+          <div className="min-h-0 flex-1 w-full bg-[#18181b]">
             <CodeEditor
               file={activeFile}
               workspaceFiles={workspace.files}
@@ -240,7 +254,7 @@ export const PlaygroundView: React.FC<PlaygroundViewProps> = ({ onBack }) => {
         </div>
 
         {/* Sandbox Preview */}
-        <div className="playground-preview w-[45%] shrink-0 h-full flex flex-col">
+        <div className="playground-preview playground-panel w-[45%] shrink-0 h-full flex flex-col">
           <PreviewPane ref={previewRef} workspace={workspace} />
         </div>
       </div>

@@ -1,15 +1,19 @@
 import React, { useMemo, useState } from 'react';
-import { buildExamQuestions, evaluateExamAnswers, type ExamEvaluation, type ExamQuestion } from '../../learning/exam';
+import { buildExamQuestions, evaluateExamAnswers, type ExamConceptCandidate, type ExamEvaluation, type ExamQuestion } from '../../learning/exam';
 import type { LearningProfile } from '../../learning/types';
 
 interface ExamModeProps {
   courseId: string;
   profile: LearningProfile;
+  fallbackConcepts?: ExamConceptCandidate[];
   onComplete: (questions: ExamQuestion[], result: ExamEvaluation) => Promise<void>;
 }
 
-export const ExamMode: React.FC<ExamModeProps> = ({ courseId, profile, onComplete }) => {
-  const questions = useMemo(() => buildExamQuestions(profile, courseId), [courseId, profile]);
+export const ExamMode: React.FC<ExamModeProps> = ({ courseId, profile, fallbackConcepts, onComplete }) => {
+  const questions = useMemo(
+    () => buildExamQuestions(profile, courseId, fallbackConcepts),
+    [courseId, fallbackConcepts, profile],
+  );
   const [answers, setAnswers] = useState<Partial<Record<ExamQuestion['capability'], string>>>({});
   const [result, setResult] = useState<ExamEvaluation | null>(null);
 

@@ -34,8 +34,27 @@ describe('createCellsComponentWorkspace', () => {
     expect(source).toContain("AcademyTypeText");
     expect(source).toContain("AcademyActionButton");
     expect(source).toContain('WidgetMixin(ScopedElementsMixin(LitElement))');
+    expect(source).toContain('...super.scopedElements');
     expect(source).toContain("'academy-type-text': AcademyTypeText");
     expect(source).toContain("'academy-action-button': AcademyActionButton");
+    expect(source).toMatch(/static get properties\(\)\s*\{/);
+    expect(source).not.toContain('static properties =');
+  });
+
+  it('instala IntlMsg, espera sus recursos y vuelve a renderizar al cambiar el idioma', () => {
+    const widgetMixin = workspace.snapshot.files['src/mixins/WidgetMixin.js'].content;
+    const intlRuntime = workspace.snapshot.files['src/runtime/academy-intl-msg.js'].content;
+    const demo = workspace.snapshot.files['demo/demo.js'].content;
+
+    expect(widgetMixin).toContain("addEventListener('language-update'");
+    expect(widgetMixin).toContain("removeEventListener('language-update'");
+    expect(widgetMixin).toContain('this.requestUpdate?.()');
+    expect(intlRuntime).toContain('export function installIntlMsg');
+    expect(intlRuntime).toContain('loadUrlResourcesComplete');
+    expect(demo).toContain("import { installIntlMsg } from '../src/runtime/academy-intl-msg.js'");
+    expect(demo).toContain('const intlMsg = installIntlMsg');
+    expect(demo).toContain('await intlMsg.loadUrlResourcesComplete');
+    expect(demo.indexOf('await intlMsg.loadUrlResourcesComplete')).toBeLessThan(demo.indexOf("await import('../academy-learning-card.js')"));
   });
 
   it('consume el css.js generado desde el SCSS en lugar de duplicar estilos dentro del componente', () => {
@@ -80,10 +99,21 @@ describe('createCellsComponentWorkspace', () => {
     expect(workspace.snapshot.files['demo/index.html'].content).not.toContain('<h1>Demo interactiva</h1>');
     expect(workspace.snapshot.files['demo/basic.html'].content).toContain('<academy-learning-card');
     const controller = workspace.snapshot.files['demo/demo.js'].content;
-    expect(controller).toContain("from '../academy-learning-card.js'");
+    expect(controller).toContain("await import('../academy-learning-card.js')");
     expect(controller).toContain("addEventListener('input'");
     expect(controller).toContain("addEventListener('academy-learning-card-continue'");
     expect(workspace.snapshot.files['demo/demo-build.js'].content).toContain("import './demo.js'");
+  });
+
+  it('prueba el host y sus hijos scoped desde el DOM público', () => {
+    const testSource = workspace.snapshot.files['test/unit/academy-learning-card.test.js'].content;
+    expect(testSource).toContain("import catalogs from './locales/locales.json'");
+    expect(testSource).toContain("import { installIntlMsg } from '../../src/runtime/academy-intl-msg.js'");
+    expect(testSource).toContain("document.createElement('academy-learning-card')");
+    expect(testSource).toContain('await component.updateComplete');
+    expect(testSource).toContain("component.shadowRoot.querySelector('academy-action-button')");
+    expect(testSource).toContain("button.shadowRoot.querySelector('button').click()");
+    expect(testSource).not.toContain('.prototype.render.call(');
   });
 
   it('publica metadatos consumibles por el playground sin inventar la API', () => {

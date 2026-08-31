@@ -1,4 +1,5 @@
 import type { LearningEvidence, LearningProfile } from '../learning/types';
+import { quarantineStoredValue, readJsonStorage } from '../engine/persistenceIntegrity';
 import { learningApiRequest } from './learningHttp';
 
 const QUEUE_KEY = 'aula_learning_sync_v1';
@@ -69,6 +70,13 @@ type SyncQueue = {
   syncedEvidence: string[];
 };
 
+export type LearningSyncHealth = Readonly<{
+  status: 'syncing' | 'synced' | 'queued';
+  persistence: 'durable' | 'session-only';
+  reason?: 'network' | 'storage' | 'corrupt';
+  recoveryKey?: string;
+}>;
+
 function emptyQueue(): SyncQueue {
   return { events: [], progress: {}, feedback: [], evidence: [], attempts: [], syncedEvidence: [] };
 }
@@ -79,28 +87,163 @@ function progressKey(courseSlug: string, lessonKey: string): string {
 
 let volatileQueue: SyncQueue | null = null;
 let queueGeneration = 0;
+let syncHealth: LearningSyncHealth = { status: 'synced', persistence: 'durable' };
+let corruptionRecoveryKey: string | undefined;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isQueueEvent(value: unknown): value is QueuedEvent {
+  return isRecord(value)
+    && typeof value.id === 'string'
+    && typeof value.courseSlug === 'string'
+    && typeof value.type === 'string'
+    && typeof value.occurredAt === 'string'
+    && (value.lessonKey === undefined || typeof value.lessonKey === 'string')
+    && (value.payload === undefined || isRecord(value.payload));
+}
+
+function isQueuedProgress(value: unknown): value is QueuedProgress {
+  return isRecord(value)
+    && typeof value.courseSlug === 'string'
+    && typeof value.lessonKey === 'string'
+    && ['not_started', 'in_progress', 'completed'].includes(value.status as ProgressStatus)
+    && typeof value.playbackMs === 'number'
+    && Number.isFinite(value.playbackMs)
+    && (value.score === undefined || (typeof value.score === 'number' && Number.isFinite(value.score)));
+}
+
+function isQueuedFeedback(value: unknown): value is QueuedFeedback {
+  return isRecord(value)
+    && typeof value.id === 'string'
+    && typeof value.courseSlug === 'string'
+    && ['positive', 'negative', 'suggestion', 'confusion'].includes(value.kind as FeedbackKind)
+    && (value.lessonKey === undefined || typeof value.lessonKey === 'string')
+    && (value.message === undefined || typeof value.message === 'string');
+}
+
+function isQueuedEvidence(value: unknown): value is QueuedEvidence {
+  return isRecord(value)
+    && typeof value.fingerprint === 'string'
+    && typeof value.id === 'string'
+    && typeof value.courseSlug === 'string'
+    && typeof value.itemKey === 'string'
+    && typeof value.skillKey === 'string'
+    && ['recognize', 'explain', 'produce', 'modify', 'transfer', 'debug'].includes(value.capability as LearningEvidence['capability'])
+    && ['success', 'partial', 'failure'].includes(value.result as LearningEvidence['result'])
+    && typeof value.source === 'string'
+    && typeof value.occurredAt === 'string';
+}
+
+function isQueuedAttempt(value: unknown): value is QueuedAttempt {
+  return isRecord(value)
+    && typeof value.id === 'string'
+    && typeof value.courseSlug === 'string'
+    && typeof value.itemKey === 'string'
+    && ['challenge', 'debugging', 'exam', 'project', 'agent'].includes(value.kind as QueuedAttempt['kind'])
+    && ['success', 'partial', 'failure'].includes(value.result as QueuedAttempt['result'])
+    && typeof value.occurredAt === 'string'
+    && (value.score === undefined || (typeof value.score === 'number' && Number.isFinite(value.score)))
+    && (value.response === undefined || isRecord(value.response))
+    && (value.diagnostics === undefined || isRecord(value.diagnostics));
+}
+
+function parseQueue(value: unknown): SyncQueue | null {
+  if (!isRecord(value)
+    || !Array.isArray(value.events)
+    || !isRecord(value.progress)
+    || !Array.isArray(value.feedback)
+    || (value.evidence !== undefined && !Array.isArray(value.evidence))
+    || (value.attempts !== undefined && !Array.isArray(value.attempts))
+    || (value.syncedEvidence !== undefined && !Array.isArray(value.syncedEvidence))) {
+    return null;
+  }
+  const evidenceValues = Array.isArray(value.evidence) ? value.evidence : [];
+  const attemptValues = Array.isArray(value.attempts) ? value.attempts : [];
+  const syncedEvidenceValues = Array.isArray(value.syncedEvidence) ? value.syncedEvidence : [];
+  if (!value.events.every(isQueueEvent)
+    || !Object.values(value.progress).every(isQueuedProgress)
+    || !value.feedback.every(isQueuedFeedback)
+    || !evidenceValues.every(isQueuedEvidence)
+    || !attemptValues.every(isQueuedAttempt)
+    || !syncedEvidenceValues.every((fingerprint) => typeof fingerprint === 'string')) {
+    return null;
+  }
+  const events = value.events as QueuedEvent[];
+  const progressValues = Object.values(value.progress) as QueuedProgress[];
+  const feedback = value.feedback as QueuedFeedback[];
+  const evidence = evidenceValues as QueuedEvidence[];
+  const attempts = attemptValues as QueuedAttempt[];
+  const syncedEvidence = syncedEvidenceValues as string[];
+  const progress = progressValues.reduce<Record<string, QueuedProgress>>((items, item) => {
+    items[progressKey(item.courseSlug, item.lessonKey)] = item;
+    return items;
+  }, {});
+  return {
+    events,
+    progress,
+    feedback,
+    evidence,
+    attempts,
+    syncedEvidence,
+  };
+}
+
+function setHealth(
+  status: LearningSyncHealth['status'],
+  reason?: LearningSyncHealth['reason'],
+  persistence: LearningSyncHealth['persistence'] = volatileQueue ? 'session-only' : 'durable',
+  recoveryKey = corruptionRecoveryKey,
+): void {
+  const resolvedStatus = persistence === 'session-only' && status === 'synced' ? 'queued' : status;
+  const resolvedReason = persistence === 'session-only' ? 'storage' : reason ?? (recoveryKey ? 'corrupt' : undefined);
+  syncHealth = {
+    status: resolvedStatus,
+    persistence,
+    ...(resolvedReason ? { reason: resolvedReason } : {}),
+    ...(recoveryKey ? { recoveryKey } : {}),
+  };
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('aula-learning-sync', { detail: syncHealth }));
+  }
+}
+
+export function getLearningSyncHealth(): LearningSyncHealth {
+  return syncHealth;
+}
 
 function loadQueue(): SyncQueue {
   if (volatileQueue) return volatileQueue;
-  try {
-    const parsed = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? 'null') as Partial<SyncQueue> | null;
-    if (!parsed || !Array.isArray(parsed.events) || !parsed.progress || !Array.isArray(parsed.feedback)) return emptyQueue();
-    const progress = Object.values(parsed.progress).reduce<Record<string, QueuedProgress>>((items, item) => {
-      if (!item || typeof item.courseSlug !== 'string' || typeof item.lessonKey !== 'string') return items;
-      items[progressKey(item.courseSlug, item.lessonKey)] = item;
-      return items;
-    }, {});
-    return {
-      events: parsed.events,
-      progress,
-      feedback: parsed.feedback,
-      evidence: Array.isArray(parsed.evidence) ? parsed.evidence : [],
-      attempts: Array.isArray(parsed.attempts) ? parsed.attempts : [],
-      syncedEvidence: Array.isArray(parsed.syncedEvidence) ? parsed.syncedEvidence : [],
-    };
-  } catch {
-    return emptyQueue();
+  const result = readJsonStorage(QUEUE_KEY, localStorage);
+  if (result.state === 'missing') return emptyQueue();
+  if (result.state === 'unavailable') {
+    volatileQueue = emptyQueue();
+    setHealth('queued', 'storage', 'session-only');
+    return volatileQueue;
   }
+  if (result.state === 'corrupt') {
+    corruptionRecoveryKey = result.recoveryKey;
+    volatileQueue = emptyQueue();
+    setHealth('queued', 'corrupt', 'durable', corruptionRecoveryKey);
+    return volatileQueue;
+  }
+  const queue = parseQueue(result.value);
+  if (queue) return queue;
+  const corruption = quarantineStoredValue(
+    QUEUE_KEY,
+    result.raw,
+    localStorage,
+    new Error('La cola de sincronización no tiene una estructura válida.'),
+  );
+  volatileQueue = emptyQueue();
+  if (corruption.state === 'corrupt') {
+    corruptionRecoveryKey = corruption.recoveryKey;
+    setHealth('queued', 'corrupt', 'durable', corruptionRecoveryKey);
+  } else {
+    setHealth('queued', 'storage', 'session-only');
+  }
+  return volatileQueue;
 }
 
 function saveQueue(queue: SyncQueue, expectedGeneration = queueGeneration): boolean {
@@ -111,7 +254,7 @@ function saveQueue(queue: SyncQueue, expectedGeneration = queueGeneration): bool
     return true;
   } catch {
     volatileQueue = queue;
-    notify('queued', 'storage');
+    setHealth('queued', 'storage', 'session-only');
     return false;
   }
 }
@@ -120,10 +263,6 @@ let flushTimer: ReturnType<typeof setTimeout> | undefined;
 let flushScheduledAt = 0;
 let activeFlush: Promise<boolean> | undefined;
 let retryAttempt = 0;
-
-function notify(status: 'syncing' | 'synced' | 'queued', reason?: 'network' | 'storage'): void {
-  window.dispatchEvent(new CustomEvent('aula-learning-sync', { detail: { status, ...(reason ? { reason } : {}) } }));
-}
 
 function scheduleFlush(delayMs = 900): void {
   const scheduledAt = Date.now() + delayMs;
@@ -217,7 +356,7 @@ export async function flushLearningQueue(): Promise<boolean> {
     const generation = queueGeneration;
     const queue = loadQueue();
     if (queue.events.length === 0 && Object.keys(queue.progress).length === 0 && queue.feedback.length === 0 && queue.evidence.length === 0 && queue.attempts.length === 0) return true;
-    notify('syncing');
+    setHealth('syncing');
     try {
       await flushEvents(queue, generation);
       if (generation !== queueGeneration) return false;
@@ -230,12 +369,12 @@ export async function flushLearningQueue(): Promise<boolean> {
       await flushAttempts(queue, generation);
       if (generation !== queueGeneration) return false;
       retryAttempt = 0;
-      notify('synced');
+      setHealth('synced');
       return true;
     } catch {
       if (generation !== queueGeneration) return false;
       retryAttempt += 1;
-      notify('queued', 'network');
+      setHealth('queued', 'network');
       if (retryAttempt <= 5 && navigator.onLine) scheduleFlush(Math.min(30_000, 1000 * 2 ** retryAttempt));
       return false;
     }
@@ -274,7 +413,13 @@ export function clearLearningSyncQueue(): void {
   if (flushTimer !== undefined) clearTimeout(flushTimer);
   flushTimer = undefined;
   flushScheduledAt = 0;
-  try { localStorage.removeItem(QUEUE_KEY); } catch { /* Storage puede estar bloqueado. */ }
+  try {
+    localStorage.removeItem(QUEUE_KEY);
+    corruptionRecoveryKey = undefined;
+    setHealth('synced', undefined, 'durable', undefined);
+  } catch {
+    setHealth('queued', 'storage', 'session-only');
+  }
 }
 
 export async function submitLessonFeedback(courseSlug: string, lessonKey: string, kind: FeedbackKind, message?: string): Promise<'sent' | 'queued'> {

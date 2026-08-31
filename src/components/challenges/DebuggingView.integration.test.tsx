@@ -52,6 +52,14 @@ describe('DebuggingView integración', () => {
     expect(screen.getByRole('button', { name: 'Ejecutar lógica' })).toBeTruthy();
   });
 
+  it('el resultado conserva desplazamiento propio cuando el diagnóstico es largo', () => {
+    render(<DebuggingView exercise={exercise} onBack={() => {}} />);
+    fireEvent.click(screen.getByRole('tab', { name: /^Resultado/ }));
+
+    const resultPanel = screen.getByRole('tabpanel', { name: /^Resultado/ });
+    expect(resultPanel.querySelector('.debug-panel-scroll')).toBeTruthy();
+  });
+
   it('una práctica de DOM conserva archivos web y vista previa', () => {
     const domExercise = DEBUG_EXERCISES.find(e => e.id === 'fundamentos-10-debug')!;
     render(<DebuggingView exercise={domExercise} onBack={() => {}} />);

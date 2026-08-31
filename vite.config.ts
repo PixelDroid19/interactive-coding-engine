@@ -3,8 +3,9 @@ import react from '@vitejs/plugin-react';
 import fs from 'node:fs';
 import path from 'path';
 import { createRequire } from 'node:module';
-import {defineConfig} from 'vite';
+import {defineConfig, loadEnv} from 'vite';
 
+const DEFAULT_LEARNING_API_URL = 'https://api.devt.lat';
 const require = createRequire(import.meta.url);
 const TYPE_SCRIPT_LIBS_ID = 'virtual:typescript-libraries';
 const RESOLVED_TYPE_SCRIPT_LIBS_ID = `\0${TYPE_SCRIPT_LIBS_ID}`;
@@ -32,7 +33,9 @@ function typeScriptLibrariesPlugin() {
   };
 }
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const environment = loadEnv(mode, process.cwd(), 'VITE_');
+  const learningApiTarget = (environment.VITE_LEARNING_API_URL || DEFAULT_LEARNING_API_URL).replace(/\/$/, '');
   return {
     plugins: [typeScriptLibrariesPlugin(), react(), tailwindcss()],
     css: {
@@ -57,6 +60,13 @@ export default defineConfig(() => {
       },
     },
     server: {
+      proxy: {
+        '/api': {
+          target: learningApiTarget,
+          changeOrigin: true,
+          rewrite: (requestPath) => requestPath.replace(/^\/api(?=\/|$)/, ''),
+        },
+      },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',

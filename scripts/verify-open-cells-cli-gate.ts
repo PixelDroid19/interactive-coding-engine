@@ -8,6 +8,7 @@ import { createCellsComponentWorkspace } from '../src/engine/cells/cellsRecipes'
 import { exportCellsWorkspaceZip } from '../src/engine/cells/cellsZip';
 
 const cliPath = process.env.OPEN_CELLS_CLI_PATH;
+const keepTemporaryProject = process.env.OPEN_CELLS_GATE_KEEP_TEMP === '1';
 
 if (!cliPath || !isAbsolute(cliPath)) {
   throw new Error('Define OPEN_CELLS_CLI_PATH con la ruta absoluta al archivo bin/cells.js de la CLI local.');
@@ -51,5 +52,9 @@ try {
 
   process.stdout.write('\n[gate] Componente y aplicación continuaron correctamente con la CLI real.\n');
 } finally {
-  await rm(root, { recursive: true, force: true });
+  if (keepTemporaryProject) {
+    process.stdout.write(`\n[gate] Diagnóstico conservado en ${root}\n`);
+  } else {
+    await rm(root, { recursive: true, force: true });
+  }
 }

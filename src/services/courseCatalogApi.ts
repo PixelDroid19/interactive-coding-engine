@@ -36,16 +36,34 @@ function readCache(): CachedCatalog | null {
   }
 }
 
-export function getCachedPublishedCourses(): { catalog: PublishedCatalog; fresh: boolean } | null {
+export function getCachedPublishedCourses(): { catalog: PublishedCatalog; fresh: boolean; complete: boolean } | null {
   const cached = readCache();
-  return cached ? { catalog: cached.catalog, fresh: Date.now() - cached.cachedAt < CACHE_TTL_MS } : null;
+  return cached ? {
+    catalog: cached.catalog,
+    fresh: Date.now() - cached.cachedAt < CACHE_TTL_MS,
+    complete: cached.catalog.nextCursor === null,
+  } : null;
 }
 
 export async function fetchPublishedCourses(signal?: AbortSignal): Promise<PublishedCatalog> {
-  const response = await learningApiRequest('/v1/courses?limit=50', {
-    signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10_000)]) : undefined,
-  });
-  const catalog = await readApiJson<PublishedCatalog>(response);
+  const requestSignal = signal ? AbortSignal.any([signal, AbortSignal.timeout(10_000)]) : undefined;
+  const items: PublishedCourseSummary[] = [];
+  const visitedCursors = new Set<string>();
+  let cursor: string | null = null;
+
+  do {
+    const query = new URLSearchParams({ limit: '50' });
+    if (cursor !== null) query.set('cursor', cursor);
+    const response = await learningApiRequest(`/v1/courses?${query}`, { signal: requestSignal });
+    const page = await readApiJson<PublishedCatalog>(response);
+    items.push(...page.items);
+    cursor = page.nextCursor;
+    if (cursor !== null && !visitedCursors.add(cursor)) {
+      throw new Error('El backend devolvió un cursor de catálogo repetido.');
+    }
+  } while (cursor !== null);
+
+  const catalog: PublishedCatalog = { items, nextCursor: null };
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ cachedAt: Date.now(), catalog }));
   } catch {

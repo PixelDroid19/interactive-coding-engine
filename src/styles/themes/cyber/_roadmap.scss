@@ -484,12 +484,61 @@
 .hud .debug-panel,
 .hud .debug-context-panel,
 .hud .playground-shell,
-.hud .playground-panel {
+.hud .playground-panel,
+.hud .solo-project-shell,
+.hud .solo-project-panel {
   border-color: #34343e !important;
   border-radius: 0 !important;
   background: #08080c !important;
   box-shadow: none !important;
   color: #f0f0f2 !important;
+}
+
+.hud .playground-header,
+.hud .solo-project-header,
+.hud .playground-file-tabs,
+.hud .solo-project-file-tabs,
+.hud .solo-project-brief-footer,
+.hud .solo-project-mobile-nav {
+  border-color: #1e2638 !important;
+  background: #070911 !important;
+}
+
+.hud .playground-files,
+.hud .solo-project-files,
+.hud .solo-project-brief {
+  border-color: #1e2638 !important;
+  background: #090b12 !important;
+}
+
+.hud .playground-preview,
+.hud .solo-project-output {
+  border-color: #1e2638 !important;
+  background: #05060a !important;
+}
+
+.hud .playground-cells-shell {
+  background: #05070c !important;
+}
+
+.hud .playground-templates,
+.hud .playground-file-tabs,
+.hud .solo-project-file-tabs {
+  scrollbar-color: #3b3c4d #070911;
+}
+
+.hud .playground-templates button,
+.hud .playground-file-tabs button,
+.hud .solo-project-file-tabs button {
+  color: #aab4c8;
+}
+
+.hud .playground-templates button[aria-pressed="true"],
+.hud .playground-file-tabs button[aria-current="page"],
+.hud .solo-project-file-tabs button[aria-current="page"] {
+  border-color: var(--hud-cyan) !important;
+  background: rgba(0, 240, 255, 0.12) !important;
+  color: var(--hud-cyan) !important;
 }
 
 .hud .reasoning-card > header,
@@ -678,4 +727,3 @@
 .hud .concept-card {
   border-radius: 0 !important;
 }
-

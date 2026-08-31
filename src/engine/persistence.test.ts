@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import { ScrimLessonData, WorkspaceSnapshot } from '../types/scrim';
 import { saveLearnerBranch, loadLearnerBranch, loadLastBranchForLesson, clearBranch, clearBranchesForLesson, saveLearnerBranchDebounced, flushBranchSave, markChallengeCompleted, markChallengeSkipped, markChallengeSolutionViewed, getChallengeState, clearChallengeState, getChallengeStates, saveAppNavigationState, loadAppNavigationState, loadDebuggingDraft, saveDebuggingDraft, loadCustomScrims, saveCustomScrim, createReasoningActivityVersion, loadReasoningDraft, saveReasoningDraft, loadCourseLanguage, saveCourseLanguage, loadLanguageWorkspaceDraft, saveLanguageWorkspaceDraft } from './persistence';
+import * as persistence from './persistence';
 import { createInitialState } from './playerMachine';
 import { cloneWorkspace } from './eventLog';
 
@@ -15,14 +16,16 @@ function makeWs(content = 'let x=1'): WorkspaceSnapshot {
 }
 
 describe('persistence branches', () => {
+  let storageValues: Record<string, string>;
+
   beforeEach(() => {
     // Mock localStorage for node env
-    const store: Record<string, string> = {};
+    storageValues = {};
     (globalThis as any).localStorage = {
-      getItem: (k: string) => store[k] ?? null,
-      setItem: (k: string, v: string) => { store[k] = v; },
-      removeItem: (k: string) => { delete store[k]; },
-      clear: () => { for (const k in store) delete store[k]; },
+      getItem: (k: string) => storageValues[k] ?? null,
+      setItem: (k: string, v: string) => { storageValues[k] = v; },
+      removeItem: (k: string) => { delete storageValues[k]; },
+      clear: () => { for (const k in storageValues) delete storageValues[k]; },
     } as any;
     (globalThis as any).localStorage.clear();
     vi.useFakeTimers();
@@ -217,13 +220,47 @@ describe('persistence branches', () => {
     expect(last?.workspace.files['app.js'].content).toBe('v2');
   });
 
-  it('ignora rama corrupta sin romper', () => {
+  it('cuarentena una rama corrupta y expone una recuperación en vez de confundirla con una rama ausente', () => {
     localStorage.setItem('aula_learner_branches_v1', 'not-json');
     const last = loadLastBranchForLesson('fundamentos-01');
     expect(last).toBeNull();
-    // also load by id should not throw
     const byId = loadLearnerBranch('any');
     expect(byId).toBeNull();
+
+    const status = (persistence as unknown as {
+      getPersistenceStatus?: (key: string) => unknown;
+    }).getPersistenceStatus?.('aula_learner_branches_v1');
+    expect(status).toMatchObject({
+      state: 'corrupt',
+      key: 'aula_learner_branches_v1',
+      recoveryKey: expect.stringContaining('aula_recovery_v1'),
+    });
+    expect(Object.entries(storageValues).some(([key, value]) => (
+      key.startsWith('aula_recovery_v1:aula_learner_branches_v1:') && value.includes('not-json')
+    ))).toBe(true);
+  });
+
+  it('expone un fallo de escritura de ramas en vez de descartarlo', () => {
+    localStorage.setItem = () => { throw new DOMException('quota', 'QuotaExceededError'); };
+
+    saveLearnerBranch({
+      id: 'branch-storage-failure',
+      lessonId: 'fundamentos-01',
+      baseTime: 0,
+      baseSequence: 0,
+      workspace: makeWs(),
+      isForked: true,
+      lastSavedAt: Date.now(),
+      executionCount: 0,
+    });
+
+    const status = (persistence as unknown as {
+      getPersistenceStatus?: (key: string) => unknown;
+    }).getPersistenceStatus?.('aula_learner_branches_v1');
+    expect(status).toMatchObject({
+      state: 'write-failed',
+      key: 'aula_learner_branches_v1',
+    });
   });
 
   it('varias ediciones persisten correctamente', () => {

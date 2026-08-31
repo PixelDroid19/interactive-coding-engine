@@ -884,7 +884,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         file.language === 'javascript'
         || file.language === 'typescript'
         || file.language === 'json'
-        || /\.(?:js|jsx|ts|tsx|json)$/i.test(file.name)))
+        || file.language === 'python'
+        || /\.(?:js|jsx|ts|tsx|json|py)$/i.test(file.name)))
     : workspace.files;
 
   const isCompleted = playerState.status === 'completed' || closureConfirmed;
@@ -950,7 +951,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             aria-label="Explicar lección"
           >
             <Lightbulb size={14} />
-            <span>Explicar</span>
+            <span className="player-action-label player-action-label--wide">Explicar</span>
+            <span className="player-action-label player-action-label--compact">Guía</span>
           </button>
 
           {playerState.isForked && (
@@ -994,7 +996,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
                 aria-label="Siguiente"
                 title={navigationState.next?.item.title || 'Siguiente'}
               >
-                <span>Siguiente</span>
+                <span className="player-action-label player-action-label--wide">Siguiente</span>
+                <span className="player-action-label player-action-label--compact">Sigue</span>
                 <ChevronRight size={15} />
               </button>
             ) : navigationState?.isLast ? (
@@ -1016,7 +1019,8 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
                 aria-label="Siguiente lección"
                 title={isCompleted ? 'Siguiente lección' : 'Completa el cierre para continuar'}
               >
-                <span>Siguiente</span>
+                <span className="player-action-label player-action-label--wide">Siguiente</span>
+                <span className="player-action-label player-action-label--compact">Sigue</span>
                 <ChevronRight size={15} />
               </button>
             ) : null

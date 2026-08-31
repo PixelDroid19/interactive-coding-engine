@@ -82,7 +82,7 @@
   border-radius: 1px !important;
 }
 
-.hud .player-center [role="slider"] button.rotate-45 {
+.hud .timeline-challenge-marker__diamond {
   background: var(--hud-yellow) !important;
   border: 1px solid #000 !important;
   box-shadow: 0 0 6px var(--hud-yellow-glow) !important;
@@ -179,4 +179,3 @@
   border-radius: 0 !important;
   box-shadow: none !important;
 }
-

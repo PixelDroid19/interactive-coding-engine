@@ -13,6 +13,10 @@
   min-width: 0;
 }
 
+.player-action-label--compact {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .playground-header {
     height: auto;
@@ -109,6 +113,28 @@
   .player-right {
     gap: 4px;
   }
+  .studio-card .player-bar {
+    width: 100%;
+    max-width: 100%;
+    gap: 4px;
+    padding-inline: 6px;
+  }
+  .studio-card .player-left {
+    gap: 4px;
+  }
+  .studio-card .player-left .timestamp-text {
+    min-width: 42px !important;
+  }
+  .studio-card .player-left .timestamp-text > :nth-child(n + 2) {
+    display: none;
+  }
+  .studio-card .player-center {
+    min-width: 36px;
+    margin-inline: 2px;
+  }
+  .studio-card .player-right {
+    flex: 0 0 auto;
+  }
   .browser-window.fixed {
     left: 8px !important;
     right: 8px !important;
@@ -132,15 +158,26 @@
     width: 100%;
     min-width: 0;
     flex: 1 1 100%;
-    flex-wrap: nowrap !important;
-    overflow-x: auto;
-    overscroll-behavior-inline: contain;
-    padding: 1px 1px 4px;
-    scrollbar-width: none;
+    flex-wrap: wrap !important;
+    column-gap: 6px;
+    row-gap: 6px;
+    overflow: visible;
+    padding: 1px;
   }
-  .window-titlebar-actions::-webkit-scrollbar { display: none; }
   .window-titlebar-actions > * {
     flex: 0 0 auto;
+  }
+  .window-titlebar-actions .player-action-label--wide {
+    display: none;
+  }
+  .window-titlebar-actions .player-action-label--compact {
+    display: inline;
+  }
+  .window-titlebar-actions .btn-explain,
+  .window-titlebar-actions .btn-next-lesson {
+    min-width: 70px;
+    min-height: 40px;
+    padding-inline: 10px;
   }
   .topbar-lesson-title {
     max-width: none;
@@ -164,4 +201,3 @@
     font-size: 12px;
   }
 }
-

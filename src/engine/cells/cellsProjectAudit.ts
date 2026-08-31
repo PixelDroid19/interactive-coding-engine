@@ -58,7 +58,9 @@ export function auditCellsComponent(workspace: WorkspaceSnapshot): { results: Ce
   const documentedProperties = (declaration?.members ?? []).filter((member: any) => member.kind === 'field' && member.name);
   const documentedEvent = (declaration?.events ?? [])[0];
   const scopedRegistry = source.match(/static\s+get\s+scopedElements\s*\(\)\s*\{\s*return\s*\{([\s\S]*?)\}\s*;?\s*\}/)?.[1] ?? '';
-  const publicProperties = source.match(/static\s+properties\s*=\s*\{([\s\S]*?)\n\s*\};/)?.[1] ?? '';
+  const publicProperties = source.match(/static\s+get\s+properties\s*\(\)\s*\{\s*return\s*\{([\s\S]*?)\n\s*\};\s*\}/)?.[1]
+    ?? source.match(/static\s+properties\s*=\s*\{([\s\S]*?)\n\s*\};/)?.[1]
+    ?? '';
   const publicPropertyContracts = documentedProperties.map((property: any) => {
     const contract = publicProperties.match(new RegExp(`${property.name}\\s*:\\s*\\{([\\s\\S]*?)\\}`))?.[1] ?? '';
     return Boolean(
@@ -67,9 +69,11 @@ export function auditCellsComponent(workspace: WorkspaceSnapshot): { results: Ce
     );
   });
   const localImports = Array.from(source.matchAll(/import\s+\{\s*([A-Za-z_$][\w$]*)\s*\}\s+from\s+['"]\.\/components\/([^'"]+)\.js['"]/g), (match) => ({ className: match[1], tagName: match[2] }));
-  const scopedImportsComplete = localImports.length > 0 && localImports.every((dependency) => (
-    new RegExp(`['"]${dependency.tagName}['"]\\s*:\\s*${dependency.className}\\b`).test(scopedRegistry)
-  ));
+  const scopedImportsComplete = localImports.length > 0
+    && /\.\.\.super\.scopedElements\b/.test(scopedRegistry)
+    && localImports.every((dependency) => (
+      new RegExp(`['"]${dependency.tagName}['"]\\s*:\\s*${dependency.className}\\b`).test(scopedRegistry)
+    ));
   const translationCalls = Array.from(source.matchAll(/this\.t\(['"]([^'"]+)['"]/g), (match) => match[1]);
   const uniqueCalls = [...new Set(translationCalls)];
   const primaryProperty = documentedProperties[0];
@@ -96,14 +100,14 @@ export function auditCellsComponent(workspace: WorkspaceSnapshot): { results: Ce
     test('package-contract', 'Declara entradas y comandos consumibles', manifest.exports?.['.'] === './index.js' && manifest.scripts?.documentation === 'cells component:documentation', 'package.json debe exponer index.js y conservar el comando Cells de documentación.', 'package.json'),
     test('source-entry', 'Existe una entrada pública', Boolean(sourcePath), sourcePath ? 'Se encontró el módulo principal.' : 'Falta un archivo principal dentro de src/.'),
     test('cells-mixins', 'Compone los mixins Cells', /WidgetMixin\(ScopedElementsMixin\(LitElement\)\)/.test(source), 'La clase debe componer WidgetMixin y ScopedElementsMixin.', sourcePath),
-    test('public-property', 'Declara la API pública documentada', documentedProperties.length > 0 && publicPropertyContracts.every(Boolean), 'Cada propiedad de custom-elements.json debe existir con tipo y atributo coherentes en la clase.', sourcePath),
+    test('public-property', 'Declara la API pública documentada', documentedProperties.length > 0 && /\.\.\.super\.properties\b/.test(publicProperties) && publicPropertyContracts.every(Boolean), 'Cada propiedad de custom-elements.json debe existir con tipo y atributo coherentes en el getter de propiedades.', sourcePath),
     test('scoped-components', 'Registra dependencias scoped', scopedImportsComplete, 'Cada clase importada desde components debe quedar asociada a su tag dentro de scopedElements.', sourcePath),
     test('translated-copy', 'Traduce el texto visible', uniqueCalls.length >= 2 && !/this\.t\([^)]*\)\s*\|\|/.test(source), 'Usa this.t con claves reales y sin ocultar errores con un fallback vacío.', sourcePath),
     test('locale-parity', 'Mantiene EN y ES sincronizados', enKeys.length > 0 && JSON.stringify(enKeys) === JSON.stringify(esKeys), 'El catálogo fuente debe contener exactamente las mismas claves en EN y ES.', 'locales/locales.json'),
     test('locale-placeholders', 'Conserva placeholders entre idiomas', esKeys.every((key) => JSON.stringify(placeholders(localeCatalog.es?.[key])) === JSON.stringify(placeholders(localeCatalog.en?.[key]))), 'Cada clave debe conservar los mismos nombres de placeholder en EN y ES.', 'locales/locales.json'),
     test('public-event', 'Emite el evento público documentado', Boolean(eventSuffix && new RegExp(`this\\.emitEvent\\(\\s*['"]${eventSuffix}['"]\\s*,\\s*[^)\\s][^)]*\\)`, 's').test(source)), 'El evento declarado en metadata debe salir mediante emitEvent con un detail útil.', sourcePath),
     test('demo-renders', 'La demo instancia el componente', Boolean(tagName && new RegExp(`<${tagName}(?:\\s|>)`).test(demo)), 'La demo debe incluir el tag definido por el componente.', 'demo/index.html'),
-    test('demo-public-entry', 'La demo consume la entrada pública', Boolean(tagName && demoController.includes(`from '../${tagName}.js'`)), 'demo/demo.js debe importar la entrada pública que utilizará una aplicación consumidora.', 'demo/demo.js'),
+    test('demo-public-entry', 'La demo consume la entrada pública', Boolean(tagName && (demoController.includes(`from '../${tagName}.js'`) || demoController.includes(`import('../${tagName}.js')`))), 'demo/demo.js debe importar la entrada pública que utilizará una aplicación consumidora.', 'demo/demo.js'),
     test('demo-controls-property', 'La demo configura la propiedad pública', Boolean(primaryProperty && new RegExp(`[A-Za-z_$][\\w$]*\\.${primaryProperty.name}\\s*=\\s*[A-Za-z_$][\\w$]*\\.target\\.value`).test(demoController)), 'El control debe modificar la propiedad pública documentada en la instancia real.', 'demo/demo.js'),
     test('style-pair', 'Consume el css.js generado desde el SCSS', consumesGeneratedStyles, 'Conserva el SCSS como fuente, genera el css.js equivalente, impórtalo como styles y úsalo en static styles.', sourcePath),
     test('test-public-event', 'Prueba el evento desde la API pública', /expect\([^)]*\.detail\)\.toEqual\(/.test(componentTest) && /expect\([^)]*\.bubbles\)\.toBe\(true\)/.test(componentTest) && /expect\([^)]*\.composed\)\.toBe\(true\)/.test(componentTest), 'La suite debe comprobar detail, bubbles y composed a partir del evento recibido por un consumidor.', tagName ? `test/unit/${tagName}.test.js` : undefined),
@@ -124,8 +128,13 @@ export function auditCellsComponent(workspace: WorkspaceSnapshot): { results: Ce
 
 export function auditCellsApplication(workspace: WorkspaceSnapshot): { results: CellsTestResult[]; coverage: CellsCoverageResult } {
   const routes = workspace.files['app/scripts/app-routes.js']?.content ?? '';
+  const appEntry = workspace.files['app/scripts/app.js']?.content ?? '';
+  const appMessages = workspace.files['app/scripts/app-messages.js']?.content ?? '';
   const pagePath = 'app/pages/academy-home-page/academy-home-page.js';
   const page = workspace.files[pagePath]?.content ?? '';
+  const pageSources = Object.entries(workspace.files)
+    .filter(([path]) => /^app\/pages\/[^/]+\/[^/]+\.js$/.test(path))
+    .map(([, source]) => source.content);
   const managerPath = 'app/data/academy-product-data-manager.js';
   const manager = workspace.files[managerPath]?.content ?? '';
   const cardPath = 'app/components/academy-product-card/academy-product-card.js';
@@ -134,11 +143,18 @@ export function auditCellsApplication(workspace: WorkspaceSnapshot): { results: 
   const homeLocales = workspace.files['app/pages/academy-home-page/locales/locales.json']?.content ?? '';
   const nativeAdapterPath = 'app/bridge/native-adapter.js';
   const nativeAdapter = workspace.files[nativeAdapterPath]?.content ?? '';
+  const appSuite = workspace.files['test/unit/app.test.js']?.content ?? '';
+  const prodConfig = workspace.files['app/config/prod.js']?.content ?? '';
   const results = [
-    test('app-entry', 'Arranca desde una entrada Cells', /startApp\s*\(\s*\{/.test(workspace.files['app/scripts/app.js']?.content ?? ''), 'La entrada debe entregar rutas y mainNode al runtime público de Cells.', 'app/scripts/app.js'),
+    test('app-entry', 'Arranca desde una entrada Cells', /startApp\s*\(\s*\{/.test(appEntry), 'La entrada debe entregar rutas y mainNode al runtime público de Cells.', 'app/scripts/app.js'),
+    test('app-i18n-bootstrap', 'Espera IntlMsg antes de iniciar el router', /import\s+\{\s*initializeAppMessages\s*\}/.test(appEntry) && appEntry.indexOf('await initializeAppMessages') >= 0 && appEntry.indexOf('await initializeAppMessages') < appEntry.indexOf('startApp({') && /installIntlMsg\(\{\s*catalogs:\s*appCatalogs/.test(appMessages) && /await\s+appIntlMsg\.loadUrlResourcesComplete/.test(appMessages), 'La entrada debe instalar los catálogos EN/ES, esperar sus recursos y solo después iniciar Cells.', 'app/scripts/app-messages.js'),
     test('declarative-routes', 'Declara rutas lazy por nombre', /name:\s*['"]home['"]/.test(routes) && /path:\s*['"]\/product\/:id['"]/.test(routes) && /action:\s*async\s*\(\)\s*=>\s*import\(/.test(routes), 'Cada ruta declara path, name, component y carga lazy.', 'app/scripts/app-routes.js'),
+    test('single-route-table', 'Conserva una única tabla de rutas', Boolean(routes) && workspace.files['app/scripts/routes.js'] === undefined, 'La aplicación no debe mantener dos archivos divergentes con la misma tabla.', 'app/scripts/app-routes.js'),
     test('not-found-route', 'Reserva una ruta para direcciones desconocidas', (routes.match(/notFound:\s*true/g) ?? []).length === 1, 'La tabla debe declarar exactamente una ruta notFound.', 'app/scripts/app-routes.js'),
-    test('cells-page', 'Compone una página Cells', /class\s+AcademyHomePage\s+extends\s+PageMixin\(ScopedElementsMixin\(LitElement\)\)/.test(page), 'La página termina en -page y aplica PageMixin.', pagePath),
+    test('cells-page', 'Compone una página Cells', /class\s+AcademyHomePage\s+extends\s+PageMixin\(WidgetMixin\(ScopedElementsMixin\(LitElement\)\)\)/.test(page), 'La página termina en -page y combina PageMixin con las capacidades del widget.', pagePath),
+    test('page-properties', 'Preserva propiedades heredadas de la página', /static\s+get\s+properties\s*\(\)\s*\{[\s\S]*\.\.\.super\.properties/.test(page), 'El getter de propiedades debe conservar el contrato heredado de PageMixin y WidgetMixin.', pagePath),
+    test('page-i18n', 'Traduce textos desde cada host Cells', pageSources.length > 0 && pageSources.every((source) => /WidgetMixin/.test(source) && /this\.t\(['"]/.test(source) && !/const\s+t\s*=/.test(source)), 'Cada página debe usar this.t y reaccionar al cambio de idioma sin recrearse.', pagePath),
+    test('page-scoped-elements', 'Mantiene las dependencias internas en el registro scoped', /static\s+get\s+scopedElements\s*\(\)\s*\{[\s\S]*\.\.\.super\.scopedElements[\s\S]*['"]academy-product-card['"]\s*:\s*AcademyProductCard/.test(page) && /WidgetMixin\(ScopedElementsMixin\(LitElement\)\)/.test(card) && !/customElements\.define\(AcademyProductCard\.is/.test(card), 'La tarjeta debe resolverse dentro de scopedElements y no registrarse globalmente.', cardPath),
     test('page-lifecycle', 'Limpia canales al abandonar la página', /onPageEnter\s*\(\)/.test(page) && /onPageLeave\s*\(\)\s*\{[\s\S]*this\.unsubscribe\(PRODUCT_SELECTED_CHANNEL\)/.test(page), 'Toda suscripción de página necesita cleanup observable en onPageLeave.', pagePath),
     test('channel-subscribe', 'Recibe el último valor del canal', /this\.subscribe\(PRODUCT_SELECTED_CHANNEL/.test(page), 'La página observa el canal estable al entrar.', pagePath),
     test('channel-publish', 'Publica un payload estable', /this\.publish\(\s*PRODUCT_SELECTED_CHANNEL\s*,\s*[^)\s][^)]*\)/s.test(page), 'La selección publica un producto explícito en el mismo canal.', pagePath),
@@ -148,12 +164,14 @@ export function auditCellsApplication(workspace: WorkspaceSnapshot): { results: 
     test('data-race', 'Descarta respuestas antiguas', /(?:requestId\s*!==\s*this\.requestId|this\.requestId\s*!==\s*requestId)/.test(manager), 'Solo la petición más reciente puede publicar su resultado.', managerPath),
     test('data-cleanup', 'Cancela la petición al desconectar', /disconnect\s*\(\)\s*\{[\s\S]*?this\.controller[\s\S]*?\.abort\(\)[\s\S]*?\}/.test(manager), 'disconnect debe abortar el trabajo que todavía pertenece al manager.', managerPath),
     test('public-card-event', 'El componente hijo emite una intención', /this\.emitEvent\(\s*['"]select['"]\s*,\s*[^)\s][^)]*\)/s.test(card), 'La tarjeta emite select; no conoce rutas ni canales de aplicación.', cardPath),
+    test('app-behavior-tests', 'Prueba DOM, idioma y evento scoped', /customElements\.get\(['"]academy-product-card['"]\)/.test(appSuite) && /switchAppLanguage\(['"]en['"]\)/.test(appSuite) && /academy-product-card-select/.test(appSuite), 'La suite debe montar la página, cambiar de idioma y observar el evento del componente real.', 'test/unit/app.test.js'),
     test('app-locales', 'Separa textos globales y de página', localeKeys(globalLocales, 'es').includes('app.title') && localeKeys(homeLocales, 'es').includes('home.title') && !localeKeys(homeLocales, 'es').includes('app.title'), 'Los textos globales viven en locales-app y cada página conserva su catálogo dentro de su carpeta.', 'app/pages/academy-home-page/locales/locales.json'),
     test(
       'environment-config',
       'Separa configuración dev y prod',
       workspace.files['app/config/dev.js']?.content.includes("runtimeConfig: 'open-cells-development'") === true
-        && workspace.files['app/config/prod.js']?.content.includes("runtimeConfig: 'open-cells-production'") === true,
+        && prodConfig.includes("runtimeConfig: 'open-cells-production'")
+        && prodConfig.includes('forTesting: false'),
       'Ambos entornos deben conservar configuraciones Cells explícitas y diferentes.',
       'app/config/prod.js',
     ),
@@ -161,6 +179,11 @@ export function auditCellsApplication(workspace: WorkspaceSnapshot): { results: 
   const covered = results.filter((result) => result.passed).length;
   const behaviorIds = new Set([
     'not-found-route',
+    'app-i18n-bootstrap',
+    'single-route-table',
+    'page-properties',
+    'page-i18n',
+    'page-scoped-elements',
     'page-lifecycle',
     'channel-subscribe',
     'channel-publish',
@@ -170,6 +193,7 @@ export function auditCellsApplication(workspace: WorkspaceSnapshot): { results: 
     'data-race',
     'data-cleanup',
     'public-card-event',
+    'app-behavior-tests',
     'app-locales',
     'environment-config',
   ]);

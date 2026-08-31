@@ -59,6 +59,7 @@
 .staff-learners__list { overflow: auto; border-right: 2px solid #111318; padding: 16px; }
 .staff-search { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; border: 2px solid #111318; border-radius: 9px; background: #fff; padding: 9px 11px; }
 .staff-search input { min-width: 0; flex: 1; border: 0; background: transparent; outline: 0; }
+.staff-search:focus-within { outline: 3px solid #2563eb; outline-offset: 2px; }
 .staff-search > span { color: #706b63; font-size: 9px; white-space: nowrap; }.staff-search.is-searching > svg { animation: staff-search-pulse .8s ease-in-out infinite alternate; } @keyframes staff-search-pulse { to { opacity: .35; } }
 .staff-learners__detail { min-width: 0; overflow: auto; padding: clamp(18px, 3vw, 32px); }
 .staff-detail-back { display: none; }

@@ -51,6 +51,7 @@
 .learning-center textarea:focus, .learning-center select:focus { outline: 3px solid color-mix(in srgb, #ffe600 70%, transparent); border-color: #111; }
 .learning-notebook__intro { margin-bottom: 1.25rem; padding: 1rem; border-left: 5px solid #ffe600; background: color-mix(in srgb, #ffe600 10%, transparent); }
 .learning-notebook__intro p, .learning-empty p { margin: .35rem 0 0; color: color-mix(in srgb, currentColor 68%, transparent); }
+.learning-notebook__error { margin: .75rem 0; border: 2px solid #b42345; border-radius: 8px; background: #fff0f3; padding: .7rem .8rem; color: #7a1530; font-weight: 700; }
 .learning-primary { min-height: 2.8rem; padding: .7rem 1rem; border: 2px solid #111; border-radius: 9px; background: #ffe600; color: #111; font-weight: 800; box-shadow: 4px 4px 0 #111; }
 .learning-primary:disabled { opacity: .45; box-shadow: none; }
 .learning-progress-line { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; color: color-mix(in srgb, currentColor 65%, transparent); font: 650 .76rem/1 var(--font-mono, monospace); text-transform: uppercase; }

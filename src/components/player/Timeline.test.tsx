@@ -98,4 +98,32 @@ describe('Timeline', () => {
 
     expect(timelineModule.getClosestChallenge(challenges, 35000, 120000)?.id).toBe('cercano');
   });
+
+  it('expone los marcadores como controles hermanos del slider con blancos táctiles suficientes', () => {
+    render(
+      <Timeline
+        currentTimeMs={5000}
+        durationMs={120000}
+        isPlaying={false}
+        playbackRate={1}
+        chapters={[{ timestamp: 2500, title: 'Variables' }]}
+        challenges={[makeChallenge('reto-uno', 5000)]}
+        onPlay={() => undefined}
+        onPause={() => undefined}
+        onSeek={() => undefined}
+        onRateChange={() => undefined}
+      />,
+    );
+
+    const slider = screen.getAllByRole('slider', { name: 'Progreso de la clase' }).at(-1)!;
+    const chapter = screen.getByRole('button', { name: 'Ir al capítulo Variables' });
+    const challenge = screen.getByRole('button', { name: 'Ir al reto reto-uno' });
+
+    expect(slider.contains(chapter)).toBe(false);
+    expect(slider.contains(challenge)).toBe(false);
+    expect(Number.parseFloat(chapter.style.width)).toBeGreaterThanOrEqual(24);
+    expect(Number.parseFloat(chapter.style.height)).toBeGreaterThanOrEqual(24);
+    expect(Number.parseFloat(challenge.style.width)).toBeGreaterThanOrEqual(24);
+    expect(Number.parseFloat(challenge.style.height)).toBeGreaterThanOrEqual(24);
+  });
 });

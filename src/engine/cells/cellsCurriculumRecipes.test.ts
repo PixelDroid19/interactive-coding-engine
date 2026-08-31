@@ -34,6 +34,19 @@ describe('recipes acumulativas del currículo Cells', () => {
     }
   });
 
+  it('mantiene los contratos de composición y propiedades Cells en todos los componentes acumulativos', () => {
+    for (let number = 1; number <= 38; number += 1) {
+      const workspace = createOpenCellsLessonWorkspace(number).snapshot;
+      const source = Object.values(workspace.files).find((file) => (
+        /^src\/[^/]+\.js$/.test(file.path) && file.content.includes('WidgetMixin(ScopedElementsMixin(LitElement))')
+      ))?.content;
+
+      expect(source, `falta host Cells en ${number}`).toBeDefined();
+      expect(source, `properties no usa getter en ${number}`).toMatch(/static get properties\(\)\s*\{/);
+      expect(source, `scopedElements no conserva super en ${number}`).toContain('...super.scopedElements');
+    }
+  });
+
   it('abre páginas y servicios diferentes dentro de la aplicación acumulativa', () => {
     const focuses = [
       [44, 'favorites', 'app/pages/academy-favorites-page/academy-favorites-page.js'],

@@ -165,6 +165,12 @@
   letter-spacing: 0.05em;
 }
 
+.browser-preview-badge--error {
+  background: #fee2e2;
+  border-color: #b91c1c;
+  color: #991b1b;
+}
+
 .browser-dim-pill {
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
@@ -261,6 +267,36 @@
   min-height: 0;
 }
 
+.cells-preview-error {
+  display: grid;
+  place-content: center;
+  gap: 0.6rem;
+  min-height: 0;
+  height: 100%;
+  padding: 1.5rem;
+  background: var(--bg-editor);
+  color: var(--color-inverse);
+  text-align: center;
+}
+
+.cells-preview-error strong {
+  color: #fca5a5;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.95rem;
+}
+
+.cells-preview-error p {
+  max-width: 38ch;
+  margin: 0;
+  color: var(--color-inverse-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.cells-preview-error .cells-preview-error__hint {
+  color: var(--color-highlighter-yellow);
+}
+
 .browser-viewport-mobile {
   max-width: 375px;
   margin: 0 auto;
@@ -316,4 +352,3 @@
   z-index: 30;
   font-family: 'Patrick Hand', cursive;
 }
-

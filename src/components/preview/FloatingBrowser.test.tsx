@@ -11,6 +11,16 @@ const workspace = workspaceOf('index.html', {
   'index.html': file('index.html', '<h1>Hola</h1>'),
 });
 const cellsWorkspace = createCellsPracticeWorkspace('styles').snapshot;
+const invalidCellsWorkspace = {
+  ...cellsWorkspace,
+  files: {
+    ...cellsWorkspace.files,
+    'package.json': {
+      ...cellsWorkspace.files['package.json'],
+      content: '{',
+    },
+  },
+};
 
 describe('FloatingBrowser', () => {
   afterEach(cleanup);
@@ -73,6 +83,23 @@ describe('FloatingBrowser', () => {
     window.dispatchEvent(own);
 
     expect(await screen.findByText('error del preview')).toBeTruthy();
+  });
+
+  it('muestra un error de compilación Cells sin simular una vista previa estándar', async () => {
+    render(
+      <FloatingBrowser
+        workspace={invalidCellsWorkspace}
+        isFloating
+        previewRuntime="cells"
+        onToggleFloating={() => {}}
+      />,
+    );
+
+    const error = await screen.findByRole('alert');
+    expect(error.textContent).toContain('Error de compilación');
+    expect(error.textContent).toContain('package.json no contiene JSON válido.');
+    expect(screen.queryByText('Ejecutado')).toBeNull();
+    expect(screen.queryByTitle('Vista previa')).toBeNull();
   });
 });
 

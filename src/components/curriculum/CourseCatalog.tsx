@@ -26,8 +26,11 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress,
           className="rm-play-btn rm-playground-btn"
           data-augmented-ui={isCyber ? "hud-playground-btn tl-clip br-clip border inlay" : undefined}
           onClick={onPlayground}
+          aria-label="Abrir Playground"
         >
-          <Code2 size={14} /> Playground
+          <Code2 size={14} />
+          <span className="rm-button-label">Playground</span>
+          <span className="rm-playground-compact-label">Abrir</span>
         </button>
       </div>
     </header>

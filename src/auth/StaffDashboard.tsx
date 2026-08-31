@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Activity, ArrowLeft, BookOpenCheck, CheckCircle2, Clock3, Inbox, LibraryBig, MessageSquareText, RefreshCw, Search, ShieldCheck, Trash2, TriangleAlert, Users, X } from 'lucide-react';
 import { staffDashboardApi, type AdminCourse, type IdentityAccessRule, type LearnerDetail, type StaffAdminUser, type StaffLearner, type StaffOverview, type StaffThread, type UserCourseAccess } from '../services/staffDashboardApi';
 import { useTheme } from '../themes/ThemeProvider';
+import { useModalDialog } from '../components/useModalDialog';
 
 type Tab = 'overview' | 'learners' | 'inbox' | 'access' | 'content';
 
@@ -23,6 +24,7 @@ function duration(milliseconds: number): string {
 
 export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClose(): void }) {
   const { themeId } = useTheme();
+  const dialogRef = useModalDialog<HTMLDivElement>({ open: true, onClose });
   const [tab, setTab] = useState<Tab>('overview');
   const [overview, setOverview] = useState<StaffOverview | null>(null);
   const [learners, setLearners] = useState<StaffLearner[]>([]);
@@ -72,12 +74,6 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
   }, [canAdmin]);
 
   useEffect(() => { void load(); }, [load]);
-  useEffect(() => {
-    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', escape);
-    return () => window.removeEventListener('keydown', escape);
-  }, [onClose]);
-
   useEffect(() => {
     if (tab !== 'learners' || loading) return;
     let active = true;
@@ -140,7 +136,7 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
   };
 
   return (
-    <div className={`staff-dashboard${themeId === 'cyber' ? ' staff-dashboard--cyber' : ''}`} role="dialog" aria-modal="true" aria-label="Panel de seguimiento">
+    <div ref={dialogRef} className={`staff-dashboard${themeId === 'cyber' ? ' staff-dashboard--cyber' : ''}`} role="dialog" aria-modal="true" aria-label="Panel de seguimiento">
       <aside className="staff-dashboard__rail">
         <div className="staff-dashboard__brand"><ShieldCheck size={22} /><span>Seguimiento</span></div>
         <nav aria-label="Secciones del panel">
@@ -155,7 +151,7 @@ export function StaffDashboard({ canAdmin, onClose }: { canAdmin: boolean; onClo
       <main className="staff-dashboard__main">
         <header className="staff-dashboard__header">
           <div><span>{canAdmin ? 'Administración' : 'Formación'}</span><h1>{tab === 'overview' ? 'Pulso de aprendizaje' : tab === 'learners' ? 'Seguimiento individual' : tab === 'inbox' ? 'Bandeja de acompañamiento' : tab === 'content' ? 'Gestión de cursos' : 'Acceso y responsabilidades'}</h1></div>
-          <div className="staff-dashboard__header-actions"><button onClick={() => void load()} aria-label="Actualizar"><RefreshCw size={18} /></button><button onClick={onClose} aria-label="Cerrar panel"><X size={20} /></button></div>
+          <div className="staff-dashboard__header-actions"><button onClick={() => void load()} aria-label="Actualizar"><RefreshCw size={18} /></button><button data-dialog-initial-focus onClick={onClose} aria-label="Cerrar panel"><X size={20} /></button></div>
         </header>
         {error && <div className="staff-dashboard__error" role="alert">{error}</div>}
         {loading ? <div className="staff-dashboard__loading" role="status">Preparando datos de seguimiento…</div> : (

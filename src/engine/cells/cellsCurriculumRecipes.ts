@@ -76,13 +76,21 @@ function localDependencySource(tagName: string, accent: string): string {
   return `import { LitElement, css, html } from 'lit';
 
 export class ${className} extends LitElement {
-  static properties = { ${propertyName}: { type: String, attribute: '${attribute}' } };
+  static get properties() {
+    return {
+      ...super.properties,
+      ${propertyName}: { type: String, attribute: '${attribute}' },
+    };
+  }
   static styles = css\`
     :host { display: inline-flex; }
     button, span, article { border: 1px solid ${accent}; border-radius: 999px; padding: .55rem .85rem; background: #fff; color: #172033; font: 700 .78rem/1 system-ui, sans-serif; }
     button { cursor: pointer; box-shadow: 0 .2rem 0 ${accent}; }
   \`;
-  ${propertyName} = ${JSON.stringify(defaultValue)};
+  constructor() {
+    super();
+    this.${propertyName} = ${JSON.stringify(defaultValue)};
+  }
   handleAction() { this.dispatchEvent(new CustomEvent('${tagName}-${eventName}', { detail: { ${propertyName}: this.${propertyName} }, bubbles: true, composed: true })); }
   render() { return ${isButton
     ? `html\`<button type="button" @click=\${this.handleAction}><slot>\${this.${propertyName}}</slot></button>\``
@@ -105,11 +113,11 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
           <button class="primary-action" ${action}>${value}</button>
         </div>`;
     case 'status-badge':
-      return `<div class="status-stage" ${action}>
+      return `<button type="button" class="status-stage" ${action}>
           <span class="status-dot"></span>
           <strong>${value}</strong>
           <small>${translated('action')}</small>
-        </div>`;
+        </button>`;
     case 'state-panel':
       return `<div class="state-grid">
           <academy-status-badge .status=\${this.state}></academy-status-badge>
@@ -138,6 +146,7 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
             <p>${translated('description')}</p>
           </div>
           <academy-status-badge status="Activo"></academy-status-badge>
+          <button type="button" class="primary-action" ${action}>${translated('action')}</button>
         </div>`;
     case 'notice-banner':
       return `<aside class="notice" role="status">
@@ -161,11 +170,11 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
           </div>
         </section>`;
     case 'price-tag':
-      return `<div class="price" ${action}>
+      return `<button type="button" class="price" ${action}>
           <small>${translated('title')}</small>
           <strong>${value}</strong>
           <academy-status-badge status="IVA incluido"></academy-status-badge>
-        </div>`;
+        </button>`;
     case 'search-filter':
       return `<form class="search" @submit=\${this.handleSubmit}>
           <label>
@@ -175,7 +184,7 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
               @input=\${(event) => { this.query = event.target.value; }}
             >
           </label>
-          <academy-action-button .label=\${this.t('${prefix}.action')}></academy-action-button>
+          <button type="submit" class="primary-action">${translated('action')}</button>
         </form>`;
     case 'language-switcher':
       return `<div class="language">
@@ -188,6 +197,7 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
           <academy-search-filter .query=\${this.section}></academy-search-filter>
           <academy-notice-banner .message=\${this.t('${prefix}.description')}></academy-notice-banner>
           <academy-product-list .category=\${this.section}></academy-product-list>
+          <button type="button" class="primary-action" ${action}>${translated('action')}</button>
         </main>`;
     default:
       return `<article class="state-grid">
@@ -222,6 +232,7 @@ function componentStyles(artifact: OpenCellsArtifact, blueprint: ComponentBluepr
 .primary-action, .language button { border: 0; border-radius: 999px; padding: .85rem 1.2rem; background: ${blueprint.accent}; color: white; font-weight: 800; cursor: pointer; }
 .status-stage, .profile, .notice, .price, .collection header, .language { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
 .status-stage, .notice, .price { border-left: .35rem solid ${blueprint.accent}; padding: 1rem; background: #f8fafc; }
+.status-stage, .price { width: 100%; border-top: 0; border-right: 0; border-bottom: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .status-dot { width: .75rem; height: .75rem; border-radius: 50%; background: ${blueprint.accent}; }
 .state-grid, .product-card { display: grid; gap: 1rem; }
 .avatar { display: grid; width: 3rem; height: 3rem; place-items: center; border-radius: 50%; background: ${blueprint.accent}; color: white; font-size: 1.25rem; font-weight: 900; }
@@ -250,6 +261,15 @@ export function createCellsCurriculumComponentWorkspace(artifact: OpenCellsArtif
   });
   const imports = dependencyImports.map((dependency) => `import { ${dependency.className} } from './components/${dependency.tag}.js';`).join('\n');
   const registry = dependencyImports.map((dependency) => `      '${dependency.tag}': ${dependency.className},`).join('\n');
+  const unitDependencyImports = dependencyImports
+    .map((dependency) => `import { ${dependency.className} } from '../../src/components/${dependency.tag}.js';`)
+    .join('\n');
+  const unitDependencyAssertions = dependencyImports
+    .map((dependency) => `    const ${dependency.id.replaceAll('-', '_')} = component.shadowRoot.querySelector('${dependency.tag}');
+    await ${dependency.id.replaceAll('-', '_')}.updateComplete;
+    expect(${dependency.id.replaceAll('-', '_')}.constructor).toBe(${dependency.className});
+    expect(customElements.get('${dependency.tag}')).toBeUndefined();`)
+    .join('\n');
   const markup = renderMarkup(artifact, blueprint, prefix);
   const styles = componentStyles(artifact, blueprint);
   const source = `import { LitElement, html } from 'lit';
@@ -261,16 +281,24 @@ ${imports}
 export class ${className} extends WidgetMixin(ScopedElementsMixin(LitElement)) {
   static get scopedElements() {
     return {
+      ...super.scopedElements,
 ${registry}
     };
   }
 
-  static properties = {
-    ${blueprint.propertyName}: { type: String, attribute: '${blueprint.attribute}' },
-  };
+  static get properties() {
+    return {
+      ...super.properties,
+      ${blueprint.propertyName}: { type: String, attribute: '${blueprint.attribute}' },
+    };
+  }
 
   static styles = styles;
-  ${blueprint.propertyName} = ${JSON.stringify(blueprint.defaultValue)};
+
+  constructor() {
+    super();
+    this.${blueprint.propertyName} = ${JSON.stringify(blueprint.defaultValue)};
+  }
 
   handleAction() {
     this.emitEvent('${blueprint.eventName}', { ${blueprint.propertyName}: this.${blueprint.propertyName} });
@@ -333,10 +361,19 @@ ${registry}
     <title>${artifact.label}</title>
   </head>
   <body>
-    <label>
-      Valor
-      <input id="control-value" value="${blueprint.demoValue}">
-    </label>
+    <form aria-label="Controles de la demostración" onsubmit="return false">
+      <label>
+        Valor
+        <input id="control-value" value="${blueprint.demoValue}">
+      </label>
+      <label>
+        Idioma
+        <select id="locale">
+          <option value="es" selected>Español</option>
+          <option value="en">English</option>
+        </select>
+      </label>
+    </form>
     <${artifact.tagName}
       data-cells-demo-subject
       ${blueprint.attribute}="${blueprint.demoValue}"
@@ -360,29 +397,85 @@ ${registry}
   };
   files['demo/demo.js'] = {
     ...files['demo/demo.js'],
-    content: `import { ${className} } from '../${artifact.tagName}.js';
-export { ${className} };
+    content: `import { installIntlMsg } from '../src/runtime/academy-intl-msg.js';
+const intlMsg = installIntlMsg({ language: document.documentElement.lang || 'es' });
+intlMsg.localesHost = new URL('./locales/locales.json', import.meta.url).href;
+void intlMsg.loadUrlResources();
+await intlMsg.loadUrlResourcesComplete;
+const { ${className} } = await import('../${artifact.tagName}.js');
 const subject = document.querySelector('${artifact.tagName}');
 const control = document.querySelector('#control-value');
+const locale = document.querySelector('#locale');
 const eventLog = document.querySelector('#event-log');
 control?.addEventListener('input', (event) => { subject.${blueprint.propertyName} = event.target.value; });
+locale?.addEventListener('change', async (event) => {
+  await intlMsg.setLanguage(event.target.value);
+  document.documentElement.lang = event.target.value;
+  await subject?.updateComplete;
+});
 subject?.addEventListener('${artifact.tagName}-${blueprint.eventName}', (event) => { if (eventLog) eventLog.textContent = event.type + ' · ' + JSON.stringify(event.detail); });
+export { ${className} };
 `,
   };
   files[`test/unit/${artifact.tagName}.test.js`] = {
     ...files[`test/unit/${artifact.tagName}.test.js`],
-    content: `import { ${className} } from '../../${artifact.tagName}.js';
+    content: `import catalogs from './locales/locales.json' with { type: 'json' };
+${unitDependencyImports}
+import { installIntlMsg } from '../../src/runtime/academy-intl-msg.js';
+import { ${className} } from '../../${artifact.tagName}.js';
+
+async function renderComponent() {
+  const component = document.createElement('${artifact.tagName}');
+  component.${blueprint.propertyName} = ${JSON.stringify(blueprint.demoValue)};
+  document.body.replaceChildren(component);
+  await component.updateComplete;
+  return component;
+}
+
+async function activate(component) {
+  const directButton = component.shadowRoot.querySelector('button');
+  if (directButton) {
+    directButton.click();
+    return;
+  }
+  const action = component.shadowRoot.querySelector('academy-action-button');
+  if (!action) throw new Error('El componente no expone una acción interactiva.');
+  await action.updateComplete;
+  action.shadowRoot.querySelector('button').click();
+}
+
 describe('${artifact.tagName}', () => {
-  it('expone una propiedad configurable', () => { expect(${className}.properties.${blueprint.propertyName}.attribute).toBe('${blueprint.attribute}'); });
-  it('emite una intención pública completa', async () => {
-    const element = new ${className}();
-    element.${blueprint.propertyName} = ${JSON.stringify(blueprint.demoValue)};
-    const received = new Promise((resolve) => element.addEventListener('${artifact.tagName}-${blueprint.eventName}', resolve, { once: true }));
-    element.handleAction();
+  beforeEach(async () => {
+    const intlMsg = installIntlMsg({ catalogs, language: 'es' });
+    await intlMsg.loadUrlResourcesComplete;
+  });
+
+  afterEach(() => document.body.replaceChildren());
+
+  it('expone una propiedad configurable y resuelve sus dependencias scoped', async () => {
+    const component = await renderComponent();
+    expect(${className}.properties.${blueprint.propertyName}.attribute).toBe('${blueprint.attribute}');
+${unitDependencyAssertions}
+    expect(component.shadowRoot.textContent).toContain(${JSON.stringify(blueprint.title.es)});
+  });
+
+  it('cambia a inglés sobre el mismo host', async () => {
+    const component = await renderComponent();
+    await globalThis.IntlMsg.setLanguage('en');
+    await globalThis.IntlMsg.loadUrlResourcesComplete;
+    await component.updateComplete;
+    expect(component.shadowRoot.textContent).toContain(${JSON.stringify(blueprint.title.en)});
+  });
+
+  it('emite una intención pública completa desde el control visible', async () => {
+    const component = await renderComponent();
+    const received = new Promise((resolve) => component.addEventListener('${artifact.tagName}-${blueprint.eventName}', resolve, { once: true }));
+    await activate(component);
     const event = await received;
     expect(event.detail).toEqual({ ${blueprint.propertyName}: ${JSON.stringify(blueprint.demoValue)} });
     expect(event.bubbles).toBe(true);
     expect(event.composed).toBe(true);
+    expect(event.cancelable).toBe(true);
   });
 });
 `,
@@ -440,7 +533,7 @@ export function createCellsCurriculumPracticeWorkspace(
   if (stage === 'api') {
     const source = complete.snapshot.files[sourcePath].content
       .replace(
-        `    ${blueprint.propertyName}: { type: String, attribute: '${blueprint.attribute}' },`,
+        `      ${blueprint.propertyName}: { type: String, attribute: '${blueprint.attribute}' },`,
         `    // TODO: declara ${blueprint.propertyName} como propiedad String y atributo ${blueprint.attribute}.`,
       )
       .replace(
@@ -487,7 +580,7 @@ export function createCellsCurriculumPracticeWorkspace(
     const demoPath = 'demo/demo.js';
     const className = classNameFor(artifact.tagName);
     const controller = complete.snapshot.files[demoPath].content
-      .replace(`import { ${className} } from '../${artifact.tagName}.js';`, `import { ${className} } from '../src/${artifact.tagName}.js';`)
+      .replace(`const { ${className} } = await import('../${artifact.tagName}.js');`, `const { ${className} } = await import('../src/${artifact.tagName}.js');`)
       .replace(
         `control?.addEventListener('input', (event) => { subject.${blueprint.propertyName} = event.target.value; });`,
         `control?.addEventListener('input', () => {\n  // TODO: conecta el valor del control con ${blueprint.propertyName}.\n});`,

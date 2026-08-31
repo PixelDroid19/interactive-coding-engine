@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { SoloProjectView } from './SoloProjectView';
 import type { SoloProjectItem } from '../../types/curriculum';
 
@@ -72,5 +72,24 @@ describe('SoloProjectView', () => {
     fireEvent.input(reflections[1], { target: { value: 'Probaría un valor negativo y el cero para comprobar que la misma regla sigue funcionando.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Registrar dominio del proyecto' }));
     await waitFor(() => expect(screen.getByText('Completado')).toBeTruthy());
+  });
+
+  it('permite recorrer los archivos abiertos del proyecto con el teclado', () => {
+    const multiFileProject = structuredClone(project);
+    multiFileProject.initialWorkspace.files['helpers.js'] = {
+      name: 'helpers.js',
+      path: 'helpers.js',
+      language: 'javascript',
+      content: 'export const doble = (valor) => valor * 2;',
+    };
+    render(<SoloProjectView project={multiFileProject} onBack={vi.fn()} />);
+
+    const tabs = screen.getByRole('group', { name: 'Archivos abiertos' });
+    const appFile = within(tabs).getByRole('button', { name: 'app.js' });
+    const helperFile = within(tabs).getByRole('button', { name: 'helpers.js' });
+    appFile.focus();
+
+    fireEvent.keyDown(appFile, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(helperFile);
   });
 });

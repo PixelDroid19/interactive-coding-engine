@@ -1,6 +1,16 @@
 import { Course, ItemType, ReasoningAttempt, UserProgressRecord } from '../types/curriculum';
 import { ChallengeTest, ScrimLessonData, LearnerBranch, WorkspaceSnapshot, type CourseLanguage } from '../types/scrim';
 import { TemplateDefinition } from '../types/runtime';
+import {
+  getPersistenceStatus,
+  quarantineStoredValue,
+  readJsonStorage,
+  recordPersistenceReadFailure,
+  recordPersistenceWriteFailure,
+  writeJsonStorage,
+} from './persistenceIntegrity';
+
+export { getPersistenceStatus } from './persistenceIntegrity';
 
 const STORAGE_KEYS = {
   USER_PROGRESS: 'aula_user_progress_v1',
@@ -20,6 +30,22 @@ const STORAGE_KEYS = {
 
 const CUSTOM_AUDIO_DATABASE = 'aula_custom_audio_v1';
 const CUSTOM_AUDIO_STORE = 'recordings';
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function readStoredJson(key: string) {
+  return readJsonStorage(key, localStorage);
+}
+
+function quarantineInvalidStoredValue(key: string, raw: string, message: string): void {
+  quarantineStoredValue(key, raw, localStorage, new Error(message));
+}
+
+function saveStoredJson(key: string, value: unknown): boolean {
+  return writeJsonStorage(key, value, localStorage);
+}
 
 export interface PlaygroundDraft {
   templateId: TemplateDefinition['id'];
@@ -50,29 +76,32 @@ export function createReasoningActivityVersion(activity: unknown): string {
 }
 
 export function loadReasoningDraft(exerciseId: string, expectedVersion: string): ReasoningDraft | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.REASONING_DRAFTS);
-    if (!raw) return null;
-    const draft = (JSON.parse(raw) as Record<string, ReasoningDraft>)[exerciseId];
-    if (!draft || draft.activityVersion !== expectedVersion || typeof draft.revealedHints !== 'number' || !draft.attempt) {
-      return null;
-    }
-    return draft;
-  } catch {
+  const result = readStoredJson(STORAGE_KEYS.REASONING_DRAFTS);
+  if (result.state !== 'loaded') return null;
+  if (!isRecord(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.REASONING_DRAFTS, result.raw, 'Los borradores de razonamiento no tienen una estructura válida.');
     return null;
   }
+  const draft = result.value[exerciseId] as Partial<ReasoningDraft> | undefined;
+  if (!draft || draft.activityVersion !== expectedVersion) return null;
+  if (typeof draft.revealedHints !== 'number' || !draft.attempt) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.REASONING_DRAFTS, result.raw, 'El borrador de razonamiento no tiene una estructura válida.');
+    return null;
+  }
+  return draft as ReasoningDraft;
 }
 
 export function saveReasoningDraft(exerciseId: string, draft: ReasoningDraft): void {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.REASONING_DRAFTS);
-    const parsed = raw ? JSON.parse(raw) : {};
-    const drafts = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-    drafts[exerciseId] = draft;
-    localStorage.setItem(STORAGE_KEYS.REASONING_DRAFTS, JSON.stringify(drafts));
-  } catch {
-    // Draft persistence is best-effort and must not interrupt learning.
+  const result = readStoredJson(STORAGE_KEYS.REASONING_DRAFTS);
+  if (result.state === 'unavailable') return;
+  const drafts = result.state === 'loaded' && isRecord(result.value)
+    ? result.value
+    : {};
+  if (result.state === 'loaded' && !isRecord(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.REASONING_DRAFTS, result.raw, 'Los borradores de razonamiento no tienen una estructura válida.');
   }
+  drafts[exerciseId] = draft;
+  saveStoredJson(STORAGE_KEYS.REASONING_DRAFTS, drafts);
 }
 
 const PLAYGROUND_TEMPLATE_IDS: TemplateDefinition['id'][] = [
@@ -86,31 +115,30 @@ const PLAYGROUND_TEMPLATE_IDS: TemplateDefinition['id'][] = [
 const WORKSPACE_LANGUAGES = ['javascript', 'html', 'css', 'typescript', 'json', 'python', 'markdown'];
 
 export function loadCourseLanguage(courseId: string): CourseLanguage {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.COURSE_LANGUAGE);
-    if (!raw) return 'javascript';
-    const language = (JSON.parse(raw) as Record<string, unknown>)?.[courseId];
-    return language === 'python' ? 'python' : 'javascript';
-  } catch {
+  const result = readStoredJson(STORAGE_KEYS.COURSE_LANGUAGE);
+  if (result.state !== 'loaded') return 'javascript';
+  if (!isRecord(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.COURSE_LANGUAGE, result.raw, 'Las preferencias de lenguaje no tienen una estructura válida.');
     return 'javascript';
   }
+  const language = result.value[courseId];
+  if (language !== undefined && language !== 'python' && language !== 'javascript') {
+    quarantineInvalidStoredValue(STORAGE_KEYS.COURSE_LANGUAGE, result.raw, 'La preferencia de lenguaje guardada no es válida.');
+  }
+  return language === 'python' ? 'python' : 'javascript';
 }
 
 export function saveCourseLanguage(courseId: string, language: CourseLanguage): void {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.COURSE_LANGUAGE);
-    let preferences: Record<string, CourseLanguage> = {};
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-        preferences = parsed as Record<string, CourseLanguage>;
-      }
-    }
-    preferences[courseId] = language;
-    localStorage.setItem(STORAGE_KEYS.COURSE_LANGUAGE, JSON.stringify(preferences));
-  } catch {
-    // Language preference is helpful, but must never block a lesson.
+  const result = readStoredJson(STORAGE_KEYS.COURSE_LANGUAGE);
+  if (result.state === 'unavailable') return;
+  const preferences = result.state === 'loaded' && isRecord(result.value)
+    ? result.value as Record<string, CourseLanguage>
+    : {};
+  if (result.state === 'loaded' && !isRecord(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.COURSE_LANGUAGE, result.raw, 'Las preferencias de lenguaje no tienen una estructura válida.');
   }
+  preferences[courseId] = language;
+  saveStoredJson(STORAGE_KEYS.COURSE_LANGUAGE, preferences);
 }
 
 function isWorkspaceSnapshot(value: unknown): value is WorkspaceSnapshot {
@@ -139,14 +167,19 @@ export function loadLanguageWorkspaceDraft(
   itemId: string,
   language: CourseLanguage,
 ): WorkspaceSnapshot | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.LANGUAGE_WORKSPACE_DRAFTS);
-    if (!raw) return null;
-    const workspace = (JSON.parse(raw) as Record<string, unknown>)?.[languageDraftKey(itemId, language)];
-    return isWorkspaceSnapshot(workspace) ? structuredClone(workspace) : null;
-  } catch {
+  const result = readStoredJson(STORAGE_KEYS.LANGUAGE_WORKSPACE_DRAFTS);
+  if (result.state !== 'loaded') return null;
+  if (!isRecord(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.LANGUAGE_WORKSPACE_DRAFTS, result.raw, 'Los borradores de workspace no tienen una estructura válida.');
     return null;
   }
+  const workspace = result.value[languageDraftKey(itemId, language)];
+  if (workspace === undefined) return null;
+  if (!isWorkspaceSnapshot(workspace)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.LANGUAGE_WORKSPACE_DRAFTS, result.raw, 'El borrador de workspace no es válido.');
+    return null;
+  }
+  return structuredClone(workspace);
 }
 
 export function saveLanguageWorkspaceDraft(
@@ -154,41 +187,34 @@ export function saveLanguageWorkspaceDraft(
   language: CourseLanguage,
   workspace: WorkspaceSnapshot,
 ): void {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.LANGUAGE_WORKSPACE_DRAFTS);
-    const parsed = raw ? JSON.parse(raw) : {};
-    const drafts = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-    drafts[languageDraftKey(itemId, language)] = structuredClone(workspace);
-    localStorage.setItem(STORAGE_KEYS.LANGUAGE_WORKSPACE_DRAFTS, JSON.stringify(drafts));
-  } catch {
-    // Draft persistence is best-effort and must not interrupt editing.
+  const result = readStoredJson(STORAGE_KEYS.LANGUAGE_WORKSPACE_DRAFTS);
+  if (result.state === 'unavailable') return;
+  const drafts = result.state === 'loaded' && isRecord(result.value) ? result.value : {};
+  if (result.state === 'loaded' && !isRecord(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.LANGUAGE_WORKSPACE_DRAFTS, result.raw, 'Los borradores de workspace no tienen una estructura válida.');
   }
+  drafts[languageDraftKey(itemId, language)] = structuredClone(workspace);
+  saveStoredJson(STORAGE_KEYS.LANGUAGE_WORKSPACE_DRAFTS, drafts);
 }
 
 export function loadPlaygroundDraft(): PlaygroundDraft | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.PLAYGROUND_DRAFT);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<PlaygroundDraft>;
-    if (
-      !PLAYGROUND_TEMPLATE_IDS.includes(parsed.templateId as TemplateDefinition['id'])
-      || typeof parsed.showFileTree !== 'boolean'
-      || !isWorkspaceSnapshot(parsed.workspace)
-    ) {
-      return null;
-    }
-    return parsed as PlaygroundDraft;
-  } catch {
+  const result = readStoredJson(STORAGE_KEYS.PLAYGROUND_DRAFT);
+  if (result.state !== 'loaded') return null;
+  const parsed = result.value as Partial<PlaygroundDraft>;
+  if (
+    !isRecord(parsed)
+    || !PLAYGROUND_TEMPLATE_IDS.includes(parsed.templateId as TemplateDefinition['id'])
+    || typeof parsed.showFileTree !== 'boolean'
+    || !isWorkspaceSnapshot(parsed.workspace)
+  ) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.PLAYGROUND_DRAFT, result.raw, 'El borrador del playground no tiene una estructura válida.');
     return null;
   }
+  return parsed as PlaygroundDraft;
 }
 
 export function savePlaygroundDraft(draft: PlaygroundDraft): void {
-  try {
-    localStorage.setItem(STORAGE_KEYS.PLAYGROUND_DRAFT, JSON.stringify(draft));
-  } catch {
-    // Draft persistence is best-effort and must not interrupt editing.
-  }
+  saveStoredJson(STORAGE_KEYS.PLAYGROUND_DRAFT, draft);
 }
 
 export function createDebuggingDraftVersion(workspace: WorkspaceSnapshot, tests: ChallengeTest[]): string {
@@ -205,47 +231,37 @@ export function createDebuggingDraftVersion(workspace: WorkspaceSnapshot, tests:
 }
 
 export function loadDebuggingDraft(exerciseId: string, expectedVersion?: string): DebuggingDraft | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.DEBUGGING_DRAFTS);
-    if (!raw) return null;
-    const drafts = JSON.parse(raw) as Record<string, Partial<DebuggingDraft>>;
-    const draft = drafts?.[exerciseId];
-    if (
-      !draft
-      || !isWorkspaceSnapshot(draft.workspace)
-      || typeof draft.revealedHints !== 'number'
-      || !Number.isInteger(draft.revealedHints)
-      || draft.revealedHints < 0
-      || typeof draft.exerciseVersion !== 'string'
-      || (expectedVersion !== undefined && draft.exerciseVersion !== expectedVersion)
-    ) {
-      return null;
-    }
-    return draft as DebuggingDraft;
-  } catch {
+  const result = readStoredJson(STORAGE_KEYS.DEBUGGING_DRAFTS);
+  if (result.state !== 'loaded') return null;
+  if (!isRecord(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.DEBUGGING_DRAFTS, result.raw, 'Los borradores de depuración no tienen una estructura válida.');
     return null;
   }
+  const draft = result.value[exerciseId] as Partial<DebuggingDraft> | undefined;
+  if (!draft) return null;
+  if (expectedVersion !== undefined && draft.exerciseVersion !== expectedVersion) return null;
+  if (
+    !isWorkspaceSnapshot(draft.workspace)
+    || typeof draft.revealedHints !== 'number'
+    || !Number.isInteger(draft.revealedHints)
+    || draft.revealedHints < 0
+    || typeof draft.exerciseVersion !== 'string'
+  ) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.DEBUGGING_DRAFTS, result.raw, 'El borrador de depuración no es válido.');
+    return null;
+  }
+  return draft as DebuggingDraft;
 }
 
 export function saveDebuggingDraft(exerciseId: string, draft: DebuggingDraft): void {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.DEBUGGING_DRAFTS);
-    let drafts: Record<string, DebuggingDraft> = {};
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          drafts = parsed as Record<string, DebuggingDraft>;
-        }
-      } catch {
-        // A valid edit replaces a corrupted draft store.
-      }
-    }
-    drafts[exerciseId] = draft;
-    localStorage.setItem(STORAGE_KEYS.DEBUGGING_DRAFTS, JSON.stringify(drafts));
-  } catch {
-    // Draft persistence is best-effort and must not interrupt the exercise.
+  const result = readStoredJson(STORAGE_KEYS.DEBUGGING_DRAFTS);
+  if (result.state === 'unavailable') return;
+  const drafts = result.state === 'loaded' && isRecord(result.value) ? result.value : {};
+  if (result.state === 'loaded' && !isRecord(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.DEBUGGING_DRAFTS, result.raw, 'Los borradores de depuración no tienen una estructura válida.');
   }
+  drafts[exerciseId] = draft;
+  saveStoredJson(STORAGE_KEYS.DEBUGGING_DRAFTS, drafts);
 }
 
 export type AppNavigationView = 'catalog' | 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'reasoning' | 'playground' | 'studio';
@@ -273,57 +289,65 @@ const APP_NAVIGATION_VIEWS: AppNavigationView[] = [
 export const DEFAULT_VOICE_VOLUME = 0.5;
 
 export function loadAppNavigationState(): AppNavigationState | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.APP_NAVIGATION);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<AppNavigationState>;
-    if (!parsed || typeof parsed !== 'object' || !APP_NAVIGATION_VIEWS.includes(parsed.view as AppNavigationView)) {
-      return null;
-    }
-    if (parsed.courseId !== undefined && typeof parsed.courseId !== 'string') return null;
-    if (parsed.moduleId !== undefined && typeof parsed.moduleId !== 'string') return null;
-    if (parsed.itemId !== undefined && typeof parsed.itemId !== 'string') return null;
-    if (parsed.timestampMs !== undefined && (typeof parsed.timestampMs !== 'number' || !Number.isFinite(parsed.timestampMs))) {
-      return null;
-    }
-    return {
-      view: parsed.view as AppNavigationView,
-      ...(parsed.courseId ? { courseId: parsed.courseId } : {}),
-      ...(parsed.moduleId ? { moduleId: parsed.moduleId } : {}),
-      ...(parsed.itemId ? { itemId: parsed.itemId } : {}),
-      ...(parsed.timestampMs !== undefined ? { timestampMs: Math.max(0, parsed.timestampMs) } : {}),
-    };
-  } catch {
+  const result = readStoredJson(STORAGE_KEYS.APP_NAVIGATION);
+  if (result.state !== 'loaded') return null;
+  const parsed = result.value as Partial<AppNavigationState>;
+  if (!isRecord(parsed) || !APP_NAVIGATION_VIEWS.includes(parsed.view as AppNavigationView)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.APP_NAVIGATION, result.raw, 'La navegación guardada no tiene una estructura válida.');
     return null;
   }
+  if (parsed.courseId !== undefined && typeof parsed.courseId !== 'string') {
+    quarantineInvalidStoredValue(STORAGE_KEYS.APP_NAVIGATION, result.raw, 'El curso de la navegación guardada no es válido.');
+    return null;
+  }
+  if (parsed.moduleId !== undefined && typeof parsed.moduleId !== 'string') {
+    quarantineInvalidStoredValue(STORAGE_KEYS.APP_NAVIGATION, result.raw, 'El módulo de la navegación guardada no es válido.');
+    return null;
+  }
+  if (parsed.itemId !== undefined && typeof parsed.itemId !== 'string') {
+    quarantineInvalidStoredValue(STORAGE_KEYS.APP_NAVIGATION, result.raw, 'El elemento de la navegación guardada no es válido.');
+    return null;
+  }
+  if (parsed.timestampMs !== undefined && (typeof parsed.timestampMs !== 'number' || !Number.isFinite(parsed.timestampMs))) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.APP_NAVIGATION, result.raw, 'La marca de tiempo de la navegación guardada no es válida.');
+    return null;
+  }
+  return {
+    view: parsed.view as AppNavigationView,
+    ...(parsed.courseId ? { courseId: parsed.courseId } : {}),
+    ...(parsed.moduleId ? { moduleId: parsed.moduleId } : {}),
+    ...(parsed.itemId ? { itemId: parsed.itemId } : {}),
+    ...(parsed.timestampMs !== undefined ? { timestampMs: Math.max(0, parsed.timestampMs) } : {}),
+  };
 }
 
 export function saveAppNavigationState(state: AppNavigationState): void {
-  try {
-    localStorage.setItem(STORAGE_KEYS.APP_NAVIGATION, JSON.stringify(state));
-  } catch {
-    // Navigation persistence is best-effort; it must never interrupt the lesson.
-  }
+  saveStoredJson(STORAGE_KEYS.APP_NAVIGATION, state);
 }
 
 export function loadVoiceVolume(): number {
+  let raw: string | null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEYS.VOICE_VOLUME);
-    if (raw == null) return DEFAULT_VOICE_VOLUME;
-    const value = Number(raw);
-    if (!Number.isFinite(value)) return DEFAULT_VOICE_VOLUME;
-    return Math.min(1, Math.max(0, value));
-  } catch {
+    raw = localStorage.getItem(STORAGE_KEYS.VOICE_VOLUME);
+  } catch (error) {
+    recordPersistenceReadFailure(STORAGE_KEYS.VOICE_VOLUME, error);
     return DEFAULT_VOICE_VOLUME;
   }
+  if (raw == null) return DEFAULT_VOICE_VOLUME;
+  const value = Number(raw);
+  if (!Number.isFinite(value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.VOICE_VOLUME, raw, 'El volumen guardado no es válido.');
+    return DEFAULT_VOICE_VOLUME;
+  }
+  return Math.min(1, Math.max(0, value));
 }
 
 export function saveVoiceVolume(volume: number): void {
+  const value = Math.min(1, Math.max(0, volume));
   try {
-    const value = Math.min(1, Math.max(0, volume));
     localStorage.setItem(STORAGE_KEYS.VOICE_VOLUME, String(value));
-  } catch {
-    // ignore quota errors
+  } catch (error) {
+    recordPersistenceWriteFailure(STORAGE_KEYS.VOICE_VOLUME, error);
   }
 }
 
@@ -339,33 +363,31 @@ const DEFAULT_PROGRESS: UserProgressRecord = {
  * Loads stored user progress from LocalStorage
  */
 export function loadUserProgress(): UserProgressRecord {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.USER_PROGRESS);
-    if (!raw) return { ...DEFAULT_PROGRESS };
-    const parsed = JSON.parse(raw);
-    return {
-      ...DEFAULT_PROGRESS,
-      ...parsed,
-      completedItemIds: parsed.completedItemIds || [],
-      completedChallenges: parsed.completedChallenges || [],
-      passedSoloProjects: parsed.passedSoloProjects || [],
-      recentActivity: parsed.recentActivity || [],
-    };
-  } catch (e) {
-    console.error('Error reading user progress:', e);
+  const result = readStoredJson(STORAGE_KEYS.USER_PROGRESS);
+  if (result.state !== 'loaded') return { ...DEFAULT_PROGRESS };
+  if (!isRecord(result.value)
+    || (result.value.completedItemIds !== undefined && !Array.isArray(result.value.completedItemIds))
+    || (result.value.completedChallenges !== undefined && !Array.isArray(result.value.completedChallenges))
+    || (result.value.passedSoloProjects !== undefined && !Array.isArray(result.value.passedSoloProjects))
+    || (result.value.recentActivity !== undefined && !Array.isArray(result.value.recentActivity))) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.USER_PROGRESS, result.raw, 'El progreso guardado no tiene una estructura válida.');
     return { ...DEFAULT_PROGRESS };
   }
+  return {
+    ...DEFAULT_PROGRESS,
+    ...result.value,
+    completedItemIds: result.value.completedItemIds ?? [],
+    completedChallenges: result.value.completedChallenges ?? [],
+    passedSoloProjects: result.value.passedSoloProjects ?? [],
+    recentActivity: result.value.recentActivity ?? [],
+  } as UserProgressRecord;
 }
 
 /**
  * Saves user progress to LocalStorage
  */
 export function saveUserProgress(progress: UserProgressRecord): void {
-  try {
-    localStorage.setItem(STORAGE_KEYS.USER_PROGRESS, JSON.stringify(progress));
-  } catch (e) {
-    console.error('Error saving user progress:', e);
-  }
+  saveStoredJson(STORAGE_KEYS.USER_PROGRESS, progress);
 }
 
 /**
@@ -438,16 +460,25 @@ export interface ChallengeStateRecord {
   updatedAt: number;
 }
 
+function isChallengeStateRecord(value: unknown): value is ChallengeStateRecord {
+  return isRecord(value)
+    && ['completed', 'skipped', 'solutionViewed', 'in_progress'].includes(value.status as ChallengeStateValue)
+    && typeof value.updatedAt === 'number'
+    && Number.isFinite(value.updatedAt);
+}
+
 export function getChallengeStates(): Record<string, ChallengeStateRecord> {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.CHALLENGE_STATES);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    if (typeof parsed !== 'object' || parsed === null) return {};
-    return parsed;
-  } catch {
+  const result = readStoredJson(STORAGE_KEYS.CHALLENGE_STATES);
+  if (result.state !== 'loaded') return {};
+  if (!isRecord(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.CHALLENGE_STATES, result.raw, 'Los estados de retos no tienen una estructura válida.');
     return {};
   }
+  if (Object.values(result.value).some((state) => !isChallengeStateRecord(state))) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.CHALLENGE_STATES, result.raw, 'Un estado de reto guardado no es válido.');
+    return {};
+  }
+  return result.value as Record<string, ChallengeStateRecord>;
 }
 
 export function getChallengeState(challengeId: string): ChallengeStateRecord | null {
@@ -456,11 +487,9 @@ export function getChallengeState(challengeId: string): ChallengeStateRecord | n
 }
 
 export function setChallengeState(challengeId: string, status: ChallengeStateValue): void {
-  try {
-    const all = getChallengeStates();
-    all[challengeId] = { status, updatedAt: Date.now() };
-    localStorage.setItem(STORAGE_KEYS.CHALLENGE_STATES, JSON.stringify(all));
-  } catch {}
+  const all = getChallengeStates();
+  all[challengeId] = { status, updatedAt: Date.now() };
+  saveStoredJson(STORAGE_KEYS.CHALLENGE_STATES, all);
 }
 
 export function markChallengeSkipped(challengeId: string): void {
@@ -479,147 +508,123 @@ export function markChallengeSolutionViewed(challengeId: string): void {
 }
 
 export function clearChallengeState(challengeId: string): void {
-  try {
-    const all = getChallengeStates();
-    if (all[challengeId]) {
-      delete all[challengeId];
-      localStorage.setItem(STORAGE_KEYS.CHALLENGE_STATES, JSON.stringify(all));
-    }
-  } catch {}
+  const all = getChallengeStates();
+  if (all[challengeId]) {
+    delete all[challengeId];
+    saveStoredJson(STORAGE_KEYS.CHALLENGE_STATES, all);
+  }
 }
 
 /**
  * Saves or updates a LearnerBranch — clones deeply, no mutation, coherent timestamps
  */
-export function saveLearnerBranch(branch: LearnerBranch): void {
-  try {
-    const clone: LearnerBranch = {
-      ...branch,
-      workspace: {
-        ...branch.workspace,
-        files: Object.fromEntries(Object.entries(branch.workspace.files).map(([k, v]) => [k, { ...v }])),
-        cursorPosition: branch.workspace.cursorPosition ? { ...branch.workspace.cursorPosition } : undefined,
-        selection: branch.workspace.selection ? { ...branch.workspace.selection } : undefined,
-      },
-      lastSavedAt: Date.now(),
-    };
-    const raw = localStorage.getItem(STORAGE_KEYS.LEARNER_BRANCHES);
-    let branches: Record<string, LearnerBranch> = {};
-    try {
-      branches = raw ? JSON.parse(raw) : {};
-      if (typeof branches !== 'object' || branches === null) branches = {};
-    } catch {
-      branches = {};
-    }
-    branches[clone.id] = clone;
-    localStorage.setItem(STORAGE_KEYS.LEARNER_BRANCHES, JSON.stringify(branches));
-  } catch (e) {
-    console.error('Error saving learner branch:', e);
+function isLearnerBranch(value: unknown): value is LearnerBranch {
+  if (!isRecord(value)) return false;
+  return typeof value.id === 'string'
+    && typeof value.lessonId === 'string'
+    && typeof value.baseTime === 'number'
+    && isWorkspaceSnapshot(value.workspace);
+}
+
+function readLearnerBranchesForWrite(): Record<string, LearnerBranch> | null {
+  const result = readStoredJson(STORAGE_KEYS.LEARNER_BRANCHES);
+  if (result.state === 'missing' || result.state === 'corrupt') return {};
+  if (result.state === 'unavailable') return null;
+  if (!isRecord(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.LEARNER_BRANCHES, result.raw, 'Las ramas del estudiante no tienen una estructura válida.');
+    return {};
   }
+  return result.value as Record<string, LearnerBranch>;
+}
+
+function readLearnerBranches(): { branches: Record<string, LearnerBranch>; raw: string } | null {
+  const result = readStoredJson(STORAGE_KEYS.LEARNER_BRANCHES);
+  if (result.state !== 'loaded') return null;
+  if (!isRecord(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.LEARNER_BRANCHES, result.raw, 'Las ramas del estudiante no tienen una estructura válida.');
+    return null;
+  }
+  return { branches: result.value as Record<string, LearnerBranch>, raw: result.raw };
+}
+
+export function saveLearnerBranch(branch: LearnerBranch): void {
+  const clone: LearnerBranch = {
+    ...branch,
+    workspace: {
+      ...branch.workspace,
+      files: Object.fromEntries(Object.entries(branch.workspace.files).map(([k, v]) => [k, { ...v }])),
+      cursorPosition: branch.workspace.cursorPosition ? { ...branch.workspace.cursorPosition } : undefined,
+      selection: branch.workspace.selection ? { ...branch.workspace.selection } : undefined,
+    },
+    lastSavedAt: Date.now(),
+  };
+  const branches = readLearnerBranchesForWrite();
+  if (!branches) return;
+  branches[clone.id] = clone;
+  saveStoredJson(STORAGE_KEYS.LEARNER_BRANCHES, branches);
 }
 
 /**
  * Loads a LearnerBranch by ID — safe against corruption
  */
 export function loadLearnerBranch(branchId: string): LearnerBranch | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.LEARNER_BRANCHES);
-    if (!raw) return null;
-    let branches: Record<string, LearnerBranch> = {};
-    try {
-      branches = JSON.parse(raw);
-    } catch {
-      return null;
-    }
-    if (typeof branches !== 'object' || branches === null) return null;
-    const found = branches[branchId];
-    if (!found || typeof found !== 'object') return null;
-    // Basic validation
-    if (!found.id || !found.lessonId || !found.workspace || typeof found.baseTime !== 'number') return null;
-    return found;
-  } catch {
+  const stored = readLearnerBranches();
+  if (!stored) return null;
+  const found = stored.branches[branchId];
+  if (!found) return null;
+  if (!isLearnerBranch(found)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.LEARNER_BRANCHES, stored.raw, 'La rama guardada no es válida.');
     return null;
   }
+  return found;
 }
 
 /**
  * Latest branch for a lesson — deterministic recovery, safe against corruption
  */
 export function loadLastBranchForLesson(lessonId: string): LearnerBranch | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.LEARNER_BRANCHES);
-    if (!raw) return null;
-    let branches: Record<string, LearnerBranch>;
-    try {
-      branches = JSON.parse(raw);
-    } catch {
-      return null;
-    }
-    if (typeof branches !== 'object' || branches === null) return null;
-    const candidates = Object.values(branches).filter(
-      (b: any) => b && b.lessonId === lessonId && b.workspace && typeof b.baseTime === 'number'
-    ) as LearnerBranch[];
-    if (candidates.length === 0) return null;
-    candidates.sort((a, b) => (b.lastSavedAt || 0) - (a.lastSavedAt || 0));
-    return candidates[0] || null;
-  } catch {
+  const stored = readLearnerBranches();
+  if (!stored) return null;
+  const branches = Object.values(stored.branches);
+  if (branches.some((branch) => !isLearnerBranch(branch))) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.LEARNER_BRANCHES, stored.raw, 'Una rama guardada no es válida.');
     return null;
   }
+  const candidates = branches.filter((branch) => branch.lessonId === lessonId);
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => (b.lastSavedAt || 0) - (a.lastSavedAt || 0));
+  return candidates[0] || null;
 }
 
 export function loadAllBranchesForLesson(lessonId: string): LearnerBranch[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.LEARNER_BRANCHES);
-    if (!raw) return [];
-    let branches: Record<string, LearnerBranch>;
-    try {
-      branches = JSON.parse(raw);
-    } catch {
-      return [];
-    }
-    if (typeof branches !== 'object' || branches === null) return [];
-    return Object.values(branches).filter((b: any) => b && b.lessonId === lessonId) as LearnerBranch[];
-  } catch {
+  const stored = readLearnerBranches();
+  if (!stored) return [];
+  const branches = Object.values(stored.branches);
+  if (branches.some((branch) => !isLearnerBranch(branch))) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.LEARNER_BRANCHES, stored.raw, 'Una rama guardada no es válida.');
     return [];
   }
+  return branches.filter((branch) => branch.lessonId === lessonId);
 }
 
 export function clearBranch(branchId: string): void {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.LEARNER_BRANCHES);
-    if (!raw) return;
-    let branches: Record<string, LearnerBranch> = {};
-    try {
-      branches = JSON.parse(raw);
-    } catch {
-      return;
-    }
-    if (branches[branchId]) {
-      delete branches[branchId];
-      localStorage.setItem(STORAGE_KEYS.LEARNER_BRANCHES, JSON.stringify(branches));
-    }
-  } catch {}
+  const branches = readLearnerBranchesForWrite();
+  if (!branches || !branches[branchId]) return;
+  delete branches[branchId];
+  saveStoredJson(STORAGE_KEYS.LEARNER_BRANCHES, branches);
 }
 
 export function clearBranchesForLesson(lessonId: string): void {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.LEARNER_BRANCHES);
-    if (!raw) return;
-    let branches: Record<string, LearnerBranch> = {};
-    try {
-      branches = JSON.parse(raw);
-    } catch {
-      return;
+  const branches = readLearnerBranchesForWrite();
+  if (!branches) return;
+  let changed = false;
+  for (const key of Object.keys(branches)) {
+    if (branches[key]?.lessonId === lessonId) {
+      delete branches[key];
+      changed = true;
     }
-    let changed = false;
-    for (const key of Object.keys(branches)) {
-      if ((branches[key] as any)?.lessonId === lessonId) {
-        delete branches[key];
-        changed = true;
-      }
-    }
-    if (changed) localStorage.setItem(STORAGE_KEYS.LEARNER_BRANCHES, JSON.stringify(branches));
-  } catch {}
+  }
+  if (changed) saveStoredJson(STORAGE_KEYS.LEARNER_BRANCHES, branches);
 }
 
 // Debounce helper for branch saves — avoids excessive writes per keystroke
@@ -659,23 +664,15 @@ export function flushBranchSave(lessonId: string): void {
  * Saves Creator Studio Draft
  */
 export function saveStudioDraft(draftData: any): void {
-  try {
-    localStorage.setItem(STORAGE_KEYS.STUDIO_DRAFT, JSON.stringify(draftData));
-  } catch (e) {
-    console.error('Error saving studio draft:', e);
-  }
+  saveStoredJson(STORAGE_KEYS.STUDIO_DRAFT, draftData);
 }
 
 /**
  * Loads Creator Studio Draft
  */
 export function loadStudioDraft(): any | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.STUDIO_DRAFT);
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) {
-    return null;
-  }
+  const result = readStoredJson(STORAGE_KEYS.STUDIO_DRAFT);
+  return result.state === 'loaded' ? result.value : null;
 }
 
 /**
@@ -684,46 +681,50 @@ export function loadStudioDraft(): any | null {
 export function clearStudioDraft(): void {
   try {
     localStorage.removeItem(STORAGE_KEYS.STUDIO_DRAFT);
-  } catch (e) {}
+  } catch (error) {
+    recordPersistenceWriteFailure(STORAGE_KEYS.STUDIO_DRAFT, error);
+  }
 }
 
 /**
  * Custom Courses Persistence
  */
 export function loadCustomCourses(): Course[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_COURSES);
-    return raw ? JSON.parse(raw) : [];
-  } catch (e) {
+  const result = readStoredJson(STORAGE_KEYS.CUSTOM_COURSES);
+  if (result.state !== 'loaded') return [];
+  if (!Array.isArray(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.CUSTOM_COURSES, result.raw, 'Los cursos personalizados no tienen una estructura válida.');
     return [];
   }
+  return result.value as Course[];
 }
 
 export function saveCustomCourse(course: Course): void {
-  try {
-    const existing = loadCustomCourses();
-    const index = existing.findIndex((c) => c.id === course.id);
-    if (index >= 0) {
-      existing[index] = course;
-    } else {
-      existing.push(course);
-    }
-    localStorage.setItem(STORAGE_KEYS.CUSTOM_COURSES, JSON.stringify(existing));
-  } catch (e) {
-    console.error('Error saving custom course:', e);
+  const result = readStoredJson(STORAGE_KEYS.CUSTOM_COURSES);
+  if (result.state === 'unavailable') return;
+  const existing = result.state === 'loaded' && Array.isArray(result.value)
+    ? result.value as Course[]
+    : [];
+  if (result.state === 'loaded' && !Array.isArray(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.CUSTOM_COURSES, result.raw, 'Los cursos personalizados no tienen una estructura válida.');
   }
+  const index = existing.findIndex((candidate) => candidate.id === course.id);
+  if (index >= 0) existing[index] = course;
+  else existing.push(course);
+  saveStoredJson(STORAGE_KEYS.CUSTOM_COURSES, existing);
 }
 
 /**
  * Custom Scrims Persistence
  */
 function loadCustomScrimMetadata(): Record<string, ScrimLessonData> {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_SCRIMS);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
+  const result = readStoredJson(STORAGE_KEYS.CUSTOM_SCRIMS);
+  if (result.state !== 'loaded') return {};
+  if (!isRecord(result.value)) {
+    quarantineInvalidStoredValue(STORAGE_KEYS.CUSTOM_SCRIMS, result.raw, 'Las clases personalizadas no tienen una estructura válida.');
     return {};
   }
+  return result.value as Record<string, ScrimLessonData>;
 }
 
 function openCustomAudioDatabase(): Promise<IDBDatabase> {
@@ -815,7 +816,9 @@ export async function saveCustomScrim(scrim: ScrimLessonData): Promise<void> {
         ? { ...scrim.audioTrack, audioBlob: undefined, audioStorageKey }
         : undefined,
     };
-    localStorage.setItem(STORAGE_KEYS.CUSTOM_SCRIMS, JSON.stringify(existing));
+    if (!saveStoredJson(STORAGE_KEYS.CUSTOM_SCRIMS, existing)) {
+      throw new Error('No se pudo persistir la clase personalizada.');
+    }
   } catch (error) {
     throw new Error('No se pudo guardar la clase personalizada.', { cause: error });
   }

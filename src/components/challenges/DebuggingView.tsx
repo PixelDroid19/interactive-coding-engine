@@ -33,6 +33,7 @@ import { PostSolveStudio } from '../learning/PostSolveStudio';
 import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
 import { useTheme } from '../../themes/ThemeProvider';
 import type { ExerciseCompletion } from '../../services/learningSync';
+import { useModalDialog } from '../useModalDialog';
 
 interface DebuggingViewProps {
   exercise: DebuggingExerciseItem;
@@ -97,6 +98,10 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   const exerciseVersion = createDebuggingDraftVersion(exercise.initialWorkspace, exercise.tests);
   const [initialDraft] = useState(() => loadDebuggingDraft(draftKey, exerciseVersion));
   const [showDraftChoice, setShowDraftChoice] = useState(() => hasMeaningfulDraft(exercise, initialDraft));
+  const draftDialogRef = useModalDialog<HTMLDivElement>({
+    open: showDraftChoice,
+    onClose: () => setShowDraftChoice(false),
+  });
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot>(() =>
     normalizeWorkspace(exercise, initialDraft?.workspace ?? exercise.initialWorkspace),
   );
@@ -125,15 +130,9 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
         await logicRunnerRef.current?.run();
       } else if (previewRef.current) {
         // Las prácticas DOM necesitan una vista recién ejecutada antes de evaluar.
-        const maybePromise = (previewRef.current as any).reloadPreview?.();
-        if (maybePromise && typeof maybePromise.then === 'function') {
-          await maybePromise;
-          const currentIframe = previewRef.current?.getIframeElement();
-          if (currentIframe) (currentIframe as HTMLIFrameElement & { __generation?: number }).__generation = currentGen;
-        } else {
-          // Fallback: small delay if reloadPreview doesn't return promise
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
+        await previewRef.current.reloadPreview();
+        const currentIframe = previewRef.current.getIframeElement();
+        if (currentIframe) (currentIframe as HTMLIFrameElement & { __generation?: number }).__generation = currentGen;
       }
 
       // Ensure we are still on the same generation (no newer edit in between)
@@ -252,13 +251,9 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
     if (exercise.executionMode === 'logic') {
       await logicRunnerRef.current?.run();
     } else if (previewRef.current) {
-      const maybePromise = (previewRef.current as any).reloadPreview?.();
-      if (maybePromise && typeof maybePromise.then === 'function') {
-        await maybePromise;
-        // Tag generation
-        const iframe = previewRef.current?.getIframeElement();
-        if (iframe) (iframe as any).__generation = gen;
-      }
+      await previewRef.current.reloadPreview();
+      const iframe = previewRef.current.getIframeElement();
+      if (iframe) (iframe as HTMLIFrameElement & { __generation?: number }).__generation = gen;
     }
   };
 
@@ -310,6 +305,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
       {showDraftChoice && (
         <div className="fixed inset-0 z-[140] grid place-items-center bg-black/70 p-4" role="presentation">
           <div
+            ref={draftDialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="debug-draft-title"
@@ -677,7 +673,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                     tabIndex={-1}
                     aria-live="polite"
                     aria-atomic="true"
-                    className="outline-none"
+                    className="debug-panel-scroll outline-none"
                   >
                     {!validationResult ? (
                       <div className="text-center py-8 text-zinc-500">

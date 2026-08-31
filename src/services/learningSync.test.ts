@@ -47,12 +47,60 @@ describe('learning sync', () => {
 
   it('sigue sincronizando en memoria si Storage está temporalmente bloqueado', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('quota', 'QuotaExceededError'); });
+    vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new DOMException('quota', 'QuotaExceededError'); });
     const sync = await import('./learningSync');
+    const healthEvents: unknown[] = [];
+    const onHealth = (event: Event) => healthEvents.push((event as CustomEvent).detail);
+    window.addEventListener('aula-learning-sync', onHealth);
 
-    expect(() => sync.queueLessonProgress('fundamentos', 'fundamentos-01', 'completed', 4_000)).not.toThrow();
-    expect(await sync.flushLearningQueue()).toBe(true);
-    expect(fetchMock).toHaveBeenCalledOnce();
+    try {
+      expect(() => sync.queueLessonProgress('fundamentos', 'fundamentos-01', 'completed', 4_000)).not.toThrow();
+      expect((sync as unknown as { getLearningSyncHealth?: () => unknown }).getLearningSyncHealth?.()).toMatchObject({
+        status: 'queued',
+        persistence: 'session-only',
+        reason: 'storage',
+      });
+      expect(healthEvents).toContainEqual(expect.objectContaining({
+        status: 'queued',
+        persistence: 'session-only',
+        reason: 'storage',
+      }));
+      expect(await sync.flushLearningQueue()).toBe(true);
+      expect(fetchMock).toHaveBeenCalledOnce();
+    } finally {
+      window.removeEventListener('aula-learning-sync', onHealth);
+    }
+  });
+
+  it('cuarentena una cola malformada y la hace visible antes de continuar con eventos nuevos', async () => {
+    localStorage.setItem('aula_learning_sync_v1', '{no-json');
+    const sync = await import('./learningSync');
+    const healthEvents: unknown[] = [];
+    const onHealth = (event: Event) => healthEvents.push((event as CustomEvent).detail);
+    window.addEventListener('aula-learning-sync', onHealth);
+
+    try {
+      sync.queueLearningEvent('fundamentos', 'fundamentos-01', 'lesson_opened');
+
+      const recoveryKey = Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))
+        .find((key) => key?.startsWith('aula_recovery_v1:aula_learning_sync_v1:'));
+      expect(recoveryKey).toBeDefined();
+      expect(localStorage.getItem(recoveryKey!)).toContain('{no-json');
+      expect((sync as unknown as { getLearningSyncHealth?: () => unknown }).getLearningSyncHealth?.()).toMatchObject({
+        status: 'queued',
+        persistence: 'durable',
+        reason: 'corrupt',
+        recoveryKey,
+      });
+      expect(healthEvents).toContainEqual(expect.objectContaining({
+        status: 'queued',
+        persistence: 'durable',
+        reason: 'corrupt',
+        recoveryKey,
+      }));
+    } finally {
+      window.removeEventListener('aula-learning-sync', onHealth);
+    }
   });
 
   it('cancela el resto de la cola al cerrar sesión y no mezcla cuentas', async () => {

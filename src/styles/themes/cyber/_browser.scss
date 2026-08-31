@@ -55,6 +55,12 @@
   padding: 1px 4px !important;
 }
 
+.hud .browser-preview-badge--error {
+  border-color: rgba(255, 0, 85, 0.8) !important;
+  background: rgba(255, 0, 85, 0.14) !important;
+  color: #ff7aa8 !important;
+}
+
 .hud .browser-window-actions {
   gap: 4px !important;
 }
@@ -82,6 +88,23 @@
 
 .hud .browser-viewport {
   background: #ffffff !important;
+}
+
+.hud .cells-preview-error {
+  background: #080a12;
+  color: #f8fafc;
+}
+
+.hud .cells-preview-error strong {
+  color: #ff7aa8;
+}
+
+.hud .cells-preview-error p {
+  color: #aab4c8;
+}
+
+.hud .cells-preview-error .cells-preview-error__hint {
+  color: var(--hud-yellow);
 }
 
 .hud .browser-viewport::before {
@@ -144,4 +167,3 @@
 }
 
 .hud .logic-runner-kicker { color: var(--hud-cyan) !important; }
-

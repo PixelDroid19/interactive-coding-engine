@@ -89,7 +89,7 @@ function readCache(courseSlug: string): CachedSnapshot | null {
   }
 }
 
-function writeCache(snapshot: LearningCenterSnapshot): void {
+export function cacheLearningCenterSnapshot(snapshot: LearningCenterSnapshot): void {
   try {
     localStorage.setItem(cacheKey(snapshot.courseSlug), JSON.stringify({ cachedAt: Date.now(), snapshot }));
   } catch {
@@ -107,8 +107,23 @@ export async function fetchLearningCenter(courseSlug: string, signal?: AbortSign
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10_000)]) : undefined,
   });
   const snapshot = await readApiJson<LearningCenterSnapshot>(response);
-  writeCache(snapshot);
+  cacheLearningCenterSnapshot(snapshot);
   return snapshot;
+}
+
+export function withSavedNotebook(
+  snapshot: LearningCenterSnapshot,
+  entry: RemoteNotebookEntry,
+): LearningCenterSnapshot {
+  const notes = [
+    ...snapshot.notes.filter((candidate) => candidate.skillKey !== entry.skillKey),
+    entry,
+  ];
+  return {
+    ...snapshot,
+    notes,
+    summary: { ...snapshot.summary, notes: notes.length },
+  };
 }
 
 export async function saveRemoteNotebook(skillKey: string, entry: {
@@ -118,8 +133,8 @@ export async function saveRemoteNotebook(skillKey: string, entry: {
   pattern: string;
   ownExample: string;
   personalMistake: string;
-}): Promise<void> {
-  await readApiJson(await learningApiRequest(`/v1/me/notebook/${encodeURIComponent(skillKey)}`, {
+}): Promise<RemoteNotebookEntry> {
+  return readApiJson<RemoteNotebookEntry>(await learningApiRequest(`/v1/me/notebook/${encodeURIComponent(skillKey)}`, {
     method: 'PUT', body: JSON.stringify(entry),
   }));
 }

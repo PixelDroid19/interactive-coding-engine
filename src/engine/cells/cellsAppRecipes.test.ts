@@ -30,7 +30,10 @@ describe('scaffold de aplicación Cells', () => {
   it('usa el contrato público de páginas, rutas y canales', () => {
     const page = workspace.files['app/pages/academy-home-page/academy-home-page.js'].content;
     const routes = workspace.files['app/scripts/app-routes.js'].content;
-    expect(page).toContain('PageMixin(ScopedElementsMixin(LitElement))');
+    expect(page).toContain('PageMixin(WidgetMixin(ScopedElementsMixin(LitElement)))');
+    expect(page).toContain('...super.scopedElements');
+    expect(page).toContain('static get properties()');
+    expect(page).toContain('...super.properties');
     expect(page).toContain('onPageEnter()');
     expect(page).toContain('onPageLeave()');
     expect(page).toContain('this.subscribe(PRODUCT_SELECTED_CHANNEL');
@@ -38,6 +41,38 @@ describe('scaffold de aplicación Cells', () => {
     expect(page).toContain("this.navigate('product-detail', { id: product.id })");
     expect(routes).toContain("path: '/product/:id'");
     expect(routes).toContain('action: async () => import(');
+  });
+
+  it('inicializa IntlMsg antes del router y traduce desde las instancias Cells', () => {
+    const entry = workspace.files['app/scripts/app.js'].content;
+    const messages = workspace.files['app/scripts/app-messages.js'].content;
+    const pages = Object.entries(workspace.files)
+      .filter(([path]) => /^app\/pages\/[^/]+\/[^/]+\.js$/.test(path))
+      .map(([, source]) => source.content);
+
+    expect(entry).toContain("import { initializeAppMessages } from './app-messages.js'");
+    expect(entry.indexOf('await initializeAppMessages')).toBeLessThan(entry.indexOf('startApp({'));
+    expect(messages).toContain('installIntlMsg({ catalogs: appCatalogs');
+    expect(messages).toContain('await appIntlMsg.loadUrlResourcesComplete');
+    expect(workspace.files['app/runtime/academy-intl-msg.js']).toBeDefined();
+    expect(pages.every((source) => source.includes('WidgetMixin'))).toBe(true);
+    expect(pages.every((source) => !source.includes('const t ='))).toBe(true);
+    expect(pages.every((source) => source.includes('this.t('))).toBe(true);
+  });
+
+  it('mantiene la tarjeta interna únicamente en scopedElements y prueba DOM, idioma y evento', () => {
+    const page = workspace.files['app/pages/academy-home-page/academy-home-page.js'].content;
+    const card = workspace.files['app/components/academy-product-card/academy-product-card.js'].content;
+    const suite = workspace.files['test/unit/app.test.js'].content;
+
+    expect(page).toContain("'academy-product-card': AcademyProductCard");
+    expect(card).toContain('WidgetMixin(ScopedElementsMixin(LitElement))');
+    expect(card).toContain('...super.scopedElements');
+    expect(card).not.toContain('customElements.define(AcademyProductCard.is');
+    expect(card).toContain("this.t('home.productLabel')");
+    expect(suite).toContain("customElements.get('academy-product-card')");
+    expect(suite).toContain("switchAppLanguage('en')");
+    expect(suite).toContain("academy-product-card-select");
   });
 
   it('incluye cancelación y protección contra respuestas fuera de orden', () => {
@@ -61,6 +96,12 @@ describe('scaffold de aplicación Cells', () => {
     expect(createCellsAppPracticeWorkspace('channels').snapshot.activeFilePath).toBe('app/bridge/native-adapter.js');
     expect(createCellsAppPracticeWorkspace('data').snapshot.activeFilePath).toContain('data-manager');
     expect(createCellsAppPracticeWorkspace('delivery').snapshot.activeFilePath).toBe('app/scripts/app-routes.js');
+  });
+
+  it('no duplica la tabla de rutas y separa configuración productiva de pruebas', () => {
+    expect(workspace.files['app/scripts/routes.js']).toBeUndefined();
+    expect(workspace.files['app/config/dev.js'].content).toContain('forTesting: true');
+    expect(workspace.files['app/config/prod.js'].content).toContain('forTesting: false');
   });
 
   it('entrega Museo, Clima, Relé y capstone como proyectos distintos', () => {

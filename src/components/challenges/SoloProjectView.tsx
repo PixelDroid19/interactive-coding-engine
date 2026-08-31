@@ -5,6 +5,7 @@ import { cloneWorkspace } from '../../engine/eventLog';
 import { loadLanguageWorkspaceDraft, markItemCompleted, saveLanguageWorkspaceDraft } from '../../engine/persistence';
 import { CodeEditor } from '../editor/CodeEditor';
 import { FileTree } from '../editor/FileTree';
+import { moveFocusInHorizontalTabStrip } from '../editor/horizontalTabNavigation';
 import { LogicRunnerPanel } from '../preview/LogicRunnerPanel';
 import { LanguageSelector } from '../runtime/LanguageSelector';
 import {
@@ -135,10 +136,10 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
   const activeFile = workspace.files[workspace.activeFilePath] || Object.values(workspace.files)[0] || null;
 
   return (
-    <div className="flex h-screen w-screen flex-col bg-[#0f0f11] text-zinc-200 overflow-hidden font-sans">
+    <div className="solo-project-shell flex w-full flex-col font-sans">
       {/* Top Header */}
-      <header className="flex h-11 shrink-0 items-center justify-between gap-3 px-3 bg-[#141416] border-b border-zinc-800/80 z-30">
-        <div className="flex min-w-0 items-center gap-2.5">
+      <header className="solo-project-header solo-project-panel flex h-11 shrink-0 items-center justify-between gap-3 px-3 z-30">
+        <div className="solo-project-header__primary flex min-w-0 items-center gap-2.5">
           <button
             onClick={onBackToRoadmap || onBack}
             className="flex items-center gap-1.5 rounded bg-zinc-800/80 hover:bg-zinc-700 px-2.5 py-1 text-xs text-zinc-300 font-medium transition-colors"
@@ -168,7 +169,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
           <h2 className="min-w-0 truncate text-xs font-semibold text-zinc-100">{project.title}</h2>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2.5">
+        <div className="solo-project-header__actions flex shrink-0 items-center gap-2.5">
           {project.languageVariants && onLanguageChange && (
             <LanguageSelector value={language} onChange={onLanguageChange} compact />
           )}
@@ -204,7 +205,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
         </div>
       </header>
 
-      <nav className="grid h-10 shrink-0 grid-cols-3 border-b border-zinc-800 bg-[#111113] p-1 lg:hidden" aria-label="Paneles del proyecto">
+      <nav className="solo-project-mobile-nav grid h-10 shrink-0 grid-cols-3 p-1 lg:hidden" aria-label="Paneles del proyecto">
         {([
           ['brief', 'Proyecto'],
           ['code', 'Código'],
@@ -224,10 +225,10 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
         ))}
       </nav>
 
-      <div className="flex min-h-0 flex-1 w-full overflow-hidden">
+      <div className="solo-project-layout flex min-h-0 flex-1 w-full overflow-hidden">
         {/* Left panel: brief, checklist and steps with a sticky action footer */}
         <aside
-          className={`${compactPane === 'brief' ? 'flex' : 'hidden'} h-full w-full shrink-0 flex-col overflow-hidden border-r border-zinc-800/80 bg-[#141416] lg:flex lg:w-[350px]`}
+          className={`solo-project-brief solo-project-panel ${compactPane === 'brief' ? 'flex' : 'hidden'} h-full w-full shrink-0 flex-col overflow-hidden lg:flex lg:w-[350px]`}
         >
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
             <section className="space-y-2">
@@ -300,7 +301,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
           </div>
 
           {/* Sticky action footer */}
-          <div className="shrink-0 space-y-2.5 border-t border-zinc-800/80 bg-[#141416] px-5 py-4">
+          <div className="solo-project-brief-footer shrink-0 space-y-2.5 px-5 py-4">
             {validationResult && (
               <div
                 className={`rounded-lg border p-3 ${validationResult.allPassed ? 'border-emerald-800/70 bg-emerald-950/25' : 'border-rose-900/70 bg-rose-950/15'}`}
@@ -380,9 +381,9 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
         </aside>
 
         {/* Center: editor */}
-        <div className={`${compactPane === 'code' ? 'flex' : 'hidden'} min-w-0 flex-1 overflow-hidden lg:flex`}>
+        <div className={`solo-project-editor solo-project-panel ${compactPane === 'code' ? 'flex' : 'hidden'} min-w-0 flex-1 overflow-hidden lg:flex`}>
           {showFileTree && (
-            <div className="h-full w-48 shrink-0 border-r border-zinc-800/80 bg-[#121214]">
+            <div className="solo-project-files solo-project-panel h-full w-48 shrink-0">
               <FileTree
                 files={workspace.files}
                 activeFilePath={workspace.activeFilePath}
@@ -407,8 +408,13 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
             </div>
           )}
 
-          <div className="flex h-full min-w-0 flex-1 flex-col bg-[#18181b]">
-            <div className="flex h-9 shrink-0 items-center gap-1 border-b border-zinc-800/80 bg-[#141416] px-2">
+          <div className="solo-project-editor-canvas flex h-full min-w-0 flex-1 flex-col">
+            <div
+              className="solo-project-file-tabs flex h-9 min-w-0 shrink-0 items-center gap-1 px-2"
+              role="group"
+              aria-label="Archivos abiertos"
+              onKeyDown={moveFocusInHorizontalTabStrip}
+            >
               <button
                 onClick={() => setShowFileTree(!showFileTree)}
                 title={showFileTree ? 'Ocultar archivos' : 'Mostrar archivos'}
@@ -421,8 +427,12 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
               {(Object.values(workspace.files) as WorkspaceFile[]).map((f) => (
                 <button
                   key={f.path}
+                  type="button"
                   onClick={() => setWorkspace((prev) => ({ ...prev, activeFilePath: f.path }))}
-                  className={`px-3 py-1.5 font-mono text-xs transition-colors ${
+                  aria-current={f.path === workspace.activeFilePath ? 'page' : undefined}
+                  data-horizontal-tab
+                  title={f.name}
+                  className={`solo-project-file-tab px-3 py-1.5 font-mono text-xs transition-colors ${
                     f.path === workspace.activeFilePath
                       ? 'rounded bg-[#18181b] font-semibold text-zinc-100'
                       : 'rounded text-zinc-500 hover:bg-white/5 hover:text-zinc-200'
@@ -433,7 +443,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
               ))}
             </div>
 
-            <div className="h-full min-h-0 w-full flex-1 bg-[#18181b]">
+            <div className="min-h-0 w-full flex-1">
               <CodeEditor
                 file={activeFile}
                 workspaceFiles={workspace.files}
@@ -471,7 +481,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
 
         {/* Right: execution console (these projects validate logic, not visuals) */}
         <div
-          className={`${compactPane === 'output' ? 'flex' : 'hidden'} h-full w-full shrink-0 flex-col overflow-hidden border-l border-zinc-800/80 lg:flex lg:w-[380px] xl:w-[420px]`}
+          className={`solo-project-output solo-project-panel ${compactPane === 'output' ? 'flex' : 'hidden'} h-full w-full shrink-0 flex-col overflow-hidden lg:flex lg:w-[380px] xl:w-[420px]`}
         >
           <LogicRunnerPanel
             workspace={workspace}

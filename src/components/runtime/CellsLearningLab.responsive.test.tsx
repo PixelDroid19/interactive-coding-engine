@@ -16,7 +16,7 @@ vi.mock('../../engine/cells/cellsRuntimeClient', () => ({
 
 vi.mock('../../engine/cells/cellsWorkspaceRepository', () => ({
   CellsWorkspaceRepository: class CellsWorkspaceRepository {
-    async load() { return null; }
+    async load() { return { status: 'missing' }; }
     async loadSession() { return null; }
     async save() {}
     async saveSession() {}

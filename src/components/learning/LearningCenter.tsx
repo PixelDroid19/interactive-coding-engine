@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpenText, Brain, ClipboardCheck, Cloud, CloudOff, LoaderCircle, LockKeyhole, MessagesSquare, Route, X } from 'lucide-react';
 import { useTheme } from '../../themes/ThemeProvider';
 import type { Course } from '../../types/curriculum';
@@ -8,13 +8,17 @@ import { ReviewQueue } from './ReviewQueue';
 import { LearningNotebook } from './LearningNotebook';
 import { ExamMode } from './ExamMode';
 import { TechnologyPath } from './TechnologyPath';
+import { useModalDialog } from '../useModalDialog';
 import {
+  cacheLearningCenterSnapshot,
   fetchLearningCenter,
   getCachedLearningCenter,
   markRemoteReinforcementReviewed,
   rateRemoteReview,
   saveRemoteNotebook,
   type LearningCenterSnapshot,
+  type RemoteNotebookEntry,
+  withSavedNotebook,
 } from '../../services/learningCenterApi';
 
 type LearningTab = 'review' | 'notebook' | 'exam' | 'leader' | 'path';
@@ -111,36 +115,93 @@ function mergeRemoteProfile(profile: LearningProfile, course: Course, snapshot: 
   };
 }
 
+function notesStillAwaitingRemoteConfirmation(
+  remoteNotes: RemoteNotebookEntry[],
+  confirmedNotes: RemoteNotebookEntry[],
+): RemoteNotebookEntry[] {
+  return confirmedNotes.filter((confirmed) => {
+    const remote = remoteNotes.find((candidate) => candidate.skillKey === confirmed.skillKey);
+    if (!remote) return true;
+    const remoteUpdatedAt = Date.parse(remote.updatedAt);
+    const confirmedUpdatedAt = Date.parse(confirmed.updatedAt);
+    if (!Number.isFinite(remoteUpdatedAt) || !Number.isFinite(confirmedUpdatedAt)) return true;
+    return remoteUpdatedAt < confirmedUpdatedAt;
+  });
+}
+
 export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile, onClose, onRateReview, onSaveNotebook, onCompleteExam, onReviewReinforcement, onSummaryChange }) => {
+  const dialogRef = useModalDialog<HTMLElement>({ open: true, onClose });
   const [tab, setTab] = useState<LearningTab>('review');
   const cached = useMemo(() => getCachedLearningCenter(course.slug), [course.slug]);
   const [snapshot, setSnapshot] = useState<LearningCenterSnapshot | null>(cached?.snapshot ?? null);
+  const snapshotRef = useRef<LearningCenterSnapshot | null>(snapshot);
+  const [confirmedNotes, setConfirmedNotes] = useState<RemoteNotebookEntry[]>([]);
+  const confirmedNotesRef = useRef<RemoteNotebookEntry[]>([]);
+  const onSummaryChangeRef = useRef(onSummaryChange);
   const [remoteStatus, setRemoteStatus] = useState<'loading' | 'ready' | 'cached' | 'error'>(cached ? (cached.fresh ? 'ready' : 'cached') : 'loading');
   const [remoteMessage, setRemoteMessage] = useState('');
   const { themeId } = useTheme();
   const isCyber = themeId === 'cyber';
-  const effectiveProfile = useMemo(() => mergeRemoteProfile(profile, course, snapshot), [course, profile, snapshot]);
+  const effectiveProfile = useMemo(() => {
+    const merged = mergeRemoteProfile(profile, course, snapshot);
+    if (!confirmedNotes.length) return merged;
+    const confirmedSkills = new Set(confirmedNotes.map((entry) => entry.skillKey));
+    return {
+      ...merged,
+      notebook: [
+        ...merged.notebook.filter((entry) => entry.courseId !== course.id || !confirmedSkills.has(entry.skillId)),
+        ...confirmedNotes.map((entry) => ({
+          id: entry.id,
+          courseId: course.id,
+          skillId: entry.skillKey,
+          concept: entry.concept,
+          mentalModel: entry.mentalModel,
+          pattern: entry.pattern,
+          ownExample: entry.ownExample,
+          personalMistake: entry.personalMistake,
+          updatedAt: Date.parse(entry.updatedAt),
+        })),
+      ],
+    };
+  }, [confirmedNotes, course, profile, snapshot]);
   const dueCount = snapshot?.summary.dueReviews ?? effectiveProfile.reviews.filter((entry) => entry.courseId === course.id && entry.dueAt <= Date.now()).length;
   const reinforcementCount = snapshot?.summary.reinforcements ?? effectiveProfile.tutor.reinforcements.filter((entry) => entry.courseId === course.id && !entry.reviewed).length;
   const noteCount = snapshot?.summary.notes ?? effectiveProfile.notebook.filter((entry) => entry.courseId === course.id).length;
 
+  useEffect(() => {
+    onSummaryChangeRef.current = onSummaryChange;
+  }, [onSummaryChange]);
+
+  useEffect(() => {
+    if (snapshot) onSummaryChangeRef.current?.(snapshot.summary);
+  }, [snapshot]);
+
   const refresh = async (signal?: AbortSignal) => {
     try {
-      const next = await fetchLearningCenter(course.slug, signal);
+      const remote = await fetchLearningCenter(course.slug, signal);
+      const pendingConfirmations = notesStillAwaitingRemoteConfirmation(remote.notes, confirmedNotesRef.current);
+      confirmedNotesRef.current = pendingConfirmations;
+      setConfirmedNotes(pendingConfirmations);
+      const next = pendingConfirmations.reduce(withSavedNotebook, remote);
+      snapshotRef.current = next;
       setSnapshot(next);
+      cacheLearningCenterSnapshot(next);
       setRemoteStatus('ready');
       setRemoteMessage('');
-      onSummaryChange?.(next.summary);
     } catch (error) {
       if (signal?.aborted) return;
-      setRemoteStatus(snapshot ? 'cached' : 'error');
+      setRemoteStatus(snapshotRef.current ? 'cached' : 'error');
       setRemoteMessage(error instanceof Error ? error.message : 'No se pudo sincronizar tu aprendizaje.');
     }
   };
 
   useEffect(() => {
+    confirmedNotesRef.current = [];
+    setConfirmedNotes([]);
+  }, [course.slug]);
+
+  useEffect(() => {
     if (cached?.fresh) {
-      onSummaryChange?.(cached.snapshot.summary);
       return;
     }
     const controller = new AbortController();
@@ -161,7 +222,7 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
   };
 
   const saveNotebook = async (entry: Omit<NotebookEntry, 'id' | 'updatedAt'>) => {
-    await saveRemoteNotebook(entry.skillId, {
+    const savedEntry = await saveRemoteNotebook(entry.skillId, {
       courseSlug: course.slug,
       concept: entry.concept,
       mentalModel: entry.mentalModel,
@@ -170,7 +231,19 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
       personalMistake: entry.personalMistake,
     });
     await onSaveNotebook(entry);
-    await refresh();
+    const nextConfirmed = [
+      ...confirmedNotesRef.current.filter((candidate) => candidate.skillKey !== savedEntry.skillKey),
+      savedEntry,
+    ];
+    confirmedNotesRef.current = nextConfirmed;
+    setConfirmedNotes(nextConfirmed);
+    const currentSnapshot = snapshotRef.current;
+    if (currentSnapshot) {
+      const next = withSavedNotebook(currentSnapshot, savedEntry);
+      snapshotRef.current = next;
+      setSnapshot(next);
+      cacheLearningCenterSnapshot(next);
+    }
   };
 
   const reviewReinforcement = async (reinforcementId: string) => {
@@ -185,6 +258,7 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
   return (
     <div className="learning-center-backdrop" onClick={onClose}>
       <section
+        ref={dialogRef}
         className="learning-center"
         role="dialog"
         aria-modal="true"
@@ -192,7 +266,7 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
         onClick={(event) => event.stopPropagation()}
         data-augmented-ui={isCyber ? "learning-center-modal tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
       >
-        <header><div><span>TU PROGRESO</span><h2>Centro de aprendizaje</h2><p>Repasa, explica y organiza lo que estás aprendiendo en {course.title}.</p><div className={`learning-center__sync is-${remoteStatus}`} role="status">{remoteStatus === 'loading' ? <LoaderCircle size={13} className="animate-spin" /> : remoteStatus === 'ready' ? <Cloud size={13} /> : <CloudOff size={13} />}<span>{remoteStatus === 'loading' ? 'Sincronizando tu progreso…' : remoteStatus === 'ready' ? 'Progreso sincronizado' : remoteStatus === 'cached' ? 'Mostrando la última copia disponible' : 'No pudimos recuperar tu progreso'}</span>{remoteMessage && <small>{remoteMessage}</small>}</div></div><button type="button" onClick={onClose} aria-label="Cerrar centro de aprendizaje"><X size={19} /></button></header>
+        <header><div><span>TU PROGRESO</span><h2>Centro de aprendizaje</h2><p>Repasa, explica y organiza lo que estás aprendiendo en {course.title}.</p><div className={`learning-center__sync is-${remoteStatus}`} role="status">{remoteStatus === 'loading' ? <LoaderCircle size={13} className="animate-spin" /> : remoteStatus === 'ready' ? <Cloud size={13} /> : <CloudOff size={13} />}<span>{remoteStatus === 'loading' ? 'Sincronizando tu progreso…' : remoteStatus === 'ready' ? 'Progreso sincronizado' : remoteStatus === 'cached' ? 'Mostrando la última copia disponible' : 'No pudimos recuperar tu progreso'}</span>{remoteMessage && <small>{remoteMessage}</small>}</div></div><button type="button" data-dialog-initial-focus onClick={onClose} aria-label="Cerrar centro de aprendizaje"><X size={19} /></button></header>
         <div className="learning-center__summary" aria-label="Resumen de aprendizaje">
           <span><strong>{dueCount}</strong> {dueCount === 1 ? 'repaso pendiente' : 'repasos pendientes'}</span>
           <span><strong>{reinforcementCount}</strong> por reforzar</span>
@@ -202,7 +276,15 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
         <main>
           {tab === 'review' && <ReviewQueue courseId={course.id} profile={effectiveProfile} onRate={rateReview} onReviewReinforcement={reviewReinforcement} />}
           {tab === 'notebook' && <LearningNotebook courseId={course.id} profile={effectiveProfile} onSave={saveNotebook} />}
-          {tab === 'exam' && <ExamMode courseId={course.id} profile={effectiveProfile} onComplete={onCompleteExam} />}
+          {tab === 'exam' && <ExamMode
+            courseId={course.id}
+            profile={effectiveProfile}
+            fallbackConcepts={course.tags.map((label) => ({
+              skillId: label.toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+              label,
+            }))}
+            onComplete={onCompleteExam}
+          />}
           {tab === 'path' && <TechnologyPath currentCourseId={course.id} />}
         </main>
       </section>

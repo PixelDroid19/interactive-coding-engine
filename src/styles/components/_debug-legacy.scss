@@ -43,11 +43,13 @@
 .course-card > button { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 18px; border: 2px solid #111; border-radius: 10px; background: #171a21; padding: 12px 16px; color: var(--color-white); font-weight: 850; box-shadow: 4px 4px 0 rgba(0,0,0,.45); }
 .course-card > button:hover { transform: translate(-1px,-1px); box-shadow: 5px 5px 0 rgba(0,0,0,.55); }
 .course-card > button:disabled { cursor: not-allowed; opacity: .58; box-shadow: none; transform: none; }
+.rm-playground-compact-label { display: none; }
 
 @media (max-width: 600px) {
   .course-catalog__main { width: min(100% - 22px, 1120px); padding-top: 38px; }
-  .course-catalog__nav { padding-inline: 12px; }
-  .course-catalog__actions { gap: 6px; }
+  .course-catalog__nav { min-width: 0; gap: 8px; padding-inline: 12px; }
+  .course-catalog__brand { min-width: 0; flex: 1 1 auto; white-space: nowrap; }
+  .course-catalog__actions { min-width: 0; flex: 0 0 auto; gap: 6px; }
   .course-catalog__actions .account-trigger,
   .course-catalog__actions .rm-play-btn,
   .course-catalog__actions .cyber-glitch-btn {
@@ -63,6 +65,13 @@
   .course-catalog__actions .cyber-hud-badge,
   .course-catalog__actions .cyber-text-main,
   .course-catalog__actions .cyber-glitch-ghost span { display: none; }
+  .course-catalog__actions .rm-playground-btn {
+    width: auto;
+    min-width: 76px;
+    gap: 4px;
+    padding-inline: 9px;
+  }
+  .course-catalog__actions .rm-playground-compact-label { display: inline; }
   .course-card { min-height: 390px; padding: 20px; }
 }
 

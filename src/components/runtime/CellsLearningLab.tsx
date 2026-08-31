@@ -11,7 +11,7 @@ import {
   type CellsAppPracticeStage,
   type CellsAppProject,
 } from '../../engine/cells/cellsAppRecipes';
-import { CellsWorkspaceRepository } from '../../engine/cells/cellsWorkspaceRepository';
+import { CellsWorkspaceRepository, type CellsWorkspaceRecovery } from '../../engine/cells/cellsWorkspaceRepository';
 import { createVersionedCellsWorkspace } from '../../engine/cells/cellsVirtualFileSystem';
 import { waitForCellsBrowserTests } from '../../engine/cells/cellsBrowserRunner';
 import { createCellsCoverageReport, createIstanbulCoverageReport, mergeCellsCoverageReports } from '../../engine/cells/cellsCoverage';
@@ -107,6 +107,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
   const [coverage, setCoverage] = useState<CellsCoverageResult | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'running' | 'error'>('loading');
   const [error, setError] = useState('');
+  const [workspaceRecovery, setWorkspaceRecovery] = useState<CellsWorkspaceRecovery | null>(null);
   const [command, setCommand] = useState(defaultCellsCommand(variant));
   const [terminalOutput, setTerminalOutput] = useState('Runtime detenido. El Worker se iniciará al abrir el proyecto.');
   const [activeInspectorTab, setActiveInspectorTab] = useState<'preview' | 'tests' | 'terminal'>('preview');
@@ -200,6 +201,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
         throw new Error('El runtime no pudo reconstruir la vista previa inicial.');
       }
       applyPreviewBuild(request, previewResult.payload);
+      setWorkspaceRecovery(null);
       setStatus('ready');
     } catch (caught) {
       setError(messageFor(caught));
@@ -212,10 +214,18 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
     const loadInitialWorkspace = async () => {
       setStatus('loading');
       try {
-        const [saved, savedSession] = await Promise.all([
+        const [savedResult, savedSession] = await Promise.all([
           ensureRepository().load(draftKey),
           ensureRepository().loadSession(draftKey),
         ]);
+        if (cancelled) return;
+        if (savedResult.status === 'corrupt') {
+          setWorkspaceRecovery(savedResult.recovery);
+          setError('No pudimos abrir el proyecto Cells guardado porque sus datos son inválidos. No se reemplazó por el proyecto inicial.');
+          setStatus('error');
+          return;
+        }
+        const saved = savedResult.status === 'loaded' ? savedResult.workspace : null;
         const initial = saved ?? (variant === 'application'
           ? createCellsProjectPracticeWorkspace(project, stage)
           : createCellsCurriculumPracticeWorkspace(componentArtifact, componentStage));
@@ -449,6 +459,37 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
 
   const passedTestsCount = tests.filter((test) => test.passed).length;
   const allTestsPassed = tests.length > 0 && passedTestsCount === tests.length;
+
+  if (workspaceRecovery) {
+    return (
+      <div className="cells-lab" aria-label="Playground real de Open Cells">
+        <header className="cells-lab__header">
+          <div className="cells-lab__header-info">
+            <p>PROYECTO · RECUPERACIÓN</p>
+            <h3>Proyecto guardado necesita atención</h3>
+            <span className="cells-lab__status-indicator is-error">
+              <span className="cells-lab__status-dot" />
+              El laboratorio necesita atención
+            </span>
+          </div>
+        </header>
+        <section className="cells-lab__empty" role="alert">
+          <XCircle size={28} />
+          <h4>No pudimos abrir tu proyecto guardado</h4>
+          <p>No se reemplazó por el proyecto inicial. La copia inválida queda preservada para que puedas recuperarla.</p>
+          <small>{workspaceRecovery.message}</small>
+          <button
+            type="button"
+            className="cells-lab__empty-btn"
+            onClick={() => void loadStarter(true)}
+            disabled={status === 'running' || status === 'loading'}
+          >
+            <RotateCcw size={14} /> Crear un proyecto nuevo
+          </button>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="cells-lab" aria-label="Playground real de Open Cells">

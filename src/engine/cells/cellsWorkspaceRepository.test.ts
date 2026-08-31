@@ -10,8 +10,13 @@ describe('CellsWorkspaceRepository', () => {
     const changed = writeCellsFile(createCellsComponentWorkspace({ name: 'academy-learning-card' }), 'README.md', '# Mi proyecto');
     await repository.save('component:first', changed);
     const restored = await repository.load('component:first');
-    expect(restored?.generation).toBe(1);
-    expect(restored?.snapshot.files['README.md'].content).toBe('# Mi proyecto');
+    expect(restored).toMatchObject({
+      status: 'loaded',
+      workspace: {
+        generation: 1,
+        snapshot: { files: { 'README.md': { content: '# Mi proyecto' } } },
+      },
+    });
     await repository.close();
   });
 
@@ -21,11 +26,11 @@ describe('CellsWorkspaceRepository', () => {
     await repository.save('one', workspace);
     await repository.save('two', workspace);
     await repository.remove('one');
-    expect(await repository.load('one')).toBeNull();
-    expect(await repository.load('two')).not.toBeNull();
+    expect(await repository.load('one')).toEqual({ status: 'missing' });
+    expect(await repository.load('two')).toMatchObject({ status: 'loaded' });
   });
 
-  it('ignora datos corruptos en vez de romper el laboratorio', async () => {
+  it('cuarentena datos corruptos en vez de confundirlos con un proyecto ausente', async () => {
     const factory = new IDBFactory();
     const repository = new CellsWorkspaceRepository(factory);
     await repository.save('valid', createCellsComponentWorkspace({ name: 'academy-learning-card' }));
@@ -38,7 +43,36 @@ describe('CellsWorkspaceRepository', () => {
       const request = database.transaction('workspaces', 'readwrite').objectStore('workspaces').put({ generation: -1 }, 'broken');
       request.onsuccess = () => resolve();
     });
-    expect(await repository.load('broken')).toBeNull();
+    const result = await repository.load('broken');
+    expect(result).toMatchObject({
+      status: 'corrupt',
+      recovery: {
+        sourceKey: 'broken',
+        recoveryKey: expect.stringContaining('workspace:broken'),
+        preserved: true,
+      },
+    });
+    if (result.status !== 'corrupt') throw new Error('Se esperaba un resultado de recuperación.');
+
+    const [original, quarantined] = await Promise.all([
+      new Promise<unknown>((resolve, reject) => {
+        const request = database.transaction('workspaces', 'readonly').objectStore('workspaces').get('broken');
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      }),
+      new Promise<unknown>((resolve, reject) => {
+        const request = database.transaction('workspaces', 'readonly').objectStore('workspaces').get(result.recovery.recoveryKey);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      }),
+    ]);
+    expect(original).toEqual({ generation: -1 });
+    expect(quarantined).toMatchObject({
+      sourceKey: 'broken',
+      value: { generation: -1 },
+    });
+    database.close();
+    await repository.close();
   });
 
   it('restaura panel, comando, idioma y resultados sin mezclarlos con el workspace', async () => {

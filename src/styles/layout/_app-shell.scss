@@ -297,3 +297,156 @@
   line-height: 1.15;
 }
 
+/* Playground and solo-project workspaces share the IDE viewport without
+   relying on fixed Zinc utility surfaces. */
+.playground-shell,
+.solo-project-shell {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg-editor);
+  color: var(--color-inverse);
+}
+
+.playground-panel,
+.solo-project-panel {
+  border-color: var(--color-pencil-soft);
+  background: var(--bg-editor);
+}
+
+.playground-header,
+.solo-project-header,
+.playground-file-tabs,
+.solo-project-file-tabs,
+.solo-project-brief-footer,
+.solo-project-mobile-nav {
+  border-color: var(--color-pencil-soft);
+  background: var(--bg-editor-tabs);
+}
+
+.playground-files,
+.solo-project-files,
+.solo-project-brief {
+  border-color: var(--color-pencil-soft);
+  background: var(--bg-editor-tabs);
+}
+
+.playground-preview,
+.solo-project-output {
+  border-color: var(--color-pencil-soft);
+  background: var(--bg-console);
+}
+
+.solo-project-editor-canvas {
+  background: var(--bg-editor);
+}
+
+.playground-cells-shell {
+  background: var(--bg-main);
+  color: var(--color-text-main);
+}
+
+.playground-controls,
+.playground-actions,
+.solo-project-header__primary,
+.solo-project-header__actions {
+  min-width: 0;
+}
+
+.playground-templates,
+.playground-file-tabs,
+.solo-project-file-tabs {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+
+.playground-templates {
+  max-width: min(48vw, 36rem);
+}
+
+.playground-file-tabs,
+.solo-project-file-tabs {
+  flex: 1 1 auto;
+}
+
+.playground-scroll-tab,
+.solo-project-file-tab {
+  flex: 0 0 auto;
+  max-width: min(40vw, 14rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .playground-shell {
+    height: auto;
+    overflow: visible;
+  }
+
+  .playground-header {
+    height: auto;
+    min-height: 44px;
+    align-items: flex-start;
+  }
+
+  .playground-controls,
+  .playground-actions {
+    min-width: 0;
+  }
+
+  .playground-actions {
+    flex-wrap: nowrap;
+  }
+
+  .playground-templates {
+    max-width: calc(100vw - 8rem);
+  }
+}
+
+@media (max-width: 1023px) {
+  .solo-project-shell {
+    height: auto;
+    overflow: visible;
+  }
+
+  .solo-project-header {
+    height: auto;
+    min-height: 44px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    padding-block: 0.5rem;
+  }
+
+  .solo-project-header__primary,
+  .solo-project-header__actions {
+    width: 100%;
+  }
+
+  .solo-project-header__actions {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+  }
+
+  .solo-project-layout {
+    min-height: calc(100vh - 5.5rem);
+    min-height: calc(100dvh - 5.5rem);
+    overflow: visible;
+  }
+
+  .solo-project-brief,
+  .solo-project-editor,
+  .solo-project-output {
+    height: auto !important;
+    min-height: calc(100vh - 5.5rem);
+    min-height: calc(100dvh - 5.5rem);
+  }
+}

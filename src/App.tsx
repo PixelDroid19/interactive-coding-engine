@@ -37,6 +37,7 @@ const COURSE_SLUG_BY_ID: Record<string, string> = Object.fromEntries(
 );
 
 type AppView = 'catalog' | 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'reasoning' | 'playground' | 'studio';
+type CanonicalDataSource = 'catalog' | 'manifest' | 'progress';
 
 interface InitialAppState {
   view: AppView;
@@ -60,11 +61,12 @@ function getInitialCourses(): Course[] {
 }
 
 function applyPublishedCatalog(localCourses: Course[], published: PublishedCourseSummary[]): Course[] {
-  return published.flatMap((remote) => {
-    const local = localCourses.find((candidate) => candidate.slug === remote.slug);
-    if (!local) return [];
+  const publishedBySlug = new Map(published.map((remote) => [remote.slug, remote]));
+  return localCourses.map((local) => {
+    const remote = publishedBySlug.get(local.slug);
+    if (!remote) return local;
     const metadata = remote.metadata ?? {};
-    return [{
+    return {
       ...local,
       title: remote.title,
       description: remote.description,
@@ -75,7 +77,7 @@ function applyPublishedCatalog(localCourses: Course[], published: PublishedCours
       thumbnailGradient: metadata.thumbnailGradient ?? local.thumbnailGradient,
       availability: remote.availability,
       availabilityReason: remote.availabilityReason ?? undefined,
-    }];
+    };
   });
 }
 
@@ -261,6 +263,7 @@ export default function App() {
   const [navigationBlocker, setNavigationBlocker] = useState<ItemReadiness | null>(null);
   const [remoteLessonState, setRemoteLessonState] = useState<{ id: string; status: 'loading' | 'ready' | 'offline' | 'unavailable'; message?: string } | null>(null);
   const [identityRevision, setIdentityRevision] = useState(0);
+  const [canonicalDataIssues, setCanonicalDataIssues] = useState<Record<CanonicalDataSource, string | null>>({ catalog: null, manifest: null, progress: null });
   const activitySession = useRef<{ id: string; courseSlug: string; itemId: string; itemType: string; openedAt: number; playbackMs: number } | null>(null);
 
   const closeActivitySession = (reason: string) => {
@@ -325,6 +328,7 @@ export default function App() {
       });
     };
     const cached = getCachedCourseProgress();
+    setCanonicalDataIssues((current) => ({ ...current, progress: null }));
     if (cached) {
       applyRemoteProgress(cached.snapshot.items);
       if (cached.fresh) return;
@@ -332,9 +336,19 @@ export default function App() {
     const controller = new AbortController();
     void fetchCourseProgress(controller.signal)
       .then((snapshot) => {
-        if (!controller.signal.aborted) applyRemoteProgress(snapshot.items);
+        if (controller.signal.aborted) return;
+        applyRemoteProgress(snapshot.items);
+        setCanonicalDataIssues((current) => ({ ...current, progress: null }));
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setCanonicalDataIssues((current) => ({
+          ...current,
+          progress: cached
+            ? 'No pudimos actualizar tu progreso desde el servidor. Estás viendo una copia guardada que puede estar desactualizada.'
+            : 'No pudimos actualizar tu progreso desde el servidor. Se conserva el progreso de este dispositivo.',
+        }));
+      });
     return () => controller.abort();
   }, [identityRevision]);
 
@@ -348,6 +362,7 @@ export default function App() {
       setCourse((current) => current.slug === hydrated.slug ? hydrated : current);
     };
     const cached = identityRevision === 0 ? getCachedPublishedManifest(course.slug) : null;
+    setCanonicalDataIssues((current) => ({ ...current, manifest: null }));
     if (cached) {
       applyManifest(cached.manifest);
       if (cached.fresh) return;
@@ -355,9 +370,19 @@ export default function App() {
     const controller = new AbortController();
     void fetchPublishedManifest(course.slug, controller.signal)
       .then((manifest) => {
-        if (!controller.signal.aborted) applyManifest(manifest);
+        if (controller.signal.aborted) return;
+        applyManifest(manifest);
+        setCanonicalDataIssues((current) => ({ ...current, manifest: null }));
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        setCanonicalDataIssues((current) => ({
+          ...current,
+          manifest: cached
+            ? 'No pudimos actualizar la estructura publicada de este curso. Estás viendo una copia guardada que puede estar desactualizada.'
+            : 'No pudimos actualizar la estructura publicada de este curso. Estás viendo el contenido local y el acceso puede estar desactualizado.',
+        }));
+      });
     return () => controller.abort();
   // La fuente base conserva el contenido ejecutable; el manifiesto remoto decide estructura y acceso.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -376,17 +401,32 @@ export default function App() {
   }, [activeItem, course, currentView]);
 
   useEffect(() => {
+    const applyCatalog = (published: PublishedCourseSummary[]) => {
+      setCourses((current) => applyPublishedCatalog(current, published));
+      setCourse((current) => applyPublishedCatalog([current], published)[0] ?? current);
+    };
     const cachedCatalog = identityRevision === 0 ? getCachedPublishedCourses() : null;
-    if (cachedCatalog?.catalog.items.length) {
-      setCourses((current) => applyPublishedCatalog(current, cachedCatalog.catalog.items));
-      if (cachedCatalog.fresh) return;
+    setCanonicalDataIssues((current) => ({ ...current, catalog: null }));
+    if (cachedCatalog) {
+      applyCatalog(cachedCatalog.catalog.items);
+      if (cachedCatalog.fresh && cachedCatalog.complete) return;
     }
     const controller = new AbortController();
     void fetchPublishedCourses(controller.signal).then((catalog) => {
-      if (!controller.signal.aborted && catalog.items.length > 0) {
-        setCourses((current) => applyPublishedCatalog(current, catalog.items));
-      }
-    }).catch(() => undefined);
+      if (controller.signal.aborted) return;
+      applyCatalog(catalog.items);
+      setCanonicalDataIssues((current) => ({ ...current, catalog: null }));
+    }).catch(() => {
+      if (controller.signal.aborted) return;
+      setCanonicalDataIssues((current) => ({
+        ...current,
+        catalog: cachedCatalog
+          ? cachedCatalog.complete
+            ? 'No pudimos actualizar el catálogo publicado. Estás viendo una copia guardada que puede estar desactualizada.'
+            : 'No pudimos actualizar el catálogo publicado. Estás viendo una copia guardada que puede estar incompleta o desactualizada.'
+          : 'No pudimos consultar el catálogo publicado. Se muestra el contenido local y su disponibilidad puede estar desactualizada.',
+      }));
+    });
     return () => controller.abort();
   }, [identityRevision]);
 
@@ -445,7 +485,7 @@ export default function App() {
             ? details
             : publishedError?.status === 404
               ? 'La revisión publicada aún no está disponible. Estás usando el contenido guardado en este dispositivo.'
-              : `Sin conexión con el catálogo. Estás usando el contenido guardado en este dispositivo. ${details}`,
+              : 'No pudimos comprobar la revisión publicada. Estás usando el contenido local de esta lección; su disponibilidad puede estar desactualizada.',
         });
       });
     return () => controller.abort();
@@ -557,26 +597,6 @@ export default function App() {
     handleSelectItem(nav.next.item, nav.next.moduleId, 0);
   };
 
-  const handleResumeRecent = (courseId: string, moduleId: string, itemId: string, timeMs?: number) => {
-    // Find item across modules
-    for (const mod of course.modules) {
-      const found = mod.items.find((i) => i.id === itemId);
-      if (found) {
-        handleSelectItem(found, mod.id, timeMs || 0);
-        return;
-      }
-    }
-    // Fallback to first item
-    if (course.modules[0]?.items[0]) {
-      handleSelectItem(course.modules[0].items[0], course.modules[0].id, 0);
-    }
-  };
-
-  const handleNextLesson = () => {
-    // Keep for backward compat, delegate to handleNext
-    handleNext();
-  };
-
   const handleLessonPublished = (newLesson: ScrimLessonData) => {
     setScrimsMap((prev) => ({ ...prev, [newLesson.id]: newLesson }));
 
@@ -638,9 +658,22 @@ export default function App() {
     && course.id !== AI_ENGINEER_COURSE.id
     && ['scrim', 'debugging', 'solo-project', 'reading', 'reasoning'].includes(currentView),
   );
+  const canonicalDataMessages = Object.values(canonicalDataIssues).filter((message): message is string => Boolean(message));
 
   return (
     <div className={currentView === 'scrim' ? 'app-screen' : undefined}>
+      {canonicalDataMessages.length > 0 && (
+        <aside
+          className="fixed right-4 top-4 z-[120] max-w-md border-2 border-amber-700 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-[4px_4px_0_#111]"
+          role="alert"
+          aria-label="Estado de datos publicados"
+        >
+          <p className="font-bold">Datos publicados sin actualizar</p>
+          <ul className="mt-1 list-disc pl-5">
+            {canonicalDataMessages.map((message) => <li key={message}>{message}</li>)}
+          </ul>
+        </aside>
+      )}
       {currentView === 'catalog' && (
         <CourseCatalog
           courses={courses}

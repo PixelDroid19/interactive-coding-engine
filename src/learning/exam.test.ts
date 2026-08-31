@@ -37,4 +37,15 @@ describe('modo examen por capacidades', () => {
     expect(weak.classification).toBe('red');
     expect(strong.scores.debug).toBeGreaterThan(weak.scores.debug);
   });
+
+  it('usa un concepto visible del curso cuando todavía no existe evidencia', () => {
+    const questions = buildExamQuestions(createEmptyLearningProfile(), 'course-lit', [
+      { skillId: 'web-components', label: 'Web Components' },
+      { skillId: 'lit', label: 'Lit' },
+    ]);
+
+    expect(questions.every((question) => question.skillId === 'web-components')).toBe(true);
+    expect(questions[0].prompt).toContain('Web Components');
+    expect(questions[0].prompt).not.toContain('fundamentos del curso');
+  });
 });

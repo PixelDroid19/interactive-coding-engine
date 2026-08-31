@@ -22,6 +22,7 @@ import {
 import { LearningCenter } from '../learning/LearningCenter';
 import type { LearningCenterSnapshot } from '../../services/learningCenterApi';
 import { AccountMenu } from '../../auth/AccountMenu';
+import { useModalDialog } from '../useModalDialog';
 
 interface RoadmapHomeProps {
   course: Course;
@@ -46,6 +47,14 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
 }) => {
   const [openConcept, setOpenConcept] = useState<RoadmapNode | null>(null);
   const [blockedItem, setBlockedItem] = useState<(ItemReadiness & { itemId: string }) | null>(null);
+  const conceptDialogRef = useModalDialog<HTMLElement>({
+    open: Boolean(openConcept),
+    onClose: () => setOpenConcept(null),
+  });
+  const blockerDialogRef = useModalDialog<HTMLElement>({
+    open: Boolean(blockedItem),
+    onClose: () => setBlockedItem(null),
+  });
   const { themeId } = useTheme();
   const isCyber = themeId === 'cyber';
   const [showLearningCenter, setShowLearningCenter] = useState(false);
@@ -385,6 +394,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
       {openConcept && conceptCopy && (
         <div className="rm-concept-backdrop" onClick={() => setOpenConcept(null)}>
           <aside
+            ref={conceptDialogRef}
             className="rm-concept-pop"
             role="dialog"
             aria-modal="true"
@@ -392,7 +402,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             onClick={(event) => event.stopPropagation()}
             data-augmented-ui={isCyber ? "rm-concept-pop tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
           >
-            <button type="button" className="rm-briefing-close" onClick={() => setOpenConcept(null)} aria-label="Cerrar">
+            <button type="button" data-dialog-initial-focus className="rm-briefing-close" onClick={() => setOpenConcept(null)} aria-label="Cerrar">
               <X size={14} />
             </button>
             <span className="rm-pill">Concepto</span>
@@ -412,6 +422,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
       {blockedItem && (
         <div className="rm-concept-backdrop" onClick={() => setBlockedItem(null)}>
           <aside
+            ref={blockerDialogRef}
             className="rm-concept-pop rm-mastery-blocker"
             role="dialog"
             aria-modal="true"
@@ -419,7 +430,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             onClick={(event) => event.stopPropagation()}
             data-augmented-ui={isCyber ? "rm-concept-pop tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
           >
-            <button type="button" className="rm-briefing-close" onClick={() => setBlockedItem(null)} aria-label="Cerrar">
+            <button type="button" data-dialog-initial-focus className="rm-briefing-close" onClick={() => setBlockedItem(null)} aria-label="Cerrar">
               <X size={14} />
             </button>
             <span className="rm-pill">Siguiente paso</span>

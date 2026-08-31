@@ -43,6 +43,33 @@ describe('PlaygroundView', () => {
     expect(jsTemplate.getAttribute('aria-pressed')).toBe('true');
   });
 
+  it('permite recorrer las plantillas con el teclado sin perder el foco', () => {
+    render(<PlaygroundView onBack={() => {}} />);
+
+    const selector = screen.getByRole('group', { name: 'Plantilla inicial' });
+    const htmlTemplate = within(selector).getByRole('button', { name: 'HTML, CSS y JavaScript' });
+    const jsTemplate = within(selector).getByRole('button', { name: 'JavaScript puro' });
+    htmlTemplate.focus();
+
+    fireEvent.keyDown(htmlTemplate, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(jsTemplate);
+
+    fireEvent.keyDown(jsTemplate, { key: 'ArrowLeft' });
+    expect(document.activeElement).toBe(htmlTemplate);
+  });
+
+  it('permite recorrer los archivos abiertos con el teclado', () => {
+    render(<PlaygroundView onBack={() => {}} />);
+
+    const tabs = screen.getByRole('group', { name: 'Archivos abiertos' });
+    const htmlFile = within(tabs).getByRole('button', { name: 'index.html' });
+    const cssFile = within(tabs).getByRole('button', { name: 'style.css' });
+    htmlFile.focus();
+
+    fireEvent.keyDown(htmlFile, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(cssFile);
+  });
+
   it('abre proyectos Cells reales como plantillas independientes de Lit', () => {
     render(<PlaygroundView onBack={() => {}} />);
 

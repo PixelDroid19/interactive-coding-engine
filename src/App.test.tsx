@@ -152,6 +152,17 @@ describe('App navigation persistence', () => {
     expect(screen.getByText(/La revisión publicada aún no está disponible/)).toBeTruthy();
   });
 
+  it('explica el modo sin conexión sin exponer el error técnico del navegador', async () => {
+    const lesson = seedPublishedFirstLessonManifest();
+    fetchPublishedLessonMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+    renderApp();
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`^${lesson.title}`) }));
+
+    expect(await screen.findByText(/No pudimos comprobar la revisión publicada/)).toBeTruthy();
+    expect(screen.queryByText(/Failed to fetch/)).toBeNull();
+  });
+
   it('no abre la copia local cuando el backend responde 403', async () => {
     const lesson = seedPublishedFirstLessonManifest();
     fetchPublishedLessonMock.mockRejectedValue(
@@ -208,7 +219,7 @@ describe('App navigation persistence', () => {
   it('restaura el Playground después de recargar la aplicación', () => {
     const firstRender = renderApp();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Playground' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Playground' }));
     expect(screen.getByText('Playground independiente')).toBeTruthy();
     expect(loadAppNavigationState()).toEqual({ view: 'playground' });
 

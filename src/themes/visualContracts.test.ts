@@ -22,6 +22,9 @@ const scssAggregate = readScssAggregate();
 const mainScss = (() => {
   try { return readFileSync(new URL('../styles/main.scss', import.meta.url), 'utf8'); } catch { return ''; }
 })();
+const cyberResponsiveScss = (() => {
+  try { return readFileSync(new URL('../styles/themes/cyber/_responsive.scss', import.meta.url), 'utf8'); } catch { return ''; }
+})();
 
 describe('contratos visuales de superficies principales', () => {
   it('reserva una fila independiente para la navegación del Centro de aprendizaje', () => {
@@ -60,6 +63,12 @@ describe('contratos visuales de superficies principales', () => {
     expect(scssAggregate).toMatch(/\.socratic-tutor__composer\s*\{[^}]*position:\s*relative/s);
     expect(scssAggregate).toMatch(/\.socratic-tutor__composer button\s*\{[^}]*position:\s*absolute[^}]*width:\s*2\.5rem/s);
     expect(scssAggregate).toMatch(/\.socratic-tutor__composer textarea\s*\{[^}]*padding-right:\s*3\.5rem/s);
+  });
+
+  it('libera la altura del encabezado cyber también en el ancho tablet de 768 px', () => {
+    expect(cyberResponsiveScss).toMatch(
+      /@media \(max-width:\s*768px\)\s*\{[\s\S]*?\.hud \.window-topbar\s*\{[^}]*height:\s*auto\s*!important/s,
+    );
   });
 
   it('no deja ningún CSS legacy monolítico', () => {

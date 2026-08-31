@@ -9,6 +9,11 @@ const runtime = vi.hoisted(() => {
   return { builds, failLoad: false };
 });
 
+const repository = vi.hoisted(() => ({
+  loadResult: { status: 'missing' } as unknown,
+  remove: vi.fn(),
+}));
+
 vi.mock('../../engine/cells/cellsRuntimeClient', () => ({
   CellsRuntimeClientError: class CellsRuntimeClientError extends Error {},
   CellsRuntimeClient: class CellsRuntimeClient {
@@ -37,11 +42,11 @@ vi.mock('../../engine/cells/cellsRuntimeClient', () => ({
 
 vi.mock('../../engine/cells/cellsWorkspaceRepository', () => ({
   CellsWorkspaceRepository: class CellsWorkspaceRepository {
-    async load() { return null; }
+    async load() { return repository.loadResult; }
     async loadSession() { return null; }
     async save() {}
     async saveSession() {}
-    async remove() {}
+    async remove() { repository.remove(); }
     async removeSession() {}
     async close() {}
   },
@@ -65,6 +70,8 @@ describe('CellsLearningLab live preview', () => {
   beforeEach(() => {
     runtime.builds.length = 0;
     runtime.failLoad = false;
+    repository.loadResult = { status: 'missing' };
+    repository.remove.mockClear();
   });
 
   afterEach(() => {
@@ -124,5 +131,26 @@ describe('CellsLearningLab live preview', () => {
 
     expect(await screen.findByText('El laboratorio necesita atención')).toBeTruthy();
     expect(screen.queryByText('Todo ocurre en este navegador')).toBeNull();
+  });
+
+  it('no reemplaza un proyecto Cells corrupto por el starter sin una decisión explícita', async () => {
+    repository.loadResult = {
+      status: 'corrupt',
+      recovery: {
+        sourceKey: 'course-open-cells:v2:component:cells-corrupt',
+        recoveryKey: 'recovery:workspace:cells-corrupt:1',
+        preserved: true,
+        message: 'La generación del workspace no es válida.',
+      },
+    };
+
+    render(<CellsLearningLab lessonId="cells-corrupt" componentStage="composition" />);
+
+    expect((await screen.findByRole('alert')).textContent).toContain('No se reemplazó por el proyecto inicial');
+    expect(screen.queryByText('Árbol')).toBeNull();
+    expect(repository.remove).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Crear un proyecto nuevo' }));
+    await waitFor(() => expect(repository.remove).toHaveBeenCalledOnce());
   });
 });

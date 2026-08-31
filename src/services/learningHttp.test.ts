@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { learningApiRequest, setLearningCsrfToken } from './learningHttp';
 
 beforeEach(() => {
@@ -7,6 +7,10 @@ beforeEach(() => {
   localStorage.setItem('aula_anonymous_actor_v1', '30000000-0000-4000-8000-000000000003');
   setLearningCsrfToken(null);
   vi.restoreAllMocks();
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('cliente HTTP de aprendizaje', () => {
@@ -39,5 +43,36 @@ describe('cliente HTTP de aprendizaje', () => {
 
     await expect(learningApiRequest('/v1/staff/dashboard/overview'))
       .rejects.toThrow('No pudimos conectar con el servicio. Conservamos los datos que ya estaban cargados.');
+  });
+
+  it('usa el proxy del mismo origen durante el desarrollo local', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'));
+
+    await learningApiRequest('/v1/courses');
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/v1/courses', expect.any(Object));
+  });
+
+  it('mantiene el actor anónimo de la página cuando localStorage no está disponible', async () => {
+    vi.resetModules();
+    vi.stubGlobal('localStorage', {
+      getItem: () => {
+        throw new Error('Storage bloqueado');
+      },
+      setItem: () => {
+        throw new Error('Storage bloqueado');
+      },
+    });
+    const { getLearningActorId, learningApiRequest: requestWithUnavailableStorage } = await import('./learningHttp');
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}'));
+
+    const actor = getLearningActorId();
+    expect(getLearningActorId()).toBe(actor);
+
+    await requestWithUnavailableStorage('/v1/me/progress');
+    await requestWithUnavailableStorage('/v1/courses');
+
+    expect((fetchMock.mock.calls[0]?.[1]?.headers as Record<string, string>)['x-anonymous-id']).toBe(actor);
+    expect((fetchMock.mock.calls[1]?.[1]?.headers as Record<string, string>)['x-anonymous-id']).toBe(actor);
   });
 });

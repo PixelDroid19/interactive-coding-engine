@@ -11,12 +11,15 @@ describe('buildCellsPreviewDocument', () => {
     expect(result.warnings).toEqual([]);
     expect(result.html).not.toContain('<iframe');
     expect(result.html).toContain('Content-Security-Policy');
+    expect(result.html).toContain('connect-src data: https://esm.sh');
     expect(result.html).toContain('"lit":"https://esm.sh/lit@3.3.3"');
     expect(result.html).toContain('workspace%3A%2Fsrc%2Fmixins%2FWidgetMixin.js');
     expect(result.html).toContain('https%3A%2F%2Fesm.sh%2F%40webcomponents%2Fscoped-custom-element-registry%400.0.10');
     expect(result.html).toContain('https%3A%2F%2Fesm.sh%2F%40open-wc%2Fscoped-elements%403.0.6%2Flit-element.js');
     expect(result.html).toContain('<academy-learning-card data-cells-demo-subject>');
     expect(result.html).toContain('workspace:/demo/demo.js');
+    expect(result.html).toContain(encodeURIComponent('data:application/json;charset=utf-8,'));
+    expect(result.html).not.toContain(encodeURIComponent("new URL('./locales/locales.json', import.meta.url).href"));
     expect(result.html).toContain('__OPEN_CELLS_LOCALES__');
     expect(result.html).toContain('globalThis.IntlMsg');
     expect(result.html).toContain('Bienvenido');
@@ -136,16 +139,16 @@ describe('buildCellsPreviewDocument', () => {
     const workspace = createCellsComponentWorkspace({ name: 'academy-learning-card' });
     const sourcePath = 'src/academy-learning-card.js';
     const editedSource = workspace.snapshot.files[sourcePath].content
-      .replace("learnerName = 'Alex';", "learnerName = 'NombreDesdeElEditor';")
+      .replace("this.learnerName = 'Alex';", "this.learnerName = 'NombreDesdeElEditor';")
       .replace('class="learning-card"', 'class="componente-editado-en-vivo"');
     const changed = writeCellsFile(workspace, sourcePath, editedSource);
 
     const result = buildCellsPreviewDocument(changed.snapshot);
 
     expect(result.componentDemo?.source).toBe(editedSource);
-    expect(result.html).toContain(encodeURIComponent("learnerName = 'NombreDesdeElEditor';"));
+    expect(result.html).toContain(encodeURIComponent("this.learnerName = 'NombreDesdeElEditor';"));
     expect(result.html).toContain(encodeURIComponent('class="componente-editado-en-vivo"'));
-    expect(result.html).not.toContain(encodeURIComponent("learnerName = 'Alex';"));
+    expect(result.html).not.toContain(encodeURIComponent("this.learnerName = 'Alex';"));
   });
 
   it('rechaza paquetes que no están en la allowlist', () => {
@@ -173,8 +176,10 @@ describe('buildCellsPreviewDocument', () => {
     expect(result.html).toContain('const propertyName = "learnerName"');
     expect(result.html).toContain('const expectedScopedTags = ["academy-type-text","academy-action-button"]');
     expect(result.html).toContain('constructor.scopedElements');
-    expect(result.html).toContain("__OPEN_CELLS_LOCALE__ = 'es'");
-    expect(result.html).toContain("__OPEN_CELLS_LOCALE__ = 'en'");
+    expect(result.html).toContain("await setContractLanguage('es')");
+    expect(result.html).toContain("await setContractLanguage('en')");
+    expect(result.html).toContain("typeof intlMsg?.setLanguage === 'function'");
+    expect(result.html).toContain('await intlMsg.setLanguage(language)');
     expect(result.html).toContain('__OPEN_CELLS_CONTRACT_TESTS__ = true');
     expect(result.html).toContain('element.handleAction');
     expect(result.html).toContain('event.detail?.[propertyName]');
