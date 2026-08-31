@@ -18,6 +18,8 @@ describe('ReviewQueue', () => {
       />,
     );
 
+    expect(screen.getByRole('heading', { name: 'Practica recordar, no volver a leer' })).toBeTruthy();
+    expect(screen.getByText(/programa estas preguntas a partir de lo que ya trabajaste/i)).toBeTruthy();
     expect(screen.getByText('Aún no tienes actividad para repasar.')).toBeTruthy();
   });
 
@@ -37,12 +39,14 @@ describe('ReviewQueue', () => {
     const onRate = vi.fn().mockRejectedValueOnce(new Error('Servicio temporalmente no disponible')).mockResolvedValueOnce(undefined);
 
     render(<ReviewQueue courseId="course-1" profile={profile} onRate={onRate} onReviewReinforcement={vi.fn(async () => undefined)} />);
+    expect(screen.getByText('1 · Responder').getAttribute('aria-current')).toBe('step');
     fireEvent.change(screen.getByLabelText('Responde sin abrir la lección'), {
       target: {
         value: 'Una función puede devolver un valor para usarlo después.',
       },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Comparar mi respuesta' }));
+    expect(screen.getByText('2 · Comparar').getAttribute('aria-current')).toBe('step');
     fireEvent.click(screen.getByRole('button', { name: 'Lo expliqué' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain('No se pudo registrar tu calificación');

@@ -132,6 +132,21 @@ describe('arquitectura SCSS modular y sistema de temas', () => {
     expect(cyberTokens).toMatch(/\[data-theme="cyber"\]/);
   });
 
+  it('usa tokens semánticos compartidos para centro de aprendizaje y dashboard sin variantes cyber por pantalla', () => {
+    const baseTokens = readFileSync(new URL('../styles/base/_tokens.scss', import.meta.url), 'utf8');
+    const cyberTokens = readFileSync(new URL('../styles/themes/cyber/_tokens.scss', import.meta.url), 'utf8');
+    const learningCenter = readFileSync(new URL('../styles/components/_learning-center.scss', import.meta.url), 'utf8');
+    const staffDashboard = readFileSync(new URL('../styles/components/_staff-dashboard.scss', import.meta.url), 'utf8');
+    const cyberModals = readFileSync(new URL('../styles/themes/cyber/_modals.scss', import.meta.url), 'utf8');
+
+    expect(baseTokens).toMatch(/--ui-canvas:/);
+    expect(cyberTokens).toMatch(/--ui-canvas:\s*#07090e/);
+    expect(learningCenter).toMatch(/background:\s*var\(--ui-canvas\)/);
+    expect(staffDashboard).toMatch(/background:\s*var\(--ui-surface\)/);
+    expect(staffDashboard).not.toMatch(/\.staff-dashboard--cyber/);
+    expect(cyberModals).not.toMatch(/\.hud \.learning-center/);
+  });
+
   it('mantiene soporte legacy .hud y .cyber además de [data-theme="cyber"]', () => {
     const cyberTokens = (() => {
       try { return readFileSync(new URL('../styles/themes/cyber/_tokens.scss', import.meta.url), 'utf8'); } catch { return ''; }

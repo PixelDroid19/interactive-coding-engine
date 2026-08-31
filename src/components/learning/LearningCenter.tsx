@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BookOpenText, Brain, Cloud, CloudOff, LoaderCircle, LogIn, X } from 'lucide-react';
 import { useAuthSession } from '../../auth/AuthSessionProvider';
 import type { Course } from '../../types/curriculum';
-import type { LearningEvidence, LearningProfile, NotebookEntry, ReviewRating } from '../../learning/types';
-import { useTheme } from '../../themes/ThemeProvider';
+import type { LearningEvidence, LearningProfile, ReviewRating } from '../../learning/types';
 import { useModalDialog } from '../useModalDialog';
 import { LearningNotebook } from './LearningNotebook';
 import { LiveHelpSlot, type LiveHelpIntegration } from './LiveHelpSlot';
@@ -11,16 +10,20 @@ import { ReviewQueue } from './ReviewQueue';
 import type { AuthSession } from '../../services/authSessionApi';
 import {
   cacheLearningCenterSnapshot,
+  createRemoteNotebook,
+  deleteRemoteNotebook,
   fetchLearningCenter,
   getCachedLearningCenter,
   markRemoteReinforcementReviewed,
   rateRemoteReview,
-  saveRemoteNotebook,
+  updateRemoteNotebook,
   type LearningCenterSnapshot,
   type RemoteNotebookEntry,
   type RemoteReinforcement,
   type RemoteReviewCard,
 } from '../../services/learningCenterApi';
+import type { NotebookSaveInput } from './LearningNotebook';
+import { UiTabs } from '../ui/UiTabs';
 
 type LearningTab = 'review' | 'notebook';
 type RemoteStatus = 'loading' | 'ready' | 'cached' | 'error';
@@ -46,12 +49,14 @@ interface ScopedRemoteState {
 
 interface PendingRemoteState {
   notes: RemoteNotebookEntry[];
+  deletedNoteIds: string[];
   ratedReviews: Array<{ reviewId: string; revision: string }>;
   reviewedReinforcements: Array<{ reinforcementId: string; revision: string }>;
 }
 
 const EMPTY_PENDING: PendingRemoteState = {
   notes: [],
+  deletedNoteIds: [],
   ratedReviews: [],
   reviewedReinforcements: [],
 };
@@ -73,7 +78,6 @@ function getAnonymousSession(session: AuthSession): Extract<AuthSession, { authe
 function toRemoteEvidence(course: Course, snapshot: LearningCenterSnapshot): LearningEvidence[] {
   const skillKeys = new Set([
     ...snapshot.reviews.map((entry) => entry.skillKey),
-    ...snapshot.notes.map((entry) => entry.skillKey),
     ...snapshot.reinforcements.map((entry) => entry.skillKey),
     ...snapshot.skillGaps.map((entry) => entry.skillKey),
   ]);
@@ -113,7 +117,7 @@ function reinforcementRevision(entry: RemoteReinforcement): string {
 
 function notesStillAwaitingRemoteConfirmation(remoteNotes: RemoteNotebookEntry[], pendingNotes: RemoteNotebookEntry[]): RemoteNotebookEntry[] {
   return pendingNotes.filter((pending) => {
-    const remote = remoteNotes.find((candidate) => candidate.skillKey === pending.skillKey);
+    const remote = remoteNotes.find((candidate) => candidate.id === pending.id);
     if (!remote) return true;
     const remoteUpdatedAt = Date.parse(remote.updatedAt);
     const pendingUpdatedAt = Date.parse(pending.updatedAt);
@@ -124,6 +128,7 @@ function notesStillAwaitingRemoteConfirmation(remoteNotes: RemoteNotebookEntry[]
 function reconcilePending(snapshot: LearningCenterSnapshot, pending: PendingRemoteState): PendingRemoteState {
   return {
     notes: notesStillAwaitingRemoteConfirmation(snapshot.notes, pending.notes),
+    deletedNoteIds: pending.deletedNoteIds.filter((id) => snapshot.notes.some((note) => note.id === id)),
     ratedReviews: pending.ratedReviews.filter((pendingReview) => {
       const remote = snapshot.reviews.find((entry) => entry.id === pendingReview.reviewId);
       return Boolean(remote && reviewRevision(remote) === pendingReview.revision);
@@ -144,8 +149,8 @@ function isPendingReinforcement(entry: RemoteReinforcement, pending: PendingRemo
 }
 
 function withPendingRemoteState(snapshot: LearningCenterSnapshot, pending: PendingRemoteState): LearningCenterSnapshot {
-  const notes = new Map(snapshot.notes.map((entry) => [entry.skillKey, entry]));
-  notesStillAwaitingRemoteConfirmation(snapshot.notes, pending.notes).forEach((entry) => notes.set(entry.skillKey, entry));
+  const notes = new Map(snapshot.notes.filter((entry) => !pending.deletedNoteIds.includes(entry.id)).map((entry) => [entry.id, entry]));
+  notesStillAwaitingRemoteConfirmation(snapshot.notes, pending.notes).forEach((entry) => notes.set(entry.id, entry));
   const reviews = snapshot.reviews.filter((entry) => !isPendingReview(entry, pending));
   const reinforcements = snapshot.reinforcements.filter((entry) => !isPendingReinforcement(entry, pending));
   return {
@@ -165,8 +170,8 @@ function withPendingRemoteState(snapshot: LearningCenterSnapshot, pending: Pendi
 function mergeRemoteProfile(profile: LearningProfile, course: Course, snapshot: LearningCenterSnapshot | null, pending: PendingRemoteState): LearningProfile {
   const base = withoutCoursePersonalData(profile, course.id);
   if (!snapshot) return base;
-  const notes = new Map(snapshot.notes.map((entry) => [entry.skillKey, entry]));
-  notesStillAwaitingRemoteConfirmation(snapshot.notes, pending.notes).forEach((entry) => notes.set(entry.skillKey, entry));
+  const notes = new Map(snapshot.notes.filter((entry) => !pending.deletedNoteIds.includes(entry.id)).map((entry) => [entry.id, entry]));
+  notesStillAwaitingRemoteConfirmation(snapshot.notes, pending.notes).forEach((entry) => notes.set(entry.id, entry));
   const reviews = snapshot.reviews.filter((entry) => !isPendingReview(entry, pending));
   const reinforcements = snapshot.reinforcements.filter((entry) => !isPendingReinforcement(entry, pending));
   return {
@@ -186,12 +191,9 @@ function mergeRemoteProfile(profile: LearningProfile, course: Course, snapshot: 
     notebook: [...notes.values()].map((entry) => ({
       id: entry.id,
       courseId: course.id,
-      skillId: entry.skillKey,
-      concept: entry.concept,
-      mentalModel: entry.mentalModel,
-      pattern: entry.pattern,
-      ownExample: entry.ownExample,
-      personalMistake: entry.personalMistake,
+      title: entry.title,
+      body: entry.body,
+      ...(entry.itemKey ? { itemId: entry.itemKey } : {}),
       updatedAt: Date.parse(entry.updatedAt),
     })),
     tutor: {
@@ -221,7 +223,7 @@ function summaryWithPending(snapshot: LearningCenterSnapshot | null, pending: Pe
     ...snapshot.summary,
     dueReviews: Math.max(0, snapshot.summary.dueReviews - hiddenReviews),
     reinforcements: Math.max(0, snapshot.summary.reinforcements - hiddenReinforcements),
-    notes: Math.max(snapshot.summary.notes, new Set([...snapshot.notes, ...awaitingNotes].map((entry) => entry.skillKey)).size),
+    notes: Math.max(0, new Map([...snapshot.notes.filter((entry) => !pending.deletedNoteIds.includes(entry.id)), ...awaitingNotes].map((entry) => [entry.id, entry])).size),
   };
 }
 
@@ -240,7 +242,6 @@ function AccessState({ title, description, action }: Readonly<{ title: string; d
 export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile, onClose, onSummaryChange, liveHelpIntegration }) => {
   const dialogRef = useModalDialog<HTMLElement>({ open: true, onClose });
   const auth = useAuthSession();
-  const { themeId } = useTheme();
   const studentUserId =
     auth.status === 'ready' && auth.session.authenticated && auth.session.user.roles.includes('student') && auth.session.user.id.trim()
       ? auth.session.user.id.trim()
@@ -262,7 +263,6 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
   const scopeGenerationRef = useRef(0);
   const scopeControllerRef = useRef<AbortController | null>(null);
   const onSummaryChangeRef = useRef(onSummaryChange);
-  const isCyber = themeId === 'cyber';
 
   useEffect(() => {
     onSummaryChangeRef.current = onSummaryChange;
@@ -386,23 +386,42 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
     await refresh(userId, scope.signal, scope.generation);
   };
 
-  const saveNotebook = async (entry: Omit<NotebookEntry, 'id' | 'updatedAt'>) => {
+  const saveNotebook = async (entry: NotebookSaveInput) => {
     const userId = studentUserId;
     const scope = userId ? getCurrentScope(userId) : null;
     if (!userId || !scope) throw new Error('Inicia sesión para guardar una nota personal.');
-    const savedEntry = await saveRemoteNotebook(entry.skillId, {
+    const payload = {
       courseSlug: course.slug,
-      concept: entry.concept,
-      mentalModel: entry.mentalModel,
-      pattern: entry.pattern,
-      ownExample: entry.ownExample,
-      personalMistake: entry.personalMistake,
-    });
-    if (savedEntry.skillKey !== entry.skillId) throw new Error('La respuesta de la nota no corresponde al concepto que estabas editando.');
+      title: entry.title,
+      body: entry.body,
+      ...(entry.itemId ? { itemKey: entry.itemId } : {}),
+    };
+    const savedEntry = entry.id ? await updateRemoteNotebook(entry.id, payload) : await createRemoteNotebook(payload);
+    if (entry.id && savedEntry.id !== entry.id) throw new Error('La respuesta no corresponde a la nota que estabas editando.');
     if (!isCurrentScope(userId, scope.generation, scope.signal)) return;
     const nextPending = {
       ...pendingRemoteRef.current,
-      notes: [...pendingRemoteRef.current.notes.filter((candidate) => candidate.skillKey !== savedEntry.skillKey), savedEntry],
+      notes: [...pendingRemoteRef.current.notes.filter((candidate) => candidate.id !== savedEntry.id), savedEntry],
+      deletedNoteIds: pendingRemoteRef.current.deletedNoteIds.filter((id) => id !== savedEntry.id),
+    };
+    const currentSnapshot = snapshotRef.current;
+    if (currentSnapshot?.userId !== userId) return;
+    const nextSnapshot = withPendingRemoteState(currentSnapshot.snapshot, nextPending);
+    if (!commitSnapshot(userId, nextSnapshot, scope.generation, scope.signal)) return;
+    replacePendingForUser(userId, nextPending);
+    await refresh(userId, scope.signal, scope.generation);
+  };
+
+  const deleteNotebook = async (noteId: string) => {
+    const userId = studentUserId;
+    const scope = userId ? getCurrentScope(userId) : null;
+    if (!userId || !scope) throw new Error('Inicia sesión para eliminar una nota personal.');
+    await deleteRemoteNotebook(noteId);
+    if (!isCurrentScope(userId, scope.generation, scope.signal)) return;
+    const nextPending = {
+      ...pendingRemoteRef.current,
+      notes: pendingRemoteRef.current.notes.filter((entry) => entry.id !== noteId),
+      deletedNoteIds: [...new Set([...pendingRemoteRef.current.deletedNoteIds, noteId])],
     };
     const currentSnapshot = snapshotRef.current;
     if (currentSnapshot?.userId !== userId) return;
@@ -435,19 +454,6 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
     await refresh(userId, scope.signal, scope.generation);
   };
 
-  const selectTabFromKeyboard = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const key = event.key;
-    if (!['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', 'Home', 'End'].includes(key)) {
-      if (key === 'Enter' || key === ' ') setTab(TABS[index].id);
-      return;
-    }
-    event.preventDefault();
-    const direction = key === 'ArrowDown' || key === 'ArrowRight' ? 1 : key === 'ArrowUp' || key === 'ArrowLeft' ? -1 : 0;
-    const nextIndex = key === 'Home' ? 0 : key === 'End' ? TABS.length - 1 : (index + direction + TABS.length) % TABS.length;
-    const tabs = event.currentTarget.closest('[role="tablist"]')?.querySelectorAll<HTMLButtonElement>('[role="tab"]');
-    tabs?.[nextIndex]?.focus();
-  };
-
   const renderStudentContent = () => (
     <>
       <div className="learning-center__summary" role="group" aria-label="Resumen de aprendizaje">
@@ -461,33 +467,12 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
           <strong>{noteCount}</strong> {noteCount === 1 ? 'nota propia' : 'notas propias'}
         </span>
       </div>
-      <nav role="tablist" aria-label="Secciones de aprendizaje">
-        {TABS.map((candidate, index) => {
-          const selected = tab === candidate.id;
-          return (
-            <button
-              key={candidate.id}
-              id={`learning-tab-${candidate.id}`}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              aria-controls={`learning-panel-${candidate.id}`}
-              tabIndex={selected ? 0 : -1}
-              className={selected ? 'is-active' : ''}
-              onClick={() => setTab(candidate.id)}
-              onKeyDown={(event) => selectTabFromKeyboard(event, index)}
-            >
-              {candidate.icon}
-              <span>{candidate.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      <UiTabs ariaLabel="Secciones de aprendizaje" activeId={tab} tabs={TABS} onChange={(next) => setTab(next as LearningTab)} />
       <main
-        id={`learning-panel-${tab}`}
+        id={`ui-panel-${tab}`}
         role="tabpanel"
         aria-label={TABS.find((candidate) => candidate.id === tab)?.label}
-        aria-labelledby={`learning-tab-${tab}`}
+        aria-labelledby={`ui-tab-${tab}`}
         tabIndex={0}
       >
         {tab === 'review' && (
@@ -496,7 +481,7 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
             {liveHelpIntegration && <LiveHelpSlot integration={liveHelpIntegration} />}
           </>
         )}
-        {tab === 'notebook' && <LearningNotebook courseId={course.id} profile={effectiveProfile} onSave={saveNotebook} />}
+        {tab === 'notebook' && <LearningNotebook courseId={course.id} profile={effectiveProfile} onSave={saveNotebook} onDelete={deleteNotebook} />}
       </main>
     </>
   );
@@ -549,7 +534,6 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
         aria-modal="true"
         aria-label="Centro de aprendizaje"
         onClick={(event) => event.stopPropagation()}
-        data-augmented-ui={isCyber ? 'learning-center-modal tl-clip tr-clip br-clip bl-clip border inlay' : undefined}
       >
         <header>
           <div>

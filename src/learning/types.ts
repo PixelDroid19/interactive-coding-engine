@@ -64,12 +64,9 @@ export interface ReviewCard {
 export interface NotebookEntry {
   id: string;
   courseId: string;
-  skillId: string;
-  concept: string;
-  mentalModel: string;
-  pattern: string;
-  ownExample: string;
-  personalMistake: string;
+  title: string;
+  body: string;
+  itemId?: string;
   updatedAt: number;
 }
 

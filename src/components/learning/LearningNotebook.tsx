@@ -1,217 +1,211 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Edit3, FileText, Trash2 } from 'lucide-react';
 import type { LearningProfile, NotebookEntry } from '../../learning/types';
+import { UiButton } from '../ui/UiButton';
+import { UiField } from '../ui/UiField';
+
+export type NotebookSaveInput = Omit<NotebookEntry, 'id' | 'updatedAt'> & { id?: string };
 
 interface LearningNotebookProps {
   courseId: string;
   profile: LearningProfile;
-  onSave: (entry: Omit<NotebookEntry, 'id' | 'updatedAt'>) => Promise<void>;
+  onSave: (entry: NotebookSaveInput) => Promise<void>;
+  onDelete: (noteId: string) => Promise<void>;
 }
 
-type Draft = Pick<NotebookEntry, 'mentalModel' | 'pattern' | 'ownExample' | 'personalMistake'>;
-const EMPTY: Draft = {
-  mentalModel: '',
-  pattern: '',
-  ownExample: '',
-  personalMistake: '',
-};
-
-function toDraft(entry: NotebookEntry | undefined): Draft {
-  return entry
-    ? {
-        mentalModel: entry.mentalModel,
-        pattern: entry.pattern,
-        ownExample: entry.ownExample,
-        personalMistake: entry.personalMistake,
-      }
-    : { ...EMPTY };
+function noteLabel(note: NotebookEntry): string {
+  return note.title.trim() || 'Nota sin título';
 }
 
-function revisionOf(entry: NotebookEntry | undefined): string {
-  return entry ? `${entry.id}:${entry.updatedAt}` : 'empty';
-}
-
-export const LearningNotebook: React.FC<LearningNotebookProps> = ({ courseId, profile, onSave }) => {
-  const skills = useMemo(
-    () =>
-      [
-        ...new Set([
-          ...profile.evidence.filter((evidence) => evidence.courseId === courseId).map((evidence) => evidence.skillId),
-          ...profile.notebook.filter((entry) => entry.courseId === courseId).map((entry) => entry.skillId),
-        ]),
-      ].sort(),
-    [courseId, profile.evidence, profile.notebook],
+export const LearningNotebook: React.FC<LearningNotebookProps> = ({ courseId, profile, onSave, onDelete }) => {
+  const notes = useMemo(
+    () => profile.notebook.filter((entry) => entry.courseId === courseId).sort((left, right) => right.updatedAt - left.updatedAt),
+    [courseId, profile.notebook],
   );
-  const [skillId, setSkillId] = useState(skills[0] ?? '');
-  const [draft, setDraft] = useState<Draft>(EMPTY);
-  const [baseRevision, setBaseRevision] = useState<string | null>(null);
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [baseRevision, setBaseRevision] = useState<number | null>(null);
   const [dirty, setDirty] = useState(false);
   const [remoteConflict, setRemoteConflict] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const activeEntryKeyRef = useRef<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const remoteEditingNote = editingId ? notes.find((note) => note.id === editingId) : undefined;
 
   useEffect(() => {
-    setSkillId((current) => (skills.includes(current) ? current : (skills[0] ?? '')));
-  }, [skills]);
-
-  const entry = useMemo(
-    () => profile.notebook.find((candidate) => candidate.courseId === courseId && candidate.skillId === skillId),
-    [courseId, profile.notebook, skillId],
-  );
-  const remoteDraft = useMemo(() => toDraft(entry), [entry]);
-  const remoteRevision = revisionOf(entry);
-
-  useEffect(() => {
-    const entryKey = `${courseId}:${skillId}`;
-    if (activeEntryKeyRef.current !== entryKey) {
-      activeEntryKeyRef.current = entryKey;
-      setDraft(remoteDraft);
-      setBaseRevision(remoteRevision);
-      setDirty(false);
-      setRemoteConflict(false);
-      return;
-    }
-
-    if (!dirty && baseRevision !== remoteRevision) {
-      setDraft(remoteDraft);
-      setBaseRevision(remoteRevision);
-      setRemoteConflict(false);
-      return;
-    }
-
-    if (dirty && baseRevision !== remoteRevision) {
+    if (!editingId || !remoteEditingNote || baseRevision === remoteEditingNote.updatedAt) return;
+    if (dirty) {
       setRemoteConflict(true);
-      setSaved(false);
+      return;
     }
-  }, [baseRevision, courseId, dirty, remoteDraft, remoteRevision, skillId]);
+    setTitle(remoteEditingNote.title);
+    setBody(remoteEditingNote.body);
+    setBaseRevision(remoteEditingNote.updatedAt);
+    setRemoteConflict(false);
+  }, [baseRevision, dirty, editingId, remoteEditingNote]);
 
-  useEffect(() => {
-    setSaved(false);
+  const resetComposer = () => {
+    setTitle('');
+    setBody('');
+    setEditingId(null);
+    setBaseRevision(null);
+    setDirty(false);
+    setRemoteConflict(false);
     setSaveError('');
-  }, [courseId, skillId]);
+  };
 
-  const update = (field: keyof Draft, value: string) => {
-    setDraft((current) => ({ ...current, [field]: value }));
-    setDirty(true);
-    setSaved(false);
+  const beginEdit = (note: NotebookEntry) => {
+    setTitle(note.title);
+    setBody(note.body);
+    setEditingId(note.id);
+    setBaseRevision(note.updatedAt);
+    setDirty(false);
+    setRemoteConflict(false);
     setSaveError('');
   };
 
   const reloadRemote = () => {
-    setDraft(remoteDraft);
-    setBaseRevision(remoteRevision);
+    if (!remoteEditingNote) return;
+    setTitle(remoteEditingNote.title);
+    setBody(remoteEditingNote.body);
+    setBaseRevision(remoteEditingNote.updatedAt);
     setDirty(false);
     setRemoteConflict(false);
-    setSaved(false);
     setSaveError('');
   };
 
   const save = async () => {
-    if (!skillId || saving) return;
+    if (!body.trim() || saving) return;
     setSaving(true);
     setSaveError('');
     try {
       await onSave({
+        ...(editingId ? { id: editingId } : {}),
         courseId,
-        skillId,
-        concept: skillId.replace(/-/g, ' '),
-        ...draft,
+        title: title.trim(),
+        body: body.trim(),
+        ...(remoteEditingNote?.itemId ? { itemId: remoteEditingNote.itemId } : {}),
       });
-      setDirty(false);
-      setRemoteConflict(false);
-      setSaved(true);
+      resetComposer();
     } catch {
-      setSaved(false);
-      setSaveError('No se pudo guardar tu ficha. El borrador sigue aquí para que puedas reintentar.');
+      setSaveError('No se pudo guardar la nota. Tu borrador sigue aquí para que puedas reintentar.');
     } finally {
       setSaving(false);
     }
   };
 
-  if (!skills.length) {
-    return (
-      <section className="learning-notebook learning-notebook--empty">
-        <div className="learning-empty">
-          <h3>Aún no hay conceptos para anotar</h3>
-          <p>Cuando completes una lectura, práctica o desafío, podrás guardar una nota sobre lo que observaste.</p>
-        </div>
-      </section>
-    );
-  }
+  const remove = async (noteId: string) => {
+    if (deletingId) return;
+    setDeletingId(noteId);
+    try {
+      await onDelete(noteId);
+      if (editingId === noteId) resetComposer();
+      setPendingDeleteId(null);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const markDirty = (change: () => void) => {
+    change();
+    setDirty(true);
+    setRemoteConflict(false);
+    setSaveError('');
+  };
 
   return (
     <section className="learning-notebook">
-      <div className="learning-notebook__intro">
-        <h3>Tu explicación corta, no otra documentación</h3>
-        <p>Guarda lo que te ayuda a reconstruir el concepto cuando vuelvas dentro de una semana.</p>
-      </div>
-      <label>
-        Concepto
-        <select value={skillId} disabled={saving} onChange={(event) => setSkillId(event.target.value)}>
-          {skills.map((skill) => (
-            <option key={skill} value={skill}>
-              {skill.replace(/-/g, ' ')}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Modelo mental
-        <textarea
-          rows={2}
-          value={draft.mentalModel}
-          disabled={saving}
-          onChange={(event) => update('mentalModel', event.target.value)}
-          placeholder="Lo imagino como…"
-        />
-      </label>
-      <label>
-        Patrón que quiero recordar
-        <textarea
-          rows={2}
-          value={draft.pattern}
-          disabled={saving}
-          onChange={(event) => update('pattern', event.target.value)}
-          placeholder="Cuando aparece…, hago…"
-        />
-      </label>
-      <label>
-        Mi ejemplo
-        <textarea
-          rows={3}
-          value={draft.ownExample}
-          disabled={saving}
-          onChange={(event) => update('ownExample', event.target.value)}
-          placeholder="Un caso distinto al curso…"
-        />
-      </label>
-      <label>
-        Error que ya cometí
-        <textarea
-          rows={2}
-          value={draft.personalMistake}
-          disabled={saving}
-          onChange={(event) => update('personalMistake', event.target.value)}
-          placeholder="Me confundí cuando…"
-        />
-      </label>
-      {saveError && (
-        <p className="learning-notebook__error" role="alert">
-          {saveError}
-        </p>
-      )}
-      {remoteConflict && (
-        <div className="learning-notebook__conflict" role="alert">
-          <p>Una copia remota cambió mientras editabas. Conservamos tu borrador para que elijas qué versión usar.</p>
-          <button type="button" onClick={reloadRemote} disabled={saving}>
-            Recargar copia remota
-          </button>
+      <header className="learning-notebook__intro">
+        <div>
+          <span>CUADERNO PERSONAL</span>
+          <h3>{editingId ? 'Editar nota' : 'Anota lo que te resulte útil'}</h3>
+          <p>Una idea, una duda o un ejemplo basta. El curso se asocia automáticamente.</p>
         </div>
-      )}
-      <button type="button" className="learning-primary" onClick={() => void save()} disabled={saving || !Object.values(draft).some((value) => value.trim())}>
-        {saving ? 'Guardando…' : saveError ? 'Reintentar guardado' : saved ? 'Guardado' : 'Guardar nota'}
-      </button>
+        {editingId && <UiButton variant="quiet" onClick={resetComposer} disabled={saving}>Cancelar edición</UiButton>}
+      </header>
+
+      <div className="learning-notebook__composer">
+        <UiField label="Título de la nota" hint="Opcional. El curso se asocia automáticamente.">
+          <input
+            value={title}
+            maxLength={120}
+            disabled={saving}
+            onChange={(event) => markDirty(() => setTitle(event.target.value))}
+            placeholder="Opcional, por ejemplo: retorno de funciones"
+          />
+        </UiField>
+        <UiField label="Nota">
+          <textarea
+            value={body}
+            maxLength={12000}
+            rows={5}
+            disabled={saving}
+            onChange={(event) => markDirty(() => setBody(event.target.value))}
+            placeholder="Escribe una idea, duda, ejemplo o recordatorio…"
+          />
+        </UiField>
+        {remoteConflict && (
+          <div className="learning-notebook__conflict" role="alert">
+            <p>Esta nota cambió en otro lugar. Conservamos tu borrador para que no pierdas lo que escribiste.</p>
+            <button type="button" onClick={reloadRemote} disabled={saving}>Recargar copia remota</button>
+          </div>
+        )}
+        {saveError && <p className="learning-notebook__error" role="alert">{saveError}</p>}
+        <UiButton variant="primary" onClick={() => void save()} disabled={saving || !body.trim()}>
+          {saving ? 'Guardando…' : editingId ? 'Guardar cambios' : 'Guardar nota'}
+        </UiButton>
+      </div>
+
+      <section className="learning-notebook__saved" aria-labelledby="saved-notes-title">
+        <div className="learning-section-heading">
+          <div>
+            <span>TUS APUNTES</span>
+            <h3 id="saved-notes-title">Notas guardadas</h3>
+          </div>
+          <strong>{notes.length}</strong>
+        </div>
+        {notes.length === 0 ? (
+          <div className="learning-notebook__empty">
+            <FileText size={20} aria-hidden="true" />
+            <p>Cuando guardes una nota aparecerá aquí. No necesitas completar una plantilla.</p>
+          </div>
+        ) : (
+          <div className="learning-notebook__list">
+            {notes.map((note) => {
+              const label = noteLabel(note);
+              const confirmingDelete = pendingDeleteId === note.id;
+              return (
+                <article key={note.id} className={editingId === note.id ? 'is-editing' : ''}>
+                  <header>
+                    <div>
+                      <h4>{label}</h4>
+                      <small>
+                        {note.itemId ? `Lección ${note.itemId} · ` : ''}
+                        {new Date(note.updatedAt).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </small>
+                    </div>
+                    <div className="learning-notebook__note-actions">
+                      <button type="button" aria-label={`Editar ${label}`} onClick={() => beginEdit(note)} disabled={saving || Boolean(deletingId)}><Edit3 size={15} /></button>
+                      <button type="button" aria-label={`Eliminar ${label}`} onClick={() => setPendingDeleteId(note.id)} disabled={saving || Boolean(deletingId)}><Trash2 size={15} /></button>
+                    </div>
+                  </header>
+                  <p>{note.body}</p>
+                  {confirmingDelete && (
+                    <div className="learning-notebook__delete-confirm" role="group" aria-label={`Confirmar eliminación de ${label}`}>
+                      <span>¿Eliminar esta nota?</span>
+                      <button type="button" onClick={() => void remove(note.id)} disabled={Boolean(deletingId)}>Confirmar eliminación</button>
+                      <button type="button" onClick={() => setPendingDeleteId(null)} disabled={Boolean(deletingId)}>Conservar nota</button>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </section>
   );
 };

@@ -1,0 +1,44 @@
+.ui-button {
+  display: inline-flex;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  border: 1.5px solid var(--ui-border);
+  border-radius: var(--ui-radius-md);
+  padding: .65rem 1rem;
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  font: 800 .88rem/1 var(--font-body, "Outfit", sans-serif);
+  box-shadow: var(--ui-shadow);
+  cursor: pointer;
+}
+.ui-button:hover:not(:disabled) { transform: translate(-1px, -1px); }
+.ui-button:active:not(:disabled) { transform: translate(1px, 1px); box-shadow: none; }
+.ui-button:disabled { opacity: .5; box-shadow: none; cursor: not-allowed; }
+.ui-button:focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 3px; }
+.ui-button--primary { background: var(--ui-accent); color: var(--ui-accent-contrast); }
+.ui-button--quiet, .ui-button--icon { background: transparent; box-shadow: none; }
+.ui-button--danger { border-color: var(--ui-danger); color: var(--ui-danger); box-shadow: none; }
+.ui-button--icon { width: 2.6rem; padding: 0; }
+
+.ui-field { display: grid; gap: .4rem; }
+.ui-field > label { font-weight: 750; }
+.ui-field > :is(input, textarea, select) {
+  width: 100%;
+  border: 1.5px solid var(--ui-border-subtle);
+  border-radius: var(--ui-radius-md);
+  padding: .75rem .85rem;
+  background: var(--ui-surface-raised);
+  color: var(--ui-text);
+  font: 500 .96rem/1.5 var(--font-body, sans-serif);
+}
+.ui-field > textarea { resize: vertical; }
+.ui-field > :is(input, textarea, select):focus { outline: 3px solid color-mix(in srgb, var(--ui-focus) 45%, transparent); border-color: var(--ui-focus); }
+.ui-field > small { color: var(--ui-muted); }
+.ui-field > [role="alert"] { margin: 0; color: var(--ui-danger); font-weight: 700; }
+
+.ui-tabs { display: grid; grid-template-columns: repeat(var(--ui-tab-count, 2), 1fr); gap: .45rem; padding: .65rem 1rem; background: var(--ui-surface-soft); }
+.ui-tabs > button { display: flex; min-height: 2.65rem; align-items: center; justify-content: center; gap: .45rem; border: 1px solid transparent; border-radius: var(--ui-radius-md); background: transparent; color: var(--ui-muted); font-weight: 800; }
+.ui-tabs > button[aria-selected="true"] { border-color: var(--ui-border); background: var(--ui-accent); color: var(--ui-accent-contrast); box-shadow: var(--ui-shadow); }
+.ui-tabs > button:focus-visible { outline: 3px solid var(--ui-focus); outline-offset: 2px; }

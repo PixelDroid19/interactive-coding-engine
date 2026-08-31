@@ -78,35 +78,6 @@
   filter: drop-shadow(0 0 24px rgba(0, 0, 0, 0.85));
 }
 
-/* Learning Center Modal */
-.hud [data-augmented-ui~="learning-center-modal"] {
-  --aug-border-all: 1.5px;
-  --aug-border-bg: linear-gradient(180deg, #ffe600 0%, #00f0ff 50%, #b026ff 100%);
-  --aug-inlay-all: 1px;
-  --aug-inlay-bg: #070911;
-  --aug-inlay-opacity: 1;
-  --aug-tl: 14px;
-  --aug-tr: 14px;
-  --aug-br: 14px;
-  --aug-bl: 14px;
-  filter: drop-shadow(0 0 30px rgba(0, 0, 0, 0.9));
-}
-
-/* Staff Dashboard Dialog */
-.hud [data-augmented-ui~="staff-dashboard-modal"],
-[data-augmented-ui~="staff-dashboard-modal"] {
-  --aug-border-all: 1.5px;
-  --aug-border-bg: linear-gradient(135deg, #00f0ff 0%, #ffe600 50%, #00f0ff 100%);
-  --aug-inlay-all: 1px;
-  --aug-inlay-bg: #05080f;
-  --aug-inlay-opacity: 1;
-  --aug-tl: 14px;
-  --aug-tr: 14px;
-  --aug-br: 14px;
-  --aug-bl: 14px;
-  filter: drop-shadow(0 0 35px rgba(0, 240, 255, 0.25));
-}
-
 /* Account Dropdown Menu */
 .hud [data-augmented-ui~="hud-account-menu"],
 [data-augmented-ui~="hud-account-menu"] {
@@ -143,5 +114,4 @@
     border: 1px solid var(--hud-yellow) !important;
   }
 }
-
 

@@ -83,5 +83,26 @@
   --radius-doodle-md: 14px 18px 16px 20px / 18px 16px 20px 14px;
   --radius-doodle-pill: 9999px;
   --radius-clean-box: 10px;
-}
 
+  /* Shared application primitives. Components consume intent, themes own color. */
+  --ui-canvas: #f5f2eb;
+  --ui-surface: #eee9dd;
+  --ui-surface-raised: #fff;
+  --ui-surface-soft: #e7e2d7;
+  --ui-text: #1e2433;
+  --ui-muted: #606979;
+  --ui-border: #232733;
+  --ui-border-subtle: #b8b2a7;
+  --ui-accent: #ffe600;
+  --ui-accent-hover: #fff04d;
+  --ui-accent-contrast: #111318;
+  --ui-focus: #0284c7;
+  --ui-success: #08744c;
+  --ui-warning: #8a4b10;
+  --ui-danger: #a3163a;
+  --ui-shadow: 4px 4px 0 #232733;
+  --ui-shadow-raised: 8px 8px 0 #111318;
+  --ui-radius-sm: 7px;
+  --ui-radius-md: 10px;
+  --ui-radius-lg: 16px;
+}

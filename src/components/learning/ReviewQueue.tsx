@@ -58,6 +58,14 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
     }
   };
 
+  const introduction = (
+    <header className="review-intro">
+      <span>REPASO PROGRAMADO</span>
+      <h3>Practica recordar, no volver a leer</h3>
+      <p>La plataforma programa estas preguntas a partir de lo que ya trabajaste. Responde sin abrir la lección; después comparas y registras cuánto recordaste.</p>
+    </header>
+  );
+
   const reinforcementCards = reinforcements.length > 0 && (
     <section className="tutor-reinforcements" aria-labelledby="tutor-reinforcements-title">
       <div className="learning-section-heading">
@@ -100,6 +108,7 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
   if (!active) {
     return (
       <div className="review-overview">
+        {introduction}
         {reinforcementCards}
         <div className="learning-empty">
           <strong>
@@ -123,7 +132,13 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
 
   return (
     <section className="review-queue">
+      {introduction}
       {reinforcementCards}
+      <ol className="review-steps" aria-label="Pasos del repaso">
+        <li aria-current={!compare ? 'step' : undefined}>1 · Responder</li>
+        <li aria-current={compare ? 'step' : undefined}>2 · Comparar</li>
+        <li>3 · Registrar recuerdo</li>
+      </ol>
       <div className="learning-progress-line">
         <span>{due.length} por recuperar</span>
         <span>{active.skillId.replace(/-/g, ' ')}</span>

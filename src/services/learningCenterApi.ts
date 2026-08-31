@@ -18,12 +18,23 @@ export interface RemoteReviewCard {
 
 export interface RemoteNotebookEntry {
   id: string;
-  skillKey: string;
-  concept: string;
-  mentalModel: string;
-  pattern: string;
-  ownExample: string;
-  personalMistake: string;
+  title: string;
+  body: string;
+  itemKey: string | null;
+  updatedAt: string;
+}
+
+interface LegacyRemoteNotebookEntry {
+  id: string;
+  skillKey?: string;
+  concept?: string;
+  mentalModel?: string;
+  pattern?: string;
+  ownExample?: string;
+  personalMistake?: string;
+  title?: string;
+  body?: string;
+  itemKey?: string | null;
   updatedAt: string;
 }
 
@@ -88,6 +99,29 @@ function cacheKey(userId: string, courseSlug: string): string {
   return `${CACHE_PREFIX}${encodeURIComponent(userId)}:${encodeURIComponent(courseSlug)}`;
 }
 
+function normalizeNotebookEntry(entry: LegacyRemoteNotebookEntry): RemoteNotebookEntry {
+  const legacySections = [
+    entry.mentalModel?.trim() ? `Modelo mental\n${entry.mentalModel.trim()}` : '',
+    entry.pattern?.trim() ? `Patrón para recordar\n${entry.pattern.trim()}` : '',
+    entry.ownExample?.trim() ? `Ejemplo propio\n${entry.ownExample.trim()}` : '',
+    entry.personalMistake?.trim() ? `Error que cometí\n${entry.personalMistake.trim()}` : '',
+  ].filter(Boolean);
+  return {
+    id: entry.id,
+    title: entry.title?.trim() || entry.concept?.trim() || 'Nota importada',
+    body: entry.body?.trim() || legacySections.join('\n\n') || entry.concept?.trim() || '',
+    itemKey: entry.itemKey?.trim() || null,
+    updatedAt: entry.updatedAt,
+  };
+}
+
+function normalizeSnapshot(snapshot: LearningCenterSnapshot): LearningCenterSnapshot {
+  return {
+    ...snapshot,
+    notes: (snapshot.notes as unknown as LegacyRemoteNotebookEntry[]).map(normalizeNotebookEntry),
+  };
+}
+
 export function purgeLegacyLearningCenterCache(): void {
   try {
     for (let index = localStorage.length - 1; index >= 0; index -= 1) {
@@ -127,7 +161,7 @@ export function getCachedLearningCenter(userId: string, courseSlug: string): { s
   const cached = readCache(ownerId, normalizedCourseSlug);
   return cached
     ? {
-        snapshot: cached.snapshot,
+        snapshot: normalizeSnapshot(cached.snapshot),
         fresh: Date.now() - cached.cachedAt < CACHE_TTL_MS,
       }
     : null;
@@ -139,7 +173,7 @@ export async function fetchLearningCenter(userId: string, courseSlug: string, si
   const response = await learningApiRequest(`/v1/me/learning-center?courseSlug=${encodeURIComponent(normalizedCourseSlug)}`, {
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10_000)]) : undefined,
   });
-  const snapshot = await readApiJson<LearningCenterSnapshot>(response);
+  const snapshot = normalizeSnapshot(await readApiJson<LearningCenterSnapshot>(response));
   if (signal?.aborted) throw new Error('La sincronización fue cancelada.');
   if (!snapshot || snapshot.courseSlug !== normalizedCourseSlug) {
     throw new Error('La respuesta de aprendizaje no corresponde al curso abierto. Inténtalo otra vez.');
@@ -147,25 +181,40 @@ export async function fetchLearningCenter(userId: string, courseSlug: string, si
   return snapshot;
 }
 
-export async function saveRemoteNotebook(
-  skillKey: string,
-  entry: {
-    courseSlug: string;
-    concept: string;
-    mentalModel: string;
-    pattern: string;
-    ownExample: string;
-    personalMistake: string;
-  },
-): Promise<RemoteNotebookEntry> {
-  const normalizedSkillKey = requiredIdentifier(skillKey, 'el concepto');
+export interface RemoteNotebookInput {
+  courseSlug: string;
+  title: string;
+  body: string;
+  itemKey?: string;
+}
+
+export async function createRemoteNotebook(entry: RemoteNotebookInput): Promise<RemoteNotebookEntry> {
   requiredIdentifier(entry?.courseSlug, 'el curso');
-  return readApiJson<RemoteNotebookEntry>(
-    await learningApiRequest(`/v1/me/notebook/${encodeURIComponent(normalizedSkillKey)}`, {
+  requiredIdentifier(entry?.body, 'el contenido de la nota');
+  return normalizeNotebookEntry(await readApiJson<LegacyRemoteNotebookEntry>(
+    await learningApiRequest('/v1/me/notebook', {
+      method: 'POST',
+      body: JSON.stringify(entry),
+    }),
+  ));
+}
+
+export async function updateRemoteNotebook(noteId: string, entry: RemoteNotebookInput): Promise<RemoteNotebookEntry> {
+  const normalizedNoteId = requiredIdentifier(noteId, 'la nota');
+  requiredIdentifier(entry?.courseSlug, 'el curso');
+  requiredIdentifier(entry?.body, 'el contenido de la nota');
+  return normalizeNotebookEntry(await readApiJson<LegacyRemoteNotebookEntry>(
+    await learningApiRequest(`/v1/me/notebook/entries/${encodeURIComponent(normalizedNoteId)}`, {
       method: 'PUT',
       body: JSON.stringify(entry),
     }),
-  );
+  ));
+}
+
+export async function deleteRemoteNotebook(noteId: string): Promise<void> {
+  const normalizedNoteId = requiredIdentifier(noteId, 'la nota');
+  const response = await learningApiRequest(`/v1/me/notebook/entries/${encodeURIComponent(normalizedNoteId)}`, { method: 'DELETE' });
+  if (!response.ok) await readApiJson(response);
 }
 
 export async function rateRemoteReview(reviewId: string, rating: ReviewRating): Promise<void> {

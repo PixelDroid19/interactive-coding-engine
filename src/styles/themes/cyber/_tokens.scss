@@ -20,6 +20,31 @@
   @include theme.emit-cyber-tokens;
 }
 
+html.hud,
+html.cyber,
+html[data-theme="cyber"] {
+  --ui-canvas: #07090e;
+  --ui-surface: #0c0f16;
+  --ui-surface-raised: #11151e;
+  --ui-surface-soft: #0a0d13;
+  --ui-text: #e8edf5;
+  --ui-muted: #98a3b5;
+  --ui-border: #3a4352;
+  --ui-border-subtle: #252c38;
+  --ui-accent: #ffe600;
+  --ui-accent-hover: #fff04d;
+  --ui-accent-contrast: #080a0f;
+  --ui-focus: #00c9d7;
+  --ui-success: #52d6a2;
+  --ui-warning: #f4c95d;
+  --ui-danger: #ff5c85;
+  --ui-shadow: 3px 3px 0 #050609;
+  --ui-shadow-raised: 6px 6px 0 #050609;
+  --ui-radius-sm: 2px;
+  --ui-radius-md: 3px;
+  --ui-radius-lg: 4px;
+}
+
 .hud body,
 .hud #root,
 .hud .app-screen,
@@ -76,4 +101,3 @@
 .hud ::-webkit-scrollbar-thumb:hover {
   background: var(--hud-yellow) !important;
 }
-

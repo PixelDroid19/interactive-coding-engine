@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Activity, ArrowLeft, BookOpenCheck, CheckCircle2, Clock3, Headphones, Inbox, LibraryBig, MessageSquareText, RefreshCw, Search, ShieldCheck, Trash2, TriangleAlert, Users, X } from 'lucide-react';
 import { staffDashboardApi, type AdminCourse, type IdentityAccessRule, type LearnerDetail, type StaffAdminUser, type StaffLearner, type StaffOverview, type StaffThread, type UserCourseAccess } from '../services/staffDashboardApi';
-import { useTheme } from '../themes/ThemeProvider';
 import { useModalDialog } from '../components/useModalDialog';
 import { StaffLiveHelpQueue } from '../live-help/StaffLiveHelpQueue';
 import type { UserRole } from '../services/authSessionApi';
@@ -30,7 +29,6 @@ export interface StaffDashboardIdentity {
 }
 
 export function StaffDashboard({ canAdmin, staffIdentity, onClose }: { canAdmin: boolean; staffIdentity: StaffDashboardIdentity | null; onClose(): void }) {
-  const { themeId } = useTheme();
   const canUseDashboard = Boolean(staffIdentity?.roles.some((role) => role === 'tutor' || role === 'admin'));
   const effectiveCanAdmin = canUseDashboard && canAdmin && Boolean(staffIdentity?.roles.includes('admin'));
   const staffIdentityKey = staffIdentity ? `${staffIdentity.userId}\u0000${staffIdentity.roles.slice().sort().join(',')}` : 'no-staff';
@@ -183,8 +181,7 @@ export function StaffDashboard({ canAdmin, staffIdentity, onClose }: { canAdmin:
   return (
     <div
       ref={dialogRef}
-      className={`staff-dashboard${themeId === 'cyber' ? ' staff-dashboard--cyber' : ''}`}
-      data-augmented-ui={themeId === 'cyber' ? "staff-dashboard-modal tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
+      className="staff-dashboard"
       role="dialog"
       aria-modal="true"
       aria-label="Panel de seguimiento"

@@ -116,7 +116,7 @@ export function rateCurriculumReview(reviewId: string, rating: ReviewRating): Pr
 
 export function saveNotebookEntry(entry: Omit<NotebookEntry, 'id' | 'updatedAt'>): Promise<LearningProfile> {
   const now = Date.now();
-  const id = `notebook:${entry.courseId}:${entry.skillId}`;
+  const id = `notebook:${entry.courseId}:${crypto.randomUUID()}`;
   return defaultRepository.update((profile) => ({
     ...profile,
     updatedAt: now,

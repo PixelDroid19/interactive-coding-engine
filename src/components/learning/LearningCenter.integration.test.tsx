@@ -206,8 +206,9 @@ describe('LearningCenter', () => {
     await screen.findByText('Progreso sincronizado');
     expect(screen.getByText('Aún no tienes actividad para repasar.')).toBeTruthy();
     fireEvent.click(screen.getByRole('tab', { name: 'Mis notas' }));
-    expect(screen.getByRole('heading', { name: 'Aún no hay conceptos para anotar' })).toBeTruthy();
-    expect(screen.queryByDisplayValue('primer-concepto')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Anota lo que te resulte útil' })).toBeTruthy();
+    expect(screen.getByText('Cuando guardes una nota aparecerá aquí. No necesitas completar una plantilla.')).toBeTruthy();
+    expect(screen.queryByRole('combobox')).toBeNull();
   });
 
   it('deriva los conceptos por reforzar de eventos remotos reales sin mostrar ayuda en vivo inerte', async () => {
@@ -366,7 +367,7 @@ describe('LearningCenter', () => {
     expect(screen.getByText('Aún no tienes actividad para repasar.')).toBeTruthy();
   });
 
-  it('guarda una nota de un concepto observado, conserva el borrador y permite reintentar ante un error remoto', async () => {
+  it('guarda una nota libre, conserva el borrador y permite reintentar ante un error remoto', async () => {
     vi.mocked(globalThis.fetch)
       .mockReset()
       .mockResolvedValueOnce(
@@ -382,12 +383,9 @@ describe('LearningCenter', () => {
         new Response(
           JSON.stringify({
             id: 'saved-after-retry',
-            skillKey: 'return-values',
-            concept: 'return values',
-            mentalModel: 'Un valor debe salir de la función para reutilizarlo.',
-            pattern: '',
-            ownExample: '',
-            personalMistake: '',
+            title: 'Valores de retorno',
+            body: 'Un valor debe salir de la función para reutilizarlo.',
+            itemKey: null,
             updatedAt: new Date(3).toISOString(),
           }),
           { status: 200, headers: { 'content-type': 'application/json' } },
@@ -404,17 +402,25 @@ describe('LearningCenter', () => {
 
     await screen.findByText('Progreso sincronizado');
     fireEvent.click(screen.getByRole('tab', { name: 'Mis notas' }));
-    const mentalModel = screen.getByLabelText('Modelo mental') as HTMLTextAreaElement;
-    fireEvent.change(mentalModel, {
+    const note = screen.getByLabelText('Nota') as HTMLTextAreaElement;
+    fireEvent.change(screen.getByLabelText('Título de la nota'), { target: { value: 'Valores de retorno' } });
+    fireEvent.change(note, {
       target: { value: 'Un valor debe salir de la función para reutilizarlo.' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain('No se pudo guardar');
-    expect(mentalModel.value).toBe('Un valor debe salir de la función para reutilizarlo.');
-    fireEvent.click(screen.getByRole('button', { name: 'Reintentar guardado' }));
-    expect(await screen.findByRole('button', { name: 'Guardado' })).toBeTruthy();
-    expect(mentalModel.value).toBe('Un valor debe salir de la función para reutilizarlo.');
+    expect(note.value).toBe('Un valor debe salir de la función para reutilizarlo.');
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
+    expect(await screen.findByRole('heading', { name: 'Valores de retorno' })).toBeTruthy();
+    expect(note.value).toBe('');
+    const createCall = vi.mocked(globalThis.fetch).mock.calls[2];
+    expect(String(createCall?.[0])).toContain('/v1/me/notebook');
+    expect(JSON.parse(String(createCall?.[1]?.body))).toEqual({
+      courseSlug: 'fundamentos',
+      title: 'Valores de retorno',
+      body: 'Un valor debe salir de la función para reutilizarlo.',
+    });
   });
 
   it('mantiene la nota confirmada si una lectura anterior llega después del guardado', async () => {
@@ -424,12 +430,9 @@ describe('LearningCenter', () => {
     });
     const savedEntry = {
       id: 'saved-race',
-      skillKey: 'return-values',
-      concept: 'return values',
-      mentalModel: 'Confirmada después de iniciar la lectura.',
-      pattern: '',
-      ownExample: '',
-      personalMistake: '',
+      title: 'Lectura pendiente',
+      body: 'Confirmada después de iniciar la lectura.',
+      itemKey: null,
       updatedAt: new Date(2).toISOString(),
     };
     vi.mocked(globalThis.fetch)
@@ -459,11 +462,11 @@ describe('LearningCenter', () => {
     renderCenter(profileWithSkill());
 
     fireEvent.click(screen.getByRole('tab', { name: 'Mis notas' }));
-    fireEvent.change(await screen.findByLabelText('Modelo mental'), {
-      target: { value: savedEntry.mentalModel },
+    fireEvent.change(await screen.findByLabelText('Nota'), {
+      target: { value: savedEntry.body },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Guardado' })).toBeTruthy());
+    await screen.findByText(savedEntry.body);
 
     finishInitialRead(
       new Response(JSON.stringify(emptySnapshot), {
@@ -472,18 +475,15 @@ describe('LearningCenter', () => {
       }),
     );
     await screen.findByText('Progreso sincronizado');
-    expect((screen.getByLabelText('Modelo mental') as HTMLTextAreaElement).value).toBe(savedEntry.mentalModel);
+    expect(screen.getByText(savedEntry.body)).toBeTruthy();
   });
 
   it('muestra de inmediato una caché fresca y la revalida al abrir sin llamarla sincronizada si falla', async () => {
     const savedEntry = {
       id: 'saved-cache',
-      skillKey: 'return-values',
-      concept: 'return values',
-      mentalModel: 'La nota sigue disponible al reabrir.',
-      pattern: '',
-      ownExample: '',
-      personalMistake: '',
+      title: 'Nota disponible',
+      body: 'La nota sigue disponible al reabrir.',
+      itemKey: null,
       updatedAt: new Date(4).toISOString(),
     };
     const freshSnapshot = {
@@ -505,7 +505,7 @@ describe('LearningCenter', () => {
 
     renderCenter(profileWithSkill());
     fireEvent.click(screen.getByRole('tab', { name: 'Mis notas' }));
-    expect((screen.getByLabelText('Modelo mental') as HTMLTextAreaElement).value).toBe(savedEntry.mentalModel);
+    expect(screen.getByText(savedEntry.body)).toBeTruthy();
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/v1/me/learning-center?courseSlug=fundamentos');
     expect(screen.queryByText('Progreso sincronizado')).toBeNull();
@@ -518,7 +518,7 @@ describe('LearningCenter', () => {
     );
 
     expect(await screen.findByText('Mostrando la última copia disponible')).toBeTruthy();
-    expect((screen.getByLabelText('Modelo mental') as HTMLTextAreaElement).value).toBe(savedEntry.mentalModel);
+    expect(screen.getByText(savedEntry.body)).toBeTruthy();
     expect(JSON.parse(localStorage.getItem(cacheKey) ?? 'null').snapshot.notes).toEqual([savedEntry]);
     expect(screen.queryByText('Progreso sincronizado')).toBeNull();
   });

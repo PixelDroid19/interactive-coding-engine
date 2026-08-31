@@ -59,7 +59,7 @@ Migration adds nullable `title`, `body`, `item_key`, backfills `body` by joining
 
 - [ ] **Step 4: Register validated routes**
 
-Register `POST /v1/me/notebook`, `PUT /v1/me/notebook/:noteId`, and `DELETE /v1/me/notebook/:noteId`. Validate title at 120 characters, body between 1 and 12000 characters, and optional lesson key with the existing `LessonKey` schema.
+Register `POST /v1/me/notebook`, `PUT /v1/me/notebook/entries/:noteId`, and `DELETE /v1/me/notebook/entries/:noteId`. Validate title at 120 characters, body between 1 and 12000 characters, and optional lesson key with the existing `LessonKey` schema. Keep the legacy skill route available until the frontend migration is deployed.
 
 - [ ] **Step 5: Verify GREEN and backend regression suite**
 
@@ -273,4 +273,3 @@ Push frontend commits, deploy Vercel production, verify `https://devt.lat`, asse
 - [ ] **Step 5: Record evidence**
 
 Capture test counts, deployment IDs, health responses, and browser screenshots. Leave the goal active if any requirement lacks direct evidence.
-

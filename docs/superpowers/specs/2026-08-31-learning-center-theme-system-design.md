@@ -33,8 +33,8 @@ La tabla de notas ganará los campos `title`, `body` e `item_key`. `skill_key` d
 Contratos:
 
 - `POST /v1/me/notebook` crea una nota libre.
-- `PUT /v1/me/notebook/:noteId` actualiza una nota perteneciente al actor autenticado.
-- `DELETE /v1/me/notebook/:noteId` elimina una nota perteneciente al actor autenticado.
+- `PUT /v1/me/notebook/entries/:noteId` actualiza una nota perteneciente al actor autenticado.
+- `DELETE /v1/me/notebook/entries/:noteId` elimina una nota perteneciente al actor autenticado.
 - El snapshot del Centro devuelve `title`, `body`, `itemKey` y `updatedAt`.
 
 Las rutas validarán longitudes, pertenencia y curso. No se aceptará que un usuario modifique notas de otra identidad.
@@ -82,4 +82,3 @@ El catálogo puede seguir usando el color de nivel. El editor no se rediseña; s
 - Pruebas del repaso verificarán el texto explicativo y el ciclo responder, comparar y calificar.
 - Contratos visuales comprobarán que los temas emiten variables semánticas compartidas y que el Centro/dashboard no declaran paletas cyber propias.
 - Se probará en navegador real, escritorio, tema normal y cyber, con datos, vacío, carga y error.
-
