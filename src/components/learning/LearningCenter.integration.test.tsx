@@ -475,7 +475,7 @@ describe('LearningCenter', () => {
     expect((screen.getByLabelText('Modelo mental') as HTMLTextAreaElement).value).toBe(savedEntry.mentalModel);
   });
 
-  it('guarda una nota confirmada en la caché fresca aunque el refresco posterior falle y se cierre el centro', async () => {
+  it('muestra de inmediato una caché fresca y la revalida al abrir sin llamarla sincronizada si falla', async () => {
     const savedEntry = {
       id: 'saved-cache',
       skillKey: 'return-values',
@@ -486,44 +486,41 @@ describe('LearningCenter', () => {
       personalMistake: '',
       updatedAt: new Date(4).toISOString(),
     };
-    localStorage.setItem(
-      'aula_learning_center_cache_v2:student-1:fundamentos',
-      JSON.stringify({ cachedAt: Date.now(), snapshot: snapshotWithSkill() }),
-    );
-    vi.mocked(globalThis.fetch)
-      .mockReset()
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify(savedEntry), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        }),
-      )
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ error: { message: 'Sin conexión' } }), {
-          status: 503,
-          headers: { 'content-type': 'application/json' },
-        }),
-      );
-
-    const view = renderCenter(profileWithSkill());
-    await screen.findByText('Progreso sincronizado');
-    fireEvent.click(screen.getByRole('tab', { name: 'Mis notas' }));
-    fireEvent.change(screen.getByLabelText('Modelo mental'), {
-      target: { value: savedEntry.mentalModel },
+    const freshSnapshot = {
+      ...snapshotWithSkill(),
+      summary: { ...snapshotWithSkill().summary, notes: 1 },
+      notes: [savedEntry],
+    };
+    let resolveRevalidation!: (response: Response) => void;
+    const pendingRevalidation = new Promise<Response>((resolve) => {
+      resolveRevalidation = resolve;
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
+    const cacheKey = 'aula_learning_center_cache_v2:student-1:fundamentos';
+    localStorage.setItem(
+      cacheKey,
+      JSON.stringify({ cachedAt: Date.now(), snapshot: freshSnapshot }),
+    );
+    const fetchMock = vi.mocked(globalThis.fetch);
+    fetchMock.mockReset().mockReturnValueOnce(pendingRevalidation);
 
-    await screen.findByRole('button', { name: 'Guardado' });
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
-    expect(await screen.findByText('Mostrando la última copia disponible')).toBeTruthy();
-
-    view.unmount();
     renderCenter(profileWithSkill());
-    await screen.findByText('Progreso sincronizado');
     fireEvent.click(screen.getByRole('tab', { name: 'Mis notas' }));
-
     expect((screen.getByLabelText('Modelo mental') as HTMLTextAreaElement).value).toBe(savedEntry.mentalModel);
-    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/v1/me/learning-center?courseSlug=fundamentos');
+    expect(screen.queryByText('Progreso sincronizado')).toBeNull();
+
+    resolveRevalidation(
+      new Response(JSON.stringify({ error: { message: 'Sin conexión' } }), {
+        status: 503,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+
+    expect(await screen.findByText('Mostrando la última copia disponible')).toBeTruthy();
+    expect((screen.getByLabelText('Modelo mental') as HTMLTextAreaElement).value).toBe(savedEntry.mentalModel);
+    expect(JSON.parse(localStorage.getItem(cacheKey) ?? 'null').snapshot.notes).toEqual([savedEntry]);
+    expect(screen.queryByText('Progreso sincronizado')).toBeNull();
   });
 
   it('conserva una calificación confirmada en la caché fresca aunque falle el refresco posterior', async () => {
@@ -535,10 +532,22 @@ describe('LearningCenter', () => {
     );
     vi.mocked(globalThis.fetch)
       .mockReset()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(snapshotWithReview('review-cache', prompt)), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
       .mockResolvedValueOnce(new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }))
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ error: { message: 'Sin conexión' } }), {
           status: 503,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(emptySnapshot), {
+          status: 200,
           headers: { 'content-type': 'application/json' },
         }),
       );
@@ -551,7 +560,7 @@ describe('LearningCenter', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Comparar mi respuesta' }));
     fireEvent.click(screen.getByRole('button', { name: 'Lo expliqué' }));
 
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(3));
     expect(await screen.findByText('Mostrando la última copia disponible')).toBeTruthy();
     const cached = JSON.parse(localStorage.getItem(cacheKey) ?? 'null');
     expect(cached.snapshot.reviews).toEqual([]);
@@ -562,7 +571,7 @@ describe('LearningCenter', () => {
     await screen.findByText('Progreso sincronizado');
 
     expect(screen.queryByText(prompt)).toBeNull();
-    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(4);
   });
 
   it('conserva un refuerzo confirmado en la caché fresca aunque falle el refresco posterior', async () => {
@@ -574,10 +583,22 @@ describe('LearningCenter', () => {
     );
     vi.mocked(globalThis.fetch)
       .mockReset()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(snapshotWithReinforcement('reinforcement-cache', note)), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
       .mockResolvedValueOnce(new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }))
       .mockResolvedValueOnce(
         new Response(JSON.stringify({ error: { message: 'Sin conexión' } }), {
           status: 503,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(emptySnapshot), {
+          status: 200,
           headers: { 'content-type': 'application/json' },
         }),
       );
@@ -586,7 +607,7 @@ describe('LearningCenter', () => {
     await screen.findByRole('heading', { name: 'Conceptos para reforzar' });
     fireEvent.click(screen.getByRole('button', { name: 'Marcar return values como repasado' }));
 
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(3));
     expect(await screen.findByText('Mostrando la última copia disponible')).toBeTruthy();
     const cached = JSON.parse(localStorage.getItem(cacheKey) ?? 'null');
     expect(cached.snapshot.reinforcements).toEqual([]);
@@ -597,7 +618,7 @@ describe('LearningCenter', () => {
     await screen.findByText('Progreso sincronizado');
 
     expect(screen.queryByRole('heading', { name: 'Conceptos para reforzar' })).toBeNull();
-    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(4);
   });
 
   it('cancela un refresco posterior a una mutación cuando cambia de A a B y no restaura la caché de A', async () => {
@@ -615,6 +636,12 @@ describe('LearningCenter', () => {
     );
     vi.mocked(globalThis.fetch)
       .mockReset()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(snapshotWithReview('review-a', 'Respuesta de A que ya fue calificada')), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
       .mockResolvedValueOnce(new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }))
       .mockReturnValueOnce(pendingRefresh)
       .mockResolvedValueOnce(
@@ -632,15 +659,15 @@ describe('LearningCenter', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Comparar mi respuesta' }));
     fireEvent.click(screen.getByRole('button', { name: 'Lo expliqué' }));
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(3));
     const cachedAfterRating = JSON.parse(localStorage.getItem(aCacheKey) ?? 'null');
     expect(cachedAfterRating.snapshot.reviews).toEqual([]);
     expect(cachedAfterRating.snapshot.summary.dueReviews).toBe(0);
 
     auth.useAuthSession.mockReturnValue(studentAuth('student-b'));
     view.rerender(<LearningCenter course={FUNDAMENTOS_COURSE} profile={createEmptyLearningProfile(0)} onClose={vi.fn()} />);
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(3));
-    expect((vi.mocked(globalThis.fetch).mock.calls[1]?.[1]?.signal as AbortSignal | undefined)?.aborted).toBe(true);
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(4));
+    expect((vi.mocked(globalThis.fetch).mock.calls[2]?.[1]?.signal as AbortSignal | undefined)?.aborted).toBe(true);
 
     localStorage.removeItem(aCacheKey);
     resolveRefresh(
@@ -669,6 +696,12 @@ describe('LearningCenter', () => {
     );
     vi.mocked(globalThis.fetch)
       .mockReset()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(snapshotWithReview('review-a', 'Respuesta de A antes de logout')), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
       .mockResolvedValueOnce(new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }))
       .mockReturnValueOnce(pendingRefresh);
 
@@ -680,14 +713,14 @@ describe('LearningCenter', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Comparar mi respuesta' }));
     fireEvent.click(screen.getByRole('button', { name: 'Lo expliqué' }));
-    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(3));
 
     auth.useAuthSession.mockReturnValue({
       ...STUDENT_AUTH,
       session: { authenticated: false, providers: ['google'] },
     });
     view.rerender(<LearningCenter course={FUNDAMENTOS_COURSE} profile={createEmptyLearningProfile(0)} onClose={vi.fn()} />);
-    expect((vi.mocked(globalThis.fetch).mock.calls[1]?.[1]?.signal as AbortSignal | undefined)?.aborted).toBe(true);
+    expect((vi.mocked(globalThis.fetch).mock.calls[2]?.[1]?.signal as AbortSignal | undefined)?.aborted).toBe(true);
 
     localStorage.removeItem(aCacheKey);
     resolveRefresh(

@@ -35,7 +35,7 @@
 .learning-center__summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; border-block: 1px solid color-mix(in srgb, currentColor 15%, transparent); background: color-mix(in srgb, currentColor 15%, transparent); }
 .learning-center__summary span { padding: .6rem .8rem; background: #ebe7dc; color: #4c515b; font-size: .7rem; text-align: center; }
 .learning-center__summary strong { color: #111318; font-size: .92rem; }
-.learning-center > nav { display: grid; grid-template-columns: repeat(3, 1fr); gap: .45rem; padding: .65rem 1rem; background: color-mix(in srgb, currentColor 4%, transparent); }
+.learning-center > nav { display: grid; grid-template-columns: repeat(2, 1fr); gap: .45rem; padding: .65rem 1rem; background: color-mix(in srgb, currentColor 4%, transparent); }
 .learning-center > nav button { display: flex; justify-content: center; align-items: center; gap: .45rem; min-height: 2.65rem; border: 1px solid transparent; border-radius: 9px; background: transparent; font-weight: 700; }
 .learning-center > nav button > span { display: grid; gap: .08rem; text-align: left; line-height: 1.05; }
 .learning-center > nav button small { color: color-mix(in srgb, currentColor 62%, transparent); font-size: .58rem; font-weight: 650; letter-spacing: .02em; }

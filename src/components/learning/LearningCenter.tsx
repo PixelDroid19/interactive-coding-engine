@@ -337,10 +337,10 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
     setScopedSnapshot(nextSnapshot);
     setRemoteState({
       userId: studentUserId,
-      status: nextSnapshot ? (cached?.fresh ? 'ready' : 'cached') : 'loading',
+      status: nextSnapshot ? 'cached' : 'loading',
       message: '',
     });
-    if (studentUserId && !cached?.fresh) void refresh(studentUserId, controller.signal, generation);
+    if (studentUserId) void refresh(studentUserId, controller.signal, generation);
     return () => {
       controller.abort();
       if (scopeControllerRef.current === controller) scopeControllerRef.current = null;
