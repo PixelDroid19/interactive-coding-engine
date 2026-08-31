@@ -32,9 +32,22 @@ const CONSOLE_BRIDGE = `
     if (event.source !== window.parent || !data || data.source !== 'aula-validator' || data.type !== 'run') return;
     void (async function () {
       try {
-        const missingTag = Array.isArray(data.awaitedTags)
-          ? data.awaitedTags.find((tag) => typeof tag === 'string' && !customElements.get(tag))
-          : undefined;
+        const waitForTag = async (tag) => {
+          if (customElements.get(tag)) return true;
+          return Promise.race([
+            customElements.whenDefined(tag).then(() => true),
+            new Promise((resolve) => setTimeout(resolve, 2500, false)),
+          ]);
+        };
+        let missingTag;
+        if (Array.isArray(data.awaitedTags)) {
+          for (const tag of data.awaitedTags) {
+            if (typeof tag === 'string' && !(await waitForTag(tag))) {
+              missingTag = tag;
+              break;
+            }
+          }
+        }
         if (missingTag) {
           window.parent.postMessage({ source: 'aula-validator', type: 'missing-tag', validationId: data.validationId, tag: missingTag }, '*');
           return;
@@ -109,16 +122,16 @@ function stripLinkedAssets(html: string, files: WorkspaceFile[]): string {
     }),
   );
 
-  const referencesLocalAsset = (reference: string) => {
+  const referencesBundledAsset = (reference: string, extension: RegExp) => {
     const normalized = normalizeLocalAssetPath(reference);
-    return normalized !== null && localAssetPaths.has(normalized);
+    return normalized !== null && (localAssetPaths.has(normalized) || extension.test(normalized));
   };
 
   return html
     .replace(/<link\b[^>]*\bhref=["']([^"']+)["'][^>]*\/?>/gi, (tag, href: string) =>
-      referencesLocalAsset(href) ? '' : tag)
+      referencesBundledAsset(href, /\.css$/i) ? '' : tag)
     .replace(/<script\b[^>]*\bsrc=["']([^"']+)["'][^>]*>\s*<\/script>/gi, (tag, src: string) =>
-      referencesLocalAsset(src) ? '' : tag);
+      referencesBundledAsset(src, /\.(?:js|jsx|ts|tsx)$/i) ? '' : tag);
 }
 
 function hasModuleSyntax(source: string): boolean {

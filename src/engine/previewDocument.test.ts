@@ -18,6 +18,14 @@ describe('buildPreviewDocument', () => {
     expect(document).toContain("source: 'aula-validator', type: 'result'");
   });
 
+  it('espera de forma acotada a que Lit registre el custom element antes de declararlo ausente', () => {
+    const document = buildPreviewDocument(templateWorkspace('lit'));
+
+    expect(document).toContain('customElements.whenDefined(tag)');
+    expect(document).toContain('setTimeout(resolve, 2500, false)');
+    expect(document).not.toContain("data.awaitedTags.find((tag) => typeof tag === 'string' && !customElements.get(tag))");
+  });
+
   it('mantiene en español los documentos iniciales que ve el estudiante', () => {
     for (const templateId of ['vanilla-js', 'lit', 'react'] as const) {
       const document = buildPreviewDocument(templateWorkspace(templateId));
@@ -89,6 +97,37 @@ describe('buildPreviewDocument', () => {
     expect(document).not.toContain('src="app.js"');
     expect(document).toContain('body { color: black; }');
     expect(document).toContain('console.log("local");');
+  });
+
+  it('elimina referencias locales obsoletas después de renombrar JavaScript o CSS', () => {
+    const workspace: WorkspaceSnapshot = {
+      activeFilePath: 'main.js',
+      files: {
+        'index.html': {
+          name: 'index.html',
+          path: 'index.html',
+          language: 'html',
+          content: `<!doctype html><html><head>
+            <link rel="stylesheet" href="styles.css">
+            <link rel="stylesheet" href="https://cdn.example.com/theme.css">
+          </head><body>
+            <script src="app.js"></script>
+            <script src="https://cdn.example.com/library.js"></script>
+          </body></html>`,
+        },
+        'theme.css': { name: 'theme.css', path: 'theme.css', language: 'css', content: 'body { color: rebeccapurple; }' },
+        'main.js': { name: 'main.js', path: 'main.js', language: 'javascript', content: 'document.body.dataset.ready = "sí";' },
+      },
+    };
+
+    const document = buildPreviewDocument(workspace);
+
+    expect(document).not.toContain('href="styles.css"');
+    expect(document).not.toContain('src="app.js"');
+    expect(document).toContain('href="https://cdn.example.com/theme.css"');
+    expect(document).toContain('src="https://cdn.example.com/library.js"');
+    expect(document).toContain('body { color: rebeccapurple; }');
+    expect(document).toContain('document.body.dataset.ready = "sí";');
   });
 
   it('ejecuta módulos locales en orden de dependencia dentro del playground', () => {
