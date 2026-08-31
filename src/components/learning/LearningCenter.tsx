@@ -267,7 +267,7 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
         data-augmented-ui={isCyber ? "learning-center-modal tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
       >
         <header><div><span>TU PROGRESO</span><h2>Centro de aprendizaje</h2><p>Repasa, explica y organiza lo que estás aprendiendo en {course.title}.</p><div className={`learning-center__sync is-${remoteStatus}`} role="status">{remoteStatus === 'loading' ? <LoaderCircle size={13} className="animate-spin" /> : remoteStatus === 'ready' ? <Cloud size={13} /> : <CloudOff size={13} />}<span>{remoteStatus === 'loading' ? 'Sincronizando tu progreso…' : remoteStatus === 'ready' ? 'Progreso sincronizado' : remoteStatus === 'cached' ? 'Mostrando la última copia disponible' : 'No pudimos recuperar tu progreso'}</span>{remoteMessage && <small>{remoteMessage}</small>}</div></div><button type="button" data-dialog-initial-focus onClick={onClose} aria-label="Cerrar centro de aprendizaje"><X size={19} /></button></header>
-        <div className="learning-center__summary" aria-label="Resumen de aprendizaje">
+        <div className="learning-center__summary" role="group" aria-label="Resumen de aprendizaje">
           <span><strong>{dueCount}</strong> {dueCount === 1 ? 'repaso pendiente' : 'repasos pendientes'}</span>
           <span><strong>{reinforcementCount}</strong> por reforzar</span>
           <span><strong>{noteCount}</strong> {noteCount === 1 ? 'nota propia' : 'notas propias'}</span>

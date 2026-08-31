@@ -315,6 +315,12 @@
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 
+.hud .rm-node-main.is-locked,
+.hud .rm-node-cp.is-locked {
+  filter: none !important;
+  opacity: 1 !important;
+}
+
 /* ── Main lesson node (yellow accent) ── */
 .hud .rm-node-main {
   border: 1px solid rgba(255, 230, 0, 0.45) !important;
@@ -434,7 +440,7 @@
 }
 .hud .rm-node-cp.is-reasoning .rm-cp-tag {
   background: #ff007f !important;
-  color: #ffffff !important;
+  color: #000000 !important;
 }
 
 /* Debugging (amber) */

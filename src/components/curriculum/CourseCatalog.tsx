@@ -59,7 +59,14 @@ export const CourseCatalog: React.FC<CourseCatalogProps> = ({ courses, progress,
               <h2>{course.title}</h2>
               <p>{course.tagline}</p>
               <div className="course-card__tags">{course.tags.slice(0, 3).map((tag) => <span key={tag}>{tag}</span>)}</div>
-              <div className="course-card__progress" aria-label={`${percent}% completado`}>
+              <div
+                className="course-card__progress"
+                role="progressbar"
+                aria-label={`${percent}% completado`}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={percent}
+              >
                 <div><span style={{ width: `${percent}%` }} /></div>
                 <small>{completed > 0 ? `${percent}% completado` : 'Listo para empezar'}</small>
               </div>

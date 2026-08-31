@@ -38,9 +38,13 @@ export const FileTree: React.FC<FileTreeProps> = ({
   const [depsList, setDepsList] = useState<string[]>(dependencies);
 
   const getFileBadge = (filename: string) => {
-    if (filename.endsWith('.html')) return <span className="badge-html">5</span>;
-    if (filename.endsWith('.css')) return <span className="badge-css">3</span>;
-    if (filename.endsWith('.json')) return <span className="badge-js">{'{}'}</span>;
+    const normalizedName = filename.toLowerCase();
+    if (normalizedName.endsWith('.html')) return <span className="badge-html">5</span>;
+    if (normalizedName.endsWith('.css')) return <span className="badge-css">3</span>;
+    if (normalizedName.endsWith('.json')) return <span className="badge-js">{'{}'}</span>;
+    if (normalizedName.endsWith('.py')) return <span className="badge-js">PY</span>;
+    if (normalizedName.endsWith('.ts') || normalizedName.endsWith('.tsx')) return <span className="badge-js">TS</span>;
+    if (normalizedName.endsWith('.md')) return <span className="badge-js">MD</span>;
     return <span className="badge-js">JS</span>;
   };
 
@@ -49,10 +53,13 @@ export const FileTree: React.FC<FileTreeProps> = ({
     const name = newFileName.trim();
     if (!name || files[name]) return;
 
-    let language: 'javascript' | 'html' | 'css' | 'typescript' | 'json' = 'javascript';
+    let language: WorkspaceFile['language'] = 'javascript';
     if (name.endsWith('.html')) language = 'html';
     else if (name.endsWith('.css')) language = 'css';
     else if (name.endsWith('.json')) language = 'json';
+    else if (name.endsWith('.py')) language = 'python';
+    else if (name.endsWith('.ts') || name.endsWith('.tsx')) language = 'typescript';
+    else if (name.endsWith('.md')) language = 'markdown';
 
     onFileCreate?.({
       name,

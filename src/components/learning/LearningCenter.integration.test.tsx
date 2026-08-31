@@ -54,7 +54,7 @@ describe('LearningCenter', () => {
     );
 
     expect(screen.getByRole('dialog', { name: 'Centro de aprendizaje' })).toBeTruthy();
-    const summary = screen.getByLabelText('Resumen de aprendizaje');
+    const summary = screen.getByRole('group', { name: 'Resumen de aprendizaje' });
     expect(summary.textContent).toContain('1 por reforzar');
     expect(summary.textContent).toContain('0 notas propias');
     expect(screen.getByRole('heading', { name: 'Conceptos para reforzar' })).toBeTruthy();

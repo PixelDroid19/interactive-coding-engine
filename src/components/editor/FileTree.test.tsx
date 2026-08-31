@@ -45,6 +45,26 @@ describe('FileTree', () => {
     expect(screen.getByRole('button', { name: 'Añadir dependencia' })).toBeTruthy();
   });
 
+  it('identifica los archivos Python sin presentarlos como JavaScript', () => {
+    render(
+      <FileTree
+        files={{
+          'main.py': {
+            name: 'main.py',
+            path: 'main.py',
+            content: 'print("hola")',
+            language: 'python',
+          },
+        }}
+        activeFilePath="main.py"
+        onFileSelect={() => {}}
+      />,
+    );
+
+    expect(screen.getByText('PY')).toBeTruthy();
+    expect(screen.queryByText('JS')).toBeNull();
+  });
+
   it('crea un archivo con un formulario accesible', () => {
     const onFileCreate = vi.fn();
     render(
@@ -61,6 +81,28 @@ describe('FileTree', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Crear archivo' }));
 
     expect(onFileCreate).toHaveBeenCalledWith(expect.objectContaining({ name: 'datos.js', path: 'datos.js' }));
+  });
+
+  it('crea archivos Python con el lenguaje correcto', () => {
+    const onFileCreate = vi.fn();
+    render(
+      <FileTree
+        files={files}
+        activeFilePath="index.html"
+        onFileSelect={() => {}}
+        onFileCreate={onFileCreate}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Nuevo archivo' }));
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nombre del archivo' }), { target: { value: 'main.py' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear archivo' }));
+
+    expect(onFileCreate).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'main.py',
+      path: 'main.py',
+      language: 'python',
+    }));
   });
 
   it('renombra un archivo con un formulario accesible', () => {

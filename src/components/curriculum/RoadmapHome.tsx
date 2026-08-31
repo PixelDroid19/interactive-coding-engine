@@ -257,6 +257,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
               type="button"
               className="rm-play-btn rm-playground-btn"
               data-augmented-ui={isCyber ? "hud-playground-btn tl-clip br-clip border inlay" : undefined}
+              aria-label="Abrir Playground"
               onClick={onPlayground}
             >
               <Terminal size={13} /> <span className="rm-button-label">Playground</span>

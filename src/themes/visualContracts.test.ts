@@ -71,6 +71,15 @@ describe('contratos visuales de superficies principales', () => {
     );
   });
 
+  it('mantiene legibles las etiquetas de nodos bloqueados en el tema cyber', () => {
+    expect(scssAggregate).toMatch(
+      /\.hud \.rm-node-cp\.is-reasoning \.rm-cp-tag\s*\{[^}]*background:\s*#ff007f[^}]*color:\s*#000000/s,
+    );
+    expect(scssAggregate).toMatch(
+      /\.hud \.rm-node-(?:main|cp)\.is-locked[^}]*opacity:\s*1/s,
+    );
+  });
+
   it('no deja ningún CSS legacy monolítico', () => {
     expect(existsSync(new URL('../index.css', import.meta.url))).toBe(false);
     expect(existsSync(new URL('./hud.css', import.meta.url))).toBe(false);

@@ -214,6 +214,7 @@ describe('App navigation persistence', () => {
     fireEvent.click(screen.getByRole('button', { name: `Ver recorrido: ${AI_ENGINEER_COURSE.title}` }));
 
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'auto' });
+    expect(screen.getByRole('button', { name: 'Abrir Playground' })).toBeTruthy();
   });
 
   it('restaura el Playground después de recargar la aplicación', () => {

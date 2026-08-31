@@ -2,6 +2,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { FUNDAMENTOS_COURSE } from '../../curriculum/fundamentos/course';
 import type { UserProgressRecord } from '../../types/curriculum';
 import { CourseCatalog } from './CourseCatalog';
 
@@ -39,5 +40,21 @@ describe('CourseCatalog', () => {
 
     fireEvent.click(playground);
     expect(onPlayground).toHaveBeenCalledTimes(1);
+  });
+
+  it('expone el avance de cada curso como una barra de progreso semántica', () => {
+    render(
+      <CourseCatalog
+        courses={[FUNDAMENTOS_COURSE]}
+        progress={progress}
+        onOpenCourse={() => undefined}
+        onPlayground={() => undefined}
+      />,
+    );
+
+    const courseProgress = screen.getByRole('progressbar', { name: '0% completado' });
+    expect(courseProgress.getAttribute('aria-valuemin')).toBe('0');
+    expect(courseProgress.getAttribute('aria-valuemax')).toBe('100');
+    expect(courseProgress.getAttribute('aria-valuenow')).toBe('0');
   });
 });
