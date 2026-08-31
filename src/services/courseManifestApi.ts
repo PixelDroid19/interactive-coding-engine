@@ -113,6 +113,17 @@ export function applyPublishedManifest(course: Course, manifest: PublishedCourse
   const localItems = new Map(course.modules.flatMap((module) => module.items).map((item) => [item.id, item]));
   const localModules = new Map(course.modules.map((module) => [module.id, module]));
   const publishedModules = new Map(manifest.modules.map((module) => [module.id, module]));
+  const publishedItems = new Map(manifest.modules.flatMap((module) => module.items).map((item) => [item.id, item]));
+  const missingLocalProject = course.modules
+    .flatMap((module) => module.items)
+    .find((item) => item.type === 'solo-project' && publishedItems.get(item.id)?.type !== item.type);
+  if (missingLocalProject) {
+    return {
+      status: 'rejected',
+      course,
+      issue: `El manifiesto publicado está incompleto: falta el proyecto «${missingLocalProject.title}».`,
+    };
+  }
   const incompleteModule = course.modules.find((localModule) => {
     const publishedModule = publishedModules.get(localModule.id);
     return !publishedModule || !publishedModule.items.some((publishedItem) => {

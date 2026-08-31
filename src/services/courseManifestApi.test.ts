@@ -105,4 +105,34 @@ describe('applyPublishedManifest', () => {
 
     expect(application).toMatchObject({ status: 'rejected', course: localCourse });
   });
+
+  it('rechaza un manifiesto que omite proyectos y conserva el currículo local completo', () => {
+    const manifestWithoutProjects = {
+      slug: AI_ENGINEER_COURSE.slug,
+      version: 1,
+      publishedAt: '2026-08-30T00:00:00.000Z',
+      modules: AI_ENGINEER_COURSE.modules.map((module) => ({
+        id: module.id,
+        title: module.title,
+        items: module.items
+          .filter((item) => item.type !== 'solo-project')
+          .map((item) => ({
+            id: item.id,
+            title: item.title,
+            type: item.type,
+            estimatedMinutes: item.estimatedMinutes,
+            lessonKey: item.id,
+            availability: 'available' as const,
+            availabilityReason: null,
+          })),
+      })),
+      lessons: [],
+    };
+
+    const application = applyPublishedManifest(AI_ENGINEER_COURSE, manifestWithoutProjects);
+
+    expect(application).toMatchObject({ status: 'rejected', course: AI_ENGINEER_COURSE });
+    expect(application.status === 'rejected' && application.issue).toContain('falta el proyecto');
+    expect(application.course.modules.flatMap((module) => module.items).filter((item) => item.type === 'solo-project')).toHaveLength(7);
+  });
 });
