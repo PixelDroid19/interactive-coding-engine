@@ -1,8 +1,6 @@
 import { generateSnapshots } from '../engine/eventLog';
 import type { ScrimLessonData, WorkspaceSnapshot } from '../types/scrim';
-import { LEARNING_API_URL } from './learningHttp';
-
-const API_URL = LEARNING_API_URL;
+import { learningApiRequest } from './learningHttp';
 
 type RemoteLesson = Readonly<{
   key: string;
@@ -42,7 +40,7 @@ function parseRemoteLesson(value: unknown, expectedId: string): RemoteLesson {
 }
 
 export async function fetchPublishedLesson(lessonId: string, signal?: AbortSignal): Promise<ScrimLessonData> {
-  const response = await fetch(`${API_URL}/v1/lessons/${encodeURIComponent(lessonId)}`, {
+  const response = await learningApiRequest(`/v1/lessons/${encodeURIComponent(lessonId)}`, {
     headers: { accept: 'application/json' },
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(12_000)]) : AbortSignal.timeout(12_000),
   });
