@@ -48,7 +48,10 @@ describe('DebuggingView integración', () => {
     expect(screen.queryByRole('tab', { name: 'style.css' })).toBeNull();
     expect(screen.queryByRole('tab', { name: 'Vista previa' })).toBeNull();
     fireEvent.click(screen.getByRole('tab', { name: 'Salida' }));
-    expect(screen.getByRole('region', { name: 'Salida de JavaScript' })).toBeTruthy();
+    const output = screen.getByRole('region', { name: 'Salida de JavaScript' });
+    expect(output).toBeTruthy();
+    expect(output.className).toContain('is-embedded');
+    expect(output.getAttribute('data-augmented-ui')).toBeNull();
     expect(screen.getByRole('button', { name: 'Ejecutar lógica' })).toBeTruthy();
   });
 

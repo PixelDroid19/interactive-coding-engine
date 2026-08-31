@@ -9,19 +9,25 @@ interface RuntimeOutputPanelProps {
   result: RuntimeExecutionResult | null;
   isRunning: boolean;
   onRun: () => void;
+  /**
+   * The debugging panel already owns the surrounding surface and frame.
+   * Keep the output semantics while letting that parent provide the only
+   * visible container.
+   */
+  embedded?: boolean;
 }
 
-export function RuntimeOutputPanel({ language, result, isRunning, onRun }: RuntimeOutputPanelProps) {
+export function RuntimeOutputPanel({ language, result, isRunning, onRun, embedded = false }: RuntimeOutputPanelProps) {
   const { themeId } = useTheme();
   const isCyber = themeId === 'cyber';
   const label = language === 'python' ? 'Python' : 'JavaScript';
 
   return (
     <section
-      className="logic-runner-panel"
+      className={`logic-runner-panel${embedded ? ' is-embedded' : ''}`}
       role="region"
       aria-label={`Salida de ${label}`}
-      data-augmented-ui={isCyber ? "hud-browser tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
+      data-augmented-ui={!embedded && isCyber ? "hud-browser tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
     >
       <header className="logic-runner-header">
         <div>

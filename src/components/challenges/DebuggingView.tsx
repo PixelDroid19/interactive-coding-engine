@@ -803,6 +803,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                         workspace={workspace}
                         language={language}
                         packages={exercise.languageVariants?.[language].packages}
+                        embedded
                       />
                       <button type="button" onClick={() => setActiveTab('resultado')} className="neu-pill-btn justify-center" aria-label="Volver a resultado">Volver a resultado</button>
                     </div>

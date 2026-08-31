@@ -54,6 +54,36 @@
   box-shadow: var(--shadow-sketch-lg);
 }
 
+/* The debug contextual panel is already the surface and owns the frame.
+   Keep LogicRunnerPanel reusable there without drawing a second card inside it. */
+.debug-logic-output {
+  padding: 0;
+  gap: 0;
+}
+
+.debug-logic-output .logic-runner-panel.is-embedded {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.debug-logic-output > .neu-pill-btn {
+  margin: 10px;
+}
+
+/* On compact desktop the fixed assistant launcher shares the right edge of
+   the debug panel. Reserve that rail so it cannot cover the run control. */
+@media (max-width: 1024px) {
+  body:has(.debug-new-layout) .debug-logic-output .logic-runner-header {
+    padding-right: clamp(148px, 19vw, 174px);
+  }
+}
+
 .logic-runner-header {
   min-height: 54px;
   display: flex;

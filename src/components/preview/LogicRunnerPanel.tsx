@@ -16,6 +16,7 @@ interface LogicRunnerPanelProps {
   packages?: string[];
   onRunClick?: () => void;
   runtimeFactory?: () => CourseRuntime;
+  embedded?: boolean;
 }
 
 export const LogicRunnerPanel = forwardRef<LogicRunnerPanelRef, LogicRunnerPanelProps>(({
@@ -24,6 +25,7 @@ export const LogicRunnerPanel = forwardRef<LogicRunnerPanelRef, LogicRunnerPanel
   packages = [],
   onRunClick,
   runtimeFactory,
+  embedded = false,
 }, ref) => {
   const [result, setResult] = useState<RuntimeExecutionResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -67,6 +69,7 @@ export const LogicRunnerPanel = forwardRef<LogicRunnerPanelRef, LogicRunnerPanel
       result={result}
       isRunning={isRunning}
       onRun={handleRun}
+      embedded={embedded}
     />
   );
 });

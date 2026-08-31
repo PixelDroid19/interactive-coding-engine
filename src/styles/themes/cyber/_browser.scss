@@ -145,7 +145,7 @@
 }
 
 /* Pure JavaScript output */
-.hud .logic-runner-panel {
+.hud .logic-runner-panel:not(.is-embedded) {
   width: min(35%, 430px) !important;
   min-width: 290px !important;
   border: 0 !important;
