@@ -171,7 +171,13 @@ describe('ScrimPlayer overlay coordination', () => {
   });
 
   it('guarda el reto activo para recuperarlo después de recargar', async () => {
-    const challenge = { ...lesson.challenges[0], timestamp: 5 };
+    const starterPath = lesson.initialWorkspace.activeFilePath;
+    const starterContent = '// TODO: resolver después de que la cinta pause.\n';
+    const challenge = {
+      ...lesson.challenges[0],
+      timestamp: 5,
+      starterCodeDiff: { [starterPath]: starterContent },
+    };
     const shortLesson = {
       ...lesson,
       id: 'leccion-reto-persistente',
@@ -186,6 +192,7 @@ describe('ScrimPlayer overlay coordination', () => {
     await waitFor(() => {
       expect(loadLastBranchForLesson(shortLesson.id)?.activeChallengeId).toBe(challenge.id);
     });
+    expect(loadLastBranchForLesson(shortLesson.id)?.workspace.files[starterPath].content).toBe(starterContent);
   });
 
   it('descarta la rama recuperable al elegir ver la clase desde el inicio', () => {
@@ -276,5 +283,54 @@ describe('ScrimPlayer overlay coordination', () => {
     fireEvent.click(screen.getByRole('button', { name: `Ir al reto ${challenge.title}` }));
 
     expect(await screen.findByRole('button', { name: 'Comprobar reto' })).toBeTruthy();
+  });
+
+  it('aplica el punto de partida del reto a la rama y lo restaura al reiniciar', async () => {
+    const starterContent = '// TODO: completa el reto desde este punto de partida.\n';
+    const instructorContent = '// La cinta conserva la solución del instructor.\n';
+    const challenge = {
+      ...lesson.challenges[0],
+      id: 'reto-con-punto-de-partida',
+      timestamp: 50_000,
+      starterCodeDiff: { 'app.js': starterContent },
+    };
+    const challengeLesson = {
+      ...lesson,
+      id: 'leccion-reto-con-punto-de-partida',
+      durationMs: 60_000,
+      audioTrack: undefined,
+      initialWorkspace: {
+        activeFilePath: 'app.js',
+        files: {
+          'app.js': {
+            name: 'app.js',
+            path: 'app.js',
+            language: 'javascript' as const,
+            content: instructorContent,
+          },
+        },
+      },
+      events: [],
+      snapshots: [],
+      challenges: [challenge],
+    } as typeof lesson;
+
+    render(<ScrimPlayer lessonData={challengeLesson} onBack={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Empezar la clase' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pausar la clase' }));
+    fireEvent.click(screen.getByRole('button', { name: `Ir al reto ${challenge.title}` }));
+
+    await waitFor(() => expect(getTutorWorkspace()?.snapshot.files['app.js']).toBe(starterContent));
+    expect(loadLastBranchForLesson(challengeLesson.id)?.workspace.files['app.js'].content).toBe(starterContent);
+
+    await act(async () => {
+      await getTutorWorkspace()?.actions.replaceFile('app.js', instructorContent);
+    });
+    await waitFor(() => expect(loadLastBranchForLesson(challengeLesson.id)?.workspace.files['app.js'].content).toBe(instructorContent));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reiniciar reto' }));
+
+    await waitFor(() => expect(getTutorWorkspace()?.snapshot.files['app.js']).toBe(starterContent));
+    expect(loadLastBranchForLesson(challengeLesson.id)?.workspace.files['app.js'].content).toBe(starterContent);
   });
 });

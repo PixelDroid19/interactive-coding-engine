@@ -38,6 +38,22 @@ import { LanguageSelector } from '../runtime/LanguageSelector';
 import { LiveHelpWorkspaceBridge } from '../../live-help/LiveHelpWorkspaceBridge';
 import type { LiveHelpContext } from '../../live-help/protocol';
 
+function applyChallengeStarterCode(
+  source: WorkspaceSnapshot,
+  challenge: ScrimChallenge,
+): WorkspaceSnapshot {
+  const next = cloneWorkspace(source);
+  if (!challenge.starterCodeDiff) return next;
+
+  for (const [path, content] of Object.entries(challenge.starterCodeDiff)) {
+    const file = next.files[path];
+    if (!file) continue;
+    next.files[path] = { ...file, content };
+  }
+
+  return next;
+}
+
 interface ScrimPlayerProps {
   lessonData: ScrimLessonData;
   courseTitle?: string;
@@ -162,14 +178,18 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     return () => window.cancelAnimationFrame(frame);
   }, [isLogicMode, workspace]);
 
-  const forkLearnerBranch = useCallback((baseTime: number, activeChallengeId?: string) => {
+  const forkLearnerBranch = useCallback((
+    baseTime: number,
+    activeChallengeId?: string,
+    sourceWorkspace: WorkspaceSnapshot = workspaceRef.current,
+  ) => {
     if (isForkedRef.current) return;
     const branch: LearnerBranch = {
       id: `branch-${branchScopeId}-${Date.now()}`,
       lessonId: branchScopeId,
       baseTime,
       baseSequence: 0,
-      workspace: cloneWorkspace(workspaceRef.current),
+      workspace: cloneWorkspace(sourceWorkspace),
       isForked: true,
       ...(activeChallengeId ? { activeChallengeId } : {}),
       lastSavedAt: Date.now(),
@@ -180,6 +200,19 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     publishInstructorPointer(undefined);
     dispatch({ type: 'FORK', baseTime });
   }, [branchScopeId]);
+
+  const forkChallengeBranch = useCallback((baseTime: number, challenge: ScrimChallenge) => {
+    if (!challenge.starterCodeDiff) {
+      forkLearnerBranch(baseTime, challenge.id);
+      return;
+    }
+
+    const challengeWorkspace = applyChallengeStarterCode(workspaceRef.current, challenge);
+    workspaceRef.current = challengeWorkspace;
+    previewReloadAfterWorkspaceRef.current = true;
+    setWorkspace(challengeWorkspace);
+    forkLearnerBranch(baseTime, challenge.id, challengeWorkspace);
+  }, [forkLearnerBranch]);
 
   const handleLiveHelpProposalApplied = useCallback((next: WorkspaceSnapshot) => {
     // Una propuesta aceptada es una edición explícita de la alumna: debe salir
@@ -319,7 +352,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         setIsChallengeMinimized(false);
         setValidationResult(null);
         const base = engineRef.current?.getCurrentTime() ?? timeRef.current;
-        forkLearnerBranch(base, challenge.id);
+        forkChallengeBranch(base, challenge);
         dispatch({ type: 'CHALLENGE_TRIGGER', challengeId: challenge.id, baseTime: base });
       },
       onPlaybackStateChange: (status) => {
@@ -664,7 +697,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
       lessonData.snapshots,
       challengeTime
     );
-    const resetWs = cloneWorkspace(reconstructed.workspace);
+    const resetWs = applyChallengeStarterCode(reconstructed.workspace, activeChallenge);
     workspaceRef.current = resetWs;
     previewReloadAfterWorkspaceRef.current = true;
     setWorkspace(resetWs);
@@ -789,7 +822,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     setIsChallengeDrawerOpen(true);
     setIsChallengeMinimized(false);
     setValidationResult(null);
-    forkLearnerBranch(challenge.timestamp, challenge.id);
+    forkChallengeBranch(challenge.timestamp, challenge);
     dispatch({ type: 'CHALLENGE_TRIGGER', challengeId: challenge.id, baseTime: challenge.timestamp });
   };
 

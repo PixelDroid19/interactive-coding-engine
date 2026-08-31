@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_COURSE } from '../web-components-lit/course';
 import { R2_AUDIO_BY_LESSON } from '../../config/r2Audio';
+import { reconstructWorkspaceAt } from '../../engine/eventLog';
 import { OPEN_CELLS_COURSE, OPEN_CELLS_SCRIMS } from './course';
 
 describe('curso Open Cells', () => {
@@ -76,7 +77,18 @@ describe('curso Open Cells', () => {
     expect(lesson.narrationMode).toBe('audio');
     expect(lesson.audioTrack?.url).toBe(R2_AUDIO_BY_LESSON['open-cells-06'].url);
     expect(lesson.challenges).toHaveLength(1);
-    expect(lesson.challenges[0].instructions).toContain('producto');
+    const challenge = lesson.challenges[0];
+    const starterPath = 'src/academy-product-card.js';
+    const instructorAtChallenge = reconstructWorkspaceAt(
+      lesson.initialWorkspace,
+      lesson.events,
+      lesson.snapshots,
+      challenge.timestamp,
+    ).workspace.files[starterPath].content;
+    expect(challenge.instructions).toContain('producto');
+    expect(challenge.starterCodeDiff?.[starterPath]).toContain('TODO: registra el botón');
+    expect(challenge.starterCodeDiff?.[starterPath]).toContain('TODO: comunica la selección');
+    expect(challenge.starterCodeDiff?.[starterPath]).not.toBe(instructorAtChallenge);
     expect(lesson.initialWorkspace.files['src/academy-product-card.js']).toBeDefined();
     expect(lesson.initialWorkspace.files['src/components/academy-action-button.js']).toBeDefined();
 
