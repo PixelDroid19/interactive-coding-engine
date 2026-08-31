@@ -22,7 +22,7 @@ const ROLES = new Set<UserRole>(['student', 'tutor', 'admin']);
 const SAFE_RETURN_TO = /^\/(?!\/)(?!.*[\\\u0000-\u001f\u007f]).*$/;
 const LAST_USER_KEY = 'aula_last_authenticated_user_v1';
 const PRIVATE_KEYS = ['aula_user_progress_v1', 'aula_learning_profile_v1', 'aula_learning_sync_v1'] as const;
-const PRIVATE_PREFIXES = ['aula_course_progress_cache_v1:', 'aula_learning_center_cache_v1:'] as const;
+const PRIVATE_PREFIXES = ['aula_course_progress_cache_v1:', 'aula_learning_center_cache_v1:', 'aula_learning_center_cache_v2:'] as const;
 
 function clearPrivateDeviceState(): void {
   clearLearningSyncQueue();
@@ -63,8 +63,15 @@ function parseSession(value: unknown): AuthSession {
     return { authenticated: false, providers };
   }
   const user = payload.user as Record<string, unknown> | undefined;
-  if (payload.authenticated !== true || !user || typeof user.id !== 'string' || typeof user.email !== 'string'
-    || !Array.isArray(user.roles) || typeof payload.csrfToken !== 'string' || payload.csrfToken.length < 16) {
+  if (
+    payload.authenticated !== true ||
+    !user ||
+    typeof user.id !== 'string' ||
+    typeof user.email !== 'string' ||
+    !Array.isArray(user.roles) ||
+    typeof payload.csrfToken !== 'string' ||
+    payload.csrfToken.length < 16
+  ) {
     throw new Error('La respuesta de sesión no es válida.');
   }
   const roles = user.roles.filter((role): role is UserRole => typeof role === 'string' && ROLES.has(role as UserRole));
@@ -97,12 +104,17 @@ export function getAuthLoginUrl(provider: AuthProvider, returnTo = '/'): string 
 }
 
 export async function logoutAuthSession(): Promise<void> {
-  const response = await learningApiRequest('/v1/auth/logout', { method: 'POST' });
+  const response = await learningApiRequest('/v1/auth/logout', {
+    method: 'POST',
+  });
   if (!response.ok && response.status !== 204) await readApiJson(response);
   setLearningCsrfToken(null);
 }
 
-export async function verifyAuthEmailCode(code: string): Promise<{ session: Extract<AuthSession, { authenticated: true }>; returnTo: string }> {
+export async function verifyAuthEmailCode(code: string): Promise<{
+  session: Extract<AuthSession, { authenticated: true }>;
+  returnTo: string;
+}> {
   const response = await learningApiRequest('/v1/auth/email/verify', {
     method: 'POST',
     headers: { 'x-auth-intent': 'verify-email' },

@@ -9,13 +9,20 @@ import { LearningCenter } from './LearningCenter';
 
 const auth = vi.hoisted(() => ({ useAuthSession: vi.fn() }));
 
-vi.mock('../../auth/AuthSessionProvider', () => ({ useAuthSession: auth.useAuthSession }));
+vi.mock('../../auth/AuthSessionProvider', () => ({
+  useAuthSession: auth.useAuthSession,
+}));
 
 const STUDENT_AUTH = {
   status: 'ready' as const,
   session: {
     authenticated: true as const,
-    user: { id: 'student-1', email: 'alumna@example.com', displayName: 'Alumna', roles: ['student'] },
+    user: {
+      id: 'student-1',
+      email: 'alumna@example.com',
+      displayName: 'Alumna',
+      roles: ['student'],
+    },
     csrfToken: 'csrf-token-de-alumna-seguro',
   },
   error: null,
@@ -23,7 +30,14 @@ const STUDENT_AUTH = {
   login: vi.fn(),
   logout: vi.fn(),
   refresh: vi.fn(),
-  verification: { open: false, emailHint: '', deliveryFailed: false, error: null, busy: false, resendReadyAt: 0 },
+  verification: {
+    open: false,
+    emailHint: '',
+    deliveryFailed: false,
+    error: null,
+    busy: false,
+    resendReadyAt: 0,
+  },
   verifyEmail: vi.fn(),
   resendCode: vi.fn(),
   dismissVerification: vi.fn(),
@@ -32,8 +46,18 @@ const STUDENT_AUTH = {
 const emptySnapshot = {
   courseSlug: 'fundamentos',
   generatedAt: new Date(0).toISOString(),
-  summary: { dueReviews: 0, reinforcements: 0, notes: 0, averageMastery: null, activeSkills: 0 },
-  reviews: [], notes: [], skillGaps: [], recentItems: [], reinforcements: [],
+  summary: {
+    dueReviews: 0,
+    reinforcements: 0,
+    notes: 0,
+    averageMastery: null,
+    activeSkills: 0,
+  },
+  reviews: [],
+  notes: [],
+  skillGaps: [],
+  recentItems: [],
+  reinforcements: [],
 };
 
 function profileWithSkill(skillId = 'return-values'): LearningProfile {
@@ -52,16 +76,79 @@ function profileWithSkill(skillId = 'return-values'): LearningProfile {
 }
 
 function renderCenter(profile = createEmptyLearningProfile(0)) {
-  return render(
-    <LearningCenter
-      course={FUNDAMENTOS_COURSE}
-      profile={profile}
-      onClose={vi.fn()}
-      onRateReview={vi.fn(async () => undefined)}
-      onSaveNotebook={vi.fn(async () => undefined)}
-      onReviewReinforcement={vi.fn(async () => undefined)}
-    />,
-  );
+  return render(<LearningCenter course={FUNDAMENTOS_COURSE} profile={profile} onClose={vi.fn()} />);
+}
+
+function snapshotWithReview(id: string, prompt: string) {
+  return {
+    ...emptySnapshot,
+    summary: { ...emptySnapshot.summary, dueReviews: 1, activeSkills: 1 },
+    reviews: [
+      {
+        id,
+        itemKey: 'fundamentos-07',
+        skillKey: 'return-values',
+        prompt,
+        intervalIndex: 0,
+        dueAt: new Date(0).toISOString(),
+        lastReviewedAt: null,
+        repetitions: 0,
+      },
+    ],
+  };
+}
+
+function snapshotWithReinforcement(id: string, note: string) {
+  return {
+    ...emptySnapshot,
+    summary: { ...emptySnapshot.summary, reinforcements: 1, activeSkills: 1 },
+    reinforcements: [
+      {
+        id,
+        itemKey: 'fundamentos-07',
+        skillKey: 'return-values',
+        note,
+        evidence: 'Se observó la misma confusión en varias respuestas.',
+        occurrences: 3,
+        reviewedAt: null,
+        createdAt: new Date(1).toISOString(),
+        updatedAt: new Date(2).toISOString(),
+      },
+    ],
+  };
+}
+
+function snapshotWithSkill() {
+  return {
+    ...emptySnapshot,
+    summary: { ...emptySnapshot.summary, activeSkills: 1 },
+    skillGaps: [
+      {
+        skillKey: 'return-values',
+        capability: 'explain',
+        score: 0.4,
+        attempts: 1,
+        successes: 0,
+        lastResult: 'partial',
+        lastPracticedAt: new Date(1).toISOString(),
+      },
+    ],
+  };
+}
+
+function studentAuth(userId: string) {
+  return {
+    ...STUDENT_AUTH,
+    session: {
+      ...STUDENT_AUTH.session,
+      user: {
+        ...STUDENT_AUTH.session.user,
+        id: userId,
+        email: `${userId}@example.com`,
+        displayName: userId,
+      },
+    },
+  };
 }
 
 describe('LearningCenter', () => {
@@ -69,9 +156,12 @@ describe('LearningCenter', () => {
     localStorage.clear();
     vi.clearAllMocks();
     auth.useAuthSession.mockReturnValue(STUDENT_AUTH);
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify(emptySnapshot), {
-      status: 200, headers: { 'content-type': 'application/json' },
-    }));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify(emptySnapshot), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
   });
 
   afterEach(() => {
@@ -79,20 +169,24 @@ describe('LearningCenter', () => {
     vi.restoreAllMocks();
   });
 
-  it('solo ofrece Repaso, Mis notas y Mi ruta a una alumna autenticada, con teclado', async () => {
+  it('solo ofrece Repaso y Mis notas a una alumna autenticada, con teclado', async () => {
     renderCenter();
 
     await screen.findByText('Progreso sincronizado');
-    const tablist = screen.getByRole('tablist', { name: 'Secciones de aprendizaje' });
+    const tablist = screen.getByRole('tablist', {
+      name: 'Secciones de aprendizaje',
+    });
     expect(tablist).toBeTruthy();
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Repaso', 'Mis notas', 'Mi ruta']);
+    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual(['Repaso', 'Mis notas']);
     expect(screen.queryByRole('tab', { name: 'Examen' })).toBeNull();
     expect(screen.queryByRole('tab', { name: 'Líder' })).toBeNull();
 
     const review = screen.getByRole('tab', { name: 'Repaso' });
     fireEvent.keyDown(review, { key: 'ArrowDown' });
     expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Mis notas' }));
-    fireEvent.keyDown(screen.getByRole('tab', { name: 'Mis notas' }), { key: 'Enter' });
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Mis notas' }), {
+      key: 'Enter',
+    });
     expect(screen.getByRole('tab', { name: 'Mis notas' }).getAttribute('aria-selected')).toBe('true');
     expect(screen.getByRole('tabpanel', { name: 'Mis notas' })).toBeTruthy();
   });
@@ -117,15 +211,32 @@ describe('LearningCenter', () => {
   });
 
   it('deriva los conceptos por reforzar de eventos remotos reales sin mostrar ayuda en vivo inerte', async () => {
-    vi.mocked(globalThis.fetch).mockResolvedValueOnce(new Response(JSON.stringify({
-      ...emptySnapshot,
-      summary: { ...emptySnapshot.summary, reinforcements: 1, activeSkills: 1 },
-      reinforcements: [{
-        id: 'reinforcement-1', itemKey: 'fundamentos-07', skillKey: 'return-values',
-        note: 'Distingue mostrar un dato de devolverlo.', evidence: 'El mismo error apareció tres veces.',
-        occurrences: 3, reviewedAt: null, createdAt: new Date(1).toISOString(), updatedAt: new Date(2).toISOString(),
-      }],
-    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.mocked(globalThis.fetch).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          ...emptySnapshot,
+          summary: {
+            ...emptySnapshot.summary,
+            reinforcements: 1,
+            activeSkills: 1,
+          },
+          reinforcements: [
+            {
+              id: 'reinforcement-1',
+              itemKey: 'fundamentos-07',
+              skillKey: 'return-values',
+              note: 'Distingue mostrar un dato de devolverlo.',
+              evidence: 'El mismo error apareció tres veces.',
+              occurrences: 3,
+              reviewedAt: null,
+              createdAt: new Date(1).toISOString(),
+              updatedAt: new Date(2).toISOString(),
+            },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      ),
+    );
 
     renderCenter();
 
@@ -145,7 +256,11 @@ describe('LearningCenter', () => {
 
     renderCenter();
 
-    expect(await screen.findByRole('heading', { name: 'Inicia sesión para ver tu aprendizaje' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Inicia sesión para ver tu aprendizaje',
+      }),
+    ).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Continuar con Google' }));
     expect(login).toHaveBeenCalledWith('google');
     expect(globalThis.fetch).not.toHaveBeenCalled();
@@ -163,27 +278,136 @@ describe('LearningCenter', () => {
 
     renderCenter();
 
-    expect(await screen.findByRole('heading', { name: 'Esta cuenta no tiene acceso de alumno' })).toBeTruthy();
+    expect(
+      await screen.findByRole('heading', {
+        name: 'Esta cuenta no tiene acceso de alumno',
+      }),
+    ).toBeTruthy();
     expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it('purga la caché heredada sin dueño antes de pintar datos personales', async () => {
+    const actorId = '30000000-0000-4000-8000-000000000003';
+    const legacyKey = `aula_learning_center_cache_v1:${actorId}:fundamentos`;
+    localStorage.setItem('aula_anonymous_actor_v1', actorId);
+    localStorage.setItem(
+      legacyKey,
+      JSON.stringify({
+        cachedAt: Date.now(),
+        snapshot: snapshotWithReview('legacy-review', 'Respuesta heredada de otra persona'),
+      }),
+    );
+
+    renderCenter();
+
+    expect(screen.queryByText('Respuesta heredada de otra persona')).toBeNull();
+    await waitFor(() => expect(localStorage.getItem(legacyKey)).toBeNull());
+  });
+
+  it('separa dos alumnas consecutivas, aborta la lectura anterior e ignora su respuesta tardía', async () => {
+    let resolveFirst!: (response: Response) => void;
+    let resolveSecond!: (response: Response) => void;
+    const firstRequest = new Promise<Response>((resolve) => {
+      resolveFirst = resolve;
+    });
+    const secondRequest = new Promise<Response>((resolve) => {
+      resolveSecond = resolve;
+    });
+    const fetchMock = vi.mocked(globalThis.fetch);
+    fetchMock.mockReset().mockReturnValueOnce(firstRequest).mockReturnValueOnce(secondRequest);
+
+    auth.useAuthSession.mockReturnValue(studentAuth('student-a'));
+    const view = renderCenter();
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+    auth.useAuthSession.mockReturnValue(studentAuth('student-b'));
+    view.rerender(<LearningCenter course={FUNDAMENTOS_COURSE} profile={createEmptyLearningProfile(0)} onClose={vi.fn()} />);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    expect((fetchMock.mock.calls[0]?.[1]?.signal as AbortSignal).aborted).toBe(true);
+
+    resolveSecond(
+      new Response(JSON.stringify(snapshotWithReview('review-b', 'Respuesta privada de B')), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    expect(await screen.findByText('Respuesta privada de B')).toBeTruthy();
+
+    resolveFirst(
+      new Response(JSON.stringify(snapshotWithReview('review-a', 'Respuesta privada de A')), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+    await waitFor(() => expect(screen.queryByText('Respuesta privada de A')).toBeNull());
+    expect(screen.getByText('Respuesta privada de B')).toBeTruthy();
+    expect(localStorage.getItem('aula_learning_center_cache_v2:student-a:fundamentos')).toBeNull();
+  });
+
+  it('usa el snapshot remoto como fuente canónica y no resucita una tarjeta local ausente', async () => {
+    const profile = profileWithSkill();
+    profile.reviews.push({
+      id: 'local-review',
+      courseId: FUNDAMENTOS_COURSE.id,
+      itemId: 'fundamentos-07',
+      skillId: 'return-values',
+      prompt: 'Tarjeta local que el servidor ya retiró',
+      intervalIndex: 0,
+      dueAt: 0,
+      lastReviewedAt: 0,
+      repetitions: 0,
+    });
+
+    renderCenter(profile);
+
+    await screen.findByText('Progreso sincronizado');
+    expect(screen.queryByText('Tarjeta local que el servidor ya retiró')).toBeNull();
+    expect(screen.getByText('Aún no tienes actividad para repasar.')).toBeTruthy();
   });
 
   it('guarda una nota de un concepto observado, conserva el borrador y permite reintentar ante un error remoto', async () => {
     vi.mocked(globalThis.fetch)
       .mockReset()
-      .mockResolvedValueOnce(new Response(JSON.stringify(emptySnapshot), { status: 200, headers: { 'content-type': 'application/json' } }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ error: { message: 'Base de datos no disponible' } }), { status: 503, headers: { 'content-type': 'application/json' } }))
-      .mockResolvedValueOnce(new Response(JSON.stringify({
-        id: 'saved-after-retry', skillKey: 'return-values', concept: 'return values',
-        mentalModel: 'Un valor debe salir de la función para reutilizarlo.', pattern: '', ownExample: '', personalMistake: '',
-        updatedAt: new Date(3).toISOString(),
-      }), { status: 200, headers: { 'content-type': 'application/json' } }));
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(snapshotWithSkill()), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: { message: 'Base de datos no disponible' } }), { status: 503, headers: { 'content-type': 'application/json' } }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            id: 'saved-after-retry',
+            skillKey: 'return-values',
+            concept: 'return values',
+            mentalModel: 'Un valor debe salir de la función para reutilizarlo.',
+            pattern: '',
+            ownExample: '',
+            personalMistake: '',
+            updatedAt: new Date(3).toISOString(),
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(snapshotWithSkill()), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
 
     renderCenter(profileWithSkill());
 
     await screen.findByText('Progreso sincronizado');
     fireEvent.click(screen.getByRole('tab', { name: 'Mis notas' }));
     const mentalModel = screen.getByLabelText('Modelo mental') as HTMLTextAreaElement;
-    fireEvent.change(mentalModel, { target: { value: 'Un valor debe salir de la función para reutilizarlo.' } });
+    fireEvent.change(mentalModel, {
+      target: { value: 'Un valor debe salir de la función para reutilizarlo.' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
 
     expect((await screen.findByRole('alert')).textContent).toContain('No se pudo guardar');
@@ -195,26 +419,285 @@ describe('LearningCenter', () => {
 
   it('mantiene la nota confirmada si una lectura anterior llega después del guardado', async () => {
     let finishInitialRead!: (response: Response) => void;
-    const pendingInitialRead = new Promise<Response>((resolve) => { finishInitialRead = resolve; });
+    const pendingInitialRead = new Promise<Response>((resolve) => {
+      finishInitialRead = resolve;
+    });
     const savedEntry = {
-      id: 'saved-race', skillKey: 'return-values', concept: 'return values',
-      mentalModel: 'Confirmada después de iniciar la lectura.', pattern: '', ownExample: '', personalMistake: '',
+      id: 'saved-race',
+      skillKey: 'return-values',
+      concept: 'return values',
+      mentalModel: 'Confirmada después de iniciar la lectura.',
+      pattern: '',
+      ownExample: '',
+      personalMistake: '',
       updatedAt: new Date(2).toISOString(),
     };
     vi.mocked(globalThis.fetch)
       .mockReset()
       .mockReturnValueOnce(pendingInitialRead)
-      .mockResolvedValueOnce(new Response(JSON.stringify(savedEntry), { status: 200, headers: { 'content-type': 'application/json' } }));
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(savedEntry), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(emptySnapshot), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+
+    localStorage.setItem(
+      'aula_learning_center_cache_v2:student-1:fundamentos',
+      JSON.stringify({
+        cachedAt: 0,
+        snapshot: snapshotWithSkill(),
+      }),
+    );
 
     renderCenter(profileWithSkill());
 
     fireEvent.click(screen.getByRole('tab', { name: 'Mis notas' }));
-    fireEvent.change(screen.getByLabelText('Modelo mental'), { target: { value: savedEntry.mentalModel } });
+    fireEvent.change(await screen.findByLabelText('Modelo mental'), {
+      target: { value: savedEntry.mentalModel },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
     await waitFor(() => expect(screen.getByRole('button', { name: 'Guardado' })).toBeTruthy());
 
-    finishInitialRead(new Response(JSON.stringify(emptySnapshot), { status: 200, headers: { 'content-type': 'application/json' } }));
+    finishInitialRead(
+      new Response(JSON.stringify(emptySnapshot), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
     await screen.findByText('Progreso sincronizado');
     expect((screen.getByLabelText('Modelo mental') as HTMLTextAreaElement).value).toBe(savedEntry.mentalModel);
+  });
+
+  it('guarda una nota confirmada en la caché fresca aunque el refresco posterior falle y se cierre el centro', async () => {
+    const savedEntry = {
+      id: 'saved-cache',
+      skillKey: 'return-values',
+      concept: 'return values',
+      mentalModel: 'La nota sigue disponible al reabrir.',
+      pattern: '',
+      ownExample: '',
+      personalMistake: '',
+      updatedAt: new Date(4).toISOString(),
+    };
+    localStorage.setItem(
+      'aula_learning_center_cache_v2:student-1:fundamentos',
+      JSON.stringify({ cachedAt: Date.now(), snapshot: snapshotWithSkill() }),
+    );
+    vi.mocked(globalThis.fetch)
+      .mockReset()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(savedEntry), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: { message: 'Sin conexión' } }), {
+          status: 503,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+
+    const view = renderCenter(profileWithSkill());
+    await screen.findByText('Progreso sincronizado');
+    fireEvent.click(screen.getByRole('tab', { name: 'Mis notas' }));
+    fireEvent.change(screen.getByLabelText('Modelo mental'), {
+      target: { value: savedEntry.mentalModel },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar nota' }));
+
+    await screen.findByRole('button', { name: 'Guardado' });
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('Mostrando la última copia disponible')).toBeTruthy();
+
+    view.unmount();
+    renderCenter(profileWithSkill());
+    await screen.findByText('Progreso sincronizado');
+    fireEvent.click(screen.getByRole('tab', { name: 'Mis notas' }));
+
+    expect((screen.getByLabelText('Modelo mental') as HTMLTextAreaElement).value).toBe(savedEntry.mentalModel);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('conserva una calificación confirmada en la caché fresca aunque falle el refresco posterior', async () => {
+    const cacheKey = 'aula_learning_center_cache_v2:student-1:fundamentos';
+    const prompt = 'Explica el valor que devuelve una función.';
+    localStorage.setItem(
+      cacheKey,
+      JSON.stringify({ cachedAt: Date.now(), snapshot: snapshotWithReview('review-cache', prompt) }),
+    );
+    vi.mocked(globalThis.fetch)
+      .mockReset()
+      .mockResolvedValueOnce(new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: { message: 'Sin conexión' } }), {
+          status: 503,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+
+    const view = renderCenter();
+    await screen.findByText('Progreso sincronizado');
+    fireEvent.change(screen.getByLabelText('Responde sin abrir la lección'), {
+      target: { value: 'Una función devuelve un valor para usarlo fuera de ella.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Comparar mi respuesta' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lo expliqué' }));
+
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('Mostrando la última copia disponible')).toBeTruthy();
+    const cached = JSON.parse(localStorage.getItem(cacheKey) ?? 'null');
+    expect(cached.snapshot.reviews).toEqual([]);
+    expect(cached.snapshot.summary.dueReviews).toBe(0);
+
+    view.unmount();
+    renderCenter();
+    await screen.findByText('Progreso sincronizado');
+
+    expect(screen.queryByText(prompt)).toBeNull();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('conserva un refuerzo confirmado en la caché fresca aunque falle el refresco posterior', async () => {
+    const cacheKey = 'aula_learning_center_cache_v2:student-1:fundamentos';
+    const note = 'Repasa cuándo devolver un dato al resto del programa.';
+    localStorage.setItem(
+      cacheKey,
+      JSON.stringify({ cachedAt: Date.now(), snapshot: snapshotWithReinforcement('reinforcement-cache', note) }),
+    );
+    vi.mocked(globalThis.fetch)
+      .mockReset()
+      .mockResolvedValueOnce(new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: { message: 'Sin conexión' } }), {
+          status: 503,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+
+    const view = renderCenter();
+    await screen.findByRole('heading', { name: 'Conceptos para reforzar' });
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar return values como repasado' }));
+
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText('Mostrando la última copia disponible')).toBeTruthy();
+    const cached = JSON.parse(localStorage.getItem(cacheKey) ?? 'null');
+    expect(cached.snapshot.reinforcements).toEqual([]);
+    expect(cached.snapshot.summary.reinforcements).toBe(0);
+
+    view.unmount();
+    renderCenter();
+    await screen.findByText('Progreso sincronizado');
+
+    expect(screen.queryByRole('heading', { name: 'Conceptos para reforzar' })).toBeNull();
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('cancela un refresco posterior a una mutación cuando cambia de A a B y no restaura la caché de A', async () => {
+    let resolveRefresh!: (response: Response) => void;
+    const pendingRefresh = new Promise<Response>((resolve) => {
+      resolveRefresh = resolve;
+    });
+    const aCacheKey = 'aula_learning_center_cache_v2:student-a:fundamentos';
+    localStorage.setItem(
+      aCacheKey,
+      JSON.stringify({
+        cachedAt: Date.now(),
+        snapshot: snapshotWithReview('review-a', 'Respuesta de A que ya fue calificada'),
+      }),
+    );
+    vi.mocked(globalThis.fetch)
+      .mockReset()
+      .mockResolvedValueOnce(new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }))
+      .mockReturnValueOnce(pendingRefresh)
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(emptySnapshot), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+
+    auth.useAuthSession.mockReturnValue(studentAuth('student-a'));
+    const view = renderCenter();
+    await screen.findByText('Progreso sincronizado');
+    fireEvent.change(screen.getByLabelText('Responde sin abrir la lección'), {
+      target: { value: 'Una función devuelve un valor para usarlo fuera de ella.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Comparar mi respuesta' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lo expliqué' }));
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
+    const cachedAfterRating = JSON.parse(localStorage.getItem(aCacheKey) ?? 'null');
+    expect(cachedAfterRating.snapshot.reviews).toEqual([]);
+    expect(cachedAfterRating.snapshot.summary.dueReviews).toBe(0);
+
+    auth.useAuthSession.mockReturnValue(studentAuth('student-b'));
+    view.rerender(<LearningCenter course={FUNDAMENTOS_COURSE} profile={createEmptyLearningProfile(0)} onClose={vi.fn()} />);
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(3));
+    expect((vi.mocked(globalThis.fetch).mock.calls[1]?.[1]?.signal as AbortSignal | undefined)?.aborted).toBe(true);
+
+    localStorage.removeItem(aCacheKey);
+    resolveRefresh(
+      new Response(JSON.stringify(snapshotWithReview('review-a', 'Respuesta de A que ya fue calificada')), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+
+    await waitFor(() => expect(localStorage.getItem(aCacheKey)).toBeNull());
+    expect(screen.queryByText('Respuesta de A que ya fue calificada')).toBeNull();
+  });
+
+  it('no vuelve a escribir la caché de una alumna al resolver un refresco pendiente después de logout', async () => {
+    let resolveRefresh!: (response: Response) => void;
+    const pendingRefresh = new Promise<Response>((resolve) => {
+      resolveRefresh = resolve;
+    });
+    const aCacheKey = 'aula_learning_center_cache_v2:student-a:fundamentos';
+    localStorage.setItem(
+      aCacheKey,
+      JSON.stringify({
+        cachedAt: Date.now(),
+        snapshot: snapshotWithReview('review-a', 'Respuesta de A antes de logout'),
+      }),
+    );
+    vi.mocked(globalThis.fetch)
+      .mockReset()
+      .mockResolvedValueOnce(new Response('{}', { status: 200, headers: { 'content-type': 'application/json' } }))
+      .mockReturnValueOnce(pendingRefresh);
+
+    auth.useAuthSession.mockReturnValue(studentAuth('student-a'));
+    const view = renderCenter();
+    await screen.findByText('Progreso sincronizado');
+    fireEvent.change(screen.getByLabelText('Responde sin abrir la lección'), {
+      target: { value: 'Una función devuelve un valor para usarlo fuera de ella.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Comparar mi respuesta' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Lo expliqué' }));
+    await waitFor(() => expect(globalThis.fetch).toHaveBeenCalledTimes(2));
+
+    auth.useAuthSession.mockReturnValue({
+      ...STUDENT_AUTH,
+      session: { authenticated: false, providers: ['google'] },
+    });
+    view.rerender(<LearningCenter course={FUNDAMENTOS_COURSE} profile={createEmptyLearningProfile(0)} onClose={vi.fn()} />);
+    expect((vi.mocked(globalThis.fetch).mock.calls[1]?.[1]?.signal as AbortSignal | undefined)?.aborted).toBe(true);
+
+    localStorage.removeItem(aCacheKey);
+    resolveRefresh(
+      new Response(JSON.stringify(snapshotWithReview('review-a', 'Respuesta de A antes de logout')), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }),
+    );
+
+    await waitFor(() => expect(localStorage.getItem(aCacheKey)).toBeNull());
+    expect(screen.queryByText('Respuesta de A antes de logout')).toBeNull();
   });
 });

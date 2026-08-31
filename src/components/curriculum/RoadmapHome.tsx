@@ -4,23 +4,14 @@ import { ThemeToggle } from '../ThemeToggle';
 import { useTheme } from '../../themes/ThemeProvider';
 import { Course, CurriculumItem, UserProgressRecord } from '../../types/curriculum';
 import { ScrimLessonData } from '../../types/scrim';
-import {
-  buildRoadmap,
-  explainConcept,
-  findCourseItem,
-  RoadmapNode,
-} from '../../curriculum/fundamentos/roadmap';
+import { buildRoadmap, explainConcept, findCourseItem, RoadmapNode } from '../../curriculum/fundamentos/roadmap';
 import type { LearningProfile } from '../../learning/types';
 import { getItemReadiness, type ItemReadiness } from '../../learning/unlockPolicy';
 import { getCurriculumSkillIndex } from '../../learning/curriculumEvidence';
-import {
-  rateCurriculumReview,
-  markTutorReinforcementReviewed,
-  saveNotebookEntry,
-} from '../../learning/curriculumEvidence';
 import { LearningCenter } from '../learning/LearningCenter';
 import type { LearningCenterSnapshot } from '../../services/learningCenterApi';
 import { AccountMenu } from '../../auth/AccountMenu';
+import { useAuthSession } from '../../auth/AuthSessionProvider';
 import { useModalDialog } from '../useModalDialog';
 
 interface RoadmapHomeProps {
@@ -34,6 +25,10 @@ interface RoadmapHomeProps {
   onLearningProfileChange: (profile: LearningProfile) => void;
 }
 
+type BlockedItem =
+  | (ItemReadiness & { itemId: string; source: 'published' })
+  | (ItemReadiness & { itemId: string; source: 'personal'; userId: string });
+
 export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
   course,
   progress,
@@ -42,40 +37,59 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
   onEnterLesson,
   onPlayground,
   onBackToCourses,
-  onLearningProfileChange,
+  onLearningProfileChange: _onLearningProfileChange,
 }) => {
+  const auth = useAuthSession();
+  const studentUserId =
+    auth.status === 'ready' && auth.session.authenticated && auth.session.user.roles.includes('student') && auth.session.user.id.trim()
+      ? auth.session.user.id.trim()
+      : null;
   const [openConcept, setOpenConcept] = useState<RoadmapNode | null>(null);
-  const [blockedItem, setBlockedItem] = useState<(ItemReadiness & { itemId: string }) | null>(null);
+  const [blockedItem, setBlockedItem] = useState<BlockedItem | null>(null);
+  const visibleBlockedItem = blockedItem?.source === 'personal' && blockedItem.userId !== studentUserId ? null : blockedItem;
   const conceptDialogRef = useModalDialog<HTMLElement>({
     open: Boolean(openConcept),
     onClose: () => setOpenConcept(null),
   });
   const blockerDialogRef = useModalDialog<HTMLElement>({
-    open: Boolean(blockedItem),
+    open: Boolean(visibleBlockedItem),
     onClose: () => setBlockedItem(null),
   });
   const { themeId } = useTheme();
   const isCyber = themeId === 'cyber';
   const [showLearningCenter, setShowLearningCenter] = useState(false);
-  const [remoteLearningSummary, setRemoteLearningSummary] = useState<LearningCenterSnapshot['summary'] | null>(null);
+  const [remoteLearningSummary, setRemoteLearningSummary] = useState<{
+    userId: string;
+    summary: LearningCenterSnapshot['summary'];
+  } | null>(null);
   const phases = useMemo(() => buildRoadmap(course, scrims), [course, scrims]);
   const lessonCount = course.modules.reduce(
     (sum, mod) => sum + mod.items.filter((item) => item.type === 'scrim' || (item.type === 'reading' && !item.relatedLessonId)).length,
-    0
+    0,
   );
   const practiceCount = course.modules.reduce(
-    (sum, mod) => sum + mod.items.filter((item) => item.type === 'debugging' || item.type === 'reasoning' || (item.type === 'reading' && Boolean(item.handsOnLab))).length,
-    0
+    (sum, mod) =>
+      sum + mod.items.filter((item) => item.type === 'debugging' || item.type === 'reasoning' || (item.type === 'reading' && Boolean(item.handsOnLab))).length,
+    0,
   );
   const hasReasoning = course.modules.some((mod) => mod.items.some((item) => item.type === 'reasoning'));
-  const dueReviewCount = remoteLearningSummary?.dueReviews
-    ?? learningProfile.reviews.filter((review) => review.courseId === course.id && review.dueAt <= Date.now()).length;
+  const visibleLearningSummary = remoteLearningSummary?.userId === studentUserId ? remoteLearningSummary.summary : null;
+  const dueReviewCount = studentUserId ? (visibleLearningSummary?.dueReviews ?? 0) : 0;
+
+  useEffect(() => {
+    setRemoteLearningSummary(null);
+  }, [studentUserId]);
+
+  useEffect(() => {
+    setBlockedItem((current) => (current?.source === 'personal' && current.userId !== studentUserId ? null : current));
+  }, [studentUserId]);
 
   const enterLesson = (lessonId: string) => {
     const found = findCourseItem(course, lessonId);
     if (!found) return;
     if (found.item.availability === 'locked') {
       setBlockedItem({
+        source: 'published',
         unlocked: false,
         missing: [],
         itemId: found.item.id,
@@ -83,21 +97,25 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
       });
       return;
     }
-    const readiness = getItemReadiness(course, found.item.id, learningProfile, getCurriculumSkillIndex());
-    if (!readiness.unlocked) {
-      setBlockedItem({ ...readiness, itemId: found.item.id });
-      return;
+    if (studentUserId) {
+      const readiness = getItemReadiness(course, found.item.id, learningProfile, getCurriculumSkillIndex());
+      if (!readiness.unlocked) {
+        setBlockedItem({ ...readiness, source: 'personal', userId: studentUserId, itemId: found.item.id });
+        return;
+      }
     }
     onEnterLesson(found.item, found.moduleId, 0);
   };
 
   const isLocked = (lessonId: string) => {
     const found = findCourseItem(course, lessonId);
-    return found ? found.item.availability === 'locked' || !getItemReadiness(course, found.item.id, learningProfile, getCurriculumSkillIndex()).unlocked : false;
+    if (!found) return false;
+    if (found.item.availability === 'locked') return true;
+    return studentUserId ? !getItemReadiness(course, found.item.id, learningProfile, getCurriculumSkillIndex()).unlocked : false;
   };
 
   const openRecovery = () => {
-    const recoveryId = blockedItem?.recoveryItemId;
+    const recoveryId = visibleBlockedItem?.source === 'personal' ? visibleBlockedItem.recoveryItemId : undefined;
     if (!recoveryId) return;
     const found = findCourseItem(course, recoveryId);
     if (!found) return;
@@ -105,9 +123,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
     onEnterLesson(found.item, found.moduleId, 0);
   };
 
-  const conceptCopy = openConcept
-    ? explainConcept(course, openConcept.lessonId, openConcept.focusTerm || openConcept.label)
-    : null;
+  const conceptCopy = openConcept ? explainConcept(course, openConcept.lessonId, openConcept.focusTerm || openConcept.label) : null;
 
   useEffect(() => {
     const draw = () => {
@@ -124,9 +140,24 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
         for (let i = 0; i < mains.length - 1; i++) links.push({ from: mains[i], to: mains[i + 1] });
         for (const phase of phases) {
           for (const row of phase.rows) {
-            if (row.reading) links.push({ from: row.main.id, to: row.reading.id, dotted: true });
-            if (row.reasoning) links.push({ from: row.main.id, to: row.reasoning.id, dotted: true });
-            if (row.checkpoint) links.push({ from: row.main.id, to: row.checkpoint.id, dotted: true });
+            if (row.reading)
+              links.push({
+                from: row.main.id,
+                to: row.reading.id,
+                dotted: true,
+              });
+            if (row.reasoning)
+              links.push({
+                from: row.main.id,
+                to: row.reasoning.id,
+                dotted: true,
+              });
+            if (row.checkpoint)
+              links.push({
+                from: row.main.id,
+                to: row.checkpoint.id,
+                dotted: true,
+              });
             for (const concept of row.concepts) {
               links.push({ from: row.main.id, to: concept.id, dotted: true });
             }
@@ -194,8 +225,14 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
     if (tree) resizeObserver.observe(tree);
 
     const mutationObserver = new MutationObserver(() => draw());
-    mutationObserver.observe(document.body, { attributes: true, attributeFilter: ['class', 'data-theme'] });
-    mutationObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] });
+    mutationObserver.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme'],
+    });
+    mutationObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class', 'data-theme'],
+    });
 
     window.addEventListener('resize', draw);
     const timer1 = window.setTimeout(draw, 50);
@@ -210,8 +247,8 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
     };
   }, [phases, openConcept]);
 
-  const isDone = (lessonId: string) => progress.completedItemIds.includes(lessonId);
-  const isCurrent = (lessonId: string) => progress.lastAccessedItemId === lessonId;
+  const isDone = (lessonId: string) => Boolean(studentUserId && progress.completedItemIds.includes(lessonId));
+  const isCurrent = (lessonId: string) => Boolean(studentUserId && progress.lastAccessedItemId === lessonId);
 
   return (
     <div className="roadmap-home">
@@ -221,7 +258,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             <button
               type="button"
               className="rm-logo"
-              data-augmented-ui={isCyber ? "hud-brand-logo tl-clip br-clip border inlay" : undefined}
+              data-augmented-ui={isCyber ? 'hud-brand-logo tl-clip br-clip border inlay' : undefined}
               onClick={onBackToCourses}
               aria-label="Volver a cursos"
             >
@@ -237,7 +274,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             <button
               type="button"
               className="rm-play-btn rm-learning-btn"
-              data-augmented-ui={isCyber ? "hud-learning-btn tl-clip br-clip border inlay" : undefined}
+              data-augmented-ui={isCyber ? 'hud-learning-btn tl-clip br-clip border inlay' : undefined}
               aria-label="Mi aprendizaje"
               onClick={() => setShowLearningCenter(true)}
             >
@@ -247,7 +284,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             <button
               type="button"
               className="rm-play-btn rm-courses-btn"
-              data-augmented-ui={isCyber ? "hud-courses-btn tr-clip bl-clip border inlay" : undefined}
+              data-augmented-ui={isCyber ? 'hud-courses-btn tr-clip bl-clip border inlay' : undefined}
               onClick={onBackToCourses}
             >
               Cursos
@@ -255,7 +292,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             <button
               type="button"
               className="rm-play-btn rm-playground-btn"
-              data-augmented-ui={isCyber ? "hud-playground-btn tl-clip br-clip border inlay" : undefined}
+              data-augmented-ui={isCyber ? 'hud-playground-btn tl-clip br-clip border inlay' : undefined}
               aria-label="Abrir Playground"
               onClick={onPlayground}
             >
@@ -270,7 +307,9 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
           <div>
             <div className="rm-hero-meta">
               <span className="rm-pill">{course.tags[1] || course.tags[0] || 'Curso'}</span>
-              <span className="rm-time">{lessonCount} lecciones · {practiceCount} prácticas</span>
+              <span className="rm-time">
+                {lessonCount} lecciones · {practiceCount} prácticas
+              </span>
             </div>
             <h1>{course.title}</h1>
             <p>{course.description}</p>
@@ -360,9 +399,11 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
                         onClick={() => enterLesson(row.main.lessonId)}
                       >
                         <span>{row.main.label}</span>
-                        {row.main.itemType === 'solo-project'
-                          ? <em className="rm-reto-flag">Proyecto</em>
-                          : row.hasChallenge && <em className="rm-reto-flag">Reto</em>}
+                        {row.main.itemType === 'solo-project' ? (
+                          <em className="rm-reto-flag">Proyecto</em>
+                        ) : (
+                          row.hasChallenge && <em className="rm-reto-flag">Reto</em>
+                        )}
                         <ChevronRight size={14} />
                         {isLocked(row.main.lessonId) && <LockKeyhole size={14} aria-hidden="true" />}
                       </button>
@@ -400,7 +441,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             aria-modal="true"
             aria-label="Detalle del concepto"
             onClick={(event) => event.stopPropagation()}
-            data-augmented-ui={isCyber ? "rm-concept-pop tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
+            data-augmented-ui={isCyber ? 'rm-concept-pop tl-clip tr-clip br-clip bl-clip border inlay' : undefined}
           >
             <button type="button" data-dialog-initial-focus className="rm-briefing-close" onClick={() => setOpenConcept(null)} aria-label="Cerrar">
               <X size={14} />
@@ -408,18 +449,14 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             <span className="rm-pill">Concepto</span>
             <h2>{conceptCopy.term}</h2>
             <p>{conceptCopy.desc}</p>
-            <button
-              type="button"
-              className="rm-enter-btn"
-              onClick={() => enterLesson(openConcept.lessonId)}
-            >
+            <button type="button" className="rm-enter-btn" onClick={() => enterLesson(openConcept.lessonId)}>
               Verlo en la clase <ChevronRight size={14} />
             </button>
           </aside>
         </div>
       )}
 
-      {blockedItem && (
+      {visibleBlockedItem && (
         <div className="rm-concept-backdrop" onClick={() => setBlockedItem(null)}>
           <aside
             ref={blockerDialogRef}
@@ -428,22 +465,22 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             aria-modal="true"
             aria-label="Refuerzo necesario"
             onClick={(event) => event.stopPropagation()}
-            data-augmented-ui={isCyber ? "rm-concept-pop tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
+            data-augmented-ui={isCyber ? 'rm-concept-pop tl-clip tr-clip br-clip bl-clip border inlay' : undefined}
           >
             <button type="button" data-dialog-initial-focus className="rm-briefing-close" onClick={() => setBlockedItem(null)} aria-label="Cerrar">
               <X size={14} />
             </button>
             <span className="rm-pill">Siguiente paso</span>
-            <h2>{blockedItem.missing.length > 0 ? 'No es un castigo: detectamos un hueco' : 'Contenido no disponible'}</h2>
-            <p>{blockedItem.message}</p>
+            <h2>{visibleBlockedItem.missing.length > 0 ? 'No es un castigo: detectamos un hueco' : 'Contenido no disponible'}</h2>
+            <p>{visibleBlockedItem.message}</p>
             <ul>
-              {blockedItem.missing.slice(0, 3).map((gap) => (
+              {visibleBlockedItem.missing.slice(0, 3).map((gap) => (
                 <li key={`${gap.skillId}:${gap.capability}`}>
                   {gap.skillId.replace(/-/g, ' ')} · {gap.capability === 'explain' ? 'explicarlo' : 'aplicarlo'}
                 </li>
               ))}
             </ul>
-            {blockedItem.missing.length > 0 && (
+            {visibleBlockedItem.source === 'personal' && visibleBlockedItem.missing.length > 0 && (
               <button type="button" className="rm-enter-btn" onClick={openRecovery}>
                 Ir al refuerzo <ChevronRight size={14} />
               </button>
@@ -457,10 +494,13 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
           course={course}
           profile={learningProfile}
           onClose={() => setShowLearningCenter(false)}
-          onRateReview={async (reviewId, rating) => onLearningProfileChange(await rateCurriculumReview(reviewId, rating))}
-          onSaveNotebook={async (entry) => onLearningProfileChange(await saveNotebookEntry(entry))}
-          onReviewReinforcement={async (reinforcementId) => onLearningProfileChange(await markTutorReinforcementReviewed(reinforcementId))}
-          onSummaryChange={setRemoteLearningSummary}
+          onSummaryChange={(userId, summary) => {
+            if (!userId || !summary || userId !== studentUserId) {
+              setRemoteLearningSummary(null);
+              return;
+            }
+            setRemoteLearningSummary({ userId, summary });
+          }}
         />
       )}
     </div>

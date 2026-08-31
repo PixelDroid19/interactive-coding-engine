@@ -1,7 +1,8 @@
 import type { ReviewRating } from '../learning/types';
-import { getLearningActorId, learningApiRequest, readApiJson } from './learningHttp';
+import { learningApiRequest, readApiJson } from './learningHttp';
 
-const CACHE_PREFIX = 'aula_learning_center_cache_v1:';
+const LEGACY_CACHE_PREFIX = 'aula_learning_center_cache_v1:';
+const CACHE_PREFIX = 'aula_learning_center_cache_v2:';
 const CACHE_TTL_MS = 5 * 60_000;
 
 export interface RemoteReviewCard {
@@ -73,15 +74,34 @@ export interface LearningCenterSnapshot {
   }>;
 }
 
-type CachedSnapshot = Readonly<{ cachedAt: number; snapshot: LearningCenterSnapshot }>;
+type CachedSnapshot = Readonly<{
+  cachedAt: number;
+  snapshot: LearningCenterSnapshot;
+}>;
 
-function cacheKey(courseSlug: string): string {
-  return `${CACHE_PREFIX}${getLearningActorId()}:${courseSlug}`;
+function requiredIdentifier(value: unknown, label: string): string {
+  if (typeof value !== 'string' || !value.trim()) throw new Error(`Falta ${label} para sincronizar tu aprendizaje.`);
+  return value.trim();
 }
 
-function readCache(courseSlug: string): CachedSnapshot | null {
+function cacheKey(userId: string, courseSlug: string): string {
+  return `${CACHE_PREFIX}${encodeURIComponent(userId)}:${encodeURIComponent(courseSlug)}`;
+}
+
+export function purgeLegacyLearningCenterCache(): void {
   try {
-    const parsed = JSON.parse(localStorage.getItem(cacheKey(courseSlug)) ?? 'null') as CachedSnapshot | null;
+    for (let index = localStorage.length - 1; index >= 0; index -= 1) {
+      const key = localStorage.key(index);
+      if (key?.startsWith(LEGACY_CACHE_PREFIX)) localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage puede no estar disponible; nunca usamos la caché antigua como alternativa.
+  }
+}
+
+function readCache(userId: string, courseSlug: string): CachedSnapshot | null {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(cacheKey(userId, courseSlug)) ?? 'null') as CachedSnapshot | null;
     if (!parsed?.snapshot || parsed.snapshot.courseSlug !== courseSlug || !Number.isFinite(parsed.cachedAt)) return null;
     return parsed;
   } catch {
@@ -89,64 +109,81 @@ function readCache(courseSlug: string): CachedSnapshot | null {
   }
 }
 
-export function cacheLearningCenterSnapshot(snapshot: LearningCenterSnapshot): void {
+export function cacheLearningCenterSnapshot(userId: string, snapshot: LearningCenterSnapshot): void {
+  const ownerId = requiredIdentifier(userId, 'la identidad de la cuenta');
+  const courseSlug = requiredIdentifier(snapshot?.courseSlug, 'el curso');
+  purgeLegacyLearningCenterCache();
   try {
-    localStorage.setItem(cacheKey(snapshot.courseSlug), JSON.stringify({ cachedAt: Date.now(), snapshot }));
+    localStorage.setItem(cacheKey(ownerId, courseSlug), JSON.stringify({ cachedAt: Date.now(), snapshot }));
   } catch {
     // La caché mejora la experiencia, pero no es la fuente de verdad.
   }
 }
 
-export function getCachedLearningCenter(courseSlug: string): { snapshot: LearningCenterSnapshot; fresh: boolean } | null {
-  const cached = readCache(courseSlug);
-  return cached ? { snapshot: cached.snapshot, fresh: Date.now() - cached.cachedAt < CACHE_TTL_MS } : null;
+export function getCachedLearningCenter(userId: string, courseSlug: string): { snapshot: LearningCenterSnapshot; fresh: boolean } | null {
+  const ownerId = requiredIdentifier(userId, 'la identidad de la cuenta');
+  const normalizedCourseSlug = requiredIdentifier(courseSlug, 'el curso');
+  purgeLegacyLearningCenterCache();
+  const cached = readCache(ownerId, normalizedCourseSlug);
+  return cached
+    ? {
+        snapshot: cached.snapshot,
+        fresh: Date.now() - cached.cachedAt < CACHE_TTL_MS,
+      }
+    : null;
 }
 
-export async function fetchLearningCenter(courseSlug: string, signal?: AbortSignal): Promise<LearningCenterSnapshot> {
-  const response = await learningApiRequest(`/v1/me/learning-center?courseSlug=${encodeURIComponent(courseSlug)}`, {
+export async function fetchLearningCenter(userId: string, courseSlug: string, signal?: AbortSignal): Promise<LearningCenterSnapshot> {
+  requiredIdentifier(userId, 'la identidad de la cuenta');
+  const normalizedCourseSlug = requiredIdentifier(courseSlug, 'el curso');
+  const response = await learningApiRequest(`/v1/me/learning-center?courseSlug=${encodeURIComponent(normalizedCourseSlug)}`, {
     signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10_000)]) : undefined,
   });
   const snapshot = await readApiJson<LearningCenterSnapshot>(response);
-  cacheLearningCenterSnapshot(snapshot);
+  if (signal?.aborted) throw new Error('La sincronización fue cancelada.');
+  if (!snapshot || snapshot.courseSlug !== normalizedCourseSlug) {
+    throw new Error('La respuesta de aprendizaje no corresponde al curso abierto. Inténtalo otra vez.');
+  }
   return snapshot;
 }
 
-export function withSavedNotebook(
-  snapshot: LearningCenterSnapshot,
-  entry: RemoteNotebookEntry,
-): LearningCenterSnapshot {
-  const notes = [
-    ...snapshot.notes.filter((candidate) => candidate.skillKey !== entry.skillKey),
-    entry,
-  ];
-  return {
-    ...snapshot,
-    notes,
-    summary: { ...snapshot.summary, notes: notes.length },
-  };
-}
-
-export async function saveRemoteNotebook(skillKey: string, entry: {
-  courseSlug: string;
-  concept: string;
-  mentalModel: string;
-  pattern: string;
-  ownExample: string;
-  personalMistake: string;
-}): Promise<RemoteNotebookEntry> {
-  return readApiJson<RemoteNotebookEntry>(await learningApiRequest(`/v1/me/notebook/${encodeURIComponent(skillKey)}`, {
-    method: 'PUT', body: JSON.stringify(entry),
-  }));
+export async function saveRemoteNotebook(
+  skillKey: string,
+  entry: {
+    courseSlug: string;
+    concept: string;
+    mentalModel: string;
+    pattern: string;
+    ownExample: string;
+    personalMistake: string;
+  },
+): Promise<RemoteNotebookEntry> {
+  const normalizedSkillKey = requiredIdentifier(skillKey, 'el concepto');
+  requiredIdentifier(entry?.courseSlug, 'el curso');
+  return readApiJson<RemoteNotebookEntry>(
+    await learningApiRequest(`/v1/me/notebook/${encodeURIComponent(normalizedSkillKey)}`, {
+      method: 'PUT',
+      body: JSON.stringify(entry),
+    }),
+  );
 }
 
 export async function rateRemoteReview(reviewId: string, rating: ReviewRating): Promise<void> {
-  await readApiJson(await learningApiRequest(`/v1/me/reviews/${encodeURIComponent(reviewId)}/rating`, {
-    method: 'POST', body: JSON.stringify({ rating, operationId: crypto.randomUUID() }),
-  }));
+  const normalizedReviewId = requiredIdentifier(reviewId, 'la tarjeta de repaso');
+  await readApiJson(
+    await learningApiRequest(`/v1/me/reviews/${encodeURIComponent(normalizedReviewId)}/rating`, {
+      method: 'POST',
+      body: JSON.stringify({ rating, operationId: crypto.randomUUID() }),
+    }),
+  );
 }
 
 export async function markRemoteReinforcementReviewed(reinforcementId: string): Promise<void> {
-  await readApiJson(await learningApiRequest(`/v1/me/reinforcements/${encodeURIComponent(reinforcementId)}/reviewed`, {
-    method: 'PUT', body: JSON.stringify({}),
-  }));
+  const normalizedReinforcementId = requiredIdentifier(reinforcementId, 'el refuerzo');
+  await readApiJson(
+    await learningApiRequest(`/v1/me/reinforcements/${encodeURIComponent(normalizedReinforcementId)}/reviewed`, {
+      method: 'PUT',
+      body: JSON.stringify({}),
+    }),
+  );
 }
