@@ -87,7 +87,48 @@ function parseSession(value: unknown): AuthSession {
   };
 }
 
+const DEV_MOCK_ROLE_KEY = 'aula_dev_mock_role_v1';
+export type DevMockRole = 'admin' | 'tutor' | 'student';
+
+export function getDevMockRole(): DevMockRole | null {
+  if (!import.meta.env.DEV) return null;
+  try {
+    const val = sessionStorage.getItem(DEV_MOCK_ROLE_KEY);
+    if (val === 'admin' || val === 'tutor' || val === 'student') return val;
+  } catch {
+    // sessionStorage not available
+  }
+  return null;
+}
+
+export function setDevMockRole(role: DevMockRole | null): void {
+  if (!import.meta.env.DEV) return;
+  try {
+    if (!role) sessionStorage.removeItem(DEV_MOCK_ROLE_KEY);
+    else sessionStorage.setItem(DEV_MOCK_ROLE_KEY, role);
+  } catch {
+    // sessionStorage not available
+  }
+}
+
 export async function fetchAuthSession(signal?: AbortSignal): Promise<AuthSession> {
+  const devRole = getDevMockRole();
+  if (import.meta.env.DEV && devRole) {
+    const mockSession: AuthSession = {
+      authenticated: true,
+      user: {
+        id: '00000000-0000-4000-8000-000000000001',
+        email: devRole === 'admin' ? 'admin.local@desarrollo.local' : devRole === 'tutor' ? 'tutor.local@desarrollo.local' : 'alumno.local@desarrollo.local',
+        displayName: devRole === 'admin' ? 'Dev Admin (Local)' : devRole === 'tutor' ? 'Dev Tutor (Local)' : 'Dev Alumno (Local)',
+        roles: devRole === 'admin' ? ['admin', 'tutor', 'student'] : devRole === 'tutor' ? ['tutor', 'student'] : ['student'],
+      },
+      csrfToken: 'dev-local-csrf-token-1234567890',
+    };
+    reconcileDeviceIdentity(mockSession);
+    setLearningCsrfToken(mockSession.csrfToken);
+    return mockSession;
+  }
+
   const response = await learningApiRequest('/v1/auth/session', { signal });
   const session = parseSession(await readApiJson<unknown>(response));
   reconcileDeviceIdentity(session);
@@ -104,6 +145,9 @@ export function getAuthLoginUrl(provider: AuthProvider, returnTo = '/'): string 
 }
 
 export async function logoutAuthSession(): Promise<void> {
+  if (import.meta.env.DEV) {
+    setDevMockRole(null);
+  }
   const response = await learningApiRequest('/v1/auth/logout', {
     method: 'POST',
   });

@@ -181,7 +181,14 @@ export function StaffDashboard({ canAdmin, staffIdentity, onClose }: { canAdmin:
   if (shouldCloseDashboard) return null;
 
   return (
-    <div ref={dialogRef} className={`staff-dashboard${themeId === 'cyber' ? ' staff-dashboard--cyber' : ''}`} role="dialog" aria-modal="true" aria-label="Panel de seguimiento">
+    <div
+      ref={dialogRef}
+      className={`staff-dashboard${themeId === 'cyber' ? ' staff-dashboard--cyber' : ''}`}
+      data-augmented-ui={themeId === 'cyber' ? "staff-dashboard-modal tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Panel de seguimiento"
+    >
       <aside className="staff-dashboard__rail">
         <div className="staff-dashboard__brand"><ShieldCheck size={22} /><span>Seguimiento</span></div>
         <nav aria-label="Secciones del panel">

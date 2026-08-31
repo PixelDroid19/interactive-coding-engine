@@ -80,7 +80,11 @@
 
 .account-menu__providers { display: grid; gap: 8px; margin-top: 14px; }
 .account-menu__providers button,
+.account-provider-btn,
 .account-menu__action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   min-height: 38px;
   border: 2px solid #111318;
@@ -88,17 +92,76 @@
   background: #111318;
   padding: 8px 12px;
   color: #fff;
+  font-family: 'Space Grotesk', sans-serif;
   font-size: 12px;
   font-weight: 850;
   text-align: left;
+  box-shadow: 2px 2px 0 #111318;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
-.account-menu__providers button:first-child { background: #ffe600; color: #111318; }
+.account-provider-btn--google,
+.account-menu__providers button:first-child {
+  background: #ffe600;
+  color: #111318;
+}
+.account-provider-btn--microsoft,
+.account-menu__providers button:nth-child(2) {
+  background: #ffffff;
+  color: #111318;
+}
+.account-menu__providers button:hover:not(:disabled),
+.account-provider-btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #111318;
+}
 .account-menu__providers button:active,
-.account-menu__action:active { transform: translate(1px, 1px); }
-.account-menu__action { margin-top: 14px; background: transparent; color: #111318; text-align: center; }
-.account-menu__action--primary { margin-top: 8px; background: #fff; color: #111318; text-align: left; }
+.account-provider-btn:active,
+.account-menu__action:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 #111318; }
+.account-menu__action { margin-top: 14px; background: transparent; color: #111318; text-align: center; justify-content: center; }
+.account-menu__action--primary { margin-top: 8px; background: #fff; color: #111318; text-align: left; justify-content: flex-start; }
 .account-menu__action:disabled { cursor: wait; opacity: .6; }
 .account-menu__error { margin: 12px 0 0; border-left: 3px solid #be123c; padding-left: 9px; color: #881337; font-size: 11px; line-height: 1.45; }
+
+.account-menu__dev-tools {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #b9b3a8;
+  display: grid;
+  gap: 6px;
+}
+.account-menu__dev-tools > span {
+  color: #796400;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.account-menu__dev-roles {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+.account-menu__dev-roles button {
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 1.5px solid #111318;
+  border-radius: 6px;
+  background: #f5f2eb;
+  color: #111318;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.account-menu__dev-roles button:hover {
+  background: #ffe600;
+}
+.account-menu__dev-roles button.is-active {
+  background: #111318;
+  color: #ffe600;
+}
 
 .hud .account-trigger {
   border: 0 !important;
@@ -133,6 +196,93 @@
 .hud .account-menu__roles { border-top-color: #1e293b !important; }
 .hud .account-menu__roles span { border-color: #00f0ff !important; background: #0c1220 !important; color: #00f0ff !important; }
 .hud .account-menu__action { border-color: rgba(255, 0, 127, 0.5) !important; color: #ff007f !important; background: #1a0818 !important; }
+
+.hud .account-menu__providers button,
+.hud .account-provider-btn {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-height: 38px !important;
+  border-radius: 0 !important;
+  padding: 8px 14px !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  clip-path: polygon(
+    0 0,
+    calc(100% - 8px) 0,
+    100% 8px,
+    100% 100%,
+    8px 100%,
+    0 calc(100% - 8px)
+  ) !important;
+  box-shadow: none !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.hud .account-provider-btn--google,
+.hud .account-menu__providers button:first-child {
+  border: 1.5px solid #ffe600 !important;
+  background: #090c14 !important;
+  color: #ffe600 !important;
+  box-shadow: 0 0 12px rgba(255, 230, 0, 0.25) !important;
+}
+.hud .account-provider-btn--google:hover,
+.hud .account-menu__providers button:first-child:hover {
+  border-color: #ffffff !important;
+  background: #ffe600 !important;
+  color: #000000 !important;
+  box-shadow: 0 0 22px rgba(255, 230, 0, 0.9) !important;
+  transform: translateY(-1px) !important;
+}
+
+.hud .account-provider-btn--microsoft,
+.hud .account-menu__providers button:nth-child(2) {
+  border: 1.5px solid #00f0ff !important;
+  background: #080c14 !important;
+  color: #00f0ff !important;
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.25) !important;
+}
+.hud .account-provider-btn--microsoft:hover,
+.hud .account-menu__providers button:nth-child(2):hover {
+  border-color: #ffffff !important;
+  background: #00f0ff !important;
+  color: #000000 !important;
+  box-shadow: 0 0 22px rgba(0, 240, 255, 0.9) !important;
+  transform: translateY(-1px) !important;
+}
+
+.hud .account-menu__dev-tools {
+  border-top-color: #1e293b !important;
+}
+.hud .account-menu__dev-tools > span {
+  color: #00f0ff !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 800 !important;
+}
+.hud .account-menu__dev-roles button {
+  border-color: #334155 !important;
+  background: #070a12 !important;
+  color: #94a3b8 !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-weight: 800 !important;
+  border-radius: 2px !important;
+}
+.hud .account-menu__dev-roles button:hover {
+  border-color: #00f0ff !important;
+  color: #00f0ff !important;
+  background: #0e1726 !important;
+}
+.hud .account-menu__dev-roles button.is-active {
+  border-color: #ffe600 !important;
+  background: #ffe600 !important;
+  color: #000000 !important;
+  box-shadow: 0 0 10px rgba(255, 230, 0, 0.4) !important;
+}
 
 @media (max-width: 600px) {
   .account-trigger__label { max-width: 92px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

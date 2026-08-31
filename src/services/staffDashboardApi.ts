@@ -60,13 +60,119 @@ export type UserCourseAccess = Readonly<{
 }>;
 
 async function json<T>(path: string, init?: RequestInit): Promise<T> {
-  return readApiJson<T>(await learningApiRequest(path, init));
+  try {
+    return await readApiJson<T>(await learningApiRequest(path, init));
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      if (path.includes('/v1/staff/dashboard/overview')) return DEV_MOCK_OVERVIEW as unknown as T;
+      if (path.includes('/v1/staff/learners')) return { items: DEV_MOCK_LEARNERS } as unknown as T;
+      if (path.includes('/v1/staff/support/threads')) return { items: [] } as unknown as T;
+      if (path.includes('/v1/admin/users')) return { items: DEV_MOCK_USERS } as unknown as T;
+      if (path.includes('/v1/admin/identity/access-rules')) return { items: [] } as unknown as T;
+      if (path.includes('/v1/admin/courses')) return { items: DEV_MOCK_COURSES } as unknown as T;
+      if (path.includes('/course-access')) return { items: [] } as unknown as T;
+    }
+    throw error;
+  }
 }
 
 async function empty(path: string, init?: RequestInit): Promise<void> {
-  const response = await learningApiRequest(path, init);
-  if (!response.ok) await readApiJson(response);
+  try {
+    const response = await learningApiRequest(path, init);
+    if (!response.ok) await readApiJson(response);
+  } catch (error) {
+    if (import.meta.env.DEV) return;
+    throw error;
+  }
 }
+
+const DEV_MOCK_COURSES: AdminCourse[] = [
+  {
+    slug: 'fundamentos',
+    title: 'Fundamentos de programación',
+    description: 'Curso para quien nunca ha programado. Cada lección se reproduce como una clase: el instructor escribe, explica y ejecuta. Tú puedes pausar, editar y comprobar que de verdad entendiste.',
+    metadata: { tagline: 'Aprende a programar desde cero, pausando el código en vivo.' },
+    availability: 'available',
+    availabilityReason: null,
+  },
+  {
+    slug: 'javascript',
+    title: 'JavaScript: del lenguaje a aplicaciones',
+    description: 'Domina JavaScript moderno y su modelo de ejecución con ejercicios prácticos.',
+    metadata: { tagline: 'Estructuras de datos, async y programación orientada a eventos.' },
+    availability: 'available',
+    availabilityReason: null,
+  },
+  {
+    slug: 'web-components',
+    title: 'Web Components y Lit: Interfaces profesionales',
+    description: 'Construye componentes web estándar, reactivos y reutilizables en cualquier framework.',
+    metadata: { tagline: 'Custom Elements, Shadow DOM y Lit sin dependencias pesadas.' },
+    availability: 'available',
+    availabilityReason: null,
+  },
+  {
+    slug: 'open-cells',
+    title: 'Open Cells: componentes y aplicaciones reales',
+    description: 'Arquitectura Cells, workers y estado sincronizado para frontend moderno.',
+    metadata: { tagline: 'Desarrollo modular escalable con runtime Cells en el navegador.' },
+    availability: 'available',
+    availabilityReason: null,
+  },
+  {
+    slug: 'ai-engineer',
+    title: 'AI Engineer: construye un chat educativo local',
+    description: 'Curso progresivo para personas nuevas. Cada clase añade una capacidad pequeña al TutorLocal, un chat educativo que corre entero en tu navegador con WebLLM y Transformers.js sobre WebGPU.',
+    metadata: { tagline: 'Un solo producto que crece contigo: chat con reglas, modelo local en tu GPU.' },
+    availability: 'available',
+    availabilityReason: null,
+  },
+];
+
+const DEV_MOCK_OVERVIEW: StaffOverview = {
+  learners: 3,
+  anonymousLearners: 57,
+  active30d: 60,
+  completedItems: 1,
+  anonymousCompletedItems: 0,
+  needsSupport: 0,
+  openThreads: 0,
+  verifiedLearners: 1,
+  verificationPending: 2,
+  active7d: 60,
+  attempts30d: 434,
+  failedAttempts30d: 10,
+  pendingFeedback: 0,
+  latestActivityAt: new Date().toISOString(),
+  courses: [
+    { courseSlug: 'fundamentos', title: 'Fundamentos de programación', learners: 82, progressItems: 15, completedItems: 11, averageScore: 0.92, attempts: 180, attemptsToReview: 6 },
+    { courseSlug: 'web-components', title: 'Web Components y Lit: Interfaces profesionales', learners: 6, progressItems: 12, completedItems: 3, averageScore: 0.85, attempts: 45, attemptsToReview: 3 },
+    { courseSlug: 'javascript', title: 'JavaScript: del lenguaje a aplicaciones', learners: 5, progressItems: 10, completedItems: 1, averageScore: 0.78, attempts: 32, attemptsToReview: 1 },
+    { courseSlug: 'open-cells', title: 'Open Cells: componentes y aplicaciones reales', learners: 3, progressItems: 8, completedItems: 0, averageScore: 0.7, attempts: 12, attemptsToReview: 0 },
+    { courseSlug: 'ai-engineer', title: 'AI Engineer: construye un chat educativo local', learners: 2, progressItems: 6, completedItems: 0, averageScore: 0.65, attempts: 8, attemptsToReview: 0 },
+  ],
+  activity7d: [
+    { day: 'Mar', events: 0, activeActors: 0, completions: 0 },
+    { day: 'Mié', events: 0, activeActors: 0, completions: 0 },
+    { day: 'Jue', events: 0, activeActors: 0, completions: 0 },
+    { day: 'Vie', events: 0, activeActors: 0, completions: 0 },
+    { day: 'Sáb', events: 79, activeActors: 12, completions: 5 },
+    { day: 'Dom', events: 55, activeActors: 8, completions: 3 },
+    { day: 'Lun', events: 300, activeActors: 40, completions: 18 },
+  ],
+};
+
+const DEV_MOCK_USERS: StaffAdminUser[] = [
+  { id: '10000000-0000-4000-8000-000000000001', email: 'zeusjaimes05@gmail.com', displayName: 'Pixel Droid', status: 'active', emailVerifiedAt: '2026-08-20T10:00:00Z', lastLoginAt: '2026-08-31T07:00:00Z', roles: ['admin', 'student'] },
+  { id: '10000000-0000-4000-8000-000000000002', email: 'damien_monasterios@epam.com', displayName: 'Damien Monasterios', status: 'active', emailVerifiedAt: '2026-08-15T09:00:00Z', lastLoginAt: '2026-08-30T16:00:00Z', roles: ['tutor', 'student'] },
+  { id: '10000000-0000-4000-8000-000000000003', email: 'estudiante.demo@gmail.com', displayName: 'Estudiante Demo', status: 'active', emailVerifiedAt: '2026-08-28T14:00:00Z', lastLoginAt: '2026-08-31T06:30:00Z', roles: ['student'] },
+];
+
+const DEV_MOCK_LEARNERS: StaffLearner[] = [
+  { id: '10000000-0000-4000-8000-000000000001', email: 'zeusjaimes05@gmail.com', displayName: 'Pixel Droid', status: 'active', emailVerifiedAt: '2026-08-20T10:00:00Z', lastSeenAt: '2026-08-31T07:00:00Z', progressItems: 11, completed: 8, lowestSkillScore: 0.85, skillsAtRisk: 0 },
+  { id: '10000000-0000-4000-8000-000000000002', email: 'damien_monasterios@epam.com', displayName: 'Damien Monasterios', status: 'active', emailVerifiedAt: '2026-08-15T09:00:00Z', lastSeenAt: '2026-08-30T16:00:00Z', progressItems: 6, completed: 4, lowestSkillScore: 0.72, skillsAtRisk: 1 },
+  { id: '10000000-0000-4000-8000-000000000003', email: 'estudiante.demo@gmail.com', displayName: 'Estudiante Demo', status: 'active', emailVerifiedAt: '2026-08-28T14:00:00Z', lastSeenAt: '2026-08-31T06:30:00Z', progressItems: 2, completed: 1, lowestSkillScore: 0.6, skillsAtRisk: 2 },
+];
 
 export const staffDashboardApi = {
   overview: () => json<StaffOverview>('/v1/staff/dashboard/overview'),

@@ -43,7 +43,14 @@
 .learning-center > nav button.is-active { border-color: #111; background: #ffe600; color: #111; box-shadow: 3px 3px 0 #111; }
 .learning-center > main { min-height: 0; overflow: auto; padding: clamp(1rem, 3vw, 1.6rem); }
 .learning-center__access-state { display: grid; align-items: center; }
-.learning-center__login-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; margin-top: 1.25rem; }
+.learning-center__login-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
 .learning-center h3 { margin: 0; font-size: 1.2rem; }
 .learning-center label { display: grid; gap: .4rem; margin: 0 0 1rem; font-weight: 700; }
 .learning-center textarea, .learning-center select {
@@ -55,8 +62,57 @@
 .learning-notebook__intro { margin-bottom: 1.25rem; padding: 1rem; border-left: 5px solid #ffe600; background: color-mix(in srgb, #ffe600 10%, transparent); }
 .learning-notebook__intro p, .learning-empty p { margin: .35rem 0 0; color: color-mix(in srgb, currentColor 68%, transparent); }
 .learning-notebook__error { margin: .75rem 0; border: 2px solid #b42345; border-radius: 8px; background: #fff0f3; padding: .7rem .8rem; color: #7a1530; font-weight: 700; }
-.learning-primary { min-height: 2.8rem; padding: .7rem 1rem; border: 2px solid #111; border-radius: 9px; background: #ffe600; color: #111; font-weight: 800; box-shadow: 4px 4px 0 #111; }
-.learning-primary:disabled { opacity: .45; box-shadow: none; }
+.learning-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: 2.85rem;
+  padding: 0.75rem 1.4rem;
+  border: 2px solid #111;
+  border-radius: 10px;
+  background: #ffe600;
+  color: #111;
+  font-family: var(--font-body, "Outfit", sans-serif);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 4px 4px 0 #111;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease;
+}
+.learning-primary:not(:disabled):hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #111;
+  background: #ffea2e;
+}
+.learning-primary:not(:disabled):active {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 #111;
+}
+.learning-primary:disabled { opacity: .45; box-shadow: none; cursor: not-allowed; transform: none; }
+.learning-login-btn {
+  &--google {
+    background: #ffe600;
+    color: #111;
+  }
+  &--microsoft {
+    background: #ffffff;
+    color: #111;
+    border-color: #111;
+  }
+  &--microsoft:not(:disabled):hover {
+    background: #f1f5f9;
+  }
+  .learning-login-btn__icon {
+    flex-shrink: 0;
+  }
+  .learning-login-btn__label {
+    white-space: nowrap;
+  }
+}
 .learning-center > nav button:focus-visible, .learning-center > header button:focus-visible, .learning-primary:focus-visible { outline: 3px solid #16855c; outline-offset: 3px; }
 .learning-progress-line { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; color: color-mix(in srgb, currentColor 65%, transparent); font: 650 .76rem/1 var(--font-mono, monospace); text-transform: uppercase; }
 .review-queue h3 { margin-bottom: 1.25rem; font-size: clamp(1.25rem, 3vw, 1.7rem); }
@@ -92,7 +148,32 @@
 .technology-path__connector b { color: #16855c; font-size: 1rem; }
 .technology-path > aside { margin-top: 1.2rem; padding: 1rem; border-left: 5px solid #ffe600; background: color-mix(in srgb, #ffe600 10%, transparent); }
 .technology-path > aside p { margin: .3rem 0 0; line-height: 1.5; }
-.learning-empty { min-height: 12rem; display: grid; place-content: center; text-align: center; padding: 2rem; border: 1px dashed currentColor; border-radius: 14px; }
+.learning-empty {
+  min-height: 14rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  border: 2px dashed color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--paper, #f5f2eb) 50%, white);
+}
+.learning-empty h3 {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-heading, "Space Grotesk", sans-serif);
+  font-size: clamp(1.2rem, 3vw, 1.45rem);
+  font-weight: 800;
+  color: #111318;
+}
+.learning-empty p {
+  max-width: 52ch;
+  margin: 0;
+  color: color-mix(in srgb, currentColor 68%, transparent);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
 .review-overview { display: grid; gap: 1.25rem; }
 .learning-section-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: .75rem; }
 .learning-section-heading span { display: block; margin-bottom: .25rem; color: #785b00; font: 750 .65rem/1 var(--font-mono, monospace); letter-spacing: .11em; }

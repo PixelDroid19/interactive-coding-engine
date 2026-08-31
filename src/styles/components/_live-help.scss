@@ -1,20 +1,28 @@
 .live-help-launcher {
   position: fixed;
-  z-index: 88;
+  z-index: 219;
   right: 16px;
-  bottom: 76px;
+  bottom: calc(1rem + 52px);
   display: inline-flex;
   min-height: 38px;
   align-items: center;
   gap: 7px;
   border: 2px solid #111318;
+  border-radius: 8px;
   background: #ffe600;
-  padding: 8px 12px;
+  padding: 8px 14px;
   color: #111318;
   font: 800 11px/1 'Space Grotesk', sans-serif;
   letter-spacing: .04em;
   text-transform: uppercase;
   box-shadow: 3px 3px 0 #111318;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.app-screen .live-help-launcher {
+  bottom: calc(5.4rem + 52px);
 }
 
 .live-help-launcher:hover { background: #fff5a0; transform: translate(-1px, -1px); box-shadow: 5px 5px 0 #111318; }
@@ -119,9 +127,28 @@
 .staff-live-help__workspace form label { margin: 0; }
 .staff-live-help__workspace textarea { min-height: 95px; resize: vertical; }
 
-.live-help-launcher--cyber { border-color: #00f0ff; background: #d7ff00; color: #05080f; box-shadow: 3px 3px 0 #00f0ff; clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 7px 100%, 0 calc(100% - 7px)); }
-.live-help-launcher--cyber:hover { background: #fff000; box-shadow: 5px 5px 0 #ff00b8; }
-.live-help-panel--cyber { border-color: #00f0ff; background: #070b13; color: #e2e8f0; box-shadow: 5px 5px 0 #d7ff00; font-family: 'Space Grotesk', sans-serif; }
+.hud .live-help-launcher,
+.live-help-launcher--cyber {
+  border: 1.5px solid #00f0ff !important;
+  background: #090e18 !important;
+  color: #00f0ff !important;
+  font-family: 'Chakra Petch', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0.08em !important;
+  box-shadow: 0 0 14px rgba(0, 240, 255, 0.3) !important;
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px)) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.hud .live-help-launcher:hover,
+.live-help-launcher--cyber:hover {
+  border-color: #ffffff !important;
+  background: #00f0ff !important;
+  color: #000000 !important;
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.9) !important;
+  transform: translateY(-2px) !important;
+}
+.live-help-panel--cyber { border: 1.5px solid #00f0ff; background: #070b13; color: #e2e8f0; box-shadow: 0 0 20px rgba(0, 240, 255, 0.15), inset 0 0 30px rgba(0, 240, 255, 0.03); font-family: 'Space Grotesk', sans-serif; }
 .live-help-panel--cyber .live-help-panel__header { border-color: #00f0ff; background: #090e18; color: #ef75ff; }
 .live-help-panel--cyber .live-help-panel__header button, .live-help-panel--cyber .live-help-panel__proposals article > div button:not(.live-help-panel__primary), .live-help-panel--cyber .live-help-panel__end { border-color: #00f0ff; background: #090e18; color: #00f0ff; }
 .live-help-panel--cyber .live-help-panel__state.is-connected { color: #42f58d; }
@@ -134,11 +161,14 @@
 .live-help-panel--cyber .live-help-panel__primary, .live-help-panel--cyber .live-help-panel__tools button, .live-help-panel--cyber .live-help-panel__compose button { border-color: #d7ff00; background: #d7ff00; color: #05080f; box-shadow: 2px 2px 0 #00f0ff; }
 .live-help-panel--cyber .live-help-panel__proposals article > header { border-color: #00f0ff; }.live-help-panel--cyber .live-help-panel__proposals article > header span { color: #00f0ff; }
 .live-help-panel--cyber textarea { border-color: #334155; background: #05080f; color: #f8fafc; }
-.staff-live-help--cyber { border-color: #00f0ff; background: #090e18; color: #e2e8f0; box-shadow: 5px 5px 0 #d7ff00; }
+.staff-live-help--cyber { border: 1.5px solid #00f0ff; background: #090e18; color: #e2e8f0; box-shadow: 0 0 24px rgba(0, 240, 255, 0.15), inset 0 0 40px rgba(0, 240, 255, 0.03); }
+.staff-live-help--cyber .staff-live-help__error { border-bottom: 1px solid rgba(255, 0, 85, 0.5); background: rgba(255, 0, 85, 0.12); color: #ff7294; font-family: 'Chakra Petch', sans-serif; font-weight: 800; }
+.staff-live-help--cyber .staff-live-help__empty { color: #64748b; }
+.staff-live-help--cyber .staff-live-help__empty h3 { color: #cbd5e1; }
 .staff-live-help--cyber .staff-live-help__heading, .staff-live-help--cyber .staff-live-help__queue, .staff-live-help--cyber .staff-live-help__session-header, .staff-live-help--cyber .staff-live-help__columns h3 { border-color: #00f0ff; background: #070b13; }
 .staff-live-help--cyber .staff-live-help__heading span { color: #00f0ff; }.staff-live-help--cyber .staff-live-help__heading p, .staff-live-help--cyber .staff-live-help__queue > p, .staff-live-help--cyber .staff-live-help__conversation > div > p, .staff-live-help--cyber .staff-live-help__workspace > p { color: #a9b7ca; }
 .staff-live-help--cyber .staff-live-help__heading > button, .staff-live-help--cyber .staff-live-help__queue article, .staff-live-help--cyber .staff-live-help__columns > section { border-color: #00f0ff; background: #090e18; color: #e2e8f0; }
-.staff-live-help--cyber .staff-live-help__queue article.is-selected { box-shadow: 3px 3px 0 #d7ff00; }.staff-live-help--cyber .staff-live-help__queue article > button:first-child { color: #e2e8f0; }.staff-live-help--cyber .staff-live-help__queue article span, .staff-live-help--cyber .staff-live-help__queue article small { color: #a9b7ca; }
+.staff-live-help--cyber .staff-live-help__queue article.is-selected { border-color: #ffe600; box-shadow: 0 0 14px rgba(255, 230, 0, 0.3); }.staff-live-help--cyber .staff-live-help__queue article > button:first-child { color: #e2e8f0; }.staff-live-help--cyber .staff-live-help__queue article span, .staff-live-help--cyber .staff-live-help__queue article small { color: #a9b7ca; }
 .staff-live-help--cyber .staff-live-help__claim, .staff-live-help--cyber form > button { border-color: #d7ff00; background: #d7ff00; color: #05080f; box-shadow: 2px 2px 0 #00f0ff; }
 .staff-live-help--cyber .staff-live-help__conversation article { border-left-color: #ef75ff; background: #101722; }.staff-live-help--cyber .staff-live-help__conversation article.is-learner { border-left-color: #d7ff00; }.staff-live-help--cyber .staff-live-help__session-header button { border-color: #ff4d72; background: #090e18; color: #ff7294; }
 .staff-live-help--cyber input, .staff-live-help--cyber textarea, .staff-live-help--cyber select { border-color: #334155; background: #05080f; color: #f8fafc; }.staff-live-help--cyber form label { color: #a9b7ca; }

@@ -2,6 +2,9 @@ declare module '*.css';
 
 interface ImportMetaEnv {
   readonly VITE_LEARNING_API_URL?: string;
+  readonly DEV?: boolean;
+  readonly PROD?: boolean;
+  readonly MODE?: string;
 }
 
 interface ImportMeta {

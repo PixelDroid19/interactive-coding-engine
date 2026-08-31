@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { UserRound } from 'lucide-react';
-import type { AuthProvider, UserRole } from '../services/authSessionApi';
+import { UserRound, LogIn } from 'lucide-react';
+import { type AuthProvider, type UserRole, getDevMockRole, setDevMockRole } from '../services/authSessionApi';
 import { useAuthSession } from './AuthSessionProvider';
 import { useTheme } from '../themes/ThemeProvider';
 import { StaffDashboard } from './StaffDashboard';
@@ -76,6 +76,7 @@ export function AccountMenu() {
   const providers = 'providers' in session ? session.providers : [];
   const signedInSession = session.authenticated ? session : null;
   const noProviders = !authenticated && providers.length === 0;
+  const canOpenMenu = !noProviders || import.meta.env.DEV;
   const displayName = signedInSession ? signedInSession.user.displayName || signedInSession.user.email.split('@')[0]! : '';
   const triggerLabel = authenticated ? `Cuenta de ${displayName}` : noProviders ? 'Sesión local' : 'Entrar';
   const isStaff = Boolean(staffIdentity);
@@ -98,7 +99,7 @@ export function AccountMenu() {
         <span className="account-trigger__label">{authenticated ? displayName : triggerLabel}</span>
       </button>
 
-      {open && !noProviders && (
+      {open && canOpenMenu && (
         <section
           className="account-menu"
           data-augmented-ui={isCyber ? "hud-account-menu tl-clip tr-clip br-clip bl-clip border inlay" : undefined}
@@ -133,10 +134,66 @@ export function AccountMenu() {
               </div>
               <div className="account-menu__providers">
                 {providers.map((provider) => (
-                  <button type="button" key={provider} onClick={() => auth.login(provider)}>{PROVIDER_LABEL[provider]}</button>
+                  <button
+                    type="button"
+                    key={provider}
+                    className={`account-provider-btn account-provider-btn--${provider}`}
+                    onClick={() => auth.login(provider)}
+                  >
+                    <LogIn size={15} aria-hidden="true" className="account-provider-btn__icon" />
+                    <span>{PROVIDER_LABEL[provider]}</span>
+                  </button>
                 ))}
               </div>
             </>
+          )}
+
+          {import.meta.env.DEV && (
+            <div className="account-menu__dev-tools">
+              <span>[DEV] Simular Rol Local</span>
+              <div className="account-menu__dev-roles">
+                <button
+                  type="button"
+                  className={getDevMockRole() === 'admin' ? 'is-active' : ''}
+                  onClick={() => {
+                    setDevMockRole('admin');
+                    void auth.refresh();
+                  }}
+                >
+                  Rol: Admin
+                </button>
+                <button
+                  type="button"
+                  className={getDevMockRole() === 'tutor' ? 'is-active' : ''}
+                  onClick={() => {
+                    setDevMockRole('tutor');
+                    void auth.refresh();
+                  }}
+                >
+                  Rol: Tutor
+                </button>
+                <button
+                  type="button"
+                  className={getDevMockRole() === 'student' ? 'is-active' : ''}
+                  onClick={() => {
+                    setDevMockRole('student');
+                    void auth.refresh();
+                  }}
+                >
+                  Rol: Alumno
+                </button>
+                <button
+                  type="button"
+                  className={!getDevMockRole() ? 'is-active' : ''}
+                  onClick={() => {
+                    setDevMockRole(null);
+                    void auth.refresh();
+                  }}
+                >
+                  Real / Reset
+                </button>
+              </div>
+            </div>
           )}
         </section>
       )}

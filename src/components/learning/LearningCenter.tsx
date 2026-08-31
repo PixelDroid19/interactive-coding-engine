@@ -515,9 +515,15 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
             anonymousSession.providers.length > 0 ? (
               <div className="learning-center__login-actions">
                 {anonymousSession.providers.map((provider) => (
-                  <button key={provider} type="button" className="learning-primary" disabled={auth.busy} onClick={() => auth.login(provider)}>
-                    <LogIn size={16} aria-hidden="true" />
-                    {LOGIN_LABEL[provider]}
+                  <button
+                    key={provider}
+                    type="button"
+                    className={`learning-primary learning-login-btn learning-login-btn--${provider}`}
+                    disabled={auth.busy}
+                    onClick={() => auth.login(provider)}
+                  >
+                    <LogIn size={16} aria-hidden="true" className="learning-login-btn__icon" />
+                    <span className="learning-login-btn__label">{LOGIN_LABEL[provider]}</span>
                   </button>
                 ))}
               </div>
