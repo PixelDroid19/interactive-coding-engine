@@ -109,7 +109,7 @@ export function buildLesson(spec: JavaScriptLessonSpec): ScrimLessonData {
     skillsRequired: spec.skillsRequired,
     skillsIntroduced: spec.skillsIntroduced,
     learningObjectives: [spec.summary, 'Explicar el resultado antes de ejecutar.', 'Consultar el contrato de una API sin memorizarla.'],
-    commonMistakes: [spec.reading.commonErrors],
+    commonMistakes: [spec.reading.commonErrors, spec.debug.observed],
     mentalModel: spec.reading.definition,
     frequentQuestions: spec.reading.questions,
     transferPrompt: spec.reading.transfer,

@@ -14,11 +14,36 @@ function base(lesson: number, title: string, activity: ReasoningExerciseItem['ac
   };
 }
 
-const sequence = (lesson: number, title: string, prompt: string, steps: ReasoningNode[], expectedOrder: string[]) => base(lesson, title, { kind: 'sequence', prompt, steps, expectedOrder }, 'El orden correcto conserva las dependencias entre entrada, transformación y salida.');
-const trace = (lesson: number, title: string, prompt: string, columns: string[], rows: ReasoningNode[], expectedCells: Record<string, string>) => base(lesson, title, { kind: 'trace-table', prompt, columns, rows, expectedCells }, 'La tabla muestra el valor después de cada paso y revela la primera diferencia con la predicción.');
-const decision = (lesson: number, title: string, prompt: string, cases: Array<ReasoningNode & { options: string[] }>, expectedOutcomes: Record<string, string>) => base(lesson, title, { kind: 'decision-table', prompt, cases, expectedOutcomes }, 'Cada fila representa un grupo de entradas; los límites pertenecen al camino que define el contrato.');
-const flow = (lesson: number, title: string, prompt: string, nodes: Array<ReasoningNode & { role: 'start' | 'process' | 'decision' | 'output' | 'end' }>, expectedConnections: ReasoningConnection[], distractors: ReasoningConnection[] = []) => base(lesson, title, { kind: 'flowchart', prompt, nodes, connectionOptions: [...expectedConnections, ...distractors], expectedConnections }, 'Las flechas forman un recorrido completo y cada decisión conserva sus salidas posibles.');
-const dependencies = (lesson: number, title: string, prompt: string, modules: ReasoningNode[], expectedDependencies: ReasoningConnection[], distractors: ReasoningConnection[] = []) => base(lesson, title, { kind: 'dependency-map', prompt, modules, dependencyOptions: [...expectedDependencies, ...distractors], expectedDependencies }, 'La dirección correcta deja las reglas independientes de los detalles de interfaz y red.');
+const sequence = (lesson: number, title: string, prompt: string, steps: ReasoningNode[], expectedOrder: string[]) => {
+  const labels = Object.fromEntries(steps.map((step) => [step.id, step.label]));
+  const route = expectedOrder.map((id) => labels[id]).join(' → ');
+  return base(lesson, title, { kind: 'sequence', prompt, steps, expectedOrder }, `El recorrido es ${route}. El resultado de cada paso permite ejecutar el siguiente.`);
+};
+
+const trace = (lesson: number, title: string, prompt: string, columns: string[], rows: ReasoningNode[], expectedCells: Record<string, string>) => {
+  const values = rows.map((row) => {
+    const cells = columns.map((column) => `${column} = ${expectedCells[`${row.id}.${column}`]}`).join(', ');
+    return `${row.label}: ${cells}`;
+  }).join('; ');
+  return base(lesson, title, { kind: 'trace-table', prompt, columns, rows, expectedCells }, `La traza correcta es ${values}. La primera fila distinta de tu predicción indica dónde revisar.`);
+};
+
+const decision = (lesson: number, title: string, prompt: string, cases: Array<ReasoningNode & { options: string[] }>, expectedOutcomes: Record<string, string>) => {
+  const outcomes = cases.map((item) => `${item.label}: ${expectedOutcomes[item.id]}`).join('; ');
+  return base(lesson, title, { kind: 'decision-table', prompt, cases, expectedOutcomes }, `La tabla queda así: ${outcomes}. Los casos de frontera muestran con precisión qué incluye cada condición.`);
+};
+
+const flow = (lesson: number, title: string, prompt: string, nodes: Array<ReasoningNode & { role: 'start' | 'process' | 'decision' | 'output' | 'end' }>, expectedConnections: ReasoningConnection[], distractors: ReasoningConnection[] = []) => {
+  const labels = Object.fromEntries(nodes.map((node) => [node.id, node.label]));
+  const routes = expectedConnections.map((edge) => `${labels[edge.from]} → ${labels[edge.to]}${edge.label ? ` (${edge.label})` : ''}`).join('; ');
+  return base(lesson, title, { kind: 'flowchart', prompt, nodes, connectionOptions: [...expectedConnections, ...distractors], expectedConnections }, `Conecta ${routes}. Ese recorrido mantiene cada efecto detrás del dato o decisión que lo habilita.`);
+};
+
+const dependencies = (lesson: number, title: string, prompt: string, modules: ReasoningNode[], expectedDependencies: ReasoningConnection[], distractors: ReasoningConnection[] = []) => {
+  const labels = Object.fromEntries(modules.map((module) => [module.id, module.label]));
+  const routes = expectedDependencies.map((edge) => `${labels[edge.from]} → ${labels[edge.to]}${edge.label ? ` (${edge.label})` : ''}`).join('; ');
+  return base(lesson, title, { kind: 'dependency-map', prompt, modules, dependencyOptions: [...expectedDependencies, ...distractors], expectedDependencies }, `Las relaciones válidas son ${routes}. La dirección evita acoplar el estado o las reglas a quien los presenta.`);
+};
 
 export const JAVASCRIPT_REASONING: ReasoningExerciseItem[] = [
   sequence(1, 'Ordena la ejecución', 'Ordena lo que ocurre al mostrar un mensaje.', [{ id: 'salida', label: 'El mensaje aparece en la consola' }, { id: 'leer', label: 'JavaScript lee la llamada completa' }, { id: 'llamar', label: 'console.log recibe el texto' }], ['leer', 'llamar', 'salida']),

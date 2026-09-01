@@ -45,23 +45,34 @@ function base(lesson: number, title: string, activity: ReasoningExerciseItem['ac
 }
 
 function sequence(lesson: number, title: string, prompt: string, steps: ReasoningNode[], expectedOrder: string[]) {
-  return base(lesson, title, { kind: 'sequence', prompt, steps, expectedOrder }, 'El orden correcto conserva las dependencias: primero nace el dato, después se transforma y al final se observa el resultado.');
+  const labels = Object.fromEntries(steps.map((step) => [step.id, step.label]));
+  const route = expectedOrder.map((id) => labels[id]).join(' → ');
+  return base(lesson, title, { kind: 'sequence', prompt, steps, expectedOrder }, `El recorrido es ${route}. Cada paso deja listo el dato que necesita el siguiente.`);
 }
 
 function decision(lesson: number, title: string, prompt: string, cases: Array<ReasoningNode & { options: string[] }>, expectedOutcomes: Record<string, string>) {
-  return base(lesson, title, { kind: 'decision-table', prompt, cases, expectedOutcomes }, 'Cada fila representa una partición de entrada. Los valores límite se asignan según los operadores incluidos en el contrato.');
+  const outcomes = cases.map((item) => `${item.label}: ${expectedOutcomes[item.id]}`).join('; ');
+  return base(lesson, title, { kind: 'decision-table', prompt, cases, expectedOutcomes }, `La clasificación queda así: ${outcomes}. Los casos de frontera confirman qué valores incluye cada condición.`);
 }
 
 function trace(lesson: number, title: string, prompt: string, columns: string[], rows: ReasoningNode[], expectedCells: Record<string, string>) {
-  return base(lesson, title, { kind: 'trace-table', prompt, columns, rows, expectedCells }, 'La tabla hace visible el estado después de cada paso y permite encontrar la primera fila que contradice la predicción.');
+  const values = rows.map((row) => {
+    const cells = columns.map((column) => `${column} = ${expectedCells[`${row.id}.${column}`]}`).join(', ');
+    return `${row.label}: ${cells}`;
+  }).join('; ');
+  return base(lesson, title, { kind: 'trace-table', prompt, columns, rows, expectedCells }, `La traza correcta es ${values}. Si tu predicción cambia antes, esa primera fila señala dónde revisar.`);
 }
 
 function flow(lesson: number, title: string, prompt: string, nodes: Array<ReasoningNode & { role: 'start' | 'process' | 'decision' | 'output' | 'end' }>, expectedConnections: ReasoningConnection[], distractors: ReasoningConnection[] = []) {
-  return base(lesson, title, { kind: 'flowchart', prompt, nodes, connectionOptions: [...expectedConnections, ...distractors], expectedConnections }, 'Las flechas correctas forman caminos completos, con salidas distintas para las respuestas sí y no.');
+  const labels = Object.fromEntries(nodes.map((node) => [node.id, node.label]));
+  const routes = expectedConnections.map((edge) => `${labels[edge.from]} → ${labels[edge.to]}${edge.label ? ` (${edge.label})` : ''}`).join('; ');
+  return base(lesson, title, { kind: 'flowchart', prompt, nodes, connectionOptions: [...expectedConnections, ...distractors], expectedConnections }, `Conecta ${routes}. Así ninguna acción aparece antes de la información o decisión que la habilita.`);
 }
 
 function dependencies(lesson: number, title: string, prompt: string, modules: ReasoningNode[], expectedDependencies: ReasoningConnection[], distractors: ReasoningConnection[] = []) {
-  return base(lesson, title, { kind: 'dependency-map', prompt, modules, dependencyOptions: [...expectedDependencies, ...distractors], expectedDependencies }, 'La interfaz puede usar reglas puras; las reglas no deben depender del DOM. Esa dirección mantiene la lógica comprobable.');
+  const labels = Object.fromEntries(modules.map((module) => [module.id, module.label]));
+  const routes = expectedDependencies.map((edge) => `${labels[edge.from]} → ${labels[edge.to]}${edge.label ? ` (${edge.label})` : ''}`).join('; ');
+  return base(lesson, title, { kind: 'dependency-map', prompt, modules, dependencyOptions: [...expectedDependencies, ...distractors], expectedDependencies }, `Las dependencias permitidas son ${routes}. Mantener esta dirección evita que la lógica central quede atada a un consumidor concreto.`);
 }
 
 const ACTIVITIES: ReasoningExerciseItem[] = [

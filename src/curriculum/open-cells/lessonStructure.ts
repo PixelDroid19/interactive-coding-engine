@@ -23,7 +23,7 @@ export function enrichOpenCellsSections(
     ...sections,
     {
       title: 'Recorrido de archivos',
-      content: `Sigue ${pathList}. Lee cada archivo según esta relación: ${trail.relationship}. No edites todavía: identifica qué recibe cada frontera y qué entrega al siguiente consumidor.`,
+      content: `Para comprobar «${title}», sigue ${pathList}. Busca esta relación: ${trail.relationship}. En cada frontera anota qué recibe, qué entrega y cómo se conecta con esta meta: ${summary}`,
       example: `Objetivo: ${title}\nPrimera evidencia: localiza la entrada pública.\nRecorrido: ${trail.paths.join(' -> ')}\nCierre: ejecuta el consumidor y la prueba desde fuera.`,
       exampleCaption: 'Recorrido mínimo para investigar el contrato sin adivinar.',
     },

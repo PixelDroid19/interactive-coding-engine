@@ -76,7 +76,7 @@ export function buildLesson(spec: ComponentCourseLessonSpec): ScrimLessonData {
     skillsRequired: spec.skillsRequired,
     skillsIntroduced: spec.skillsIntroduced,
     learningObjectives: [spec.summary, `Construir ${spec.appName} sin copiar el ejemplo.`, 'Explicar el contrato público y comprobarlo en el navegador.'],
-    commonMistakes: [spec.reading.commonErrors],
+    commonMistakes: [spec.reading.commonErrors, spec.debug.observed],
     mentalModel: spec.reading.mentalModel,
     frequentQuestions: spec.reading.questions,
     representations: [spec.reading.diagram],

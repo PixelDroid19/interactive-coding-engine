@@ -5,7 +5,7 @@ function sequence(number: number, title: string, prompt: string, labels: string[
   return {
     id: `open-cells-${String(number).padStart(2, '0')}-razona`,
     type: 'reasoning',
-    relatedLessonId: `open-cells-${String(number).padStart(2, '0')}-lectura`,
+    relatedLessonId: `open-cells-${String(number).padStart(2, '0')}`,
     title,
     description: prompt,
     estimatedMinutes: 8,
@@ -34,7 +34,7 @@ function decisions(
   return {
     id: `open-cells-${String(number).padStart(2, '0')}-razona`,
     type: 'reasoning',
-    relatedLessonId: `open-cells-${String(number).padStart(2, '0')}-lectura`,
+    relatedLessonId: `open-cells-${String(number).padStart(2, '0')}`,
     title,
     description: prompt,
     estimatedMinutes: 10,
@@ -93,7 +93,7 @@ export const OPEN_CELLS_REASONING: ReasoningExerciseItem[] = [
 export function addOpenCellsReasoning(items: ReadingItem[]): Array<ReadingItem | ReasoningExerciseItem> {
   const byLesson = new Map(OPEN_CELLS_REASONING.map((item) => [item.relatedLessonId, item]));
   return items.flatMap((item) => {
-    const practice = byLesson.get(item.id) ?? generatedReasoning(item);
+    const practice = byLesson.get(item.relatedLessonId ?? item.id.replace(/-lectura$/, '')) ?? generatedReasoning(item);
     return practice ? [item, practice] : [item];
   });
 }
@@ -156,7 +156,7 @@ function generatedReasoning(item: ReadingItem): ReasoningExerciseItem | undefine
   return {
     id: `open-cells-${String(number).padStart(2, '0')}-razona`,
     type: 'reasoning',
-    relatedLessonId: item.id,
+    relatedLessonId: item.relatedLessonId ?? item.id.replace(/-lectura$/, ''),
     title: `Razona: ${title}`,
     description: `Representa las decisiones específicas de “${title}” y comprueba que puedes relacionar modelo, contrato y error frecuente sin memorizar una línea de código.`,
     estimatedMinutes: 7,

@@ -114,7 +114,7 @@ describe('auditoría integrada del material de aprendizaje', () => {
       expect.soft(reading.transferPrompt?.trim().length, `${reading.id} no invita a transferir lo aprendido`).toBeGreaterThan(25);
       const course = courses.find((candidate) => candidate.modules.some((module) => module.items.includes(reading)))!;
       const linkedReasoning = course.modules.flatMap((module) => module.items)
-        .find((candidate) => candidate.type === 'reasoning' && candidate.relatedLessonId === reading.id);
+        .find((candidate) => candidate.type === 'reasoning' && candidate.relatedLessonId === reading.relatedLessonId);
       expect.soft(reading.practiceItemId || reading.handsOnLab || linkedReasoning, `${reading.id} no enlaza con una práctica`).toBeTruthy();
 
       if (reading.practiceItemId) {

@@ -32,7 +32,7 @@ describe('prácticas de razonamiento Open Cells', () => {
   it('las prácticas generadas usan el contenido de su lección y no una plantilla genérica repetida', () => {
     const kinds = new Set<string>();
     for (const exercise of reasoning.filter((item) => !customIds.has(item.id))) {
-      const reading = readings.find((item) => item.id === exercise.relatedLessonId);
+      const reading = readings.find((item) => item.type === 'reading' && item.relatedLessonId === exercise.relatedLessonId);
       expect(reading, `Falta la lectura de ${exercise.id}`).toBeDefined();
       if (!reading || reading.type !== 'reading') continue;
       kinds.add(exercise.activity.kind);
