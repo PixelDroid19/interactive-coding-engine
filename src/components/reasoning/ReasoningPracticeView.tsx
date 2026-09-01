@@ -13,6 +13,8 @@ import { ContextBudgetDiagram } from './diagrams/ContextBudgetDiagram';
 import { ThemeToggle } from '../ThemeToggle';
 import { PostSolveStudio } from '../learning/PostSolveStudio';
 import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
+import { PracticeBrief } from '../practice/PracticeBrief';
+import { splitPracticeCopy } from '../practice/practiceCopy';
 import type { ExerciseCompletion } from '../../services/learningSync';
 
 interface Props {
@@ -82,6 +84,20 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
   };
 
   const activity = item.activity;
+  const reasoningPracticeCopy = splitPracticeCopy(activity.prompt, 'last');
+  const expectedResult = activity.kind === 'sequence'
+    ? 'Los pasos quedan en un orden que se puede ejecutar.'
+    : activity.kind === 'trace-table'
+      ? 'Cada celda muestra el valor correcto después de ese paso.'
+      : activity.kind === 'decision-table'
+        ? 'Cada caso termina en el resultado que define la regla.'
+        : activity.kind === 'flowchart'
+          ? 'Las conexiones forman todos los caminos válidos.'
+          : activity.kind === 'dependency-map'
+            ? 'Las dependencias apuntan en la dirección correcta.'
+            : activity.kind === 'vector-ranking'
+              ? 'Las opciones quedan ordenadas según el criterio.'
+              : 'La selección cabe en el presupuesto y conserva lo esencial.';
   const selectedConnections = attempt.kind === 'flowchart' ? attempt.connections : attempt.kind === 'dependency-map' ? attempt.dependencies : [];
 
   return (
@@ -100,7 +116,40 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
           <header className="reasoning-header">
             <span className="reasoning-badge"><Sparkles size={13} /> Práctica de razonamiento</span>
             <h1 ref={titleRef} tabIndex={-1} className="reasoning-title outline-none focus:outline-none">{item.title}</h1>
-            <p>{activity.prompt}</p>
+            <PracticeBrief
+              action={reasoningPracticeCopy.action}
+              expected={expectedResult}
+              help={item.hints.length > 0 ? (
+                <div className="reasoning-hints-compact">
+                  {reasoningPracticeCopy.context && <p>{reasoningPracticeCopy.context}</p>}
+                  <header className="reasoning-hints-header">
+                    <h2><Lightbulb size={18} className="reasoning-hint-icon" /> Pistas graduadas</h2>
+                    <span className="reasoning-hints-count">{revealedHints} / {item.hints.length}</span>
+                  </header>
+                  {revealedHints > 0 && (
+                    <div className="reasoning-hints-list">
+                      {item.hints.slice(0, revealedHints).map((hint) => (
+                        <div key={hint.level} className="reasoning-hint-card">
+                          <span className="reasoning-hint-tag">Pista {hint.level}</span>
+                          <p>{hint.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {revealedHints < item.hints.length && (
+                    <button type="button" className="reasoning-hint-btn" onClick={() => setRevealedHints((value) => value + 1)}>
+                      <HelpCircle size={15} /> Mostrar una pista
+                    </button>
+                  )}
+                  {revealedHints === item.hints.length && (
+                    <details className="reasoning-explanation-details">
+                      <summary>Ver explicación completa</summary>
+                      <p>{item.explanation}</p>
+                    </details>
+                  )}
+                </div>
+              ) : undefined}
+            />
           </header>
 
           <div className="reasoning-workspace">
@@ -198,36 +247,6 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
             </section>
           )}
 
-          <aside className="reasoning-hints">
-            <header className="reasoning-hints-header">
-              <h2><Lightbulb size={18} className="reasoning-hint-icon" /> Pistas graduadas</h2>
-              <span className="reasoning-hints-count">{revealedHints} / {item.hints.length}</span>
-            </header>
-            
-            {revealedHints > 0 && (
-              <div className="reasoning-hints-list">
-                {item.hints.slice(0, revealedHints).map((hint) => (
-                  <div key={hint.level} className="reasoning-hint-card">
-                    <span className="reasoning-hint-tag">Pista {hint.level}</span>
-                    <p>{hint.text}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {revealedHints < item.hints.length && (
-              <button type="button" className="reasoning-hint-btn" onClick={() => setRevealedHints((value) => value + 1)}>
-                <HelpCircle size={15} /> Mostrar una pista
-              </button>
-            )}
-
-            {revealedHints === item.hints.length && (
-              <details className="reasoning-explanation-details">
-                <summary>Ver explicación completa</summary>
-                <p>{item.explanation}</p>
-              </details>
-            )}
-          </aside>
         </section>
         {result?.allPassed && !postSolveComplete && (
           <PostSolveStudio

@@ -1,12 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { ScrimChallenge } from '../../types/scrim';
 import { ChallengeValidationResult } from '../../types/runtime';
-import { CheckCircle2, XCircle, Lightbulb, Play, RotateCcw, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle2, XCircle, Play, RotateCcw, X, ChevronDown, ChevronUp } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { markChallengeSkipped } from '../../engine/persistence';
 import { PostSolveStudio } from '../learning/PostSolveStudio';
 import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
 import { learnerHintText } from '../../learning/learnerHints';
+import { PracticeBrief } from '../practice/PracticeBrief';
+import { splitPracticeCopy } from '../practice/practiceCopy';
 
 interface ChallengeDrawerProps {
   challenge: ScrimChallenge;
@@ -25,7 +27,7 @@ const INSTRUCTION_HEADINGS = ['Antes de empezar', 'Punto de partida', 'Cómo com
 export function splitChallengeInstructions(instructions: string): Array<{ heading?: string; body: string }> {
   const parts = instructions
     .trim()
-    .split(new RegExp(`(?=(?:${INSTRUCTION_HEADINGS.join('|')})(?::|,))`, 'g'))
+    .split(new RegExp(`(?=(?:${INSTRUCTION_HEADINGS.join('|')})(?::|,|\n|$))`, 'g'))
     .map((part) => part.trim())
     .filter(Boolean);
 
@@ -33,10 +35,10 @@ export function splitChallengeInstructions(instructions: string): Array<{ headin
 
   return parts.map((part) => {
     const heading = INSTRUCTION_HEADINGS.find((candidate) => (
-      part.startsWith(`${candidate}:`) || part.startsWith(`${candidate},`)
+      part === candidate || part.startsWith(`${candidate}:`) || part.startsWith(`${candidate},`) || part.startsWith(`${candidate}\n`)
     ));
     return heading
-      ? { heading, body: part.slice(heading.length + 1).trim() }
+      ? { heading, body: part.slice(heading.length).replace(/^[:,]\s*/, '').trim() }
       : { body: part };
   });
 }
@@ -58,6 +60,17 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const testsFunctionDirectly = challenge.tests.some((test) => test.validatorType === 'function-call');
   const instructionParts = splitChallengeInstructions(challenge.instructions);
+  const primaryInstructionParagraphs = (instructionParts[0]?.body ?? challenge.instructions)
+    .split(/\n\s*\n/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const primaryInstructionCopy = splitPracticeCopy(primaryInstructionParagraphs[0] ?? challenge.instructions.trim());
+  const primaryInstruction = primaryInstructionCopy.action;
+  const extraInstructionParts: Array<{ heading?: string; body: string }> = [
+    ...(primaryInstructionCopy.context ? [{ body: primaryInstructionCopy.context }] : []),
+    ...primaryInstructionParagraphs.slice(1).map((body) => ({ body })),
+    ...instructionParts.slice(1),
+  ];
 
   const handleSkipForNow = onSkipForNow || onSkip;
   // Reset hints when challenge changes
@@ -153,34 +166,61 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
       {!isMinimized && (
         <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs font-sans text-zinc-200">
           <>
-              {/* Instructions */}
-              <div className="space-y-1.5">
-                <h4 className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Instrucciones</h4>
-                <div className="rounded-lg bg-zinc-900/90 p-3 border border-zinc-800 text-zinc-300 leading-relaxed text-[12px]">
-                  {instructionParts.length > 1 ? (
-                    <ol className="grid gap-2.5" aria-label="Pasos del reto">
-                      {instructionParts.map((part, index) => (
-                        <li key={`${part.heading ?? 'paso'}-${index}`} className="grid grid-cols-[1.35rem_1fr] gap-2.5">
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950 font-mono text-[10px] font-bold text-amber-300" aria-hidden="true">
-                            {index + 1}
-                          </span>
-                          <span>
-                            {part.heading && <strong className="mb-0.5 block text-[11px] font-bold text-zinc-100">{part.heading}</strong>}
-                            <span className="block text-zinc-300">{part.body}</span>
-                          </span>
-                        </li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <p className="whitespace-pre-line font-mono">{instructionParts[0]?.body}</p>
-                  )}
-                </div>
-              </div>
+              <PracticeBrief
+                action={<p className="whitespace-pre-line">{primaryInstruction}</p>}
+                expected={challenge.tests.length === 1
+                  ? challenge.tests[0].description
+                  : `Las ${challenge.tests.length} comprobaciones pasan sin errores.`}
+                help={(
+                  <>
+                    {extraInstructionParts.length > 0 && (
+                      <ol aria-label="Ayuda del reto">
+                        {extraInstructionParts.map((part, index) => (
+                          <li key={`${part.heading ?? 'ayuda'}-${index}`}>
+                            {part.heading && <strong>{part.heading}: </strong>}
+                            <span className="whitespace-pre-line">{part.body}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                    {testsFunctionDirectly && (
+                      <p>
+                        Puedes usar tus propios valores y <code>console.log</code> para investigar. Las comprobaciones usarán datos distintos para confirmar que la regla sea general.
+                      </p>
+                    )}
+                    {challenge.hints && challenge.hints.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <strong>Pistas ({hintIndex + 1} de {challenge.hints.length})</strong>
+                          {hintIndex < challenge.hints.length - 1 && (
+                            <button
+                              onClick={() => setHintIndex(hintIndex + 1)}
+                              className="text-[11px] underline"
+                              aria-label="Mostrar siguiente pista"
+                            >
+                              Siguiente pista
+                            </button>
+                          )}
+                        </div>
+                        {currentHint && (
+                          <div>
+                            <strong>{currentHint.title}</strong>
+                            <p>{currentHintText}</p>
+                          </div>
+                        )}
+                        {hintIndex >= challenge.hints.length - 1 && !validationResult?.allPassed && (
+                          <p>Ya tienes todas las pistas. Cambia una sola causa y vuelve a comprobar.</p>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              />
 
               {/* Test verification checklist */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Pruebas</h4>
+                  <h4 className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 font-semibold">Comprueba</h4>
                   {validationResult && (
                     <span
                       className={`px-2 py-0.5 rounded font-mono text-[11px] font-bold ${
@@ -193,12 +233,6 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
                     </span>
                   )}
                 </div>
-
-                {testsFunctionDirectly && (
-                  <p className="rounded-md border border-sky-900/70 bg-sky-950/25 px-2.5 py-2 text-[11px] leading-relaxed text-sky-200">
-                    Puedes usar tus propios valores en el ejemplo. Las pruebas llaman a tu función con datos distintos para comprobar que la lógica sea general. Si quieres observar una llamada antes de comprobar, usa <code>console.log</code> con tu función y un valor elegido por ti.
-                  </p>
-                )}
 
                 <div className="space-y-1.5">
                   {challenge.tests.map((test) => {
@@ -251,39 +285,6 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
                 >
                   <div className="font-semibold mb-0.5">{validationResult.allPassed ? '✓ Listo' : 'Pista'}</div>
                   <div>{validationResult.feedbackMessage}</div>
-                </div>
-              )}
-
-              {/* Progressive Hints */}
-              {challenge.hints && challenge.hints.length > 0 && (
-                <div className="rounded-lg bg-zinc-900/80 border border-zinc-800 p-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 text-zinc-300 font-semibold text-xs">
-                      <Lightbulb className="h-3.5 w-3.5 text-amber-400" />
-                      <span>Pistas ({hintIndex + 1} de {challenge.hints.length})</span>
-                    </div>
-                    {hintIndex < challenge.hints.length - 1 && (
-                      <button
-                        onClick={() => setHintIndex(hintIndex + 1)}
-                        className="text-[11px] text-zinc-300 hover:text-white font-medium underline"
-                        aria-label="Mostrar siguiente pista"
-                      >
-                        Siguiente pista
-                      </button>
-                    )}
-                  </div>
-
-                  {currentHint && (
-                    <div className="text-zinc-300 text-xs leading-relaxed">
-                      <div className="font-semibold text-zinc-200 mb-1">{currentHint.title}</div>
-                      <p>{currentHintText}</p>
-                    </div>
-                  )}
-                  {hintIndex >= challenge.hints.length - 1 && !validationResult?.allPassed && (
-                    <p className="mt-1 border-t border-zinc-800 pt-2 text-[11px] text-zinc-400">
-                      Ya tienes todas las pistas. Cambia una sola causa, ejecuta y usa el resultado de las pruebas como nueva evidencia.
-                    </p>
-                  )}
                 </div>
               )}
 

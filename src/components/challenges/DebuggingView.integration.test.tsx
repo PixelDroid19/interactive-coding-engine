@@ -37,6 +37,9 @@ describe('DebuggingView integración', () => {
     expect(container.querySelector('[role="tablist"]')).toBeTruthy();
     expect(container.textContent).toContain('Reto');
     expect(container.querySelector('[role="dialog"][aria-label*="Explorador"]')).toBeNull();
+    expect(screen.getByText('Haz esto')).toBeTruthy();
+    expect(screen.getByText('Debe ocurrir')).toBeTruthy();
+    expect(screen.getByText('Necesito ayuda')).toBeTruthy();
   });
 
   it('una práctica lógica usa salida JavaScript y oculta archivos web', () => {

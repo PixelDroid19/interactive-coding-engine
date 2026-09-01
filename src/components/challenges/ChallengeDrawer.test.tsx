@@ -27,6 +27,18 @@ describe('ChallengeDrawer', () => {
     ]);
   });
 
+  it('reconoce los encabezados reales aunque no lleven dos puntos', () => {
+    const parts = splitChallengeInstructions(
+      'Corrige total().\n\nAntes de empezar\nRecuerda el contrato.\n\nCómo comprobarlo\nEjecuta las pruebas.',
+    );
+
+    expect(parts).toEqual([
+      { body: 'Corrige total().' },
+      { heading: 'Antes de empezar', body: 'Recuerda el contrato.' },
+      { heading: 'Cómo comprobarlo', body: 'Ejecuta las pruebas.' },
+    ]);
+  });
+
   it('conserva como párrafo las instrucciones breves sin secciones', () => {
     expect(splitChallengeInstructions('Cambia Alex')).toEqual([{ body: 'Cambia Alex' }]);
   });
@@ -82,8 +94,10 @@ describe('ChallengeDrawer', () => {
     const markup = renderToStaticMarkup(
       <ChallengeDrawer challenge={challenge as any} validationResult={null} onValidate={() => {}} onReset={() => {}} onContinue={() => {}} isOpen={true} />
     );
-    expect(markup).toContain('Instrucciones');
-    expect(markup).toContain('Pruebas');
+    expect(markup).toContain('Haz esto');
+    expect(markup).toContain('Debe ocurrir');
+    expect(markup).toContain('Necesito ayuda');
+    expect(markup).toContain('Comprueba');
     expect(markup).toContain('Pistas');
     expect(markup).toContain('Comprobar');
     expect(markup).toContain('Reiniciar reto');

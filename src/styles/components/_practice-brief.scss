@@ -1,0 +1,100 @@
+.practice-brief {
+  display: grid;
+  gap: 0.55rem;
+  width: 100%;
+  color: inherit;
+}
+
+.practice-brief__row,
+.practice-brief__help {
+  border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+  border-radius: 0.5rem;
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+
+.practice-brief__row {
+  padding: 0.7rem 0.8rem;
+}
+
+.practice-brief__row.is-action {
+  border-left: 3px solid var(--color-highlighter-yellow, #ffe600);
+}
+
+.practice-brief__row.is-expected {
+  border-left: 3px solid var(--color-success, #34d399);
+}
+
+.practice-brief__label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 0.25rem;
+  color: color-mix(in srgb, currentColor 72%, transparent);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.practice-brief__copy {
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.practice-brief__copy > :first-child,
+.practice-brief__help-content > :first-child { margin-top: 0; }
+
+.practice-brief__copy > :last-child,
+.practice-brief__help-content > :last-child { margin-bottom: 0; }
+
+.practice-brief__copy p,
+.practice-brief__help-content p {
+  max-width: none;
+  margin-bottom: 0;
+  color: inherit;
+  font: inherit;
+}
+
+.practice-brief__help {
+  overflow: hidden;
+}
+
+.practice-brief__help > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 2.35rem;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 750;
+  list-style: none;
+}
+
+.practice-brief__help > summary::-webkit-details-marker { display: none; }
+
+.practice-brief__chevron {
+  margin-left: auto;
+  transition: transform 160ms ease;
+}
+
+.practice-brief__help[open] .practice-brief__chevron { transform: rotate(180deg); }
+
+.practice-brief__help-content {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.1rem 0.8rem 0.8rem;
+  border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  color: color-mix(in srgb, currentColor 78%, transparent);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.practice-brief__help-content ul,
+.practice-brief__help-content ol {
+  margin: 0;
+  padding-left: 1.15rem;
+}

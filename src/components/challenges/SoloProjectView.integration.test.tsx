@@ -44,6 +44,8 @@ describe('SoloProjectView', () => {
   it('comprueba el codigo y no permite completar el proyecto solo marcando una lista', async () => {
     render(<SoloProjectView project={project} onBack={vi.fn()} />);
 
+    expect(screen.getByText('Haz esto')).toBeTruthy();
+    expect(screen.getByText('Debe ocurrir')).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Marcar proyecto como completado/i })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Comprobar proyecto' }));
 

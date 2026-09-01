@@ -31,6 +31,8 @@ import { recordPostSolveEvidence } from '../../learning/curriculumEvidence';
 import type { ExerciseCompletion } from '../../services/learningSync';
 import { LiveHelpWorkspaceBridge } from '../../live-help/LiveHelpWorkspaceBridge';
 import type { LiveHelpContext } from '../../live-help/protocol';
+import { PracticeBrief } from '../practice/PracticeBrief';
+import { splitPracticeCopy } from '../practice/practiceCopy';
 
 interface SoloProjectViewProps {
   project: SoloProjectItem;
@@ -138,6 +140,7 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
   };
 
   const activeFile = workspace.files[workspace.activeFilePath] || Object.values(workspace.files)[0] || null;
+  const projectPracticeCopy = splitPracticeCopy(project.brief);
 
   return (
     <div className="solo-project-shell flex w-full flex-col font-sans">
@@ -235,10 +238,21 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
           className={`solo-project-brief solo-project-panel ${compactPane === 'brief' ? 'flex' : 'hidden'} h-full w-full shrink-0 flex-col overflow-hidden lg:flex lg:w-[350px]`}
         >
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-            <section className="space-y-2">
-              <h4 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Objetivo</h4>
-              <p className="text-[13px] leading-relaxed text-zinc-300 whitespace-pre-line">{project.brief}</p>
-            </section>
+            <PracticeBrief
+              action={<p className="whitespace-pre-line">{projectPracticeCopy.action}</p>}
+              expected={project.tests?.length
+                ? `Cumple los requisitos y supera las ${project.tests.length} comprobaciones.`
+                : 'Cumple todos los requisitos del proyecto.'}
+              help={(projectPracticeCopy.context || project.suggestedSteps?.length || project.starterNotes) ? (
+                <>
+                  {projectPracticeCopy.context && <p>{projectPracticeCopy.context}</p>}
+                  {project.starterNotes && <p>{project.starterNotes}</p>}
+                  {project.suggestedSteps && project.suggestedSteps.length > 0 && (
+                    <ol>{project.suggestedSteps.map((step) => <li key={step}>{step}</li>)}</ol>
+                  )}
+                </>
+              ) : undefined}
+            />
 
             <section className="mt-7 space-y-3">
               <div className="flex items-baseline justify-between">
@@ -287,21 +301,6 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
               </ul>
             </section>
 
-            {project.suggestedSteps && project.suggestedSteps.length > 0 && (
-              <section className="mt-7 space-y-2.5">
-                <h4 className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">Etapas sugeridas</h4>
-                <ol className="space-y-2">
-                  {project.suggestedSteps.map((step, idx) => (
-                    <li key={idx} className="flex items-start gap-2.5 text-[13px] leading-relaxed text-zinc-400">
-                      <span className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border border-zinc-700 text-[10px] font-semibold tabular-nums text-zinc-500">
-                        {idx + 1}
-                      </span>
-                      <span>{step}</span>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            )}
           </div>
 
           {/* Sticky action footer */}

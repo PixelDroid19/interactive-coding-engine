@@ -35,6 +35,8 @@ import { useModalDialog } from '../useModalDialog';
 import { LiveHelpWorkspaceBridge } from '../../live-help/LiveHelpWorkspaceBridge';
 import type { LiveHelpContext } from '../../live-help/protocol';
 import { learnerHintText } from '../../learning/learnerHints';
+import { PracticeBrief } from '../practice/PracticeBrief';
+import { splitPracticeCopy } from '../practice/practiceCopy';
 
 interface DebuggingViewProps {
   exercise: DebuggingExerciseItem;
@@ -253,6 +255,7 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
   const visibleFileMap = Object.fromEntries(visibleFiles.map((file) => [file.path, file]));
   const activeFile = visibleFileMap[workspace.activeFilePath] || visibleFiles[0] || null;
   const testsFunctionDirectly = exercise.tests.some((test) => test.validatorType === 'function-call');
+  const debugPracticeCopy = splitPracticeCopy(exercise.description ?? `Corrige “${exercise.title}”.`);
 
   const handleRoadmap = () => {
     if (onBackToRoadmap) onBackToRoadmap();
@@ -541,41 +544,24 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
               {activeTab === 'reto' && (
                 <div id="panel-reto" role="tabpanel" aria-labelledby="tab-reto" className="debug-panel-pane">
                   <div className="debug-panel-scroll">
-                    <h3 className="debug-panel-title">Objetivo</h3>
-                    <p className="text-sm text-zinc-700">{exercise.description}</p>
-
-                    <details className="debug-details" open>
-                      <summary className="debug-summary">Esperado</summary>
-                      <div className="debug-card is-expected mt-2">
-                        <p>{exercise.expectedBehavior}</p>
-                      </div>
-                    </details>
-
-                    <details className="debug-details">
-                      <summary className="debug-summary">Lo que ocurre</summary>
-                      <div className="debug-card is-observed mt-2">
-                        <p>{exercise.observedBehavior}</p>
-                      </div>
-                    </details>
-
-                    {testsFunctionDirectly && (
-                      <p className="debug-hint mt-3">
-                        Puedes probar la función con valores propios antes de pulsar Comprobar. Añade temporalmente una llamada con <code>{language === 'python' ? 'print(...)' : 'console.log(...)'}</code>; las comprobaciones usarán otros datos para revisar que la regla sea general.
-                      </p>
-                    )}
-
-                    {exercise.troubleshootingTips && exercise.troubleshootingTips.length > 0 && (
-                      <details className="debug-details">
-                        <summary className="debug-summary">Cómo investigar</summary>
-                        <ul className="debug-tips mt-2">
-                          {exercise.troubleshootingTips.map((tip) => (
-                            <li key={tip}>{tip}</li>
-                          ))}
-                        </ul>
-                      </details>
-                    )}
-
-                    {exercise.hints.length > 0 && (
+                    <PracticeBrief
+                      action={debugPracticeCopy.action}
+                      expected={exercise.expectedBehavior}
+                      help={(
+                        <>
+                          {debugPracticeCopy.context && <p>{debugPracticeCopy.context}</p>}
+                          <p><strong>Ahora ocurre:</strong> {exercise.observedBehavior}</p>
+                          {testsFunctionDirectly && (
+                            <p>
+                              Puedes probar la función con valores propios usando <code>{language === 'python' ? 'print(...)' : 'console.log(...)'}</code>. Las comprobaciones usarán datos distintos.
+                            </p>
+                          )}
+                          {exercise.troubleshootingTips && exercise.troubleshootingTips.length > 0 && (
+                            <ul className="debug-tips">
+                              {exercise.troubleshootingTips.map((tip) => <li key={tip}>{tip}</li>)}
+                            </ul>
+                          )}
+                          {exercise.hints.length > 0 && (
                         <div className="mt-3">
                           <div className="flex items-center justify-between mb-2">
                             <span className="debug-kicker" style={{ marginBottom: 0 }}>
@@ -609,7 +595,10 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                             </p>
                           )}
                         </div>
-                    )}
+                          )}
+                        </>
+                      )}
+                    />
                   </div>
 
                   <div className="debug-panel-actions">
