@@ -56,8 +56,23 @@ function seedMastery(lessonIds: string[]) {
 }
 
 function seedPublishedFirstLessonManifest() {
-  const lesson = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.type === 'scrim')!;
+  const localLesson = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.type === 'scrim')!;
+  if (localLesson.type !== 'scrim') throw new Error('La primera clase debe ser una lección.');
+  const lesson = {
+    ...localLesson,
+    id: 'fundamentos-01-publicado-test',
+    title: `${localLesson.title} publicada`,
+    availability: 'available' as const,
+    availabilityReason: undefined,
+  };
   const module = FUNDAMENTOS_COURSE.modules[0];
+  localStorage.setItem('aula_custom_courses_v1', JSON.stringify([{
+    ...FUNDAMENTOS_COURSE,
+    modules: FUNDAMENTOS_COURSE.modules.map((courseModule) => ({
+      ...courseModule,
+      items: courseModule.id === module.id ? [...courseModule.items, lesson] : courseModule.items,
+    })),
+  }]));
   localStorage.setItem('aula_app_navigation_v1', JSON.stringify({
     view: 'home',
     courseId: FUNDAMENTOS_COURSE.id,
@@ -138,7 +153,7 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('button', { name: 'Abrir ayuda de IA' })).toBeTruthy();
   });
 
-  it('abre la copia local cuando la revisión publicada responde 404', async () => {
+  it('abre la copia local sin superponer avisos cuando la revisión publicada responde 404', async () => {
     const lesson = seedPublishedFirstLessonManifest();
     fetchPublishedLessonMock.mockRejectedValue(
       new PublishedLessonError(404, 'LESSON_NOT_FOUND', 'No se encontró la lección.'),
@@ -149,18 +164,37 @@ describe('App navigation persistence', () => {
 
     expect(await screen.findByRole('button', { name: 'Empezar la clase' })).toBeTruthy();
     expect(screen.queryByText(/No se encontró la lección/)).toBeNull();
-    expect(await screen.findByText(/La revisión publicada aún no está disponible/)).toBeTruthy();
+    expect(screen.queryByText(/La revisión publicada aún no está disponible/)).toBeNull();
   });
 
-  it('explica el modo sin conexión sin exponer el error técnico del navegador', async () => {
+  it('usa la copia local sin superponer el fallo de red al visitante', async () => {
     const lesson = seedPublishedFirstLessonManifest();
     fetchPublishedLessonMock.mockRejectedValue(new TypeError('Failed to fetch'));
 
     renderApp();
     fireEvent.click(await screen.findByRole('button', { name: new RegExp(`^${lesson.title}`) }));
 
-    expect(await screen.findByText(/No pudimos comprobar la revisión publicada/)).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Empezar la clase' })).toBeTruthy();
+    expect(screen.queryByText(/No pudimos comprobar la revisión publicada/)).toBeNull();
     expect(screen.queryByText(/Failed to fetch/)).toBeNull();
+  });
+
+  it('permite que un visitante avance a la siguiente actividad sin exigir dominio personal', async () => {
+    const lesson = FUNDAMENTOS_COURSE.modules[0].items.find((item) => item.type === 'scrim')!;
+    const next = FUNDAMENTOS_COURSE.modules[0].items[1];
+    localStorage.setItem('aula_app_navigation_v1', JSON.stringify({
+      view: 'scrim',
+      courseId: FUNDAMENTOS_COURSE.id,
+      moduleId: FUNDAMENTOS_COURSE.modules[0].id,
+      itemId: lesson.id,
+      timestampMs: 0,
+    }));
+
+    renderApp();
+    fireEvent.click(await screen.findByRole('button', { name: 'Siguiente' }));
+
+    expect(await screen.findByRole('heading', { name: next.title })).toBeTruthy();
+    expect(screen.queryByRole('dialog', { name: 'Comprensión pendiente' })).toBeNull();
   });
 
   it('no abre la copia local cuando el backend responde 403', async () => {

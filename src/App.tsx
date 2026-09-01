@@ -30,6 +30,7 @@ import { fetchPublishedCourses, getCachedPublishedCourses, type PublishedCourseS
 import { applyPublishedManifest, fetchPublishedManifest, getCachedPublishedManifest } from './services/courseManifestApi';
 import { fetchCourseProgress, getCachedCourseProgress, mergeRemoteProgress } from './services/courseProgressApi';
 import { flushLearningQueue, queueExerciseAttempt, queueLearningEvent, queueLearningProfileEvidence, queueLessonProgress, submitLessonFeedback } from './services/learningSync';
+import { useAuthSession } from './auth/AuthSessionProvider';
 
 const COURSE_SLUG_BY_ID: Record<string, string> = Object.fromEntries(
   [FUNDAMENTOS_COURSE, JAVASCRIPT_COURSE, COMPONENT_COURSE, OPEN_CELLS_COURSE, AI_ENGINEER_COURSE]
@@ -37,7 +38,6 @@ const COURSE_SLUG_BY_ID: Record<string, string> = Object.fromEntries(
 );
 
 type AppView = 'catalog' | 'home' | 'scrim' | 'debugging' | 'solo-project' | 'reading' | 'reasoning' | 'playground' | 'studio';
-type CanonicalDataSource = 'catalog' | 'manifest' | 'progress';
 
 interface InitialAppState {
   view: AppView;
@@ -244,6 +244,12 @@ function buildTutorActivity(
 }
 
 export default function App() {
+  const auth = useAuthSession();
+  const authenticatedStudentUserId = auth.status === 'ready'
+    && auth.session.authenticated
+    && auth.session.user.roles.includes('student')
+    ? auth.session.user.id
+    : null;
   const [initialCourses] = useState(getInitialCourses);
   const [initialCourse] = useState(() => chooseInitialCourse(initialCourses));
   const [initialAppState] = useState(() => getInitialAppState(initialCourse));
@@ -263,7 +269,6 @@ export default function App() {
   const [navigationBlocker, setNavigationBlocker] = useState<ItemReadiness | null>(null);
   const [remoteLessonState, setRemoteLessonState] = useState<{ id: string; status: 'loading' | 'ready' | 'offline' | 'unavailable'; message?: string } | null>(null);
   const [identityRevision, setIdentityRevision] = useState(0);
-  const [canonicalDataIssues, setCanonicalDataIssues] = useState<Record<CanonicalDataSource, string | null>>({ catalog: null, manifest: null, progress: null });
   const activitySession = useRef<{ id: string; courseSlug: string; itemId: string; itemType: string; openedAt: number; playbackMs: number } | null>(null);
 
   const closeActivitySession = (reason: string) => {
@@ -320,6 +325,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!authenticatedStudentUserId) return;
     const applyRemoteProgress = (items: Parameters<typeof mergeRemoteProgress>[1]) => {
       setProgress((current) => {
         const merged = mergeRemoteProgress(current, items);
@@ -328,7 +334,6 @@ export default function App() {
       });
     };
     const cached = getCachedCourseProgress();
-    setCanonicalDataIssues((current) => ({ ...current, progress: null }));
     if (cached) {
       applyRemoteProgress(cached.snapshot.items);
       if (cached.fresh) return;
@@ -338,19 +343,10 @@ export default function App() {
       .then((snapshot) => {
         if (controller.signal.aborted) return;
         applyRemoteProgress(snapshot.items);
-        setCanonicalDataIssues((current) => ({ ...current, progress: null }));
       })
-      .catch(() => {
-        if (controller.signal.aborted) return;
-        setCanonicalDataIssues((current) => ({
-          ...current,
-          progress: cached
-            ? 'No pudimos actualizar tu progreso desde el servidor. Estás viendo una copia guardada que puede estar desactualizada.'
-            : 'No pudimos actualizar tu progreso desde el servidor. Se conserva el progreso de este dispositivo.',
-        }));
-      });
+      .catch(() => undefined);
     return () => controller.abort();
-  }, [identityRevision]);
+  }, [authenticatedStudentUserId, identityRevision]);
 
   useEffect(() => {
     const applyManifest = (manifest: Parameters<typeof applyPublishedManifest>[1]): boolean => {
@@ -358,20 +354,13 @@ export default function App() {
       if (!base) return false;
       const currentPublished = courses.find((candidate) => candidate.slug === manifest.slug) ?? base;
       const application = applyPublishedManifest({ ...base, ...currentPublished, modules: base.modules }, manifest);
-      if (application.status === 'rejected') {
-        setCanonicalDataIssues((current) => ({
-          ...current,
-          manifest: `${application.issue} Se conserva el contenido local y el acceso puede estar desactualizado.`,
-        }));
-        return false;
-      }
+      if (application.status === 'rejected') return false;
       const { course: hydrated } = application;
       setCourses((current) => current.map((candidate) => candidate.slug === hydrated.slug ? hydrated : candidate));
       setCourse((current) => current.slug === hydrated.slug ? hydrated : current);
       return true;
     };
     const cached = identityRevision === 0 ? getCachedPublishedManifest(course.slug) : null;
-    setCanonicalDataIssues((current) => ({ ...current, manifest: null }));
     if (cached) {
       if (applyManifest(cached.manifest) && cached.fresh) return;
     }
@@ -379,19 +368,9 @@ export default function App() {
     void fetchPublishedManifest(course.slug, controller.signal)
       .then((manifest) => {
         if (controller.signal.aborted) return;
-        if (applyManifest(manifest)) {
-          setCanonicalDataIssues((current) => ({ ...current, manifest: null }));
-        }
+        applyManifest(manifest);
       })
-      .catch(() => {
-        if (controller.signal.aborted) return;
-        setCanonicalDataIssues((current) => ({
-          ...current,
-          manifest: cached
-            ? 'No pudimos actualizar la estructura publicada de este curso. Estás viendo una copia guardada que puede estar desactualizada.'
-            : 'No pudimos actualizar la estructura publicada de este curso. Estás viendo el contenido local y el acceso puede estar desactualizado.',
-        }));
-      });
+      .catch(() => undefined);
     return () => controller.abort();
   // La fuente base conserva el contenido ejecutable; el manifiesto remoto decide estructura y acceso.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -415,7 +394,6 @@ export default function App() {
       setCourse((current) => applyPublishedCatalog([current], published)[0] ?? current);
     };
     const cachedCatalog = identityRevision === 0 ? getCachedPublishedCourses() : null;
-    setCanonicalDataIssues((current) => ({ ...current, catalog: null }));
     if (cachedCatalog) {
       applyCatalog(cachedCatalog.catalog.items);
       if (cachedCatalog.fresh && cachedCatalog.complete) return;
@@ -424,18 +402,7 @@ export default function App() {
     void fetchPublishedCourses(controller.signal).then((catalog) => {
       if (controller.signal.aborted) return;
       applyCatalog(catalog.items);
-      setCanonicalDataIssues((current) => ({ ...current, catalog: null }));
-    }).catch(() => {
-      if (controller.signal.aborted) return;
-      setCanonicalDataIssues((current) => ({
-        ...current,
-        catalog: cachedCatalog
-          ? cachedCatalog.complete
-            ? 'No pudimos actualizar el catálogo publicado. Estás viendo una copia guardada que puede estar desactualizada.'
-            : 'No pudimos actualizar el catálogo publicado. Estás viendo una copia guardada que puede estar incompleta o desactualizada.'
-          : 'No pudimos consultar el catálogo publicado. Se muestra el contenido local y su disponibilidad puede estar desactualizada.',
-      }));
-    });
+    }).catch(() => undefined);
     return () => controller.abort();
   }, [identityRevision]);
 
@@ -593,12 +560,14 @@ export default function App() {
       });
       return;
     }
-    const latestProfile = await loadLearningProfile();
-    setLearningProfile(latestProfile);
-    const readiness = getItemReadiness(course, nav.next.item.id, latestProfile, getCurriculumSkillIndex());
-    if (!readiness.unlocked) {
-      setNavigationBlocker(readiness);
-      return;
+    if (authenticatedStudentUserId) {
+      const latestProfile = await loadLearningProfile();
+      setLearningProfile(latestProfile);
+      const readiness = getItemReadiness(course, nav.next.item.id, latestProfile, getCurriculumSkillIndex());
+      if (!readiness.unlocked) {
+        setNavigationBlocker(readiness);
+        return;
+      }
     }
     if (activeItem) {
       updateRecentPosition(course.id, activeModuleId, activeItem.id, activeItem.title, activeItem.type, scrimInitialTimeMs);
@@ -667,32 +636,8 @@ export default function App() {
     && course.id !== AI_ENGINEER_COURSE.id
     && ['scrim', 'debugging', 'solo-project', 'reading', 'reasoning'].includes(currentView),
   );
-  const canonicalDataMessages = Object.values(canonicalDataIssues).filter((message): message is string => Boolean(message));
-
   return (
     <div className={currentView === 'scrim' ? 'app-screen' : undefined}>
-      {canonicalDataMessages.length > 0 && (
-        <aside
-          className="fixed bottom-3 right-3 z-[120] w-[min(22rem,calc(100vw-1.5rem))] border-2 border-amber-700 bg-amber-50 text-xs text-amber-950 shadow-[3px_3px_0_#111]"
-          role="alert"
-          aria-label="Estado de datos publicados"
-        >
-          <details>
-            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-800">
-              <span>Modo local · datos sin actualizar</span>
-              <span className="rounded-full border border-amber-700 px-2 py-0.5" aria-label={`${canonicalDataMessages.length} avisos`}>
-                {canonicalDataMessages.length}
-              </span>
-            </summary>
-            <div className="max-h-44 overflow-y-auto border-t border-amber-700 px-3 py-2">
-              <p className="font-bold">Datos publicados sin actualizar</p>
-              <ul className="mt-1 list-disc space-y-1 pl-4">
-                {canonicalDataMessages.map((message) => <li key={message}>{message}</li>)}
-              </ul>
-            </div>
-          </details>
-        </aside>
-      )}
       {currentView === 'catalog' && (
         <CourseCatalog
           courses={courses}
@@ -757,11 +702,6 @@ export default function App() {
 
       {currentView === 'scrim' && activeItem && !activeScrimCannotPlay && (
         <>
-        {activeItem.type === 'scrim' && remoteLessonState?.id === activeItem.scrimDataId && remoteLessonState.status === 'offline' && (
-          <div className="fixed left-1/2 top-20 z-[110] -translate-x-1/2 border-2 border-amber-500 bg-amber-50 px-4 py-2 text-sm text-amber-950 shadow-[4px_4px_0_#111]" role="status">
-            {remoteLessonState.message}
-          </div>
-        )}
         <ScrimPlayer
           key={`${activeItem.id}:${courseLanguage}`}
           lessonData={

@@ -15,6 +15,10 @@ const canonicalDataMocks = vi.hoisted(() => ({
   fetchCourseProgress: vi.fn(),
 }));
 
+const authMocks = vi.hoisted(() => ({
+  useAuthSession: vi.fn(),
+}));
+
 vi.mock('./services/courseCatalogApi', async () => {
   const actual = await vi.importActual('./services/courseCatalogApi');
   return {
@@ -44,6 +48,10 @@ vi.mock('./auth/AccountMenu', () => {
     AccountMenu: () => null,
   };
 });
+
+vi.mock('./auth/AuthSessionProvider', () => ({
+  useAuthSession: authMocks.useAuthSession,
+}));
 
 vi.mock('./services/learningSync', async () => {
   const actual = await vi.importActual('./services/learningSync');
@@ -111,6 +119,12 @@ describe('datos canónicos del catálogo', () => {
     });
     canonicalDataMocks.fetchPublishedManifest.mockResolvedValue(publishedManifest);
     canonicalDataMocks.fetchCourseProgress.mockResolvedValue({ items: [] });
+    authMocks.useAuthSession.mockReturnValue({
+      status: 'ready',
+      session: { authenticated: false, providers: [] },
+      error: null,
+      busy: false,
+    });
   });
 
   afterEach(() => {
@@ -177,27 +191,23 @@ describe('datos canónicos del catálogo', () => {
     ).toBeTruthy();
   });
 
-  it('advierte cuando no puede consultar el catálogo publicado', async () => {
+  it('mantiene el catálogo local utilizable sin mostrar avisos flotantes si falla la consulta publicada', async () => {
     canonicalDataMocks.fetchPublishedCourses.mockRejectedValue(new Error('Catálogo no disponible.'));
 
     renderApp();
 
-    const alert = await screen.findByRole('alert', { name: 'Estado de datos publicados' });
-    expect(alert.textContent).toContain(
-      'No pudimos consultar el catálogo publicado. Se muestra el contenido local y su disponibilidad puede estar desactualizada.',
-    );
-    expect(alert.querySelector('details')?.open).toBe(false);
-    expect(screen.getByText(/Modo local · datos sin actualizar/)).toBeTruthy();
+    expect(await screen.findByRole('button', { name: `Ver recorrido: ${FUNDAMENTOS_COURSE.title}` })).toBeTruthy();
+    expect(screen.queryByRole('alert', { name: 'Estado de datos publicados' })).toBeNull();
+    expect(screen.queryByText(/Modo local · datos sin actualizar/)).toBeNull();
   });
 
-  it('advierte cuando no puede actualizar la estructura publicada del curso', async () => {
+  it('mantiene la estructura local sin interrumpir si falla el manifiesto publicado', async () => {
     canonicalDataMocks.fetchPublishedManifest.mockRejectedValue(new Error('Manifiesto no disponible.'));
 
     renderApp();
 
-    expect((await screen.findByRole('alert', { name: 'Estado de datos publicados' })).textContent).toContain(
-      'No pudimos actualizar la estructura publicada de este curso. Estás viendo el contenido local y el acceso puede estar desactualizado.',
-    );
+    expect(await screen.findByRole('button', { name: `Ver recorrido: ${FUNDAMENTOS_COURSE.title}` })).toBeTruthy();
+    expect(screen.queryByRole('alert', { name: 'Estado de datos publicados' })).toBeNull();
   });
 
   it('rechaza un manifiesto HTTP correcto pero incompleto y conserva el currículo local', async () => {
@@ -205,20 +215,35 @@ describe('datos canónicos del catálogo', () => {
 
     renderApp();
 
-    expect((await screen.findByRole('alert', { name: 'Estado de datos publicados' })).textContent).toContain(
-      'El manifiesto publicado está incompleto:',
-    );
-    expect(screen.getByRole('button', { name: `Ver recorrido: ${FUNDAMENTOS_COURSE.title}` })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: `Ver recorrido: ${FUNDAMENTOS_COURSE.title}` })).toBeTruthy();
+    expect(screen.queryByRole('alert', { name: 'Estado de datos publicados' })).toBeNull();
   });
 
-  it('advierte cuando no puede actualizar el progreso remoto', async () => {
+  it('no consulta progreso remoto ni muestra avisos de sincronización para visitantes', async () => {
     canonicalDataMocks.fetchCourseProgress.mockRejectedValue(new Error('Progreso no disponible.'));
 
     renderApp();
 
-    expect((await screen.findByRole('alert', { name: 'Estado de datos publicados' })).textContent).toContain(
-      'No pudimos actualizar tu progreso desde el servidor. Se conserva el progreso de este dispositivo.',
-    );
+    await vi.waitFor(() => expect(canonicalDataMocks.fetchPublishedCourses).toHaveBeenCalled());
+    expect(canonicalDataMocks.fetchCourseProgress).not.toHaveBeenCalled();
+    expect(screen.queryByRole('alert', { name: 'Estado de datos publicados' })).toBeNull();
+  });
+
+  it('mantiene la sincronización remota de progreso para una alumna autenticada', async () => {
+    authMocks.useAuthSession.mockReturnValue({
+      status: 'ready',
+      session: {
+        authenticated: true,
+        user: { id: 'student-1', email: 'student@example.com', displayName: 'Alumna', roles: ['student'] },
+        csrfToken: 'csrf-token-for-tests-123456',
+      },
+      error: null,
+      busy: false,
+    });
+
+    renderApp();
+
+    await vi.waitFor(() => expect(canonicalDataMocks.fetchCourseProgress).toHaveBeenCalledTimes(1));
   });
 
   it('identifica una copia de catálogo desactualizada cuando falla su actualización', async () => {
@@ -233,8 +258,7 @@ describe('datos canónicos del catálogo', () => {
 
     renderApp();
 
-    expect((await screen.findByRole('alert', { name: 'Estado de datos publicados' })).textContent).toContain(
-      'No pudimos actualizar el catálogo publicado. Estás viendo una copia guardada que puede estar desactualizada.',
-    );
+    expect(await screen.findByRole('button', { name: `Ver recorrido: ${FUNDAMENTOS_COURSE.title}` })).toBeTruthy();
+    expect(screen.queryByRole('alert', { name: 'Estado de datos publicados' })).toBeNull();
   });
 });
