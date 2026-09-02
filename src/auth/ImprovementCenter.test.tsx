@@ -25,6 +25,12 @@ describe('centro de mejoras', () => {
     expect(screen.queryByText('Mejoras abiertas')).toBeNull();
   });
 
+  it('invita con el texto directo “Cuenta el problema y el resultado que esperas.”', async () => {
+    render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
+    expect(await screen.findByText('Cuenta el problema y el resultado que esperas.')).toBeTruthy();
+    expect(screen.queryByText('Describe un problema concreto y el resultado que esperas.')).toBeNull();
+  });
+
   it('explica el flujo y permite enviar una propuesta concreta', async () => {
     render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
     expect(await screen.findByText('Propón una mejora')).toBeTruthy();
