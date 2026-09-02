@@ -58,7 +58,7 @@ describe('ReasoningPracticeView', () => {
   it('revela pistas gradualmente y no enseña la explicación desde el inicio', () => {
     render(<ReasoningPracticeView item={item} onBack={() => {}} />);
     expect(screen.getByText('Haz esto')).toBeTruthy();
-    expect(screen.getByText('Debe ocurrir')).toBeTruthy();
+    expect(screen.getByText('Resultado esperado')).toBeTruthy();
     expect(screen.getByText('Necesito ayuda')).toBeTruthy();
     expect(screen.queryByText(item.explanation)).toBeNull();
     fireEvent.click(screen.getByText('Necesito ayuda'));

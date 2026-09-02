@@ -95,7 +95,7 @@ describe('ChallengeDrawer', () => {
       <ChallengeDrawer challenge={challenge as any} validationResult={null} onValidate={() => {}} onReset={() => {}} onContinue={() => {}} isOpen={true} />
     );
     expect(markup).toContain('Haz esto');
-    expect(markup).toContain('Debe ocurrir');
+    expect(markup).toContain('Resultado esperado');
     expect(markup).toContain('Necesito ayuda');
     expect(markup).toContain('Comprueba');
     expect(markup).toContain('Pistas');

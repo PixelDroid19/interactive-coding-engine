@@ -76,6 +76,12 @@
 
 .practice-brief__help > summary::-webkit-details-marker { display: none; }
 
+.practice-brief__help > summary:focus-visible {
+  outline: 2px solid var(--color-highlighter-yellow, #ffe600);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
 .practice-brief__chevron {
   margin-left: auto;
   transition: transform 160ms ease;

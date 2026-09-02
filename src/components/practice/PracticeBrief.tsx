@@ -12,18 +12,18 @@ export function PracticeBrief({ action, expected, help, className = '' }: Practi
   return (
     <section className={`practice-brief ${className}`.trim()} aria-label="Instrucciones de la práctica">
       <div className="practice-brief__row is-action">
-        <span className="practice-brief__label"><PencilLine size={14} /> Haz esto</span>
+        <span className="practice-brief__label"><PencilLine size={14} aria-hidden="true" /> Haz esto</span>
         <div className="practice-brief__copy">{action}</div>
       </div>
 
       <div className="practice-brief__row is-expected">
-        <span className="practice-brief__label"><CircleCheck size={14} /> Debe ocurrir</span>
+        <span className="practice-brief__label"><CircleCheck size={14} aria-hidden="true" /> Resultado esperado</span>
         <div className="practice-brief__copy">{expected}</div>
       </div>
 
       {help && (
         <details className="practice-brief__help">
-          <summary><LifeBuoy size={14} /> Necesito ayuda <ChevronDown className="practice-brief__chevron" size={14} /></summary>
+          <summary><LifeBuoy size={14} aria-hidden="true" /> Necesito ayuda <ChevronDown className="practice-brief__chevron" size={14} aria-hidden="true" /></summary>
           <div className="practice-brief__help-content">{help}</div>
         </details>
       )}

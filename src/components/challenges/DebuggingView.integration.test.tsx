@@ -38,7 +38,7 @@ describe('DebuggingView integración', () => {
     expect(container.textContent).toContain('Reto');
     expect(container.querySelector('[role="dialog"][aria-label*="Explorador"]')).toBeNull();
     expect(screen.getByText('Haz esto')).toBeTruthy();
-    expect(screen.getByText('Debe ocurrir')).toBeTruthy();
+    expect(screen.getByText('Resultado esperado')).toBeTruthy();
     expect(screen.getByText('Necesito ayuda')).toBeTruthy();
   });
 

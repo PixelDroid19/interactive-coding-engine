@@ -16,7 +16,8 @@ describe('PracticeBrief', () => {
 
     expect(markup).toContain('Haz esto');
     expect(markup).toContain('Corrige la función total().');
-    expect(markup).toContain('Debe ocurrir');
+    expect(markup).toContain('Resultado esperado');
+    expect(markup).not.toContain('Debe ocurrir');
     expect(markup).toContain('Las comprobaciones pasan sin errores.');
     expect(markup).toContain('Necesito ayuda');
     expect(markup).toContain('<details');
