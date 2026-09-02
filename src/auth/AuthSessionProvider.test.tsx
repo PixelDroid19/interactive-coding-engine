@@ -10,6 +10,10 @@ const mocks = vi.hoisted(() => ({
   getAuthLoginUrl: vi.fn((provider: string) => `https://api.example.test/v1/auth/login/${provider}`),
   verifyAuthEmailCode: vi.fn(),
   resendAuthEmailCode: vi.fn(),
+  privateAccessStatus: vi.fn(),
+  unlockPrivateAccess: vi.fn(),
+  list: vi.fn(),
+  listCycles: vi.fn(),
 }));
 
 vi.mock('../services/authSessionApi', async () => {
@@ -17,19 +21,49 @@ vi.mock('../services/authSessionApi', async () => {
   return { ...actual, ...mocks };
 });
 
+vi.mock('../services/improvementApi', async () => ({
+  ...(await vi.importActual('../services/improvementApi')),
+  improvementApi: {
+    privateAccessStatus: mocks.privateAccessStatus,
+    unlockPrivateAccess: mocks.unlockPrivateAccess,
+    list: mocks.list,
+    listCycles: mocks.listCycles,
+    create: vi.fn(),
+    vote: vi.fn(),
+  },
+}));
+
 beforeEach(() => {
   vi.clearAllMocks();
   window.history.replaceState({}, '', '/');
+  mocks.privateAccessStatus.mockResolvedValue({ enabled: true, authorized: false });
+  mocks.list.mockResolvedValue([]);
+  mocks.listCycles.mockResolvedValue([]);
 });
 
 afterEach(() => cleanup());
 
 describe('cuenta de la plataforma', () => {
-  it('no ofrece un acceso falso cuando todavía no hay proveedor configurado', async () => {
+  it('ofrece el acceso privado a mejoras aunque no haya proveedor configurado', async () => {
     mocks.fetchAuthSession.mockResolvedValue({ authenticated: false, providers: [] });
+    mocks.unlockPrivateAccess.mockResolvedValue({
+      enabled: true, authorized: true, csrfToken: 'private-csrf-token-with-enough-length-123',
+      expiresAt: '2026-09-02T12:15:00.000Z',
+    });
     render(<AuthSessionProvider><AccountMenu /></AuthSessionProvider>);
 
-    expect((await screen.findByRole('button', { name: 'Sesión local' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(await screen.findByRole('button', { name: 'Acceso privado' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Acceso privado a mejoras' }));
+    expect(await screen.findByRole('dialog', { name: 'Acceso privado a mejoras' })).toBeTruthy();
+    fireEvent.change(screen.getByLabelText('Código privado'), {
+      target: { value: 'private-code-with-at-least-32-characters' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Centro de mejoras' }));
+
+    await waitFor(() => expect(mocks.unlockPrivateAccess)
+      .toHaveBeenCalledWith('private-code-with-at-least-32-characters'));
+    expect(await screen.findByRole('dialog', { name: 'Mejorar la plataforma' })).toBeTruthy();
+    expect(screen.getByText('Mejoras de la comunidad')).toBeTruthy();
   });
 
   it('muestra solo los proveedores habilitados por el backend', async () => {

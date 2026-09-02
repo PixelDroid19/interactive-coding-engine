@@ -5,9 +5,34 @@ beforeEach(() => {
   localStorage.clear();
   localStorage.setItem('aula_anonymous_actor_v1', '30000000-0000-4000-8000-000000000003');
   vi.restoreAllMocks();
+  vi.resetModules();
 });
 
 describe('improvementApi', () => {
+  it('conserva la capacidad solo en memoria y la usa como CSRF al crear', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        enabled: true, authorized: true, csrfToken: 'private-csrf-token-with-enough-length-123',
+        expiresAt: '2026-09-02T12:15:00.000Z',
+      }), { status: 200, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        id: 'proposal-1', title: 'Aclarar la práctica', description: 'Descripción suficientemente clara.',
+        targetArea: 'practice', status: 'open', votes: 0,
+      }), { status: 201, headers: { 'content-type': 'application/json' } }));
+    const { improvementApi } = await import('./improvementApi');
+
+    await improvementApi.unlockPrivateAccess('private-code-with-at-least-32-characters');
+    await improvementApi.create({
+      title: 'Aclarar la práctica', description: 'Descripción suficientemente clara.', targetArea: 'practice',
+    });
+
+    const unlockHeaders = new Headers(fetchMock.mock.calls[0]?.[1]?.headers);
+    const createHeaders = new Headers(fetchMock.mock.calls[1]?.[1]?.headers);
+    expect(unlockHeaders.get('x-auth-intent')).toBe('private-improvement-access');
+    expect(createHeaders.get('x-improvement-csrf-token')).toBe('private-csrf-token-with-enough-length-123');
+    expect(localStorage.getItem('improvement_private_access')).toBeNull();
+  });
+
   it('crea una propuesta real sin inventar datos locales', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
       id: 'proposal-1', title: 'Aclarar la práctica', description: 'Descripción suficientemente clara.',

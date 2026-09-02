@@ -45,7 +45,45 @@ async function json<T>(path: string, init?: RequestInit): Promise<T> {
   return readApiJson<T>(await learningApiRequest(path, init));
 }
 
+export type PrivateImprovementAccessStatus = Readonly<{
+  enabled: boolean;
+  authorized: boolean;
+  csrfToken?: string;
+  expiresAt?: string;
+}>;
+
+let privateImprovementCsrfToken: string | null = null;
+
+function privateAccessInit(init: RequestInit): RequestInit {
+  const headers = new Headers(init.headers);
+  if (privateImprovementCsrfToken) {
+    headers.set('x-improvement-csrf-token', privateImprovementCsrfToken);
+  }
+  return { ...init, headers };
+}
+
+function retainPrivateCsrf(status: PrivateImprovementAccessStatus): PrivateImprovementAccessStatus {
+  privateImprovementCsrfToken = status.authorized && status.csrfToken ? status.csrfToken : null;
+  return status;
+}
+
 export const improvementApi = {
+  async privateAccessStatus(): Promise<PrivateImprovementAccessStatus> {
+    return retainPrivateCsrf(await json<PrivateImprovementAccessStatus>('/v1/improvements/private-access'));
+  },
+  async unlockPrivateAccess(code: string): Promise<PrivateImprovementAccessStatus> {
+    const status = await json<PrivateImprovementAccessStatus>('/v1/improvements/private-access', {
+      method: 'POST',
+      headers: { 'x-auth-intent': 'private-improvement-access' },
+      body: JSON.stringify({ code }),
+    });
+    return retainPrivateCsrf(status);
+  },
+  async closePrivateAccess(): Promise<void> {
+    const response = await learningApiRequest('/v1/improvements/private-access', privateAccessInit({ method: 'DELETE' }));
+    if (!response.ok) await readApiJson<never>(response);
+    privateImprovementCsrfToken = null;
+  },
   async list(): Promise<readonly ImprovementProposal[]> {
     return (await json<{ items: ImprovementProposal[] }>('/v1/improvements?limit=50')).items;
   },
@@ -53,10 +91,10 @@ export const improvementApi = {
     return (await json<{ items: ImprovementCycle[] }>('/v1/improvements/cycles?limit=10')).items;
   },
   create(input: Readonly<{ title: string; description: string; targetArea: ImprovementTarget }>): Promise<ImprovementProposal> {
-    return json('/v1/improvements', { method: 'POST', body: JSON.stringify(input) });
+    return json('/v1/improvements', privateAccessInit({ method: 'POST', body: JSON.stringify(input) }));
   },
   vote(proposalId: string, voted: boolean): Promise<{ votes: number; votedByMe: boolean }> {
-    return json(`/v1/improvements/${encodeURIComponent(proposalId)}/vote`, { method: voted ? 'PUT' : 'DELETE' });
+    return json(`/v1/improvements/${encodeURIComponent(proposalId)}/vote`, privateAccessInit({ method: voted ? 'PUT' : 'DELETE' }));
   },
   async listAdmin(): Promise<readonly AdminImprovementProposal[]> {
     return (await json<{ items: AdminImprovementProposal[] }>('/v1/admin/improvements?limit=50')).items;
