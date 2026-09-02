@@ -81,7 +81,7 @@ describe('centro de mejoras', () => {
 
   it('explica el flujo autónomo: Muse implementa, valida, despliega y revierte si falla', async () => {
     render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
-    expect(await screen.findByText(/Muse implementa, valida, despliega y revierte automáticamente/)).toBeTruthy();
+    expect(await screen.findByText(/Muse implementa, valida, despliega y revierte automáticamente cuando falla/)).toBeTruthy();
     expect(screen.queryByText(/borrador revisable/i)).toBeNull();
     expect(screen.queryByText(/PR en revisión/i)).toBeNull();
   });
