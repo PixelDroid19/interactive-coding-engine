@@ -70,7 +70,7 @@ export function ImprovementCenter({ canAdmin, onClose }: { canAdmin: boolean; on
   return <div className="improvement-center" role="dialog" aria-modal="true" aria-label="Mejorar la plataforma" aria-describedby="improvement-flow-description">
     <UiSurface as="main" className="improvement-center__panel">
       <header className="improvement-center__header">
-        <div><span>Mejoras abiertas</span><h2>Construyamos una plataforma mejor</h2><p id="improvement-flow-description">Propón una mejora y vota. Cada 30 minutos, Muse toma la más votada, la implementa, la valida y la despliega. Si producción falla, revierte el cambio.</p></div>
+        <div><span>Mejoras de la comunidad</span><h2>Construyamos una plataforma mejor</h2><p id="improvement-flow-description">Propón una mejora y vota. Cada 30 minutos, Muse toma la más votada, la implementa, la valida y la despliega. Si producción falla, revierte el cambio.</p></div>
         <UiButton variant="icon" data-dialog-initial-focus onClick={onClose} aria-label="Cerrar"><X size={20} /></UiButton>
       </header>
       {error && <p className="improvement-center__error" role="alert">{error}</p>}

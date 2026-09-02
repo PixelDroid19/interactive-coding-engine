@@ -18,6 +18,12 @@ beforeEach(() => {
 afterEach(() => cleanup());
 
 describe('centro de mejoras', () => {
+  it('muestra el rótulo accesible “Mejoras de la comunidad”', async () => {
+    render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
+    expect(await screen.findByText('Mejoras de la comunidad')).toBeTruthy();
+    expect(screen.queryByText('Mejoras abiertas')).toBeNull();
+  });
+
   it('explica el flujo y permite enviar una propuesta concreta', async () => {
     render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
     expect(await screen.findByText('Propón una mejora')).toBeTruthy();
