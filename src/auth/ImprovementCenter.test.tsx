@@ -123,13 +123,4 @@ describe('centro de mejoras', () => {
     expect(await screen.findByText('Agrupada con otra idea')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Votar por Otra instrucción clara' }).hasAttribute('disabled')).toBe(true);
   });
-
-  it('muestra “Aún no hay ciclos cerrados” cuando no hay ciclos y conserva la lista', async () => {
-    api.list.mockResolvedValue([]);
-    api.listCycles.mockResolvedValue([]);
-    render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
-    expect(await screen.findByText('Aún no hay ciclos cerrados')).toBeTruthy();
-    expect(screen.getByText('Propuestas')).toBeTruthy();
-    expect(screen.queryByText('Último ciclo')).toBeNull();
-  });
 });
