@@ -14,8 +14,8 @@ const TARGET_LABEL: Record<ImprovementTarget, string> = {
   practice: 'Prácticas', lesson: 'Lecciones', playground: 'Playground', accessibility: 'Accesibilidad', interface: 'Interfaz',
 };
 const PROPOSAL_STATUS_LABEL: Record<ImprovementProposal['status'], string> = {
-  open: 'Abierta', queued: 'En cola', building: 'Construyendo', preview: 'PR en revisión',
-  published: 'Publicada', rejected: 'Rechazada', failed: 'Falló',
+  open: 'Abierta', queued: 'En cola', building: 'Construyendo', preview: 'Validando despliegue',
+  published: 'Desplegado', rejected: 'Rechazada', failed: 'Falló',
 };
 const RUN_STATUS_LABEL: Record<AdminImprovementProposal['runs'][number]['status'], string> = {
   queued: 'en cola', running: 'construyendo', succeeded: 'borrador listo', rejected: 'rechazado',
