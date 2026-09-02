@@ -6,11 +6,14 @@ export type ImprovementProposal = Readonly<{
   title: string;
   description: string;
   targetArea: ImprovementTarget;
-  status: 'open' | 'queued' | 'building' | 'preview' | 'published' | 'rejected' | 'failed';
+  status: 'open' | 'queued' | 'building' | 'preview' | 'published' | 'rejected' | 'failed' | 'grouped';
   votes: number;
   votedByMe?: boolean;
   authorName?: string | null;
   createdAt?: string;
+  cycleId?: string | null;
+  mergedIntoProposalId?: string | null;
+  moderationReason?: string | null;
 }>;
 export type ImprovementRun = Readonly<{
   id: string;
@@ -27,6 +30,16 @@ export type ImprovementRun = Readonly<{
   pullRequestUrl?: string | null;
 }>;
 export type AdminImprovementProposal = ImprovementProposal & Readonly<{ runs: readonly ImprovementRun[] }>;
+export type ImprovementCycle = Readonly<{
+  id: string;
+  closedAt: string;
+  candidateCount: number;
+  clusterCount: number;
+  winningScore: number;
+  rationale: string;
+  clusters: readonly Readonly<{ targetArea: ImprovementTarget; score: number }>[];
+  winner: Readonly<{ id: string; title: string; status: ImprovementProposal['status'] }>;
+}>;
 
 async function json<T>(path: string, init?: RequestInit): Promise<T> {
   return readApiJson<T>(await learningApiRequest(path, init));
@@ -35,6 +48,9 @@ async function json<T>(path: string, init?: RequestInit): Promise<T> {
 export const improvementApi = {
   async list(): Promise<readonly ImprovementProposal[]> {
     return (await json<{ items: ImprovementProposal[] }>('/v1/improvements?limit=50')).items;
+  },
+  async listCycles(): Promise<readonly ImprovementCycle[]> {
+    return (await json<{ items: ImprovementCycle[] }>('/v1/improvements/cycles?limit=10')).items;
   },
   create(input: Readonly<{ title: string; description: string; targetArea: ImprovementTarget }>): Promise<ImprovementProposal> {
     return json('/v1/improvements', { method: 'POST', body: JSON.stringify(input) });
