@@ -72,9 +72,24 @@ describe('centro de mejoras', () => {
     expect(link.getAttribute('href')).toBe('https://github.com/PixelDroid19/interactive-coding-engine/pull/73');
     expect(link.getAttribute('rel')).toContain('noreferrer');
     expect(screen.getByText('CI aprobada')).toBeTruthy();
-    expect(screen.getByText('PR en revisión')).toBeTruthy();
+    expect(screen.getByText('Validando despliegue')).toBeTruthy();
+    expect(screen.queryByText('Desplegado')).toBeNull();
     api.syncReview.mockResolvedValue({ status: 'published' });
     fireEvent.click(screen.getByRole('button', { name: 'Actualizar estado desde GitHub' }));
     await waitFor(() => expect(api.syncReview).toHaveBeenCalledWith('proposal-1'));
+  });
+
+  it('distingue validación previa de despliegue: published es Desplegado y fallido/rechazado no afirman reversión', async () => {
+    api.list.mockResolvedValue([
+      { id: 'proposal-published', title: 'Mejora publicada', description: 'Descripción extensa publicada.', targetArea: 'interface', status: 'published', votes: 5, votedByMe: false, runs: [] },
+      { id: 'proposal-failed', title: 'Mejora fallida', description: 'Descripción extensa fallida.', targetArea: 'interface', status: 'failed', votes: 1, votedByMe: false, runs: [] },
+      { id: 'proposal-rejected', title: 'Mejora rechazada', description: 'Descripción extensa rechazada.', targetArea: 'interface', status: 'rejected', votes: 1, votedByMe: false, runs: [] },
+    ]);
+    render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
+    expect(await screen.findByText('Desplegado')).toBeTruthy();
+    expect(screen.getByText('Falló')).toBeTruthy();
+    expect(screen.getByText('Rechazada')).toBeTruthy();
+    expect(screen.queryByText(/revert/i)).toBeNull();
+    expect(screen.queryByText(/revers/i)).toBeNull();
   });
 });
