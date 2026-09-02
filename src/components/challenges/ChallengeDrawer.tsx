@@ -277,6 +277,9 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
               {/* Diagnostic feedback */}
               {validationResult && (
                 <div
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
                   className={`p-3 rounded-lg border text-xs leading-relaxed ${
                     validationResult.allPassed
                       ? 'bg-emerald-950/40 border-emerald-700/60 text-emerald-200'

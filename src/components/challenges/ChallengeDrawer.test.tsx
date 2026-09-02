@@ -171,4 +171,21 @@ describe('ChallengeDrawer', () => {
     // La resolución detallada solo aparece tras clicar Ver cómo se resuelve, no en markup inicial
     expect(markup).not.toContain('Volver a intentarlo');
   });
+
+  it('anuncia el resultado del reto de forma accesible sin interrumpir', () => {
+    const challenge = makeChallenge();
+    const validation = {
+      allPassed: false,
+      passedCount: 0,
+      totalCount: 1,
+      tests: [{ id: 't1', description: 'test', passed: false, errorMessage: 'Falta', hint: 'pista' }],
+      feedbackMessage: 'Sigue intentando',
+    };
+    const markup = renderToStaticMarkup(
+      <ChallengeDrawer challenge={challenge as any} validationResult={validation as any} onValidate={() => {}} onReset={() => {}} onContinue={() => {}} isOpen={true} />
+    );
+    expect(markup).toContain('role="status"');
+    expect(markup).toContain('aria-live="polite"');
+    expect(markup).toContain('aria-atomic="true"');
+  });
 });
