@@ -27,14 +27,14 @@ describe('centro de mejoras', () => {
     await waitFor(() => expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ targetArea: 'practice' })));
   });
 
-  it('solo un administrador puede solicitar que Muse construya un borrador', async () => {
+  it('solo un administrador puede solicitar que Muse implemente automáticamente', async () => {
     api.listAdmin.mockResolvedValue([{
       id: 'proposal-1', title: 'Aclarar la práctica', description: 'Una descripción extensa para la mejora.',
       targetArea: 'practice', status: 'open', votes: 2, runs: [],
     }]);
     api.queue.mockResolvedValue({ id: 'run-1', status: 'queued' });
     render(<ThemeProvider><ImprovementCenter canAdmin onClose={vi.fn()} /></ThemeProvider>);
-    fireEvent.click(await screen.findByRole('button', { name: 'Construir borrador con Muse' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Implementar automáticamente con Muse' }));
     await waitFor(() => expect(api.queue).toHaveBeenCalledWith('proposal-1'));
   });
 
@@ -68,13 +68,22 @@ describe('centro de mejoras', () => {
 
     render(<ThemeProvider><ImprovementCenter canAdmin onClose={vi.fn()} /></ThemeProvider>);
 
-    const link = await screen.findByRole('link', { name: 'Revisar PR #73' });
+    const link = await screen.findByRole('link', { name: 'Ver PR #73' });
     expect(link.getAttribute('href')).toBe('https://github.com/PixelDroid19/interactive-coding-engine/pull/73');
     expect(link.getAttribute('rel')).toContain('noreferrer');
     expect(screen.getByText('CI aprobada')).toBeTruthy();
-    expect(screen.getByText('PR en revisión')).toBeTruthy();
+    expect(screen.getByText('Desplegado automáticamente')).toBeTruthy();
+    expect(screen.getByText('Validado y desplegado automáticamente')).toBeTruthy();
     api.syncReview.mockResolvedValue({ status: 'published' });
-    fireEvent.click(screen.getByRole('button', { name: 'Actualizar estado desde GitHub' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sincronizar estado del despliegue' }));
     await waitFor(() => expect(api.syncReview).toHaveBeenCalledWith('proposal-1'));
+  });
+
+  it('explica el flujo autónomo: implementa, valida, despliega y revierte automáticamente', async () => {
+    render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
+    expect(await screen.findByText(/Muse lo implementa, valida, despliega y revierte automáticamente si falla\./)).toBeTruthy();
+    expect(screen.queryByText(/borrador revisable/)).toBeNull();
+    expect(screen.queryByText(/Borrador listo para revisar/)).toBeNull();
+    expect(screen.queryByText('Construir borrador con Muse')).toBeNull();
   });
 });
