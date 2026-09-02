@@ -6,6 +6,7 @@ import { useAuthSession } from './AuthSessionProvider';
 import { useTheme } from '../themes/ThemeProvider';
 import { StaffDashboard } from './StaffDashboard';
 import { LearnerSupportPanel } from './LearnerSupportPanel';
+import { ImprovementCenter } from './ImprovementCenter';
 
 const ROLE_LABEL: Record<UserRole, string> = {
   student: 'Estudiante',
@@ -29,6 +30,7 @@ export function AccountMenu() {
   const [open, setOpen] = useState(false);
   const [staffOpen, setStaffOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [improvementsOpen, setImprovementsOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const staffIdentityRef = useRef<string | null>(null);
 
@@ -118,6 +120,9 @@ export function AccountMenu() {
               <button type="button" className="account-menu__action account-menu__action--primary" onClick={() => { setOpen(false); setSupportOpen(true); }}>
                 Mensajes y feedback
               </button>
+              <button type="button" className="account-menu__action account-menu__action--primary" onClick={() => { setOpen(false); setImprovementsOpen(true); }}>
+                Proponer una mejora
+              </button>
               {isStaff && <button type="button" className="account-menu__action account-menu__action--primary" onClick={() => { setOpen(false); setStaffOpen(true); }}>
                 Abrir panel de seguimiento
               </button>}
@@ -199,6 +204,7 @@ export function AccountMenu() {
       )}
       {staffOpen && staffIdentity && createPortal(<StaffDashboard canAdmin={isAdmin} staffIdentity={staffIdentity} onClose={() => setStaffOpen(false)} />, document.body)}
       {supportOpen && signedInSession && createPortal(<LearnerSupportPanel userId={signedInSession.user.id} onClose={() => setSupportOpen(false)} />, document.body)}
+      {improvementsOpen && signedInSession && createPortal(<ImprovementCenter canAdmin={isAdmin} onClose={() => setImprovementsOpen(false)} />, document.body)}
     </div>
   );
 }
