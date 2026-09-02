@@ -48,4 +48,7 @@ export const improvementApi = {
   queue(proposalId: string): Promise<ImprovementRun> {
     return json(`/v1/admin/improvements/${encodeURIComponent(proposalId)}/runs`, { method: 'POST' });
   },
+  syncReview(proposalId: string): Promise<{ status: 'published' | 'rejected' }> {
+    return json(`/v1/admin/improvements/${encodeURIComponent(proposalId)}/sync-review`, { method: 'POST' });
+  },
 };

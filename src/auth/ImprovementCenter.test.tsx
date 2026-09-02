@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeProvider } from '../themes/ThemeProvider';
 import { ImprovementCenter } from './ImprovementCenter';
 
-const api = vi.hoisted(() => ({ list: vi.fn(), listAdmin: vi.fn(), create: vi.fn(), vote: vi.fn(), queue: vi.fn() }));
+const api = vi.hoisted(() => ({ list: vi.fn(), listAdmin: vi.fn(), create: vi.fn(), vote: vi.fn(), queue: vi.fn(), syncReview: vi.fn() }));
 vi.mock('../services/improvementApi', async () => ({
   ...(await vi.importActual('../services/improvementApi')),
   improvementApi: api,
@@ -57,5 +57,8 @@ describe('centro de mejoras', () => {
     expect(link.getAttribute('href')).toBe('https://github.com/PixelDroid19/interactive-coding-engine/pull/73');
     expect(link.getAttribute('rel')).toContain('noreferrer');
     expect(screen.getByText('CI aprobada')).toBeTruthy();
+    api.syncReview.mockResolvedValue({ status: 'published' });
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar estado desde GitHub' }));
+    await waitFor(() => expect(api.syncReview).toHaveBeenCalledWith('proposal-1'));
   });
 });

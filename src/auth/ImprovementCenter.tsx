@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ArrowBigUp, Bot, GitPullRequest, Lightbulb, X } from 'lucide-react';
+import { ArrowBigUp, Bot, GitPullRequest, Lightbulb, RefreshCw, X } from 'lucide-react';
 import { UiButton } from '../components/ui/UiButton';
 import { UiField } from '../components/ui/UiField';
 import { UiSurface } from '../components/ui/UiSurface';
@@ -66,6 +66,13 @@ export function ImprovementCenter({ canAdmin, onClose }: { canAdmin: boolean; on
     finally { setBusy(null); }
   }
 
+  async function syncReview(item: ImprovementProposal) {
+    setBusy(item.id); setError(null);
+    try { await improvementApi.syncReview(item.id); await load(); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'No pudimos actualizar el estado del PR.'); }
+    finally { setBusy(null); }
+  }
+
   return <div className="improvement-center" role="dialog" aria-modal="true" aria-label="Mejorar la plataforma">
     <UiSurface as="main" className="improvement-center__panel">
       <header className="improvement-center__header">
@@ -100,6 +107,7 @@ export function ImprovementCenter({ canAdmin, onClose }: { canAdmin: boolean; on
                 {latestRun.validation?.ci === 'failed' && <span className="improvement-run__ci improvement-run__ci--failed">CI fallida</span>}
                 {latestRun.summary && <p>{latestRun.summary}</p>}
                 {pullRequestUrl && latestRun.pullRequestNumber && <a className="improvement-run__pr" href={pullRequestUrl} target="_blank" rel="noopener noreferrer"><GitPullRequest size={15} /> Revisar PR #{latestRun.pullRequestNumber}</a>}
+                {canAdmin && item.status === 'preview' && pullRequestUrl && <UiButton variant="secondary" disabled={Boolean(busy)} onClick={() => void syncReview(item)}><RefreshCw size={15} /> Actualizar estado desde GitHub</UiButton>}
                 {latestRun.changedFiles?.length > 0 && <ul>{latestRun.changedFiles.map((file) => <li key={file.path}>{file.path} <small>+{file.added} −{file.deleted}</small></li>)}</ul>}
               </div>}
             </UiSurface>;
