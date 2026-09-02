@@ -5,6 +5,7 @@ describe('cabeceras de producción en Vercel', () => {
   it('protege todas las rutas sin bloquear los workers, WebGPU ni la vista previa', async () => {
     const config = JSON.parse(await readFile(new URL('../../vercel.json', import.meta.url), 'utf8')) as {
       headers: Array<{ source: string; headers: Array<{ key: string; value: string }> }>;
+      rewrites?: Array<{ source: string; destination: string }>;
     };
     const global = config.headers.find((entry) => entry.source === '/(.*)');
     const headers = Object.fromEntries(global?.headers.map(({ key, value }) => [key.toLowerCase(), value]) ?? []);
@@ -15,5 +16,13 @@ describe('cabeceras de producción en Vercel', () => {
     expect(headers['permissions-policy']).toContain('camera=()');
     expect(headers['content-security-policy']).toContain("frame-ancestors 'none'");
     expect(headers['content-security-policy']).not.toContain('script-src');
+  });
+
+  it('sirve index.html al abrir directamente cualquier ruta de la SPA', async () => {
+    const config = JSON.parse(await readFile(new URL('../../vercel.json', import.meta.url), 'utf8')) as {
+      rewrites?: Array<{ source: string; destination: string }>;
+    };
+
+    expect(config.rewrites).toContainEqual({ source: '/(.*)', destination: '/index.html' });
   });
 });
