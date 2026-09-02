@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeProvider } from '../themes/ThemeProvider';
 import { ImprovementCenter } from './ImprovementCenter';
 
-const api = vi.hoisted(() => ({ list: vi.fn(), listAdmin: vi.fn(), create: vi.fn(), vote: vi.fn(), queue: vi.fn(), syncReview: vi.fn() }));
+const api = vi.hoisted(() => ({ list: vi.fn(), listAdmin: vi.fn(), create: vi.fn(), vote: vi.fn() }));
 vi.mock('../services/improvementApi', async () => ({
   ...(await vi.importActual('../services/improvementApi')),
   improvementApi: api,
@@ -21,21 +21,21 @@ describe('centro de mejoras', () => {
   it('explica el flujo y permite enviar una propuesta concreta', async () => {
     render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
     expect(await screen.findByText('Propón una mejora')).toBeTruthy();
+    expect(screen.getByText(/Cada 30 minutos, Muse toma la más votada/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Título corto'), { target: { value: 'Aclarar la práctica inicial' } });
     fireEvent.change(screen.getByLabelText('Qué debería mejorar'), { target: { value: 'La instrucción debería decir con claridad qué resultado debe obtener la persona.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar propuesta' }));
     await waitFor(() => expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ targetArea: 'practice' })));
   });
 
-  it('solo un administrador puede solicitar que Muse construya un borrador', async () => {
+  it('no exige que un administrador apruebe o inicie la propuesta ganadora', async () => {
     api.listAdmin.mockResolvedValue([{
       id: 'proposal-1', title: 'Aclarar la práctica', description: 'Una descripción extensa para la mejora.',
       targetArea: 'practice', status: 'open', votes: 2, runs: [],
     }]);
-    api.queue.mockResolvedValue({ id: 'run-1', status: 'queued' });
     render(<ThemeProvider><ImprovementCenter canAdmin onClose={vi.fn()} /></ThemeProvider>);
-    fireEvent.click(await screen.findByRole('button', { name: 'Construir borrador con Muse' }));
-    await waitFor(() => expect(api.queue).toHaveBeenCalledWith('proposal-1'));
+    expect(await screen.findByText(/Cada 30 minutos, Muse toma la más votada/)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Muse/ })).toBeNull();
   });
 
   it('muestra el contador con texto accesible "propuestas visibles" y singular correcto', async () => {
@@ -56,7 +56,7 @@ describe('centro de mejoras', () => {
   it('enlaza el PR real y muestra el resultado de CI al administrador', async () => {
     api.listAdmin.mockResolvedValue([{
       id: 'proposal-1', title: 'Corregir el playground', description: 'Una descripción extensa para la mejora.',
-      targetArea: 'playground', status: 'preview', votes: 4, runs: [{
+      targetArea: 'playground', status: 'published', votes: 4, runs: [{
         id: 'run-1', status: 'succeeded', model: 'opencode/muse-spark-1.2-contributor-free',
         changedFiles: [{ path: 'src/components/playground/PlaygroundView.tsx', added: 3, deleted: 1 }],
         validation: { policy: 'passed', ci: 'passed' },
@@ -68,15 +68,13 @@ describe('centro de mejoras', () => {
 
     render(<ThemeProvider><ImprovementCenter canAdmin onClose={vi.fn()} /></ThemeProvider>);
 
-    const link = await screen.findByRole('link', { name: 'Revisar PR #73' });
+    const link = await screen.findByRole('link', { name: 'Ver PR #73' });
     expect(link.getAttribute('href')).toBe('https://github.com/PixelDroid19/interactive-coding-engine/pull/73');
     expect(link.getAttribute('rel')).toContain('noreferrer');
     expect(screen.getByText('CI aprobada')).toBeTruthy();
-    expect(screen.getByText('Validando despliegue')).toBeTruthy();
-    expect(screen.queryByText('Desplegado')).toBeNull();
-    api.syncReview.mockResolvedValue({ status: 'published' });
-    fireEvent.click(screen.getByRole('button', { name: 'Actualizar estado desde GitHub' }));
-    await waitFor(() => expect(api.syncReview).toHaveBeenCalledWith('proposal-1'));
+    expect(screen.getByText('Desplegado')).toBeTruthy();
+    expect(screen.getByText('Desplegado y verificado')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Actualizar estado/ })).toBeNull();
   });
 
   it('distingue validación previa de despliegue: published es Desplegado y fallido/rechazado no afirman reversión', async () => {

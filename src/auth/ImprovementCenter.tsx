@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ArrowBigUp, Bot, GitPullRequest, Lightbulb, RefreshCw, X } from 'lucide-react';
+import { ArrowBigUp, GitPullRequest, Lightbulb, X } from 'lucide-react';
 import { UiButton } from '../components/ui/UiButton';
 import { UiField } from '../components/ui/UiField';
 import { UiSurface } from '../components/ui/UiSurface';
@@ -18,7 +18,7 @@ const PROPOSAL_STATUS_LABEL: Record<ImprovementProposal['status'], string> = {
   published: 'Desplegado', rejected: 'Rechazada', failed: 'Falló',
 };
 const RUN_STATUS_LABEL: Record<AdminImprovementProposal['runs'][number]['status'], string> = {
-  queued: 'en cola', running: 'construyendo', succeeded: 'borrador listo', rejected: 'rechazado',
+  queued: 'en cola', running: 'construyendo', succeeded: 'publicado', rejected: 'rechazado',
   failed: 'falló', timed_out: 'agotó el tiempo',
 };
 
@@ -67,24 +67,10 @@ export function ImprovementCenter({ canAdmin, onClose }: { canAdmin: boolean; on
     finally { setBusy(null); }
   }
 
-  async function queue(item: ImprovementProposal) {
-    setBusy(item.id); setError(null);
-    try { await improvementApi.queue(item.id); await load(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'No pudimos iniciar el borrador.'); }
-    finally { setBusy(null); }
-  }
-
-  async function syncReview(item: ImprovementProposal) {
-    setBusy(item.id); setError(null);
-    try { await improvementApi.syncReview(item.id); await load(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : 'No pudimos actualizar el estado del PR.'); }
-    finally { setBusy(null); }
-  }
-
-  return <div className="improvement-center" role="dialog" aria-modal="true" aria-label="Mejorar la plataforma">
+  return <div className="improvement-center" role="dialog" aria-modal="true" aria-label="Mejorar la plataforma" aria-describedby="improvement-flow-description">
     <UiSurface as="main" className="improvement-center__panel">
       <header className="improvement-center__header">
-        <div><span>Mejoras abiertas</span><h2>Construyamos una plataforma mejor</h2><p>Propón un cambio. La comunidad lo prioriza y un administrador decide cuándo Muse prepara un borrador revisable.</p></div>
+        <div><span>Mejoras abiertas</span><h2>Construyamos una plataforma mejor</h2><p id="improvement-flow-description">Propón una mejora y vota. Cada 30 minutos, Muse toma la más votada, la implementa, la valida y la despliega. Si producción falla, revierte el cambio.</p></div>
         <UiButton variant="icon" data-dialog-initial-focus onClick={onClose} aria-label="Cerrar"><X size={20} /></UiButton>
       </header>
       {error && <p className="improvement-center__error" role="alert">{error}</p>}
@@ -107,15 +93,13 @@ export function ImprovementCenter({ canAdmin, onClose }: { canAdmin: boolean; on
               <h4>{item.title}</h4><p>{item.description}</p>
               <footer>
                 <UiButton variant={item.votedByMe ? 'primary' : 'secondary'} disabled={Boolean(busy) || canAdmin} onClick={() => void vote(item)} aria-label={`${item.votedByMe ? 'Quitar voto de' : 'Votar por'} ${item.title}`}><ArrowBigUp size={16} /> {item.votes}</UiButton>
-                {canAdmin && item.status === 'open' && <UiButton variant="primary" disabled={Boolean(busy)} onClick={() => void queue(item)}><Bot size={17} /> Construir borrador con Muse</UiButton>}
               </footer>
               {latestRun && <div className="improvement-run">
-                <strong>{latestRun.status === 'succeeded' ? 'Borrador listo para revisar' : `Muse: ${RUN_STATUS_LABEL[latestRun.status]}`}</strong>
+                <strong>{latestRun.status === 'succeeded' ? 'Desplegado y verificado' : `Muse: ${RUN_STATUS_LABEL[latestRun.status]}`}</strong>
                 {latestRun.validation?.ci === 'passed' && <span className="improvement-run__ci improvement-run__ci--passed">CI aprobada</span>}
                 {latestRun.validation?.ci === 'failed' && <span className="improvement-run__ci improvement-run__ci--failed">CI fallida</span>}
                 {latestRun.summary && <p>{latestRun.summary}</p>}
-                {pullRequestUrl && latestRun.pullRequestNumber && <a className="improvement-run__pr" href={pullRequestUrl} target="_blank" rel="noopener noreferrer"><GitPullRequest size={15} /> Revisar PR #{latestRun.pullRequestNumber}</a>}
-                {canAdmin && item.status === 'preview' && pullRequestUrl && <UiButton variant="secondary" disabled={Boolean(busy)} onClick={() => void syncReview(item)}><RefreshCw size={15} /> Actualizar estado desde GitHub</UiButton>}
+                {pullRequestUrl && latestRun.pullRequestNumber && <a className="improvement-run__pr" href={pullRequestUrl} target="_blank" rel="noopener noreferrer"><GitPullRequest size={15} /> Ver PR #{latestRun.pullRequestNumber}</a>}
                 {latestRun.changedFiles?.length > 0 && <ul>{latestRun.changedFiles.map((file) => <li key={file.path}>{file.path} <small>+{file.added} −{file.deleted}</small></li>)}</ul>}
               </div>}
             </UiSurface>;
