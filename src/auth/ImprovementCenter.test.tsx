@@ -107,7 +107,7 @@ describe('centro de mejoras', () => {
     }]);
     render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
 
-    expect(await screen.findByText('Último ciclo')).toBeTruthy();
+    expect(await screen.findByText('Último ciclo cerrado')).toBeTruthy();
     expect(screen.getByText('4 propuestas · 2 grupos · 3 personas apoyaron al ganador')).toBeTruthy();
     expect(screen.getByText('Instrucciones más claras')).toBeTruthy();
   });
