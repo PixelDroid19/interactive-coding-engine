@@ -27,6 +27,7 @@ describe('validación de mejoras comunitarias', () => {
     expect(workflow).toContain('EXPECTED_COMMIT: ${{ github.sha }}');
     expect(workflow).toContain('playwright test --config=playwright.production.config.ts');
     expect(runtimeTest).toContain('meta[name="devt-build-sha"]');
+    expect(runtimeTest).toContain('deployment=${Date.now()}');
     expect(runtimeTest).toContain("['/', '/cursos', '/playground']");
     expect(runtimeTest).toContain("page.locator('#root > *').first()");
     expect(runtimeTest).toContain("request.get('https://api.devt.lat/health/ready')");
