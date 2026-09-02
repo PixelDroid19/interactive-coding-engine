@@ -123,4 +123,31 @@ describe('centro de mejoras', () => {
     expect(await screen.findByText('Agrupada con otra idea')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Votar por Otra instrucción clara' }).hasAttribute('disabled')).toBe(true);
   });
+
+  it('muestra el estado vacío “Aún no hay ciclos cerrados” cuando no hay ciclos y conserva la lista', async () => {
+    api.list.mockResolvedValue([{
+      id: 'proposal-1', title: 'Aclarar la práctica', description: 'Una descripción extensa para la mejora.',
+      targetArea: 'practice', status: 'open', votes: 1, votedByMe: false, runs: [],
+    }]);
+    api.listCycles.mockResolvedValue([]);
+    render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
+
+    const empty = await screen.findByText('Aún no hay ciclos cerrados');
+    expect(empty.getAttribute('role')).toBe('status');
+    expect(screen.getByText('Aclarar la práctica')).toBeTruthy();
+    expect(screen.queryByText('Último ciclo')).toBeNull();
+  });
+
+  it('no muestra el estado vacío cuando hay un ciclo cerrado', async () => {
+    api.listCycles.mockResolvedValue([{
+      id: 'cycle-1', closedAt: '2026-09-02T13:30:00.000Z', candidateCount: 2, clusterCount: 1,
+      winningScore: 2, rationale: 'Gana el grupo con 2 personas únicas.',
+      winner: { id: 'proposal-1', title: 'Instrucciones más claras', status: 'published' },
+      clusters: [{ targetArea: 'practice', score: 2 }],
+    }]);
+    render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
+
+    expect(await screen.findByText('Último ciclo')).toBeTruthy();
+    expect(screen.queryByText('Aún no hay ciclos cerrados')).toBeNull();
+  });
 });
