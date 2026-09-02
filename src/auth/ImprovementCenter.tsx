@@ -94,7 +94,7 @@ export function ImprovementCenter({ canAdmin, onClose }: { canAdmin: boolean; on
         <section className="improvement-list" aria-label="Propuestas de la comunidad">
           <header><h3>Propuestas</h3><small>{items.length === 1 ? '1 propuesta visible' : `${items.length} propuestas visibles`}</small></header>
           {cycles[0] && <UiSurface as="aside" className="improvement-cycle" aria-label="Resultado del último ciclo">
-            <div><span>Último ciclo cerrado</span><small>{new Date(cycles[0].closedAt).toLocaleString('es-CO')}</small></div>
+            <div><span>Último ciclo</span><small>{new Date(cycles[0].closedAt).toLocaleString('es-CO')}</small></div>
             <strong>{cycles[0].winner.title}</strong>
             <p>{cycles[0].candidateCount} propuestas · {cycles[0].clusterCount} grupos · {cycles[0].winningScore} personas apoyaron al ganador</p>
             <small>{cycles[0].rationale}</small>
