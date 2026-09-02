@@ -24,7 +24,7 @@ describe('validación de mejoras comunitarias', () => {
     expect(workflow).toContain('branches: [main]');
     expect(workflow).toContain('contents: read');
     expect(workflow).not.toContain('secrets.');
-    expect(workflow).toContain('EXPECTED_COMMIT: ${{ github.sha }}');
+    expect(workflow).toContain('EXPECTED_COMMIT: ${{ inputs.expected_commit || github.sha }}');
     expect(workflow).toContain('actions/cache@v4');
     expect(workflow).toContain('~/.cache/ms-playwright');
     expect(workflow).toContain('playwright test --config=playwright.production.config.ts');

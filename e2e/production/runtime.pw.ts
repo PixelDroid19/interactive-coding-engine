@@ -14,6 +14,7 @@ if (!EXPECTED_COMMIT || !/^[a-f0-9]{40}$/.test(EXPECTED_COMMIT)) {
 test('el commit desplegado arranca React y mantiene navegables las rutas públicas', async ({ page, request }) => {
   const attemptConsoleErrors: string[] = [];
   const attemptPageErrors: string[] = [];
+  const attemptRequestFailures: string[] = [];
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
   page.on('console', (message) => {
@@ -26,6 +27,9 @@ test('el commit desplegado arranca React y mantiene navegables las rutas públic
     if (!localCorsNoise) attemptConsoleErrors.push(text);
   });
   page.on('pageerror', (error) => attemptPageErrors.push(error.message));
+  page.on('requestfailed', (request) => {
+    attemptRequestFailures.push(`${request.url()} ${request.failure()?.errorText ?? 'fallo desconocido'}`);
+  });
 
   for (const route of ROUTES) {
     const ready = await waitForStableDeployment({
@@ -36,6 +40,7 @@ test('el commit desplegado arranca React y mantiene navegables las rutas públic
       probe: async () => {
         attemptConsoleErrors.length = 0;
         attemptPageErrors.length = 0;
+        attemptRequestFailures.length = 0;
         const separator = route.includes('?') ? '&' : '?';
         const response = await page.goto(`${route}${separator}deployment=${Date.now()}`, { waitUntil: 'domcontentloaded' });
         const deployedSha = response?.status() === 200
@@ -51,7 +56,20 @@ test('el commit desplegado arranca React y mantiene navegables las rutas públic
               .catch(() => false);
           }
         }
-        return { status: response?.status() ?? null, deployedSha, reactMounted };
+        const scriptSrc = await page.locator('script[type="module"][src]').first().getAttribute('src').catch(() => null);
+        const scriptResponse = scriptSrc
+          ? await page.request.get(new URL(scriptSrc, page.url()).href).catch(() => null)
+          : null;
+        const diagnostic = [
+          `route=${route}`,
+          `script=${scriptSrc ?? 'ausente'}`,
+          `scriptStatus=${scriptResponse?.status() ?? 'sin-respuesta'}`,
+          `scriptType=${scriptResponse?.headers()['content-type'] ?? 'ausente'}`,
+          `console=${JSON.stringify(attemptConsoleErrors.slice(0, 3))}`,
+          `page=${JSON.stringify(attemptPageErrors.slice(0, 3))}`,
+          `requests=${JSON.stringify(attemptRequestFailures.slice(0, 3))}`,
+        ].join(' ');
+        return { status: response?.status() ?? null, deployedSha, reactMounted, diagnostic };
       },
     });
     expect(ready.status, `${route} debe responder 200`).toBe(200);

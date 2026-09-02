@@ -2,6 +2,7 @@ export type DeploymentReadiness = Readonly<{
   status: number | null;
   deployedSha: string | null;
   reactMounted: boolean;
+  diagnostic?: string;
 }>;
 
 type WaitForStableDeploymentOptions = Readonly<{
@@ -29,6 +30,7 @@ export async function waitForStableDeployment({
   }
 
   throw new Error(
-    `production_not_ready: esperado=${expectedCommit} recibido=${latest.deployedSha ?? 'ausente'} react=${latest.reactMounted}`,
+    `production_not_ready: esperado=${expectedCommit} recibido=${latest.deployedSha ?? 'ausente'} react=${latest.reactMounted}`
+      + (latest.diagnostic ? ` ${latest.diagnostic}` : ''),
   );
 }

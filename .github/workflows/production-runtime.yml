@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      expected_commit:
+        description: Commit de produccion que debe verificarse
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -47,5 +52,5 @@ jobs:
 
       - name: Verify exact production commit in a real browser
         env:
-          EXPECTED_COMMIT: ${{ github.sha }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit || github.sha }}
         run: pnpm exec playwright test --config=playwright.production.config.ts

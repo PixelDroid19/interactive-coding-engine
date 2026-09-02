@@ -22,4 +22,22 @@ describe('barrera de despliegue de produccion', () => {
     expect(probe).toHaveBeenCalledTimes(2);
     expect(sleep).toHaveBeenCalledTimes(1);
   });
+
+  it('incluye la evidencia de red del ultimo intento cuando vence el plazo', async () => {
+    await expect(waitForStableDeployment({
+      expectedCommit: 'b'.repeat(40),
+      probe: vi.fn().mockResolvedValue({
+        status: 200,
+        deployedSha: 'b'.repeat(40),
+        reactMounted: false,
+        diagnostic: 'script=/assets/app.js status=200 type=text/html',
+      }),
+      sleep: vi.fn().mockResolvedValue(undefined),
+      timeoutMs: 2,
+      now: (() => {
+        let value = 0;
+        return () => value += 1;
+      })(),
+    })).rejects.toThrow('script=/assets/app.js status=200 type=text/html');
+  });
 });
