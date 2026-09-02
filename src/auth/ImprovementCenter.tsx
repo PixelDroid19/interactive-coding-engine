@@ -13,6 +13,14 @@ import {
 const TARGET_LABEL: Record<ImprovementTarget, string> = {
   practice: 'Prácticas', lesson: 'Lecciones', playground: 'Playground', accessibility: 'Accesibilidad', interface: 'Interfaz',
 };
+const PROPOSAL_STATUS_LABEL: Record<ImprovementProposal['status'], string> = {
+  open: 'Abierta', queued: 'En cola', building: 'Construyendo', preview: 'PR en revisión',
+  published: 'Publicada', rejected: 'Rechazada', failed: 'Falló',
+};
+const RUN_STATUS_LABEL: Record<AdminImprovementProposal['runs'][number]['status'], string> = {
+  queued: 'en cola', running: 'construyendo', succeeded: 'borrador listo', rejected: 'rechazado',
+  failed: 'falló', timed_out: 'agotó el tiempo',
+};
 
 function safePullRequestUrl(value: string | null | undefined): string | null {
   if (!value || !URL.canParse(value)) return null;
@@ -95,14 +103,14 @@ export function ImprovementCenter({ canAdmin, onClose }: { canAdmin: boolean; on
             const latestRun = Array.isArray(adminItem.runs) ? adminItem.runs[0] : undefined;
             const pullRequestUrl = safePullRequestUrl(latestRun?.pullRequestUrl);
             return <UiSurface as="article" className="improvement-card" key={item.id}>
-              <div className="improvement-card__meta"><span>{TARGET_LABEL[item.targetArea]}</span><small>{item.status}</small></div>
+              <div className="improvement-card__meta"><span>{TARGET_LABEL[item.targetArea]}</span><small>{PROPOSAL_STATUS_LABEL[item.status]}</small></div>
               <h4>{item.title}</h4><p>{item.description}</p>
               <footer>
                 <UiButton variant={item.votedByMe ? 'primary' : 'secondary'} disabled={Boolean(busy) || canAdmin} onClick={() => void vote(item)} aria-label={`${item.votedByMe ? 'Quitar voto de' : 'Votar por'} ${item.title}`}><ArrowBigUp size={16} /> {item.votes}</UiButton>
                 {canAdmin && item.status === 'open' && <UiButton variant="primary" disabled={Boolean(busy)} onClick={() => void queue(item)}><Bot size={17} /> Construir borrador con Muse</UiButton>}
               </footer>
               {latestRun && <div className="improvement-run">
-                <strong>{latestRun.status === 'succeeded' ? 'Borrador listo para revisar' : `Muse: ${latestRun.status}`}</strong>
+                <strong>{latestRun.status === 'succeeded' ? 'Borrador listo para revisar' : `Muse: ${RUN_STATUS_LABEL[latestRun.status]}`}</strong>
                 {latestRun.validation?.ci === 'passed' && <span className="improvement-run__ci improvement-run__ci--passed">CI aprobada</span>}
                 {latestRun.validation?.ci === 'failed' && <span className="improvement-run__ci improvement-run__ci--failed">CI fallida</span>}
                 {latestRun.summary && <p>{latestRun.summary}</p>}

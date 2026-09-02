@@ -57,6 +57,7 @@ describe('centro de mejoras', () => {
     expect(link.getAttribute('href')).toBe('https://github.com/PixelDroid19/interactive-coding-engine/pull/73');
     expect(link.getAttribute('rel')).toContain('noreferrer');
     expect(screen.getByText('CI aprobada')).toBeTruthy();
+    expect(screen.getByText('PR en revisión')).toBeTruthy();
     api.syncReview.mockResolvedValue({ status: 'published' });
     fireEvent.click(screen.getByRole('button', { name: 'Actualizar estado desde GitHub' }));
     await waitFor(() => expect(api.syncReview).toHaveBeenCalledWith('proposal-1'));
