@@ -25,4 +25,22 @@ describe('cabeceras de producción en Vercel', () => {
 
     expect(config.rewrites).toContainEqual({ source: '/(.*)', destination: '/index.html' });
   });
+
+  it('no conserva HTML de rutas SPA entre despliegues y mantiene inmutables los assets versionados', async () => {
+    const config = JSON.parse(await readFile(new URL('../../vercel.json', import.meta.url), 'utf8')) as {
+      headers: Array<{ source: string; headers: Array<{ key: string; value: string }> }>;
+    };
+    const documents = config.headers.find((entry) => entry.source === '/((?!assets/).*)');
+    const assets = config.headers.find((entry) => entry.source === '/assets/(.*)');
+    const documentHeaders = Object.fromEntries(
+      documents?.headers.map(({ key, value }) => [key.toLowerCase(), value]) ?? [],
+    );
+    const assetHeaders = Object.fromEntries(
+      assets?.headers.map(({ key, value }) => [key.toLowerCase(), value]) ?? [],
+    );
+
+    expect(documentHeaders['cache-control']).toContain('no-store');
+    expect(documentHeaders['vercel-cdn-cache-control']).toContain('no-store');
+    expect(assetHeaders['cache-control']).toContain('immutable');
+  });
 });
