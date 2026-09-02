@@ -21,20 +21,24 @@ describe('centro de mejoras', () => {
   it('explica el flujo y permite enviar una propuesta concreta', async () => {
     render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
     expect(await screen.findByText('Propón una mejora')).toBeTruthy();
+    expect(await screen.findByText(/Muse lo implementa, valida y despliega de forma autónoma/)).toBeTruthy();
+    expect(screen.getByText(/si falla la validación, revierte automáticamente/)).toBeTruthy();
+    expect(screen.queryByText(/borrador revisable/i)).toBeNull();
+    expect(screen.queryByText(/borrador listo/i)).toBeNull();
     fireEvent.change(screen.getByLabelText('Título corto'), { target: { value: 'Aclarar la práctica inicial' } });
     fireEvent.change(screen.getByLabelText('Qué debería mejorar'), { target: { value: 'La instrucción debería decir con claridad qué resultado debe obtener la persona.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar propuesta' }));
     await waitFor(() => expect(api.create).toHaveBeenCalledWith(expect.objectContaining({ targetArea: 'practice' })));
   });
 
-  it('solo un administrador puede solicitar que Muse construya un borrador', async () => {
+  it('solo un administrador puede solicitar que Muse implemente automáticamente', async () => {
     api.listAdmin.mockResolvedValue([{
       id: 'proposal-1', title: 'Aclarar la práctica', description: 'Una descripción extensa para la mejora.',
       targetArea: 'practice', status: 'open', votes: 2, runs: [],
     }]);
     api.queue.mockResolvedValue({ id: 'run-1', status: 'queued' });
     render(<ThemeProvider><ImprovementCenter canAdmin onClose={vi.fn()} /></ThemeProvider>);
-    fireEvent.click(await screen.findByRole('button', { name: 'Construir borrador con Muse' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Implementar automáticamente con Muse' }));
     await waitFor(() => expect(api.queue).toHaveBeenCalledWith('proposal-1'));
   });
 
@@ -68,13 +72,23 @@ describe('centro de mejoras', () => {
 
     render(<ThemeProvider><ImprovementCenter canAdmin onClose={vi.fn()} /></ThemeProvider>);
 
-    const link = await screen.findByRole('link', { name: 'Revisar PR #73' });
+    const link = await screen.findByRole('link', { name: 'Ver despliegue #73' });
     expect(link.getAttribute('href')).toBe('https://github.com/PixelDroid19/interactive-coding-engine/pull/73');
     expect(link.getAttribute('rel')).toContain('noreferrer');
     expect(screen.getByText('CI aprobada')).toBeTruthy();
-    expect(screen.getByText('PR en revisión')).toBeTruthy();
+    expect(screen.getByText('Despliegue automático')).toBeTruthy();
+    expect(await screen.findByText('Muse implementó, validó y desplegó automáticamente')).toBeTruthy();
     api.syncReview.mockResolvedValue({ status: 'published' });
-    fireEvent.click(screen.getByRole('button', { name: 'Actualizar estado desde GitHub' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Verificar despliegue' }));
     await waitFor(() => expect(api.syncReview).toHaveBeenCalledWith('proposal-1'));
+  });
+
+  it('comunica el flujo autónomo con despliegue y reversión', async () => {
+    render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
+    expect(await screen.findByText(/Muse lo implementa, valida y despliega/)).toBeTruthy();
+    expect(screen.getByText((text) => text.toLowerCase().includes('revierte automáticamente'))).toBeTruthy();
+    expect(screen.queryByText(/borrador/i)).toBeNull();
+    expect(screen.queryByText(/PR en revisión/i)).toBeNull();
+    expect(screen.queryByText(/Revisar PR/i)).toBeNull();
   });
 });
