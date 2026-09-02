@@ -31,4 +31,18 @@ describe('improvementApi', () => {
 
     await expect(improvementApi.list()).rejects.toThrow('Servicio temporalmente no disponible.');
   });
+
+  it('consulta la evidencia pública de ciclos sin depender del panel administrativo', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(JSON.stringify({
+      items: [{
+        id: 'cycle-1', closedAt: '2026-09-02T13:30:00.000Z', candidateCount: 2, clusterCount: 1,
+        winningScore: 2, rationale: 'Gana el grupo.', clusters: [{ targetArea: 'practice', score: 2 }],
+        winner: { id: 'proposal-1', title: 'Instrucciones claras', status: 'published' },
+      }],
+    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    const { improvementApi } = await import('./improvementApi');
+
+    await expect(improvementApi.listCycles()).resolves.toHaveLength(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toContain('/v1/improvements/cycles?limit=10');
+  });
 });

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeProvider } from '../themes/ThemeProvider';
 import { ImprovementCenter } from './ImprovementCenter';
 
-const api = vi.hoisted(() => ({ list: vi.fn(), listAdmin: vi.fn(), create: vi.fn(), vote: vi.fn() }));
+const api = vi.hoisted(() => ({ list: vi.fn(), listCycles: vi.fn(), listAdmin: vi.fn(), create: vi.fn(), vote: vi.fn() }));
 vi.mock('../services/improvementApi', async () => ({
   ...(await vi.importActual('../services/improvementApi')),
   improvementApi: api,
@@ -13,6 +13,7 @@ vi.mock('../services/improvementApi', async () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   api.list.mockResolvedValue([]);
+  api.listCycles.mockResolvedValue([]);
   api.create.mockResolvedValue({ id: 'proposal-1' });
 });
 afterEach(() => cleanup());
@@ -27,7 +28,7 @@ describe('centro de mejoras', () => {
   it('explica el flujo y permite enviar una propuesta concreta', async () => {
     render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
     expect(await screen.findByText('Propón una mejora')).toBeTruthy();
-    expect(screen.getByText(/Cada 30 minutos, Muse toma la más votada/)).toBeTruthy();
+    expect(screen.getByText(/Cada 30 minutos, agrupamos ideas parecidas/)).toBeTruthy();
     fireEvent.change(screen.getByLabelText('Título corto'), { target: { value: 'Aclarar la práctica inicial' } });
     fireEvent.change(screen.getByLabelText('Qué debería mejorar'), { target: { value: 'La instrucción debería decir con claridad qué resultado debe obtener la persona.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar propuesta' }));
@@ -40,7 +41,7 @@ describe('centro de mejoras', () => {
       targetArea: 'practice', status: 'open', votes: 2, runs: [],
     }]);
     render(<ThemeProvider><ImprovementCenter canAdmin onClose={vi.fn()} /></ThemeProvider>);
-    expect(await screen.findByText(/Cada 30 minutos, Muse toma la más votada/)).toBeTruthy();
+    expect(await screen.findByText(/Cada 30 minutos, agrupamos ideas parecidas/)).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Muse/ })).toBeNull();
   });
 
@@ -95,5 +96,31 @@ describe('centro de mejoras', () => {
     expect(screen.getByText('Rechazada')).toBeTruthy();
     expect(screen.queryByText(/revert/i)).toBeNull();
     expect(screen.queryByText(/revers/i)).toBeNull();
+  });
+
+  it('muestra la evidencia del último ciclo sin exponer identificadores agrupados', async () => {
+    api.listCycles.mockResolvedValue([{
+      id: 'cycle-1', closedAt: '2026-09-02T13:30:00.000Z', candidateCount: 4, clusterCount: 2,
+      winningScore: 3, rationale: 'Gana el grupo con 3 personas únicas y 2 propuestas equivalentes.',
+      winner: { id: 'proposal-1', title: 'Instrucciones más claras', status: 'published' },
+      clusters: [{ targetArea: 'practice', score: 3 }, { targetArea: 'interface', score: 1 }],
+    }]);
+    render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
+
+    expect(await screen.findByText('Último ciclo')).toBeTruthy();
+    expect(screen.getByText('4 propuestas · 2 grupos · 3 personas apoyaron al ganador')).toBeTruthy();
+    expect(screen.getByText('Instrucciones más claras')).toBeTruthy();
+  });
+
+  it('identifica una propuesta agrupada y no permite votarla', async () => {
+    api.listAdmin.mockResolvedValue([{
+      id: 'proposal-2', title: 'Otra instrucción clara', description: 'Se agrupó con una propuesta equivalente.',
+      targetArea: 'practice', status: 'grouped', votes: 2, votedByMe: false,
+      mergedIntoProposalId: 'proposal-1', runs: [],
+    }]);
+    render(<ThemeProvider><ImprovementCenter canAdmin onClose={vi.fn()} /></ThemeProvider>);
+
+    expect(await screen.findByText('Agrupada con otra idea')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Votar por Otra instrucción clara' }).hasAttribute('disabled')).toBe(true);
   });
 });
