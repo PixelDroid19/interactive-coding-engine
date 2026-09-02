@@ -10,6 +10,24 @@ const require = createRequire(import.meta.url);
 const TYPE_SCRIPT_LIBS_ID = 'virtual:typescript-libraries';
 const RESOLVED_TYPE_SCRIPT_LIBS_ID = `\0${TYPE_SCRIPT_LIBS_ID}`;
 
+export function normalizeBuildSha(value: string | undefined): string {
+  const candidate = value?.trim().toLowerCase() ?? '';
+  return /^[a-f0-9]{40}$/.test(candidate) ? candidate : 'local';
+}
+
+export function buildIdentityPlugin(buildSha: string) {
+  const safeBuildSha = normalizeBuildSha(buildSha);
+  return {
+    name: 'devt-build-identity',
+    transformIndexHtml(html: string) {
+      return html.replace(
+        /(<meta\s+charset=["'][^"']+["']\s*\/>)/i,
+        `$1\n    <meta name="devt-build-sha" content="${safeBuildSha}" />`,
+      );
+    },
+  };
+}
+
 function typeScriptLibrariesPlugin() {
   return {
     name: 'aula-typescript-libraries',
@@ -36,8 +54,9 @@ function typeScriptLibrariesPlugin() {
 export default defineConfig(({ mode }) => {
   const environment = loadEnv(mode, process.cwd(), 'VITE_');
   const learningApiTarget = (environment.VITE_LEARNING_API_URL || DEFAULT_LEARNING_API_URL).replace(/\/$/, '');
+  const buildSha = normalizeBuildSha(process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.GITHUB_SHA);
   return {
-    plugins: [typeScriptLibrariesPlugin(), react(), tailwindcss()],
+    plugins: [buildIdentityPlugin(buildSha), typeScriptLibrariesPlugin(), react(), tailwindcss()],
     css: {
       preprocessorOptions: {
         scss: {

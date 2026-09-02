@@ -1,0 +1,45 @@
+name: Production runtime
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-runtime-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-production-runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install isolated Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Verify exact production commit in a real browser
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: pnpm exec playwright test --config=playwright.production.config.ts
