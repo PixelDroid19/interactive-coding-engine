@@ -7,6 +7,7 @@ import { useTheme } from '../themes/ThemeProvider';
 import { StaffDashboard } from './StaffDashboard';
 import { LearnerSupportPanel } from './LearnerSupportPanel';
 import { ImprovementCenter } from './ImprovementCenter';
+import { PrivateImprovementAccessDialog } from './PrivateImprovementAccessDialog';
 
 const ROLE_LABEL: Record<UserRole, string> = {
   student: 'Estudiante',
@@ -31,6 +32,8 @@ export function AccountMenu() {
   const [staffOpen, setStaffOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [improvementsOpen, setImprovementsOpen] = useState(false);
+  const [privateAccessOpen, setPrivateAccessOpen] = useState(false);
+  const [privateAccessGranted, setPrivateAccessGranted] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const staffIdentityRef = useRef<string | null>(null);
 
@@ -78,9 +81,9 @@ export function AccountMenu() {
   const providers = 'providers' in session ? session.providers : [];
   const signedInSession = session.authenticated ? session : null;
   const noProviders = !authenticated && providers.length === 0;
-  const canOpenMenu = !noProviders || import.meta.env.DEV;
+  const canOpenMenu = true;
   const displayName = signedInSession ? signedInSession.user.displayName || signedInSession.user.email.split('@')[0]! : '';
-  const triggerLabel = authenticated ? `Cuenta de ${displayName}` : noProviders ? 'Sesión local' : 'Entrar';
+  const triggerLabel = authenticated ? `Cuenta de ${displayName}` : noProviders ? 'Acceso privado' : 'Entrar';
   const isStaff = Boolean(staffIdentity);
   const isAdmin = Boolean(signedInSession?.user.roles.includes('admin'));
 
@@ -91,9 +94,7 @@ export function AccountMenu() {
         className={`account-trigger${authenticated ? ' is-authenticated' : ''}`}
         data-augmented-ui={isCyber ? "hud-account-btn tl-clip br-clip border inlay" : undefined}
         aria-label={triggerLabel}
-        aria-expanded={noProviders ? undefined : open}
-        disabled={noProviders}
-        title={noProviders ? 'El acceso se habilitará cuando exista un proveedor OIDC configurado.' : undefined}
+        aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
         {authenticated && <span className="account-monogram" aria-hidden="true">{initials(displayName)}</span>}
@@ -150,6 +151,9 @@ export function AccountMenu() {
                   </button>
                 ))}
               </div>
+              <button type="button" className="account-menu__action account-menu__action--primary" onClick={() => { setOpen(false); setPrivateAccessOpen(true); }}>
+                Acceso privado a mejoras
+              </button>
             </>
           )}
 
@@ -204,7 +208,15 @@ export function AccountMenu() {
       )}
       {staffOpen && staffIdentity && createPortal(<StaffDashboard canAdmin={isAdmin} staffIdentity={staffIdentity} onClose={() => setStaffOpen(false)} />, document.body)}
       {supportOpen && signedInSession && createPortal(<LearnerSupportPanel userId={signedInSession.user.id} onClose={() => setSupportOpen(false)} />, document.body)}
-      {improvementsOpen && signedInSession && createPortal(<ImprovementCenter canAdmin={isAdmin} onClose={() => setImprovementsOpen(false)} />, document.body)}
+      {privateAccessOpen && createPortal(<PrivateImprovementAccessDialog
+        onClose={() => setPrivateAccessOpen(false)}
+        onUnlocked={() => {
+          setPrivateAccessGranted(true);
+          setPrivateAccessOpen(false);
+          setImprovementsOpen(true);
+        }}
+      />, document.body)}
+      {improvementsOpen && (signedInSession || privateAccessGranted) && createPortal(<ImprovementCenter canAdmin={isAdmin} onClose={() => setImprovementsOpen(false)} />, document.body)}
     </div>
   );
 }
