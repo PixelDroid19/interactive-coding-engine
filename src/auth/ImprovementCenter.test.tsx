@@ -81,7 +81,10 @@ describe('centro de mejoras', () => {
 
   it('explica el flujo autónomo: implementa, valida, despliega y revierte automáticamente', async () => {
     render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
-    expect(await screen.findByText(/Muse lo implementa, valida, despliega y revierte automáticamente si falla\./)).toBeTruthy();
+    const desc = await screen.findByText(/Muse lo implementa, valida, despliega y revierte automáticamente si falla\./);
+    expect(desc).toBeTruthy();
+    expect(desc.getAttribute('id')).toBe('improvement-flow-description');
+    expect(screen.getByRole('dialog', { name: 'Mejorar la plataforma' }).getAttribute('aria-describedby')).toBe('improvement-flow-description');
     expect(screen.queryByText(/borrador revisable/)).toBeNull();
     expect(screen.queryByText(/Borrador listo para revisar/)).toBeNull();
     expect(screen.queryByText('Construir borrador con Muse')).toBeNull();
