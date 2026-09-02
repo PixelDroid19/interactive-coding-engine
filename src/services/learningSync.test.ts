@@ -47,7 +47,8 @@ describe('learning sync', () => {
 
   it('sigue sincronizando en memoria si Storage está temporalmente bloqueado', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
-    vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new DOMException('quota', 'QuotaExceededError'); });
+    const blockedStorage = vi.spyOn(localStorage, 'setItem')
+      .mockImplementation(() => { throw new DOMException('quota', 'QuotaExceededError'); });
     const sync = await import('./learningSync');
     const healthEvents: unknown[] = [];
     const onHealth = (event: Event) => healthEvents.push((event as CustomEvent).detail);
@@ -69,6 +70,7 @@ describe('learning sync', () => {
       expect(fetchMock).toHaveBeenCalledOnce();
     } finally {
       window.removeEventListener('aula-learning-sync', onHealth);
+      blockedStorage.mockRestore();
     }
   });
 
