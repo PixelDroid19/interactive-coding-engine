@@ -171,4 +171,38 @@ describe('ChallengeDrawer', () => {
     // La resolución detallada solo aparece tras clicar Ver cómo se resuelve, no en markup inicial
     expect(markup).not.toContain('Volver a intentarlo');
   });
+
+  it('anuncia el resultado del reto de forma accesible sin interrumpir', () => {
+    const challenge = makeChallenge();
+    const failing = {
+      allPassed: false,
+      passedCount: 0,
+      totalCount: 1,
+      tests: [{ id: 't1', description: 'test', passed: false, errorMessage: 'Falta', hint: 'pista' }],
+      feedbackMessage: 'Sigue intentando',
+    };
+    const passing = {
+      allPassed: true,
+      passedCount: 1,
+      totalCount: 1,
+      tests: [{ id: 't1', description: 'test', passed: true }],
+      feedbackMessage: '¡Bien hecho!',
+    };
+    const markupFail = renderToStaticMarkup(
+      <ChallengeDrawer challenge={challenge as any} validationResult={failing as any} onValidate={() => {}} onReset={() => {}} onContinue={() => {}} isOpen={true} />
+    );
+    expect(markupFail).toContain('role="status"');
+    expect(markupFail).toContain('aria-live="polite"');
+    expect(markupFail).toContain('aria-atomic="true"');
+    const markupPass = renderToStaticMarkup(
+      <ChallengeDrawer challenge={challenge as any} validationResult={passing as any} onValidate={() => {}} onReset={() => {}} onContinue={() => {}} isOpen={true} />
+    );
+    expect(markupPass).toContain('role="status"');
+    expect(markupPass).toContain('aria-live="polite"');
+    expect(markupPass).toContain('aria-atomic="true"');
+    const markupNone = renderToStaticMarkup(
+      <ChallengeDrawer challenge={challenge as any} validationResult={null} onValidate={() => {}} onReset={() => {}} onContinue={() => {}} isOpen={true} />
+    );
+    expect(markupNone).not.toContain('role="status"');
+  });
 });
