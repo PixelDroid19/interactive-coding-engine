@@ -11,7 +11,7 @@ describe('validación de mejoras comunitarias', () => {
     expect(workflow).not.toContain('secrets.');
     expect(workflow).toContain('pnpm install --frozen-lockfile');
     expect(workflow).toContain('pnpm lint');
-    expect(workflow).toContain('pnpm test');
+    expect(workflow).toContain('pnpm exec vitest run --no-file-parallelism');
     expect(workflow).toContain('pnpm build');
     expect(workflow).toContain('validate-community-change:');
   });

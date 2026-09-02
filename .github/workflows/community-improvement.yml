@@ -40,7 +40,9 @@ jobs:
         run: pnpm lint
 
       - name: Test all courses and runtimes
-        run: pnpm test
+        # Algunos tests reemplazan Storage/localStorage de forma temporal. La
+        # ejecución por archivo evita que un worker contamine a otro en CI.
+        run: pnpm exec vitest run --no-file-parallelism
 
       - name: Production build
         run: pnpm build
