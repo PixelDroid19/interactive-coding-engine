@@ -18,12 +18,13 @@ describe('cabeceras de producción en Vercel', () => {
     expect(headers['content-security-policy']).not.toContain('script-src');
   });
 
-  it('sirve index.html al abrir directamente cualquier ruta de la SPA', async () => {
+  it('sirve index.html en rutas SPA sin convertir assets ausentes en HTML inmutable', async () => {
     const config = JSON.parse(await readFile(new URL('../../vercel.json', import.meta.url), 'utf8')) as {
       rewrites?: Array<{ source: string; destination: string }>;
     };
 
-    expect(config.rewrites).toContainEqual({ source: '/(.*)', destination: '/index.html' });
+    expect(config.rewrites).toContainEqual({ source: '/((?!assets/).*)', destination: '/index.html' });
+    expect(config.rewrites).not.toContainEqual({ source: '/(.*)', destination: '/index.html' });
   });
 
   it('no conserva HTML de rutas SPA entre despliegues y mantiene inmutables los assets versionados', async () => {
