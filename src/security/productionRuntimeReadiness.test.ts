@@ -1,0 +1,25 @@
+import { describe, expect, it, vi } from 'vitest';
+import { waitForStableDeployment } from '../../e2e/production/deploymentReadiness';
+
+describe('barrera de despliegue de produccion', () => {
+  it('no acepta el SHA nuevo hasta que su aplicacion tambien monta React', async () => {
+    const probe = vi.fn()
+      .mockResolvedValueOnce({ status: 200, deployedSha: 'a'.repeat(40), reactMounted: false })
+      .mockResolvedValueOnce({ status: 200, deployedSha: 'a'.repeat(40), reactMounted: true });
+    const sleep = vi.fn().mockResolvedValue(undefined);
+
+    await expect(waitForStableDeployment({
+      expectedCommit: 'a'.repeat(40),
+      probe,
+      sleep,
+      timeoutMs: 1_000,
+      now: (() => {
+        let value = 0;
+        return () => value += 10;
+      })(),
+    })).resolves.toEqual({ status: 200, deployedSha: 'a'.repeat(40), reactMounted: true });
+
+    expect(probe).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledTimes(1);
+  });
+});
