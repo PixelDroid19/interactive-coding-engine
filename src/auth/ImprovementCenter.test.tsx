@@ -38,7 +38,7 @@ describe('centro de mejoras', () => {
     }]);
     api.queue.mockResolvedValue({ id: 'run-1', status: 'queued' });
     render(<ThemeProvider><ImprovementCenter canAdmin onClose={vi.fn()} /></ThemeProvider>);
-    fireEvent.click(await screen.findByRole('button', { name: 'Implementar automáticamente con Muse' }));
+    fireEvent.click(await screen.findByRole('button', { name: /Implementar automáticamente con Muse/ }));
     await waitFor(() => expect(api.queue).toHaveBeenCalledWith('proposal-1'));
   });
 
