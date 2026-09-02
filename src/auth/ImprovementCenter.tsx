@@ -85,7 +85,7 @@ export function ImprovementCenter({ canAdmin, onClose }: { canAdmin: boolean; on
       {error && <p className="improvement-center__error" role="alert">{error}</p>}
       <div className="improvement-center__grid">
         <form className="improvement-compose" onSubmit={(event) => void create(event)}>
-          <div className="improvement-compose__title"><Lightbulb size={20} /><div><h3>Propón una mejora</h3><p>Describe un problema concreto y el resultado que esperas.</p></div></div>
+          <div className="improvement-compose__title"><Lightbulb size={20} /><div><h3>Propón una mejora</h3><p>Cuenta el problema y el resultado que esperas.</p></div></div>
           <UiField label="Título corto"><input value={title} onChange={(event) => setTitle(event.target.value)} minLength={5} maxLength={120} required /></UiField>
           <UiField label="Área"><select value={targetArea} onChange={(event) => setTargetArea(event.target.value as ImprovementTarget)}>{Object.entries(TARGET_LABEL).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></UiField>
           <UiField label="Qué debería mejorar"><textarea value={description} onChange={(event) => setDescription(event.target.value)} minLength={20} maxLength={2000} required placeholder="Ejemplo: en esta práctica no queda claro qué resultado debo obtener…" /></UiField>
