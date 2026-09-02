@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEmptyLearningProfile, recordEvidence } from '../learning/mastery';
 
 beforeEach(() => {
+  vi.restoreAllMocks();
   localStorage.clear();
   vi.resetModules();
-  vi.restoreAllMocks();
   vi.useFakeTimers();
 });
 
