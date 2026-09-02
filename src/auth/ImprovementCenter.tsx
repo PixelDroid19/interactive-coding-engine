@@ -83,7 +83,12 @@ export function ImprovementCenter({ canAdmin, onClose }: { canAdmin: boolean; on
         <UiButton variant="icon" data-dialog-initial-focus onClick={onClose} aria-label="Cerrar"><X size={20} /></UiButton>
       </header>
       {error && <p className="improvement-center__error" role="alert">{error}</p>}
-      <div className="improvement-center__grid">
+      <div
+        className="improvement-center__grid"
+        role="region"
+        aria-label="Contenido del centro de mejoras"
+        tabIndex={0}
+      >
         <form className="improvement-compose" onSubmit={(event) => void create(event)}>
           <div className="improvement-compose__title"><Lightbulb size={20} /><div><h3>Propón una mejora</h3><p>Cuenta el problema y el resultado que esperas.</p></div></div>
           <UiField label="Título corto"><input value={title} onChange={(event) => setTitle(event.target.value)} minLength={5} maxLength={120} required /></UiField>

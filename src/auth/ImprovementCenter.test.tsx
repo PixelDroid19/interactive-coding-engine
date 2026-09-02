@@ -66,6 +66,25 @@ describe('centro de mejoras', () => {
     expect(screen.queryByText('1 propuestas visibles')).toBeNull();
   });
 
+  it('mantiene las propuestas largas dentro de una región desplazable del diálogo', async () => {
+    api.list.mockResolvedValue(Array.from({ length: 8 }, (_, index) => ({
+      id: `proposal-${index + 1}`,
+      title: `Mejora visible ${index + 1}`,
+      description: 'Una descripción suficientemente larga para representar una propuesta real de la comunidad.',
+      targetArea: 'interface',
+      status: 'open',
+      votes: index,
+      votedByMe: false,
+      runs: [],
+    })));
+
+    render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
+
+    const scrollRegion = await screen.findByRole('region', { name: 'Contenido del centro de mejoras' });
+    expect(scrollRegion.getAttribute('tabindex')).toBe('0');
+    expect(scrollRegion.contains(screen.getByText('Mejora visible 8'))).toBe(true);
+  });
+
   it('enlaza el PR real y muestra el resultado de CI al administrador', async () => {
     api.listAdmin.mockResolvedValue([{
       id: 'proposal-1', title: 'Corregir el playground', description: 'Una descripción extensa para la mejora.',
