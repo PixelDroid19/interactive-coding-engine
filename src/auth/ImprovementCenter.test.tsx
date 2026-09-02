@@ -38,6 +38,21 @@ describe('centro de mejoras', () => {
     await waitFor(() => expect(api.queue).toHaveBeenCalledWith('proposal-1'));
   });
 
+  it('muestra el contador con texto accesible "propuestas visibles" y singular correcto', async () => {
+    api.list.mockResolvedValue([]);
+    const { unmount } = render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
+    expect(await screen.findByText('0 propuestas visibles')).toBeTruthy();
+    unmount();
+
+    api.list.mockResolvedValue([{
+      id: 'proposal-1', title: 'Aclarar la práctica', description: 'Una descripción extensa para la mejora.',
+      targetArea: 'practice', status: 'open', votes: 1, votesByMe: false, votedByMe: false, runs: [],
+    }]);
+    render(<ThemeProvider><ImprovementCenter canAdmin={false} onClose={vi.fn()} /></ThemeProvider>);
+    expect(await screen.findByText('1 propuesta visible')).toBeTruthy();
+    expect(screen.queryByText('1 propuestas visibles')).toBeNull();
+  });
+
   it('enlaza el PR real y muestra el resultado de CI al administrador', async () => {
     api.listAdmin.mockResolvedValue([{
       id: 'proposal-1', title: 'Corregir el playground', description: 'Una descripción extensa para la mejora.',

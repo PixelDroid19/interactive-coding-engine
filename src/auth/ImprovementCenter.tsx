@@ -97,7 +97,7 @@ export function ImprovementCenter({ canAdmin, onClose }: { canAdmin: boolean; on
           <UiButton variant="primary" type="submit" disabled={busy === 'create' || title.trim().length < 5 || description.trim().length < 20}>{busy === 'create' ? 'Enviando…' : 'Enviar propuesta'}</UiButton>
         </form>
         <section className="improvement-list" aria-label="Propuestas de la comunidad">
-          <header><h3>Propuestas</h3><small>{items.length} visibles</small></header>
+          <header><h3>Propuestas</h3><small>{items.length === 1 ? '1 propuesta visible' : `${items.length} propuestas visibles`}</small></header>
           {items.map((item) => {
             const adminItem = item as AdminImprovementProposal;
             const latestRun = Array.isArray(adminItem.runs) ? adminItem.runs[0] : undefined;
