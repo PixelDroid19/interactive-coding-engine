@@ -13,7 +13,6 @@ if (!EXPECTED_COMMIT || !/^[a-f0-9]{40}$/.test(EXPECTED_COMMIT)) {
 async function waitForExactDeployment(page: Page): Promise<void> {
   const deadline = Date.now() + 12 * 60_000;
   let deployedSha: string | null = null;
-  await page.context().setExtraHTTPHeaders({ 'cache-control': 'no-cache' });
   while (Date.now() < deadline) {
     const response = await page.goto(`/?deployment=${Date.now()}`, { waitUntil: 'domcontentloaded' });
     if (response?.status() === 200) {
