@@ -334,7 +334,7 @@ describe('RoadmapHome', () => {
               hints: [],
               tests: [],
               estimatedMinutes: 5,
-            } as Course['modules'][number]['items'][number],
+            } as unknown as Course['modules'][number]['items'][number],
           ],
         },
       ],
