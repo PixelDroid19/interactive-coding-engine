@@ -298,4 +298,59 @@ describe('RoadmapHome', () => {
 
     expect(screen.queryByLabelText('3 repasos pendientes')).toBeNull();
   });
+
+  it('aclara el contador de lecciones y prácticas con singular y plural en español', () => {
+    auth.useAuthSession.mockReturnValue(anonymousAuth);
+    renderRoadmap();
+    expect(screen.getByText(/lecciones · .*prácticas/)).toBeTruthy();
+    expect(screen.queryByText('1 lección')).toBeNull();
+    cleanup();
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const singleCourse: Course = {
+      ...FUNDAMENTOS_COURSE,
+      id: 'single-course',
+      title: 'Curso singular',
+      modules: [
+        {
+          id: 'm1',
+          title: 'Módulo 1',
+          items: [
+            { id: 'single-1', title: 'Única', type: 'scrim', scrimDataId: 'fundamentos-01', estimatedMinutes: 5 } as Course['modules'][number]['items'][number],
+            {
+              id: 'single-debug',
+              title: 'Debug único',
+              type: 'debugging',
+              executionMode: 'logic',
+              templateId: 'js-only',
+              initialWorkspace: { files: {}, entryFile: 'app.js' },
+              expectedBehavior: '',
+              observedBehavior: '',
+              hints: [],
+              tests: [],
+              estimatedMinutes: 5,
+            } as Course['modules'][number]['items'][number],
+          ],
+        },
+      ],
+    };
+    render(
+      <RoadmapHome
+        course={singleCourse}
+        progress={progress}
+        learningProfile={createEmptyLearningProfile(0)}
+        scrims={FUNDAMENTOS_SCRIMS}
+        onEnterLesson={vi.fn()}
+        onPlayground={vi.fn()}
+        onBackToCourses={vi.fn()}
+        onLearningProfileChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('1 lección · 1 práctica')).toBeTruthy();
+  });
 });

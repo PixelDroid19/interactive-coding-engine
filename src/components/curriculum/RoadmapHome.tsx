@@ -308,7 +308,8 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
             <div className="rm-hero-meta">
               <span className="rm-pill">{course.tags[1] || course.tags[0] || 'Curso'}</span>
               <span className="rm-time">
-                {lessonCount} lecciones · {practiceCount} prácticas
+                {lessonCount} {lessonCount === 1 ? 'lección' : 'lecciones'} · {practiceCount}{' '}
+                {practiceCount === 1 ? 'práctica' : 'prácticas'}
               </span>
             </div>
             <h1>{course.title}</h1>
