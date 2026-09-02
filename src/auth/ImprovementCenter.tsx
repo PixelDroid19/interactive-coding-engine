@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ArrowBigUp, Bot, Lightbulb, X } from 'lucide-react';
+import { ArrowBigUp, Bot, GitPullRequest, Lightbulb, X } from 'lucide-react';
 import { UiButton } from '../components/ui/UiButton';
 import { UiField } from '../components/ui/UiField';
 import { UiSurface } from '../components/ui/UiSurface';
@@ -13,6 +13,14 @@ import {
 const TARGET_LABEL: Record<ImprovementTarget, string> = {
   practice: 'Prácticas', lesson: 'Lecciones', playground: 'Playground', accessibility: 'Accesibilidad', interface: 'Interfaz',
 };
+
+function safePullRequestUrl(value: string | null | undefined): string | null {
+  if (!value || !URL.canParse(value)) return null;
+  const url = new URL(value);
+  return url.protocol === 'https:' && url.hostname === 'github.com'
+    && /^\/PixelDroid19\/interactive-coding-engine\/pull\/[1-9][0-9]*$/.test(url.pathname)
+    && !url.search && !url.hash ? url.href : null;
+}
 
 export function ImprovementCenter({ canAdmin, onClose }: { canAdmin: boolean; onClose(): void }) {
   const [items, setItems] = useState<readonly (ImprovementProposal | AdminImprovementProposal)[]>([]);
@@ -78,6 +86,7 @@ export function ImprovementCenter({ canAdmin, onClose }: { canAdmin: boolean; on
           {items.map((item) => {
             const adminItem = item as AdminImprovementProposal;
             const latestRun = Array.isArray(adminItem.runs) ? adminItem.runs[0] : undefined;
+            const pullRequestUrl = safePullRequestUrl(latestRun?.pullRequestUrl);
             return <UiSurface as="article" className="improvement-card" key={item.id}>
               <div className="improvement-card__meta"><span>{TARGET_LABEL[item.targetArea]}</span><small>{item.status}</small></div>
               <h4>{item.title}</h4><p>{item.description}</p>
@@ -85,7 +94,14 @@ export function ImprovementCenter({ canAdmin, onClose }: { canAdmin: boolean; on
                 <UiButton variant={item.votedByMe ? 'primary' : 'secondary'} disabled={Boolean(busy) || canAdmin} onClick={() => void vote(item)} aria-label={`${item.votedByMe ? 'Quitar voto de' : 'Votar por'} ${item.title}`}><ArrowBigUp size={16} /> {item.votes}</UiButton>
                 {canAdmin && item.status === 'open' && <UiButton variant="primary" disabled={Boolean(busy)} onClick={() => void queue(item)}><Bot size={17} /> Construir borrador con Muse</UiButton>}
               </footer>
-              {latestRun && <div className="improvement-run"><strong>{latestRun.status === 'succeeded' ? 'Borrador listo para revisar' : `Muse: ${latestRun.status}`}</strong>{latestRun.summary && <p>{latestRun.summary}</p>}{latestRun.changedFiles?.length > 0 && <ul>{latestRun.changedFiles.map((file) => <li key={file.path}>{file.path} <small>+{file.added} −{file.deleted}</small></li>)}</ul>}</div>}
+              {latestRun && <div className="improvement-run">
+                <strong>{latestRun.status === 'succeeded' ? 'Borrador listo para revisar' : `Muse: ${latestRun.status}`}</strong>
+                {latestRun.validation?.ci === 'passed' && <span className="improvement-run__ci improvement-run__ci--passed">CI aprobada</span>}
+                {latestRun.validation?.ci === 'failed' && <span className="improvement-run__ci improvement-run__ci--failed">CI fallida</span>}
+                {latestRun.summary && <p>{latestRun.summary}</p>}
+                {pullRequestUrl && latestRun.pullRequestNumber && <a className="improvement-run__pr" href={pullRequestUrl} target="_blank" rel="noopener noreferrer"><GitPullRequest size={15} /> Revisar PR #{latestRun.pullRequestNumber}</a>}
+                {latestRun.changedFiles?.length > 0 && <ul>{latestRun.changedFiles.map((file) => <li key={file.path}>{file.path} <small>+{file.added} −{file.deleted}</small></li>)}</ul>}
+              </div>}
             </UiSurface>;
           })}
           {items.length === 0 && !error && <p className="improvement-list__empty">Todavía no hay propuestas. Puedes abrir la primera.</p>}

@@ -37,4 +37,25 @@ describe('centro de mejoras', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Construir borrador con Muse' }));
     await waitFor(() => expect(api.queue).toHaveBeenCalledWith('proposal-1'));
   });
+
+  it('enlaza el PR real y muestra el resultado de CI al administrador', async () => {
+    api.listAdmin.mockResolvedValue([{
+      id: 'proposal-1', title: 'Corregir el playground', description: 'Una descripción extensa para la mejora.',
+      targetArea: 'playground', status: 'preview', votes: 4, runs: [{
+        id: 'run-1', status: 'succeeded', model: 'opencode/muse-spark-1.2-contributor-free',
+        changedFiles: [{ path: 'src/components/playground/PlaygroundView.tsx', added: 3, deleted: 1 }],
+        validation: { policy: 'passed', ci: 'passed' },
+        branchName: 'community/4da358c1-corregir-el-playground', commitSha: 'a'.repeat(40),
+        pullRequestNumber: 73,
+        pullRequestUrl: 'https://github.com/PixelDroid19/interactive-coding-engine/pull/73',
+      }],
+    }]);
+
+    render(<ThemeProvider><ImprovementCenter canAdmin onClose={vi.fn()} /></ThemeProvider>);
+
+    const link = await screen.findByRole('link', { name: 'Revisar PR #73' });
+    expect(link.getAttribute('href')).toBe('https://github.com/PixelDroid19/interactive-coding-engine/pull/73');
+    expect(link.getAttribute('rel')).toContain('noreferrer');
+    expect(screen.getByText('CI aprobada')).toBeTruthy();
+  });
 });

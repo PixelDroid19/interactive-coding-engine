@@ -69,6 +69,11 @@
 .improvement-run p { margin: 4px 0; }
 .improvement-run ul { margin: 8px 0 0; padding-left: 18px; font-family: monospace; font-size: 11px; }
 .improvement-run li small { color: var(--ui-muted, #625f58); }
+.improvement-run__ci { display: inline-block; margin-left: 9px; border: 1px solid currentColor; padding: 2px 6px; font: 800 10px 'Space Grotesk', sans-serif; text-transform: uppercase; }
+.improvement-run__ci--passed { color: #087f5b; }
+.improvement-run__ci--failed { color: #be123c; }
+.improvement-run__pr { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--ui-text, #111318); font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
+.improvement-run__pr:hover { color: var(--ui-accent-text, #756100); }
 .improvement-center__error { margin: 18px 28px 0; border-left: 4px solid #be123c; padding: 8px 12px; background: rgb(190 18 60 / 10%); color: #be123c; }
 .improvement-list__empty { border: 1px dashed var(--ui-border-muted, #b9b3a8); padding: 30px; color: var(--ui-muted, #625f58); text-align: center; }
 

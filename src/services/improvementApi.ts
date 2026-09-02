@@ -21,6 +21,10 @@ export type ImprovementRun = Readonly<{
   diffText?: string | null;
   summary?: string | null;
   errorCode?: string | null;
+  branchName?: string | null;
+  commitSha?: string | null;
+  pullRequestNumber?: number | null;
+  pullRequestUrl?: string | null;
 }>;
 export type AdminImprovementProposal = ImprovementProposal & Readonly<{ runs: readonly ImprovementRun[] }>;
 
