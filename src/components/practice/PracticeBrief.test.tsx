@@ -26,6 +26,12 @@ describe('PracticeBrief', () => {
 });
 
 describe('splitPracticeCopy', () => {
+  it('no inserta espacios dentro de propiedades, rutas, versiones ni números decimales', () => {
+    const copy = splitPracticeCopy('Edita app.js y conserva profile.name al mostrar el resultado con Lit 3.3.3 y el precio 12.50 de la ficha del producto seleccionado por la persona. Comprueba otra entrada antes de terminar.');
+    expect(copy.action).toBe('Edita app.js y conserva profile.name al mostrar el resultado con Lit 3.3.3 y el precio 12.50 de la ficha del producto seleccionado por la persona.');
+    expect(copy.context).toBe('Comprueba otra entrada antes de terminar.');
+  });
+
   it('separa el contrato largo sin cortar ni perder informacion', () => {
     expect(splitPracticeCopy(
       'Construye el núcleo del tutor con una regla determinista. Recibe un texto, recorta espacios y devuelve una respuesta distinta para vacío, pregunta y mensaje normal. La entrega debe funcionar con datos diferentes.',

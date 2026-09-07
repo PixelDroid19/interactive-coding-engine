@@ -8,9 +8,10 @@ interface ReviewQueueProps {
   profile: LearningProfile;
   onRate: (reviewId: string, rating: ReviewRating) => Promise<void>;
   onReviewReinforcement: (reinforcementId: string) => Promise<void>;
+  onOpenGuidedPractice?: () => void;
 }
 
-export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onRate, onReviewReinforcement }) => {
+export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onRate, onReviewReinforcement, onOpenGuidedPractice }) => {
   const due = useMemo(
     () => profile.reviews.filter((review) => review.courseId === courseId && review.dueAt <= Date.now()).sort((a, b) => a.dueAt - b.dueAt),
     [courseId, profile.reviews],
@@ -65,6 +66,7 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
       <span>REPASO PROGRAMADO</span>
       <h3>Practica recordar, no volver a leer</h3>
       <p>La plataforma programa estas preguntas a partir de lo que ya trabajaste. Responde sin abrir la lección; después comparas y registras cuánto recordaste.</p>
+      {onOpenGuidedPractice && <UiButton variant="secondary" onClick={onOpenGuidedPractice}>Prefiero practicar con código, paso a paso</UiButton>}
     </header>
   );
 
@@ -151,9 +153,9 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
         <textarea value={answer} onChange={(event) => setAnswer(event.target.value)} rows={5} placeholder="Explícalo con tus palabras y un ejemplo propio…" />
       </label>
       {!compare ? (
-        <UiButton variant="primary" onClick={() => setCompare(true)} disabled={answer.trim().length < 18}>
+        <div className="guided-actions"><UiButton variant="primary" onClick={() => setCompare(true)} disabled={!answer.trim()}>
           Comparar mi respuesta
-        </UiButton>
+        </UiButton><UiButton variant="quiet" disabled={saving} onClick={() => void rate('again')}>No lo recuerdo todavía</UiButton></div>
       ) : (
         <div className="review-self-check">
           <strong>Comprueba antes de calificarte</strong>
@@ -176,13 +178,9 @@ export const ReviewQueue: React.FC<ReviewQueueProps> = ({ courseId, profile, onR
               Puedo enseñarlo
             </UiButton>
           </div>
-          {ratingError && (
-            <p className="learning-notebook__error" role="alert">
-              {ratingError}
-            </p>
-          )}
         </div>
       )}
+      {ratingError && <p className="learning-notebook__error" role="alert">{ratingError}</p>}
     </section>
   );
 };

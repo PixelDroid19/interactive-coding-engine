@@ -30,6 +30,14 @@ describe('ReasoningPracticeView', () => {
   beforeEach(() => localStorage.clear());
   afterEach(cleanup);
 
+  it.each([true, false])('conserva el contexto visible del problema con pistas=%s', (withHints) => {
+    render(<ReasoningPracticeView item={{ ...item,
+      activity: { ...item.activity, prompt: 'Cada paso recibe los datos del anterior. Ordena la entrada, el proceso y la salida.' },
+      hints: withHints ? item.hints : [],
+    }} onBack={() => {}} />);
+    expect(screen.getByText('Cada paso recibe los datos del anterior.').closest('details')).toBeNull();
+  });
+
   it('exige construir y explicar el modelo antes de habilitar Siguiente', async () => {
     const onNext = vi.fn();
     const onCompleted = vi.fn();
@@ -49,7 +57,7 @@ describe('ReasoningPracticeView', () => {
     const reflections = screen.getAllByRole('textbox');
     fireEvent.change(reflections[0], { target: { value: 'Primero entra el nombre, después se forma el saludo y finalmente se muestra la salida.' } });
     fireEvent.change(reflections[1], { target: { value: 'Probaría con un nombre vacío y con Ada para conservar el caso anterior.' } });
-    fireEvent.click(screen.getByRole('button', { name: /Registrar comprensión/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Registrar y continuar/ }));
     await waitFor(() => expect((screen.getByRole('button', { name: /Siguiente/ }) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/ }));
     expect(onNext).toHaveBeenCalledOnce();

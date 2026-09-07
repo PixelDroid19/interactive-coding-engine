@@ -14,7 +14,7 @@ import { assessSpanishGeneration } from './localOutputQuality';
 import { buildTutorModelCatalog, curateTutorModelCatalog } from './localModelCatalog';
 
 interface StreamChunk {
-  choices: Array<{ delta: { content?: string | null } }>;
+  choices: Array<{ delta: { content?: string | null }; finish_reason?: LocalGenerationResult['finishReason'] | null }>;
 }
 
 export interface WebLlmEngineLike {
@@ -139,6 +139,7 @@ export class LocalGenerationService {
   private enginePromise: Promise<WebLlmEngineLike> | null = null;
   private activeModel: string | null = null;
   private loadingModel: string | null = null;
+  private engineEpoch = 0;
 
   constructor(private readonly dependencies: Partial<LocalGenerationDependencies> = {}) {}
 
@@ -213,6 +214,11 @@ export class LocalGenerationService {
     options.onProgress?.({ status: 'inference', label: 'Generando con WebLLM en la GPU de este dispositivo…' });
     const startedAt = performance.now();
     const responseFormat = responseFormatFor(request);
+    const isQwen3 = model.startsWith('Qwen3-');
+    const enableThinking = request.enableThinking ?? (responseFormat ? false : undefined);
+    // Direct tutor answers must pass protocol validation before becoming visible.
+    const deferChunks = isQwen3 && request.enableThinking === false;
+    let finishReason: LocalGenerationResult['finishReason'];
 
     const generate = async () => {
       const stream = await engine.chat.completions.create({
@@ -222,24 +228,34 @@ export class LocalGenerationService {
         max_tokens: Math.max(16, Math.min(1_536, request.maxNewTokens)),
         stream: true,
         ...(responseFormat ? { response_format: responseFormat } : {}),
+        ...(isQwen3 && enableThinking !== undefined ? { extra_body: { enable_thinking: enableThinking } } : {}),
       });
       let text = '';
       for await (const chunk of stream) {
+        if (chunk.choices[0]?.finish_reason) finishReason = chunk.choices[0].finish_reason;
         const piece = chunk.choices[0]?.delta.content ?? '';
         if (!piece) continue;
         text += piece;
-        options.onChunk?.(piece);
+        if (!deferChunks) options.onChunk?.(piece);
       }
       return text.trim();
     };
 
     try {
-      const text = await withTimeoutAndAbort(
+      const rawText = await withTimeoutAndAbort(
         generate(),
         { ...options, timeoutMs: options.timeoutMs ?? 180_000 },
         'WebLLM tardó demasiado en generar la respuesta.',
         () => this.stopCurrentGeneration(false),
       );
+      // Qwen3 emits empty reasoning tags even with thinking disabled. Remove
+      // only that protocol prefix; nonempty reasoning must still fail JSON validation.
+      const text = isQwen3 && enableThinking === false
+        ? rawText.replace(/^\s*<think>\s*<\/think>\s*/u, '')
+        : rawText;
+      if (deferChunks && /^\s*<think>/u.test(text)) {
+        throw new Error('El modelo no produjo una respuesta final. No se mostrará su borrador interno; vuelve a intentarlo con una pregunta breve.');
+      }
       if (!text) throw new Error('El modelo WebGPU terminó sin producir texto.');
       let structuredWarning: string | undefined;
       if (request.expectedFormat === 'json_object') {
@@ -275,8 +291,10 @@ export class LocalGenerationService {
       }
       const qualityIssue = assessSpanishGeneration(text);
       if (qualityIssue?.severity === 'unsafe') throw new Error(qualityIssue.message);
+      if (deferChunks) options.onChunk?.(text);
       return {
         text,
+        ...(finishReason ? { finishReason } : {}),
         warning: qualityIssue?.message ?? structuredWarning,
         model,
         engine: LOCAL_GENERATION_ENGINE,
@@ -290,6 +308,7 @@ export class LocalGenerationService {
   }
 
   dispose() {
+    this.engineEpoch += 1;
     this.engine?.interruptGenerate();
     void this.engine?.unload();
     this.worker?.terminate();
@@ -305,9 +324,11 @@ export class LocalGenerationService {
   }
 
   private async ensureEngine(model: string, onProgress?: LocalGenerationOptions['onProgress']) {
+    const epoch = this.engineEpoch;
     if (this.engine && this.activeModel === model) return this.engine;
     if (this.enginePromise && this.loadingModel === model) return this.enginePromise;
     if (this.enginePromise) await this.enginePromise.catch(() => undefined);
+    if (epoch !== this.engineEpoch) throw new DOMException('La preparación fue cancelada.', 'AbortError');
     if (this.engine && this.activeModel !== model) {
       const previousEngine = this.engine;
       const previousWorker = this.worker;
@@ -317,25 +338,33 @@ export class LocalGenerationService {
       await previousEngine.unload();
       previousWorker?.terminate();
     }
+    if (epoch !== this.engineEpoch) throw new DOMException('La preparación fue cancelada.', 'AbortError');
     if (!this.enginePromise) {
       const dependencies = this.resolvedDependencies();
-      this.worker = dependencies.createWorker();
+      const worker = dependencies.createWorker();
+      this.worker = worker;
       this.loadingModel = model;
-      this.enginePromise = dependencies.createEngine(this.worker, model, (report) => {
+      this.enginePromise = dependencies.createEngine(worker, model, (report) => {
+        if (epoch !== this.engineEpoch) return;
         const progress = Number.isFinite(report.progress) ? Math.max(0, Math.min(1, report.progress)) : undefined;
         onProgress?.({
           status: progress !== undefined && progress < 1 ? 'download' : 'load',
-          label: report.text || (progress !== undefined ? `Preparando modelo WebGPU: ${Math.round(progress * 100)}%` : 'Preparando WebLLM…'),
+          label: progress !== undefined ? `Preparando modelo local: ${Math.round(progress * 100)}%` : 'Preparando modelo local…',
           progress,
         });
       }).then((engine) => {
+        if (epoch !== this.engineEpoch) {
+          void engine.unload().catch(() => undefined);
+          throw new DOMException('La preparación fue cancelada.', 'AbortError');
+        }
         this.engine = engine;
         this.enginePromise = null;
         this.activeModel = model;
         this.loadingModel = null;
         return engine;
       }).catch((error) => {
-        this.worker?.terminate();
+        if (epoch !== this.engineEpoch) throw error;
+        worker.terminate();
         this.worker = null;
         this.enginePromise = null;
         this.loadingModel = null;
@@ -348,6 +377,7 @@ export class LocalGenerationService {
   private stopCurrentGeneration(discardEngine: boolean) {
     this.engine?.interruptGenerate();
     if (!discardEngine) return;
+    this.engineEpoch += 1;
     this.worker?.terminate();
     this.worker = null;
     this.engine = null;

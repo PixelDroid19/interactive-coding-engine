@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { STARTER_TEMPLATES } from '../templates/starterTemplates';
 import { WorkspaceSnapshot } from '../types/scrim';
 import { buildPreviewDocument } from './previewDocument';
+import { Window } from 'happy-dom';
 
 function templateWorkspace(templateId: keyof typeof STARTER_TEMPLATES): WorkspaceSnapshot {
   const template = STARTER_TEMPLATES[templateId];
@@ -12,6 +13,40 @@ function templateWorkspace(templateId: keyof typeof STARTER_TEMPLATES): Workspac
 }
 
 describe('buildPreviewDocument', () => {
+  it('ejecuta un template con símbolo de moneda sin transformar su código', async () => {
+    const workspace: WorkspaceSnapshot = {
+      activeFilePath: 'app.js', files: {
+        'index.html': { name: 'index.html', path: 'index.html', language: 'html', content: '<!doctype html><html><head></head><body><output></output></body></html>' },
+        'app.js': { name: 'app.js', path: 'app.js', language: 'javascript', content: 'const total = 42; document.querySelector("output").textContent = `$${total}`;' },
+      },
+    };
+    const page = new Window();
+    try {
+      const parsed = new page.DOMParser().parseFromString(buildPreviewDocument(workspace), 'text/html');
+      page.document.body.innerHTML = '<output></output>';
+      page.eval(parsed.querySelector('script[type="text/javascript"]')!.textContent);
+      expect(page.document.querySelector('output')!.textContent).toBe('$42');
+    } finally { await page.happyDOM.close(); }
+  });
+
+  it.each(['$$', '$&', '$`', "$'"])('conserva el texto %s en estilos y JavaScript insertados', async value => {
+    const workspace: WorkspaceSnapshot = {
+      activeFilePath: 'app.js', files: {
+        'index.html': { name: 'index.html', path: 'index.html', language: 'html', content: '<!doctype html><html><head></head><body><output></output></body></html>' },
+        'app.js': { name: 'app.js', path: 'app.js', language: 'javascript', content: `document.querySelector('output').textContent = ${JSON.stringify(value)};` },
+        'style.css': { name: 'style.css', path: 'style.css', language: 'css', content: `output::before { content: ${JSON.stringify(value)}; }` },
+      },
+    };
+    const page = new Window();
+    try {
+      const parsed = new page.DOMParser().parseFromString(buildPreviewDocument(workspace), 'text/html');
+      expect(parsed.querySelector('style')!.sheet!.cssRules[0].cssText).toBe(`output::before { content: ${JSON.stringify(value)}; }`);
+      page.document.body.innerHTML = '<output></output>';
+      page.eval(parsed.querySelector('script[type="text/javascript"]')!.textContent);
+      expect(page.document.querySelector('output')!.textContent).toBe(value);
+    } finally { await page.happyDOM.close(); }
+  });
+
   it('incluye un puente de validación dentro del iframe aislado', () => {
     const document = buildPreviewDocument(templateWorkspace('vanilla-js'));
     expect(document).toContain("data.source !== 'aula-validator'");

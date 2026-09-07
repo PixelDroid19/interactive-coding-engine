@@ -75,6 +75,14 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
     () => Object.keys(project.initialWorkspace.files).length > 1,
   );
   const [compactPane, setCompactPane] = useState<'brief' | 'code' | 'output'>('code');
+  const validationContext = useRef({ files: workspace.files, checkedRequirements, project, language });
+  validationContext.current = { files: workspace.files, checkedRequirements, project, language };
+  const validationPending = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
 
   useEffect(() => {
     saveLanguageWorkspaceDraft(project.id, language, workspace);
@@ -103,7 +111,9 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
 
   const handleValidateProject = async () => {
     if (!project.tests?.length) return 'Este proyecto no publica comprobaciones automáticas.';
-    if (isEvaluating) return 'Ya hay una comprobación en curso.';
+    if (validationPending.current) return 'Ya hay una comprobación en curso.';
+    validationPending.current = true;
+    const submitted = validationContext.current;
     setIsEvaluating(true);
     try {
       const result = await runChallengeValidation({
@@ -114,6 +124,11 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
         tests: project.tests,
         hints: [],
       }, workspace);
+      const current = validationContext.current;
+      if (!mounted.current || current.files !== submitted.files || current.checkedRequirements !== submitted.checkedRequirements
+        || current.project !== submitted.project || current.language !== submitted.language) {
+        return 'El proyecto cambió durante la comprobación. Comprueba la versión actual.';
+      }
       setValidationResult(result);
       onAttempt?.(result.allPassed ? 'success' : result.passedCount > 0 ? 'partial' : 'failure', {
         score: result.totalCount > 0 ? Math.round((result.passedCount / result.totalCount) * 100) : 0,
@@ -127,7 +142,8 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
       }
       return `${result.passedCount} de ${result.totalCount} comprobaciones superadas. ${result.feedbackMessage}`;
     } finally {
-      setIsEvaluating(false);
+      validationPending.current = false;
+      if (mounted.current) setIsEvaluating(false);
     }
   };
 
@@ -240,12 +256,12 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
             <PracticeBrief
               action={<p className="whitespace-pre-line">{projectPracticeCopy.action}</p>}
+              context={projectPracticeCopy.context && <p>{projectPracticeCopy.context}</p>}
               expected={project.tests?.length
                 ? `Cumple los requisitos y supera las ${project.tests.length} comprobaciones.`
                 : 'Cumple todos los requisitos del proyecto.'}
-              help={(projectPracticeCopy.context || project.suggestedSteps?.length || project.starterNotes) ? (
+              help={(project.suggestedSteps?.length || project.starterNotes) ? (
                 <>
-                  {projectPracticeCopy.context && <p>{projectPracticeCopy.context}</p>}
                   {project.starterNotes && <p>{project.starterNotes}</p>}
                   {project.suggestedSteps && project.suggestedSteps.length > 0 && (
                     <ol>{project.suggestedSteps.map((step) => <li key={step}>{step}</li>)}</ol>
@@ -335,18 +351,18 @@ export const SoloProjectView: React.FC<SoloProjectViewProps> = ({
                 title={project.title}
                 instructions={project.brief}
                 kind="project"
-                continueLabel="Registrar dominio del proyecto"
+                continueLabel="Guardar el proyecto y continuar"
                 onComplete={async (readingAnswer, variationAnswer) => {
                   await recordPostSolveEvidence(project.id, readingAnswer, variationAnswer);
                   markItemCompleted(project.id);
                   onCompleted?.({
-                    score: validationResult?.totalCount ? Math.round((validationResult.passedCount / validationResult.totalCount) * 100) : 100,
+                    ...(validationResult?.totalCount ? { score: Math.round((validationResult.passedCount / validationResult.totalCount) * 100) } : {}),
                     response: {
                       files: Object.fromEntries(Object.entries(workspace.files).map(([path, file]) => [path, file.content])),
                       readingAnswer,
                       variationAnswer,
                     },
-                    diagnostics: validationResult ? { tests: validationResult.tests, checkedRequirements } : { checkedRequirements },
+                    diagnostics: validationResult ? { tests: validationResult.tests, checkedRequirements } : { checkedRequirements, evaluation: 'ungraded' },
                   });
                   setPostSolveComplete(true);
                 }}

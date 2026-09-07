@@ -27,27 +27,24 @@ const index: Record<string, CurriculumSkillTarget> = {
   'lesson-item-2': { courseId: course.id, itemId: 'lesson-item-2', lessonId: 'lesson-2', skillIds: ['funciones'], capability: 'recognize', source: 'lesson' },
 };
 
-describe('puerta de dominio acumulativa', () => {
-  it('deja abierto el primer grupo completo y bloquea el siguiente con recuperación concreta', () => {
+describe('orientación sin confundir falta de evidencia con incapacidad', () => {
+  it('permite aprender aunque todavía no haya evaluaciones', () => {
     const profile = createEmptyLearningProfile();
 
     expect(getItemReadiness(course, 'debug-1', profile, index).unlocked).toBe(true);
     expect(getItemReadiness(course, 'read-2', profile, index)).toMatchObject({
-      unlocked: false,
-      recoveryItemId: 'read-1',
+      unlocked: true,
+      missing: [],
     });
-    expect(getItemReadiness(course, 'read-2', profile, index).message).toMatch(/variables/i);
   });
 
-  it('no confunde reconocer con aplicar: exige evidencia práctica antes de avanzar', () => {
+  it('ignora las notas históricas derivadas de completar lecturas o clases', () => {
     let profile = createEmptyLearningProfile();
     profile = recordEvidence(profile, { id: 'r', courseId: course.id, itemId: 'lesson-item-1', skillId: 'variables', capability: 'recognize', result: 'success', source: 'lesson', timestamp: 1 });
     profile = recordEvidence(profile, { id: 'e', courseId: course.id, itemId: 'read-1', skillId: 'variables', capability: 'explain', result: 'success', source: 'reading', timestamp: 2 });
 
     const readiness = getItemReadiness(course, 'read-2', profile, index);
-    expect(readiness.unlocked).toBe(false);
-    expect(readiness.missing.some((gap) => gap.capability === 'modify')).toBe(true);
-    expect(readiness.recoveryItemId).toBe('lesson-item-1');
+    expect(readiness).toEqual({ unlocked: true, missing: [] });
   });
 
   it('desbloquea el siguiente grupo cuando comprende y modifica con entradas variables', () => {
@@ -56,5 +53,18 @@ describe('puerta de dominio acumulativa', () => {
     profile = recordEvidence(profile, { id: 'm', courseId: course.id, itemId: 'challenge-1', skillId: 'variables', capability: 'modify', result: 'success', source: 'challenge', timestamp: 2 });
 
     expect(getItemReadiness(course, 'lesson-item-2', profile, index)).toMatchObject({ unlocked: true, missing: [] });
+  });
+
+  it('ofrece recuperar una práctica pendiente sin bloquear ni mezclar cursos', () => {
+    let profile = recordEvidence(createEmptyLearningProfile(), { id: 'checked:failed', courseId: course.id, itemId: 'debug-1', skillId: 'variables', capability: 'debug', result: 'failure', source: 'debugging', timestamp: 1 });
+    profile = recordEvidence(profile, { id: 'checked:other', courseId: 'other-course', itemId: 'other-debug', skillId: 'variables', capability: 'debug', result: 'success', source: 'debugging', timestamp: 2 });
+    expect(getItemReadiness(course, 'read-2', profile, index)).toMatchObject({ unlocked: true, recoveryItemId: 'debug-1', missing: [{ skillId: 'variables', capability: 'debug' }] });
+    profile = recordEvidence(profile, { id: 'checked:fixed', courseId: course.id, itemId: 'debug-1', skillId: 'variables', capability: 'debug', result: 'success', source: 'debugging', timestamp: 3 });
+    expect(getItemReadiness(course, 'read-2', profile, index)).toEqual({ unlocked: true, missing: [] });
+  });
+
+  it('conserva los bloqueos explícitos de publicación', () => {
+    const locked: Course = { ...course, modules: [{ ...course.modules[0], items: course.modules[0].items.map(item => item.id === 'read-2' ? { ...item, availability: 'locked', availabilityReason: 'En preparación' } : item) }] };
+    expect(getItemReadiness(locked, 'read-2', createEmptyLearningProfile(), index)).toMatchObject({ unlocked: false, message: 'En preparación' });
   });
 });

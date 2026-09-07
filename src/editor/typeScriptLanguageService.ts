@@ -127,7 +127,9 @@ export class TypeScriptLanguageService {
 
     const host: ts.LanguageServiceHost = {
       getCompilationSettings: () => compilerOptions,
-      getScriptFileNames: () => [...this.files.keys()],
+      // Dependency declarations are resolved on import, not injected as global
+      // roots into unrelated courses or workspaces with their own ambient types.
+      getScriptFileNames: () => [...this.files.keys()].filter((path) => !path.startsWith('/node_modules/')),
       getScriptVersion: (fileName) => String(this.files.get(normalizePath(fileName))?.version ?? 0),
       getScriptSnapshot: (fileName) => {
         const file = this.files.get(normalizePath(fileName));

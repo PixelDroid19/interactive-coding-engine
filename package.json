@@ -59,6 +59,8 @@
     "vite": "^6.2.3"
   },
   "devDependencies": {
+    "@lit/context": "1.1.6",
+    "@lit/task": "1.0.3",
     "@playwright/test": "1.62.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
@@ -71,6 +73,7 @@
     "esbuild": "^0.25.0",
     "fake-indexeddb": "^6.2.5",
     "happy-dom": "^20.11.6",
+    "lit": "3.3.3",
     "prettier": "^3.9.6",
     "sass": "^1.103.1",
     "tailwindcss": "^4.1.14",

@@ -7,6 +7,7 @@ import type { UserRole } from '../services/authSessionApi';
 import { UiButton } from '../components/ui/UiButton';
 import { UiNav } from '../components/ui/UiNav';
 import { UiSurface } from '../components/ui/UiSurface';
+import { LearningAttemptDetails, learningAttemptLabel } from './LearningAttemptDetails';
 
 type Tab = 'overview' | 'learners' | 'inbox' | 'live-help' | 'access' | 'content';
 
@@ -322,7 +323,10 @@ function LearnerDetailView({ detail, feedback, courseSlug, itemKey, skillKey, sa
 
     <section className="staff-detail-grid">
       <div className="staff-detail-section"><h3>Progreso reciente</h3>{detail.progress.slice(0, 8).map((progress) => <article className="staff-progress-row" key={`${progress.courseSlug}:${progress.lessonKey}`}><span><strong>{progress.lessonKey}</strong><small>{progress.courseSlug} · {duration(progress.playbackMs)} · {date(progress.updatedAt)}</small></span><b className={`is-${progress.status}`}>{progress.status === 'completed' ? 'Completado' : progress.status === 'in_progress' ? 'En curso' : 'Sin iniciar'}</b></article>)}{detail.progress.length === 0 && <Empty label="No hay progreso remoto todavía." />}</div>
-      <div className="staff-detail-section"><h3>Intentos recientes</h3>{detail.attempts.slice(0, 8).map((attempt) => <button className="staff-attempt-row" key={attempt.id} onClick={() => { selectCourse(attempt.courseSlug); onItem(attempt.itemKey); }}><span><strong>{attempt.itemKey}</strong><small>{attempt.courseSlug} · {attempt.kind} · {date(attempt.occurredAt)}</small></span><b className={`is-${attempt.result}`}>{attempt.score === null ? attempt.result : `${attempt.score}/100`}</b></button>)}{detail.attempts.length === 0 && <Empty label="No hay intentos registrados." />}</div>
+      <div className="staff-detail-section"><h3>Intentos recientes</h3>{detail.attempts.slice(0, 8).map((attempt) => {
+        const label = learningAttemptLabel(attempt);
+        return <article key={attempt.id}><button className="staff-attempt-row" onClick={() => { selectCourse(attempt.courseSlug); onItem(attempt.itemKey); }}><span><strong>{label.title}</strong><small>{attempt.courseSlug} · {attempt.kind} · {date(attempt.occurredAt)}</small></span><b className={attempt.diagnostics?.evaluation === 'ungraded' ? '' : `is-${attempt.result}`}>{label.result}</b></button><LearningAttemptDetails attempt={attempt} /></article>;
+      })}{detail.attempts.length === 0 && <Empty label="No hay intentos registrados." />}</div>
     </section>
 
     <section className="staff-feedback-compose"><h3><MessageSquareText size={17} /> Dejar feedback contextual</h3><div className="staff-feedback-context"><label>Curso<select value={courseSlug} onChange={(event) => selectCourse(event.target.value)}><option value="">General</option>{courses.map((course) => <option key={course} value={course}>{course}</option>)}</select></label><label>Actividad<select value={itemKey} onChange={(event) => onItem(event.target.value)}><option value="">Sin actividad concreta</option>{items.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label>Concepto<select value={skillKey} onChange={(event) => onSkill(event.target.value)}><option value="">Sin concepto concreto</option>{skills.map((skill) => <option key={skill} value={skill}>{skill}</option>)}</select></label></div><textarea value={feedback} onChange={(event) => onFeedback(event.target.value)} maxLength={4000} placeholder="Explica qué hizo bien, qué patrón debe revisar y cuál es el siguiente paso concreto." /><div className="staff-feedback-compose__footer"><small>{feedback.length}/4000 · llegará al centro de mensajes de la persona</small><UiButton variant="primary" disabled={saving || !feedback.trim()} onClick={onSend}>{saving ? 'Guardando…' : 'Enviar feedback'}</UiButton></div></section>

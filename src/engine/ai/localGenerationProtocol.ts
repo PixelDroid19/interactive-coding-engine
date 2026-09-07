@@ -12,6 +12,8 @@ export interface LocalGenerationRequest {
   temperature?: number;
   topP?: number;
   maxNewTokens: number;
+  /** Optional Qwen3 mode; omitted requests keep the lab's existing defaults. */
+  enableThinking?: boolean;
   expectedFormat?: 'text' | 'json_object';
   expectedJsonKeys?: string[];
   expectedJsonSchema?: Record<string, unknown>;
@@ -38,6 +40,7 @@ export interface LocalModelOption extends LocalModelInfo {
 
 export interface LocalGenerationResult {
   text: string;
+  finishReason?: 'stop' | 'length' | 'tool_calls' | 'abort';
   warning?: string;
   model: string;
   engine: typeof LOCAL_GENERATION_ENGINE;

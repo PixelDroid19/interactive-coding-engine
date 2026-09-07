@@ -1,6 +1,7 @@
 import type { LearningEvidence, LearningProfile } from '../learning/types';
 import { quarantineStoredValue, readJsonStorage } from '../engine/persistenceIntegrity';
 import { learningApiRequest } from './learningHttp';
+import { checkedAttemptResult, isCheckedPracticeEvidence } from '../learning/checkedAttempt';
 
 const QUEUE_KEY = 'aula_learning_sync_v1';
 type ProgressStatus = 'not_started' | 'in_progress' | 'completed';
@@ -54,7 +55,7 @@ type QueuedAttempt = Readonly<{
   courseSlug: string;
   itemKey: string;
   kind: 'challenge' | 'debugging' | 'exam' | 'project' | 'agent';
-  result: 'success' | 'partial' | 'failure';
+  result: 'success' | 'partial' | 'failure' | 'ungraded';
   score?: number;
   response?: Record<string, unknown>;
   diagnostics?: Record<string, unknown>;
@@ -66,6 +67,7 @@ type SyncQueue = {
   progress: Record<string, QueuedProgress>;
   feedback: QueuedFeedback[];
   evidence: QueuedEvidence[];
+  unverifiedEvidence: QueuedEvidence[];
   attempts: QueuedAttempt[];
   syncedEvidence: string[];
 };
@@ -78,7 +80,7 @@ export type LearningSyncHealth = Readonly<{
 }>;
 
 function emptyQueue(): SyncQueue {
-  return { events: [], progress: {}, feedback: [], evidence: [], attempts: [], syncedEvidence: [] };
+  return { events: [], progress: {}, feedback: [], evidence: [], unverifiedEvidence: [], attempts: [], syncedEvidence: [] };
 }
 
 function progressKey(courseSlug: string, lessonKey: string): string {
@@ -142,7 +144,7 @@ function isQueuedAttempt(value: unknown): value is QueuedAttempt {
     && typeof value.courseSlug === 'string'
     && typeof value.itemKey === 'string'
     && ['challenge', 'debugging', 'exam', 'project', 'agent'].includes(value.kind as QueuedAttempt['kind'])
-    && ['success', 'partial', 'failure'].includes(value.result as QueuedAttempt['result'])
+    && ['success', 'partial', 'failure', 'ungraded'].includes(value.result as QueuedAttempt['result'])
     && typeof value.occurredAt === 'string'
     && (value.score === undefined || (typeof value.score === 'number' && Number.isFinite(value.score)))
     && (value.response === undefined || isRecord(value.response))
@@ -155,17 +157,20 @@ function parseQueue(value: unknown): SyncQueue | null {
     || !isRecord(value.progress)
     || !Array.isArray(value.feedback)
     || (value.evidence !== undefined && !Array.isArray(value.evidence))
+    || (value.unverifiedEvidence !== undefined && !Array.isArray(value.unverifiedEvidence))
     || (value.attempts !== undefined && !Array.isArray(value.attempts))
     || (value.syncedEvidence !== undefined && !Array.isArray(value.syncedEvidence))) {
     return null;
   }
   const evidenceValues = Array.isArray(value.evidence) ? value.evidence : [];
+  const unverifiedEvidenceValues = Array.isArray(value.unverifiedEvidence) ? value.unverifiedEvidence : [];
   const attemptValues = Array.isArray(value.attempts) ? value.attempts : [];
   const syncedEvidenceValues = Array.isArray(value.syncedEvidence) ? value.syncedEvidence : [];
   if (!value.events.every(isQueueEvent)
     || !Object.values(value.progress).every(isQueuedProgress)
     || !value.feedback.every(isQueuedFeedback)
     || !evidenceValues.every(isQueuedEvidence)
+    || !unverifiedEvidenceValues.every(isQueuedEvidence)
     || !attemptValues.every(isQueuedAttempt)
     || !syncedEvidenceValues.every((fingerprint) => typeof fingerprint === 'string')) {
     return null;
@@ -185,6 +190,7 @@ function parseQueue(value: unknown): SyncQueue | null {
     progress,
     feedback,
     evidence,
+    unverifiedEvidence: unverifiedEvidenceValues as QueuedEvidence[],
     attempts,
     syncedEvidence,
   };
@@ -322,6 +328,15 @@ async function flushFeedback(queue: SyncQueue, generation: number): Promise<void
 
 async function flushEvidence(queue: SyncQueue, generation: number): Promise<void> {
   if (queue.evidence.length === 0 || generation !== queueGeneration) return;
+  const unverified = queue.evidence.filter(entry => !isCheckedPracticeEvidence(entry.fingerprint, entry.source));
+  if (unverified.length) {
+    // Preserve old completion/self-rating records without uploading them as
+    // checked learning. Keep the archive in the same account-scoped queue.
+    queue.unverifiedEvidence.push(...unverified);
+    queue.evidence = queue.evidence.filter(entry => isCheckedPracticeEvidence(entry.fingerprint, entry.source));
+    saveQueue(queue, generation);
+  }
+  if (queue.evidence.length === 0) return;
   const batch = queue.evidence.slice(0, 100);
   const response = await learningApiRequest('/v1/me/evidence/batch', {
     method: 'POST',
@@ -433,6 +448,7 @@ export function queueLearningProfileEvidence(profile: LearningProfile, courseSlu
   const queue = loadQueue();
   const known = new Set([...queue.syncedEvidence, ...queue.evidence.map((entry) => entry.fingerprint)]);
   for (const evidence of profile.evidence) {
+    if (!isCheckedPracticeEvidence(evidence.id, evidence.source)) continue;
     if (known.has(evidence.id)) continue;
     if (evidence.timestamp < Date.now() - 365 * 86_400_000 || evidence.timestamp > Date.now() + 5 * 60_000) continue;
     const courseSlug = courseSlugById[evidence.courseId] ?? evidence.courseId.replace(/^course-/, '');
@@ -468,9 +484,11 @@ export function queueExerciseAttempt(
   };
   const safeResponse = safe(completion.response, 60_000);
   const safeDiagnostics = safe(completion.diagnostics, 28_000);
+  const ungraded = result === 'ungraded' || completion.diagnostics?.evaluation === 'ungraded'
+    || (completion.diagnostics?.tests !== undefined && checkedAttemptResult(completion) === null);
   queue.attempts.push({
-    id: crypto.randomUUID(), courseSlug, itemKey, kind, result,
-    ...(completion.score !== undefined ? { score: completion.score } : {}),
+    id: crypto.randomUUID(), courseSlug, itemKey, kind, result: ungraded ? 'ungraded' : result,
+    ...(!ungraded && completion.score !== undefined ? { score: completion.score } : {}),
     ...(safeResponse ? { response: safeResponse } : {}),
     ...(safeDiagnostics ? { diagnostics: safeDiagnostics } : {}),
     occurredAt: new Date().toISOString(),

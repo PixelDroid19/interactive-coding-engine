@@ -260,13 +260,14 @@ ${jsContent}
       html = html.replace(/<html([^>]*)>/i, `<html$1><head></head>`);
     }
     const headInject = `${CONSOLE_BRIDGE}${usesBareLitImport ? LIT_IMPORT_MAP : ''}${reactCdns}${styleTag}`;
+    // Replacement callbacks preserve literal dollar sequences in learner CSS and JavaScript.
     if (html.includes('</head>')) {
-      html = html.replace('</head>', `${headInject}</head>`);
+      html = html.replace('</head>', () => `${headInject}</head>`);
     } else {
       html = headInject + html;
     }
     if (html.includes('</body>')) {
-      html = html.replace('</body>', `${userScript}</body>`);
+      html = html.replace('</body>', () => `${userScript}</body>`);
     } else {
       html += userScript;
     }

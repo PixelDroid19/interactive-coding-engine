@@ -277,7 +277,14 @@ body:has(.player-bar.is-speed-menu-open) .live-help-global-error {
 
 @media (max-width: 860px) { .staff-live-help__layout, .staff-live-help__columns { grid-template-columns: 1fr; }.staff-live-help__queue { border-right: 0; border-bottom: 1px solid var(--ui-border); } }
 @media (max-width: 680px) {
-  .live-help-panel { top: 54px; right: 7px; bottom: 7px; width: calc(100vw - 14px); }
+  .live-help-panel {
+    z-index: 110;
+    top: calc(7px + env(safe-area-inset-top, 0px));
+    right: 7px;
+    bottom: calc(7px + env(safe-area-inset-bottom, 0px));
+    width: calc(100vw - 14px);
+  }
+  .live-help-panel__header button { min-width: 44px; min-height: 44px; }
   :root { --assist-dock-right: 10px; --assist-dock-bottom: 12px; }
   body:has(.debug-new-layout) .live-help-launcher,
   body:has(.solo-project-shell) .live-help-launcher,
@@ -288,4 +295,62 @@ body:has(.player-bar.is-speed-menu-open) .live-help-global-error {
   .staff-live-help__heading { padding: 14px; }
   .staff-live-help__heading h2 { font-size: 20px; }
   .staff-live-help__session { padding: 10px; }
+}
+
+/* En Depura móvil no hay espacio para el carril lateral de asistencia.
+   Reserva una fila fuera del contenido desplazable, no solo padding al
+   final del texto: los campos deben poder leerse también a mitad de scroll. */
+@media (max-width: 640px) {
+  body:has(.debug-new-layout):has(.live-help-launcher, .socratic-tutor) {
+    --assist-dock-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    --assist-dock-right: 12px;
+    --assist-ai-height: 44px;
+    --assist-live-height: 44px;
+
+    .debug-new-layout {
+      padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .debug-new-layout::after {
+      content: '';
+      position: fixed;
+      z-index: 33;
+      inset: auto 0 0;
+      height: calc(68px + env(safe-area-inset-bottom, 0px));
+      border-top: var(--ui-control-border-width) solid var(--ui-border);
+      background: var(--ui-surface-raised);
+    }
+
+    .live-help-launcher {
+      left: 12px;
+      right: auto;
+      bottom: var(--assist-dock-bottom);
+      min-width: 0;
+      min-height: 44px;
+      max-width: calc(50vw - 18px);
+      padding: 8px 10px;
+    }
+
+    .socratic-tutor:not(.is-open) {
+      right: var(--assist-dock-right);
+      bottom: var(--assist-dock-bottom);
+      max-width: calc(50vw - 18px);
+    }
+
+    .socratic-tutor__launcher {
+      min-width: 0;
+      min-height: 44px;
+      max-width: 100%;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+
+    .live-help-launcher span,
+    .socratic-tutor__launcher span {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
 }

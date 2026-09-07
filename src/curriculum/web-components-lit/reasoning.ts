@@ -13,7 +13,7 @@ export function buildReasoning(spec: ComponentCourseLessonSpec): ReasoningExerci
     description: 'Ordena el comportamiento antes de tocar el código.',
     activity: {
       kind: 'sequence',
-      prompt: spec.reading.diagram,
+      prompt: `Imagina que estás usando ${spec.appName}. Las tarjetas describen momentos de su funcionamiento, pero están desordenadas. Ordénalas según qué necesita haber ocurrido antes de cada paso.`,
       steps: spec.reasoningSteps.map((label, index) => ({ id: ids[index], label })),
       expectedOrder: ids,
     },

@@ -3,7 +3,8 @@ import React from 'react';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FUNDAMENTOS_COURSE, FUNDAMENTOS_SCRIMS } from '../../curriculum/fundamentos/course';
-import { createEmptyLearningProfile } from '../../learning/mastery';
+import { COMPONENT_COURSE, COMPONENT_COURSE_SCRIMS } from '../../curriculum/web-components-lit/course';
+import { createEmptyLearningProfile, recordEvidence } from '../../learning/mastery';
 import type { LearningProfile } from '../../learning/types';
 import type { Course, UserProgressRecord } from '../../types/curriculum';
 import { RoadmapHome } from './RoadmapHome';
@@ -116,6 +117,20 @@ function renderRoadmap(profile = profileWithDueReview()) {
 }
 
 describe('RoadmapHome', () => {
+  it('abre la clase en el punto del reto interno pendiente de la persona', () => {
+    auth.useAuthSession.mockReturnValue(studentAuth());
+    const challenge = FUNDAMENTOS_SCRIMS['fundamentos-01'].challenges[0];
+    const profile = recordEvidence(createEmptyLearningProfile(), { id: 'checked:internal-failed', courseId: FUNDAMENTOS_COURSE.id,
+      itemId: challenge.id, skillId: 'instruccion', capability: 'modify', source: 'challenge', result: 'failure', timestamp: 1 });
+    const enter = vi.fn();
+    render(<RoadmapHome course={FUNDAMENTOS_COURSE} progress={{ ...progress, completedItemIds: ['fundamentos-01'] }}
+      learningProfile={profile} scrims={FUNDAMENTOS_SCRIMS} onEnterLesson={enter} onPlayground={() => undefined}
+      onBackToCourses={() => undefined} onLearningProfileChange={() => undefined} />);
+    expect(screen.getByText('Retoma el reto pendiente dentro de esta clase. También puedes elegir otra actividad del mapa.')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir actividad sugerida' }));
+    expect(enter).toHaveBeenCalledWith(expect.objectContaining({ id: 'fundamentos-01' }), FUNDAMENTOS_COURSE.modules[0].id, challenge.timestamp);
+  });
+
   beforeEach(() => {
     vi.stubGlobal(
       'ResizeObserver',
@@ -138,6 +153,31 @@ describe('RoadmapHome', () => {
     renderRoadmap();
 
     expect(screen.queryByLabelText('1 repasos pendientes')).toBeNull();
+  });
+
+  it('propone una actividad real de Lit sin presentar JavaScript básico como práctica de Lit', () => {
+    auth.useAuthSession.mockReturnValue(anonymousAuth);
+    const onEnterLesson = vi.fn();
+    render(<RoadmapHome course={COMPONENT_COURSE} progress={progress} learningProfile={createEmptyLearningProfile()} scrims={COMPONENT_COURSE_SCRIMS} onEnterLesson={onEnterLesson} onPlayground={vi.fn()} onBackToCourses={vi.fn()} onLearningProfileChange={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Práctica guiada' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir actividad sugerida' }));
+    const first = COMPONENT_COURSE.modules[0];
+    expect(onEnterLesson).toHaveBeenCalledWith(first.items[0], first.id, 0);
+  });
+
+  it('reanuda desde el punto guardado y vuelve a una sugerencia neutral al salir de la cuenta', () => {
+    auth.useAuthSession.mockReturnValue(studentAuth());
+    const onEnterLesson = vi.fn();
+    const item = FUNDAMENTOS_COURSE.modules.flatMap(module => module.items).find(item => item.type === 'scrim')!;
+    const saved = { ...progress, lastAccessedCourseId: FUNDAMENTOS_COURSE.id, lastAccessedItemId: item.id, lastAccessedTimestamp: 1234 };
+    const props = { course: FUNDAMENTOS_COURSE, progress: saved, learningProfile: createEmptyLearningProfile(), scrims: FUNDAMENTOS_SCRIMS, onEnterLesson, onPlayground: vi.fn(), onBackToCourses: vi.fn(), onLearningProfileChange: vi.fn() };
+    const view = render(<RoadmapHome {...props} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Retomar actividad' }));
+    expect(onEnterLesson).toHaveBeenCalledWith(item, expect.any(String), 1234);
+    auth.useAuthSession.mockReturnValue(anonymousAuth);
+    view.rerender(<RoadmapHome {...props} />);
+    expect(screen.queryByRole('button', { name: 'Retomar actividad' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Abrir actividad sugerida' })).toBeTruthy();
   });
 
   it('mantiene el recorrido público neutral tras logout aunque quede progreso personal y una regla de dominio', () => {
@@ -178,7 +218,7 @@ describe('RoadmapHome', () => {
     expect(screen.queryByRole('dialog', { name: 'Refuerzo necesario' })).toBeNull();
   });
 
-  it('oculta el bloqueo personal de A al cerrar sesión o cambiar a B', () => {
+  it('no bloquea a A ni a B por no tener evaluaciones y tampoco al cerrar sesión', () => {
     auth.useAuthSession.mockReturnValue(studentAuth('student-a'));
     const view = renderRoadmap(createEmptyLearningProfile(0));
     const nextLesson = screen.getByRole('button', {
@@ -186,8 +226,8 @@ describe('RoadmapHome', () => {
     });
 
     fireEvent.click(nextLesson);
-    expect(screen.getByRole('dialog', { name: 'Refuerzo necesario' })).toBeTruthy();
-    expect(screen.getByText(/Antes de continuar, refuerza/)).toBeTruthy();
+    expect(screen.queryByRole('dialog', { name: 'Refuerzo necesario' })).toBeNull();
+    expect(screen.queryByText(/Antes de continuar, refuerza/)).toBeNull();
 
     auth.useAuthSession.mockReturnValue(anonymousAuth);
     view.rerender(

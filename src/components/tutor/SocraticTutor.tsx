@@ -5,7 +5,7 @@ import { LocalGenerationService } from '../../engine/ai/localGenerationService';
 import { getLocalGenerationSession } from '../../engine/ai/localGenerationSession';
 import { isTutorResponseUsable, runTutorTurn } from '../../learning/tutor/tutorAgent';
 import { type TutorMode } from '../../learning/tutor/tutorPrompt';
-import { type TutorActivityContext, useTutorWorkspace } from '../../learning/tutor/tutorContext';
+import { getTutorWorkspace, type TutorActivityContext, useTutorWorkspace } from '../../learning/tutor/tutorContext';
 import type { TutorToolActivity } from '../../learning/tutor/tutorTools';
 import { loadLearningProfile, saveTutorConversation, saveTutorModelPreference, saveTutorReinforcement } from '../../learning/curriculumEvidence';
 import { useTheme } from '../../themes/ThemeProvider';
@@ -104,15 +104,55 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLElement | null>(null);
   const preferredModelRef = useRef(selectedModel);
+  const hasCatalogSelectionRef = useRef(false);
   const conversationKey = `${activity.courseId}:${activity.itemId}`;
+  const currentConversationRef = useRef(conversationKey);
+  currentConversationRef.current = conversationKey;
+
+  const stopGeneration = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setGenerating(false);
+    setMessages(current => current.filter(message => message.content.trim()));
+  };
+  const cancelPreparation = () => {
+    prepareAbortRef.current?.abort();
+    prepareAbortRef.current = null;
+    setPreparing(false);
+    setProgress(undefined);
+    setProgressLabel('');
+  };
+  const closePanel = () => {
+    stopGeneration();
+    cancelPreparation();
+    setOpen(false);
+    window.setTimeout(() => launcherRef.current?.focus(), 0);
+  };
+  const selectModel = (next: string) => {
+    if (next === selectedModel) return;
+    stopGeneration();
+    cancelPreparation();
+    setSelectedModel(next);
+    preferredModelRef.current = next;
+    setModelReady(false);
+    setError('');
+    void saveTutorModelPreference(next);
+  };
 
   useEffect(() => {
+    cancelPreparation();
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setGenerating(false);
+    setMessages([]);
     if (!enabled) return;
     let active = true;
     void loadLearningProfile().then((profile) => {
       if (!active) return;
       preferredModelRef.current = profile.tutor.selectedModel;
-      setSelectedModel(profile.tutor.selectedModel);
+      // Reloading a conversation must not replace a usable catalog selection
+      // with an old preference that may no longer be available.
+      if (!hasCatalogSelectionRef.current) setSelectedModel(profile.tutor.selectedModel);
       const stored = profile.tutor.conversations[conversationKey] ?? [];
       const saved = stored
         .filter((message) => message.role === 'user' || isTutorResponseUsable(message.content))
@@ -120,27 +160,36 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
       if (saved.length !== stored.length) void saveTutorConversation(conversationKey, saved);
       setMessages((current) => current.length > 0 ? current : saved);
     });
-    return () => { active = false; };
-  }, [conversationKey, enabled]);
+    return () => {
+      active = false;
+      abortRef.current?.abort();
+      prepareAbortRef.current?.abort();
+    };
+  }, [conversationKey, enabled, service]);
 
   useEffect(() => {
-    if (!open || models.length > 0 || loadingModels) return;
+    if (!enabled || !open || models.length > 0) return;
     let active = true;
     setLoadingModels(true);
+    setError('');
     service.listModels().then((available) => {
       if (!active) return;
+      setLoadingModels(false);
       setModels(available);
       const recommended = available.find((candidate) => candidate.id === preferredModelRef.current)
         ?? available.find((candidate) => candidate.profile === 'recommended')
         ?? available[0];
-      if (recommended) setSelectedModel(recommended.id);
+      if (recommended) {
+        hasCatalogSelectionRef.current = true;
+        setSelectedModel(recommended.id);
+      }
     }).catch((reason: unknown) => {
-      if (active) setError(reason instanceof Error ? reason.message : 'No se pudo consultar el catálogo local.');
-    }).finally(() => {
-      if (active) setLoadingModels(false);
+      if (!active) return;
+      setLoadingModels(false);
+      setError(reason instanceof Error ? reason.message : 'No se pudo consultar el catálogo local.');
     });
     return () => { active = false; };
-  }, [modelReady, models.length, open, service]);
+  }, [enabled, models.length, open, service]);
 
   useEffect(() => {
     if (!open) return;
@@ -148,8 +197,7 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        setOpen(false);
-        window.setTimeout(() => launcherRef.current?.focus(), 0);
+        closePanel();
         return;
       }
       if (event.key !== 'Tab' || !panelRef.current) return;
@@ -169,7 +217,7 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
     setError('');
     setToolActivities([]);
     setHasAgentChanges(false);
-  }, [activity.itemId]);
+  }, [conversationKey]);
 
   const selected = useMemo(
     () => models.find((model) => model.id === selectedModel),
@@ -179,31 +227,38 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
   if (!enabled) return null;
 
   const prepare = async () => {
+    if (prepareAbortRef.current) return;
     setPreparing(true);
     setError('');
     setProgressLabel('Preparando el modelo local…');
     const controller = new AbortController();
     prepareAbortRef.current = controller;
+    const isCurrent = () => prepareAbortRef.current === controller && !controller.signal.aborted;
     try {
       await service.prepareModel(selectedModel, {
         signal: controller.signal,
         onProgress: (report) => {
+          if (!isCurrent()) return;
           setProgressLabel(report.label);
           setProgress(report.progress);
         },
       });
+      if (!isCurrent()) return;
       setModelReady(true);
       setProgress(1);
       setProgressLabel('Modelo listo');
       preferredModelRef.current = selectedModel;
       await saveTutorModelPreference(selectedModel, true);
     } catch (reason) {
+      if (!isCurrent()) return;
       if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
         setError(reason instanceof Error ? reason.message : 'No se pudo preparar el modelo local.');
       }
     } finally {
-      prepareAbortRef.current = null;
-      setPreparing(false);
+      if (prepareAbortRef.current === controller) {
+        prepareAbortRef.current = null;
+        setPreparing(false);
+      }
     }
   };
 
@@ -219,6 +274,9 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
     setError('');
     const controller = new AbortController();
     abortRef.current = controller;
+    const isCurrent = () => !controller.signal.aborted
+      && abortRef.current === controller
+      && currentConversationRef.current === conversationKey;
     try {
       const turn = await runTutorTurn({
         mode,
@@ -226,11 +284,14 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
         attemptCount: messages.filter((message) => message.role === 'user').length,
         activity,
         conversation: messages.map(({ role, content }) => ({ role, content })),
+        isCurrent,
+        getCurrentWorkspace: getTutorWorkspace,
         generationOptions: {
           model: selectedModel,
           signal: controller.signal,
         },
       }, service, workspace);
+      if (!isCurrent()) return;
       setToolActivities(turn.activities);
       setHasAgentChanges(turn.changedFiles.length > 0);
       if (turn.reinforcement) {
@@ -240,12 +301,14 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
           ...turn.reinforcement,
         });
       }
+      if (!isCurrent()) return;
       setMessages((current) => {
         const next = current.map((message) => message.id === assistantId ? { ...message, content: turn.response } : message);
         void saveTutorConversation(conversationKey, next);
         return next;
       });
     } catch (reason) {
+      if (!isCurrent()) return;
       if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
         setError(reason instanceof Error ? reason.message : 'La ayuda local no pudo responder.');
       }
@@ -255,8 +318,10 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
         return next;
       });
     } finally {
-      abortRef.current = null;
-      setGenerating(false);
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        setGenerating(false);
+      }
     }
   };
 
@@ -277,31 +342,27 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
               <h2>{activity.itemTitle}</h2>
               <p>{activity.courseTitle}</p>
             </div>
-            <button ref={closeRef} type="button" onClick={() => { setOpen(false); window.setTimeout(() => launcherRef.current?.focus(), 0); }} aria-label="Cerrar ayuda"><X size={18} /></button>
+            <button ref={closeRef} type="button" onClick={closePanel} aria-label="Cerrar ayuda"><X size={18} /></button>
           </header>
 
           {!modelReady ? (
             <section className="socratic-tutor__setup" aria-live="polite">
-              <h3>Elige cuánto quieres descargar</h3>
+              <h3>Elige un modelo para tu equipo</h3>
               <p>El modelo se guarda en este navegador. Tu código y tus preguntas no salen del dispositivo.</p>
               {loadingModels ? <p>Consultando modelos compatibles…</p> : (
                 <label>
                   Modelo local
-                  <select value={selectedModel} onChange={(event) => {
-                    const next = event.target.value;
-                    setSelectedModel(next);
-                    preferredModelRef.current = next;
-                    void saveTutorModelPreference(next);
-                  }}>
+                  <select value={selectedModel} onChange={(event) => selectModel(event.target.value)}>
                     {models.map((model) => (
                       <option key={model.id} value={model.id}>
-                        {PROFILE_LABELS[model.profile]} · {model.label} · {Math.round(model.estimatedVramMB)} MB{model.cached ? ' · guardado' : ''}
+                        {PROFILE_LABELS[model.profile]} · {model.label}{model.cached ? ' · guardado' : ''}
                       </option>
                     ))}
                   </select>
                 </label>
               )}
               {selected && <p className="socratic-tutor__model-note">{selected.specialty}. Contexto: {selected.contextWindowSize || 'variable'} tokens.</p>}
+              {selected && <p className="socratic-tutor__model-note">Memoria gráfica estimada: {Math.round(selected.estimatedVramMB)} MB. No es el tamaño de descarga; la primera preparación necesita descargar archivos del modelo.</p>}
               {progressLabel && (
                 <div className="socratic-tutor__progress">
                   <span>{progressLabel}</span>
@@ -309,7 +370,7 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
                 </div>
               )}
               {error && <p className="socratic-tutor__error" role="alert">{error}</p>}
-              <button type="button" className="socratic-tutor__primary" onClick={() => preparing ? prepareAbortRef.current?.abort() : void prepare()} disabled={loadingModels || models.length === 0}>
+              <button type="button" className="socratic-tutor__primary" onClick={() => preparing ? cancelPreparation() : void prepare()} disabled={loadingModels || models.length === 0}>
                 {preparing ? <Square size={16} /> : <Download size={16} />} {preparing ? 'Cancelar preparación' : 'Preparar modelo'}
               </button>
             </section>
@@ -324,16 +385,9 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
                   <small>{MODE_OPTIONS.find((option) => option.id === mode)?.description}</small>
                 </label>
                 <label>Modelo local
-                  <select aria-label="Modelo local" value={selectedModel} onChange={(event) => {
-                    const next = event.target.value;
-                    if (next === selectedModel) return;
-                    setSelectedModel(next);
-                    preferredModelRef.current = next;
-                    setModelReady(false);
-                    void saveTutorModelPreference(next);
-                  }}>
+                  <select aria-label="Modelo local" value={selectedModel} onChange={(event) => selectModel(event.target.value)}>
                     {models.length === 0 && <option value={selectedModel}>Modelo activo</option>}
-                    {models.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.cached ? 'Guardado' : 'Descargar'} · {candidate.label} · {Math.round(candidate.estimatedVramMB)} MB</option>)}
+                    {models.map((candidate) => <option key={candidate.id} value={candidate.id}>{candidate.cached ? 'Guardado' : 'Preparar'} · {candidate.label}</option>)}
                   </select>
                 </label>
               </div>
@@ -374,7 +428,7 @@ export const SocraticTutor: React.FC<SocraticTutorProps> = ({
                   rows={3}
                 />
                 {generating ? (
-                  <button type="button" onClick={() => abortRef.current?.abort()} aria-label="Detener respuesta" title="Detener respuesta"><Square size={16} /></button>
+                  <button type="button" onClick={stopGeneration} aria-label="Detener respuesta" title="Detener respuesta"><Square size={16} /></button>
                 ) : (
                   <button type="button" onClick={() => void send()} disabled={!draft.trim()} aria-label="Enviar pregunta" title="Enviar pregunta"><Send size={16} /></button>
                 )}

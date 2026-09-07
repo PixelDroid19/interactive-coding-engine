@@ -3,6 +3,7 @@ export interface PostSolveVariation {
   changedRequirement: string;
   verificationPrompt: string;
   readingPrompt: string;
+  readingPlaceholder: string;
 }
 
 interface VariationInput {
@@ -12,40 +13,38 @@ interface VariationInput {
   kind: 'challenge' | 'debugging' | 'reasoning' | 'project';
 }
 
-const VARIATIONS = [
-  {
-    changedRequirement: 'Ahora debe funcionar también con un dato vacío o con el valor límite, sin romper el caso que ya resolviste.',
-    verificationPrompt: 'Escribe dos casos: el límite nuevo y un caso anterior que debe seguir funcionando.',
+const REFLECTIONS = {
+  challenge: {
+    readingPrompt: '¿Qué pone en marcha tu solución, qué cambia y qué puedes observar?',
+    readingPlaceholder: 'Empieza cuando…; cambia…; puedo observar…',
+    changedRequirement: 'Elige una condición de uso distinta para este reto. Explica qué cambiarías y qué debería seguir funcionando.',
+    verificationPrompt: 'Probaría… y debería ocurrir…',
   },
-  {
-    changedRequirement: 'El requisito cambió: la regla debe servir con dos valores diferentes a los usados en el ejemplo.',
-    verificationPrompt: 'Anota qué entradas usarías y qué resultado observable esperas en cada una.',
+  debugging: {
+    readingPrompt: '¿Qué estaba pasando y qué cambió al corregirlo?',
+    readingPlaceholder: 'Antes ocurría…; cambié…; ahora observo…',
+    changedRequirement: 'Elige otra situación de uso en la que podría reaparecer el fallo. ¿Cómo comprobarías que la corrección también funciona allí?',
+    verificationPrompt: 'Para intentar reproducirlo haría… y debería ocurrir…',
   },
-  {
-    changedRequirement: 'Otra parte de la aplicación necesita reutilizar esta solución sin copiarla.',
-    verificationPrompt: 'Explica qué entrada y qué salida formarían un contrato reutilizable.',
+  reasoning: {
+    readingPrompt: '¿Por qué organizaste el modelo así? Explica una relación entre dos de sus partes.',
+    readingPlaceholder: 'Estas partes se relacionan porque…',
+    changedRequirement: 'Elige una condición del problema y cámbiala. ¿Qué parte del modelo revisarías y qué relación debería mantenerse?',
+    verificationPrompt: 'Cambiaría…; mantendría…; lo comprobaría…',
   },
-  {
-    changedRequirement: 'La interfaz debe conservar el comportamiento, pero el texto o dato inicial puede cambiar.',
-    verificationPrompt: 'Indica qué parte cambiarías y qué parte no tocarías para evitar una regresión.',
+  project: {
+    readingPrompt: '¿Qué requisito resolviste y cómo puede comprobarlo otra persona?',
+    readingPlaceholder: 'El requisito era…; lo resolví…; se comprueba…',
+    changedRequirement: 'Elige un requisito del proyecto y cambia una condición de uso. Explica qué adaptarías y qué comportamiento conservarías.',
+    verificationPrompt: 'Cambiaría esta condición… y comprobaría…',
   },
-] as const;
-
-function hash(text: string): number {
-  let value = 0;
-  for (const character of text) value = (value * 31 + character.charCodeAt(0)) >>> 0;
-  return value;
-}
+} satisfies Record<VariationInput['kind'], Omit<PostSolveVariation, 'id'>>;
 
 export function buildPostSolveVariation(input: VariationInput): PostSolveVariation {
-  const selected = VARIATIONS[hash(input.itemId) % VARIATIONS.length];
-  const context = input.instructions?.trim().split(/\n|\.(?:\s|$)/)[0]?.trim();
+  const selected = REFLECTIONS[input.kind];
   return {
+    ...selected,
     id: `variation:${input.itemId}`,
-    changedRequirement: `${selected.changedRequirement}${context ? ` Parte del contrato original: “${context}”.` : ''}`,
-    verificationPrompt: selected.verificationPrompt,
-    readingPrompt: input.kind === 'debugging'
-      ? `Sin volver a editar, explica cuál fue la primera diferencia observable en “${input.title}” y por qué tu cambio corrige la causa, no solo el síntoma.`
-      : `Lee tu solución de arriba abajo y explica qué dato entra, qué decisión o transformación ocurre y qué resultado se puede observar en “${input.title}”.`,
+    readingPrompt: `${input.title.trim() ? `Sobre «${input.title.trim()}»: ` : ''}${selected.readingPrompt}`,
   };
 }

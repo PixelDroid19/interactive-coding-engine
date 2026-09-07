@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { CodeEditor, type EditorLanguageClient } from './CodeEditor';
 import type { WorkspaceFile } from '../../types/scrim';
+import { getTutorWorkspace } from '../../learning/tutor/tutorContext';
 
 const appFile: WorkspaceFile = {
   name: 'app.js',
@@ -103,6 +104,19 @@ describe('CodeEditor', () => {
     );
 
     await waitFor(() => expect(screen.getByRole('status').textContent).toContain('1 error'));
+    await waitFor(() => expect(getTutorWorkspace()?.snapshot.diagnostics).toContain("app.js:1:15: No se encuentra el nombre 'valorDesconocido'."));
+  });
+
+  it('no atribuye al código nuevo los diagnósticos de la versión anterior', async () => {
+    const client = languageClient();
+    const { rerender } = render(<CodeEditor file={appFile} languageClient={client} />);
+    await waitFor(() => expect(getTutorWorkspace()?.snapshot.diagnostics).toContain('valorDesconocido'));
+    client.diagnostics = async () => [];
+    const corrected = { ...appFile, content: 'const total = 3;' };
+    rerender(<CodeEditor file={corrected} languageClient={client} />);
+    expect(getTutorWorkspace()?.snapshot.files['app.js']).toBe('const total = 3;');
+    expect(getTutorWorkspace()?.snapshot.diagnostics).toBeUndefined();
+    await waitFor(() => expect(getTutorWorkspace()?.snapshot.diagnostics).toBe('Sin errores detectados'));
   });
 
   it('mantiene la ayuda de firma acotada y sin bloquear controles externos', async () => {

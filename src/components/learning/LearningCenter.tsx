@@ -34,6 +34,7 @@ interface LearningCenterProps {
   course: Course;
   profile: LearningProfile;
   onClose: () => void;
+  onOpenGuidedPractice?: () => void;
   onSummaryChange?: (userId: string | null, summary: LearningCenterSnapshot['summary'] | null) => void;
   liveHelpIntegration?: LiveHelpIntegration;
 }
@@ -241,7 +242,7 @@ function AccessState({ title, description, action }: Readonly<{ title: string; d
   );
 }
 
-export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile, onClose, onSummaryChange, liveHelpIntegration }) => {
+export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile, onClose, onSummaryChange, liveHelpIntegration, onOpenGuidedPractice }) => {
   const dialogRef = useModalDialog<HTMLElement>({ open: true, onClose });
   const auth = useAuthSession();
   const studentUserId =
@@ -479,7 +480,7 @@ export const LearningCenter: React.FC<LearningCenterProps> = ({ course, profile,
       >
         {tab === 'review' && (
           <>
-            <ReviewQueue courseId={course.id} profile={effectiveProfile} onRate={rateReview} onReviewReinforcement={reviewReinforcement} />
+            <ReviewQueue courseId={course.id} profile={effectiveProfile} onRate={rateReview} onReviewReinforcement={reviewReinforcement} onOpenGuidedPractice={onOpenGuidedPractice} />
             {liveHelpIntegration && <LiveHelpSlot integration={liveHelpIntegration} />}
           </>
         )}

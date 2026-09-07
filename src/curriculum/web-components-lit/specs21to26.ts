@@ -1,6 +1,62 @@
-import { appHtml, browserTest, lesson, source, sourceTest } from './helpers';
+import { appHtml, browserTest, lesson, source } from './helpers';
 
-const litText = (id: string, description: string, tag: string, selector: string, expected: string) => browserTest(id, description, `async ({document,customElements})=>{await customElements.whenDefined('${tag}');const el=document.querySelector('${tag}');if(!el)return false;await Promise.race([Promise.resolve(el.updateComplete).catch(()=>false),new Promise(resolve=>setTimeout(resolve,150))]);const node=el.shadowRoot?.querySelector('${selector}');return {passed:Boolean(node?.textContent?.includes('${expected}')),receivedValue:node?.textContent||''};}`);
+const filterSummaryProbe = String.raw`const matches=expected=>{
+  const numbers=((el.shadowRoot||el).querySelector('p')?.textContent||'').match(/-?\d+(?:[.,]\d+)?/g)||[];
+  return Array.isArray(el.visible)&&JSON.stringify(el.visible)===JSON.stringify(expected)&&numbers.length===1&&Number(numbers[0].replace(',','.'))===expected.length;
+};`;
+
+const surfaceCompositionTest = (id: string, tag: string, slotNames: string[]) => browserTest(id, 'La superficie admite CSS externo y conserva el contenido proyectado', `async ({document,customElements})=>{
+  await customElements.whenDefined('${tag}');
+  const el=document.createElement('${tag}');
+  el.setAttribute('data-surface-probe','${id}');
+  const style=document.createElement('style');
+  const children=${JSON.stringify(slotNames)}.map(name=>{
+    const child=document.createElement(name==='actions'?'button':'p');
+    if(name)child.slot=name;
+    child.textContent='Contenido '+(name||'principal');
+    el.append(child);
+    return child;
+  });
+  try {
+    document.head.append(style);
+    document.body.append(el);
+    await el.updateComplete;
+    const surface=el.shadowRoot?.querySelector('section[part~="surface"]');
+    if(!surface)return {passed:false,receivedValue:'La sección de contenido no expone surface en Shadow DOM.'};
+    for(const child of children){
+      const slot=[...surface.querySelectorAll('slot')].find(candidate=>candidate.name===child.slot);
+      if(!slot?.assignedElements().includes(child))return {passed:false,receivedValue:'El slot '+(child.slot||'principal')+' no proyecta el nodo original dentro de la superficie.'};
+    }
+    for(const [color,expected] of [['#0f766e','rgb(15, 118, 110)'],['#a21caf','rgb(162, 28, 175)']]){
+      style.textContent='${tag}[data-surface-probe="${id}"]::part(surface){background-color:'+color+'}';
+      const actual=document.defaultView.getComputedStyle(surface).backgroundColor;
+      if(actual!==expected)return {passed:false,receivedValue:'El CSS externo pide '+color+'; la superficie muestra '+actual+'.'};
+    }
+    return true;
+  } finally {style.remove();el.remove();}
+}`);
+
+const focusOnceTest = (id: string, tag: string) => browserTest(id, 'Enfoca tras render y respeta el foco posterior de la persona', `async ({document,customElements})=>{
+  await customElements.whenDefined('${tag}');
+  const el=document.querySelector('${tag}');
+  if(!el?.matches(':defined')||!el.renderRoot)return {passed:false,receivedValue:'El componente no terminó de construirse.'};
+  await el.updateComplete;
+  const root=el.shadowRoot||el;
+  const input=root.querySelector('input');
+  if(!input||(el.shadowRoot?.activeElement||document.activeElement)!==input)return {passed:false,receivedValue:'El input no tiene el foco tras el primer render.'};
+  const other=document.createElement('button');
+  other.textContent='Otro control';
+  document.body.append(other);
+  try {
+    other.focus();
+    if(document.activeElement!==other)return {passed:false,receivedValue:'No se pudo mover el foco al otro control.'};
+    for(let update=0;update<2;update++){
+      el.requestUpdate();await el.updateComplete;
+      if(document.activeElement!==other)return {passed:false,receivedValue:'Una actualización recuperó el foco del otro control.'};
+    }
+    return true;
+  } finally {other.remove();}
+}`);
 
 export const COMPONENT_SPECS_21_TO_26 = [
   lesson({
@@ -39,8 +95,66 @@ class ProfileEditor extends LitElement {
   }
 }
 customElements.define('profile-editor', ProfileEditor);`,
-    challengeTitle: 'App: editor de perfil', challengeInstructions: 'Conecta submit, rechaza nombre vacío con mensaje y emite profile-save con detail.name limpio.',
-    tests: [browserTest('lit21-submit', 'El formulario emite un nombre válido', `async ({document,customElements})=>{await customElements.whenDefined('profile-editor');const el=document.querySelector('profile-editor');await el.updateComplete;const form=el.shadowRoot.querySelector('form');form.querySelector('input').value='  Ana  ';let event=null;el.addEventListener('profile-save',e=>event=e,{once:true});form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));return event?.detail?.name==='Ana';}`), sourceTest('lit21-binding', 'Conecta submit declarativamente', String.raw`@submit\s*=\s*\$\{`) ],
+    challengeTitle: 'App: editor de perfil', challengeInstructions: 'Conecta submit declarativamente y evita la navegación. Si el nombre está vacío o solo tiene espacios, muestra un mensaje en el párrafo y no emitas profile-save. Para un nombre válido, limpia los espacios de los extremos, retira el mensaje de error y emite una sola vez profile-save con detail.name. Repite el envío con otro nombre.',
+    tests: [
+      browserTest('lit21-submit', 'Cada envío válido evita navegar y emite el nombre actual una sola vez', `async ({document,customElements})=>{
+        await customElements.whenDefined('profile-editor');
+        const el=document.createElement('profile-editor');
+        const names=[];
+        el.addEventListener('profile-save',event=>names.push(event.detail?.name));
+        try {
+          document.body.append(el);
+          await el.updateComplete;
+          if(names.length)return false;
+          for(const [value,expected] of [['  Ana  ','Ana'],['  Lucía del Mar  ','Lucía del Mar']]) {
+            const form=(el.shadowRoot??el).querySelector('form');
+            const input=form?.querySelector('input[name="name"]');
+            if(!input)return false;
+            input.value=value;
+            const previous=names.length;
+            const submit=new Event('submit',{bubbles:true,cancelable:true});
+            form.dispatchEvent(submit);
+            await el.updateComplete;
+            if(!submit.defaultPrevented||names.length!==previous+1||names[previous]!==expected)return false;
+          }
+          return true;
+        } finally {el.remove();}
+      }`),
+      browserTest('lit21-binding', 'Un nombre vacío muestra un error sin emitir y puede corregirse', `async ({document,customElements})=>{
+        await customElements.whenDefined('profile-editor');
+        const el=document.createElement('profile-editor');
+        const names=[];
+        el.addEventListener('profile-save',event=>names.push(event.detail?.name));
+        try {
+          document.body.append(el);
+          await el.updateComplete;
+          if(names.length)return false;
+          for(const value of ['', '   ']) {
+            const root=el.shadowRoot??el;
+            const form=root.querySelector('form');
+            const input=form?.querySelector('input[name="name"]');
+            if(!input)return false;
+            input.value=value;
+            const submit=new Event('submit',{bubbles:true,cancelable:true});
+            form.dispatchEvent(submit);
+            await el.updateComplete;
+            const message=root.querySelector('p');
+            if(!submit.defaultPrevented||names.length||!message?.textContent.trim()||message.hidden)return false;
+            const style=getComputedStyle(message);
+            if(style.display==='none'||style.visibility==='hidden')return false;
+          }
+          const root=el.shadowRoot??el;
+          const form=root.querySelector('form');
+          const input=form?.querySelector('input[name="name"]');
+          if(!input)return false;
+          input.value='  Sol  ';
+          const submit=new Event('submit',{bubbles:true,cancelable:true});
+          form.dispatchEvent(submit);
+          await el.updateComplete;
+          return submit.defaultPrevented&&names.length===1&&names[0]==='Sol'&&!root.querySelector('p')?.textContent.trim();
+        } finally {el.remove();}
+      }`),
+    ],
     hints: ['El submit pertenece al form, no solo al clic del botón.', 'FormData lee controles con name.', 'El evento público contiene el dato validado, no el nodo input.'],
     model: 'El template conecta el cable; el manejador traduce un evento DOM en una decisión de dominio y la publica.',
     whenToUse: 'Usa eventos declarativos para nodos del template y submit para acciones completas de formulario.',
@@ -62,7 +176,35 @@ class InviteForm extends LitElement {
   }
 }
 customElements.define('invite-form', InviteForm);`,
-      tests: [sourceTest('lit21-d1', 'Pasa la referencia del manejador', String.raw`@submit\s*=\s*\$\{this\._submit\}`), browserTest('lit21-d2', 'El formulario puede renderizar', `async ({document,customElements})=>{await customElements.whenDefined('invite-form');const el=document.querySelector('invite-form');await Promise.race([Promise.resolve(el.updateComplete).catch(()=>false),new Promise(resolve=>setTimeout(resolve,150))]);return Boolean(el.shadowRoot?.querySelector('form'));}`)],
+      tests: [
+        browserTest('lit21-d1', 'Renderiza el formulario sin enviar antes de tiempo', `async ({document,customElements})=>{
+          await customElements.whenDefined('invite-form');
+          const el=document.createElement('invite-form');
+          try {
+            document.body.append(el);
+            const updated=await Promise.resolve(el.updateComplete).then(()=>true,()=>false);
+            return updated&&Boolean((el.shadowRoot??el).querySelector('form'))&&!el.hasAttribute('sent');
+          } finally {el.remove();}
+        }`),
+        browserTest('lit21-d2', 'El manejador actúa al enviar y evita navegar en envíos sucesivos', `async ({document,customElements})=>{
+          await customElements.whenDefined('invite-form');
+          const el=document.createElement('invite-form');
+          try {
+            document.body.append(el);
+            const updated=await Promise.resolve(el.updateComplete).then(()=>true,()=>false);
+            if(!updated||el.hasAttribute('sent'))return false;
+            for(let index=0;index<2;index++) {
+              const form=(el.shadowRoot??el).querySelector('form');
+              if(!form)return false;
+              const submit=new Event('submit',{bubbles:true,cancelable:true});
+              form.dispatchEvent(submit);
+              await el.updateComplete;
+              if(!submit.defaultPrevented||!el.hasAttribute('sent'))return false;
+            }
+            return true;
+          } finally {el.remove();}
+        }`),
+      ],
       hints: ['Los paréntesis ejecutan ahora.', 'Lit necesita una función para llamar después.', 'Quita la llamada del binding.'] },
   }),
   lesson({
@@ -113,8 +255,62 @@ class ConnectionMonitor extends LitElement {
   }
 }
 customElements.define('connection-monitor', ConnectionMonitor);`,
-    challengeTitle: 'App: monitor con herencia intacta', challengeInstructions: 'Llama los callbacks super correspondientes, inicia el intervalo al conectar y límpialo al desconectar.',
-    tests: [browserTest('lit22-render', 'Lit conserva su actualización', `async ({document,customElements})=>{await customElements.whenDefined('connection-monitor');const el=document.querySelector('connection-monitor');await Promise.race([el.updateComplete,new Promise(resolve=>setTimeout(resolve,150))]);return Boolean(el.shadowRoot?.querySelector('p'));}`), sourceTest('lit22-super', 'Delega ambos callbacks', String.raw`super\.connectedCallback\s*\([\s\S]*super\.disconnectedCallback\s*\(`)],
+    challengeTitle: 'App: monitor con herencia intacta', challengeInstructions: 'Llama los callbacks super correspondientes. Al conectar, inicia un intervalo que incremente ticks cada segundo y muestre el valor actual en Monitor. Al desconectar, limpia el intervalo para que ticks deje de cambiar. Al volver a conectar, el monitor debe continuar funcionando sin duplicar recursos.',
+    tests: [
+      browserTest('lit22-render', 'El monitor avanza y actualiza su vista', `async ({document,customElements})=>{
+        await customElements.whenDefined('connection-monitor');
+        const el=document.createElement('connection-monitor');
+        const settle=()=>Promise.race([Promise.resolve(el.updateComplete),new Promise(resolve=>setTimeout(resolve,150))]);
+        const read=()=>Number((el.shadowRoot||el).querySelector('p')?.textContent?.match(/-?\\d+/)?.[0]);
+        try {
+          document.body.append(el);await settle();
+          if(el.ticks!==0||read()!==0)return {passed:false,receivedValue:'El monitor debe comenzar en cero.'};
+          for(const target of [1,2]){
+            const deadline=performance.now()+1150;
+            while(el.ticks<target&&performance.now()<deadline)await new Promise(resolve=>setTimeout(resolve,25));
+            await settle();
+            if(el.ticks!==target||read()!==target)return {passed:false,receivedValue:'El intervalo debe incrementar ticks y actualizar el valor visible. Esperado: '+target+'; estado: '+el.ticks+'; vista: '+read()+'; retraso sobre el límite: '+Math.round(performance.now()-deadline)+' ms.'};
+          }
+          return true;
+        }finally{el.remove();}
+      }`),
+      browserTest('lit22-super', 'Detiene los cambios al salir y conserva el ciclo de Lit', `async ({document,customElements})=>{
+        await customElements.whenDefined('connection-monitor');
+        const el=document.createElement('connection-monitor');
+        if(typeof el.addController!=='function')return false;
+        let connected=0,disconnected=0;
+        const observer={hostConnected(){connected++;},hostDisconnected(){disconnected++;}};
+        el.addController(observer);
+        const settle=()=>Promise.race([Promise.resolve(el.updateComplete),new Promise(resolve=>setTimeout(resolve,150))]);
+        try {
+          document.body.append(el);await settle();
+          if(connected!==1)return {passed:false,receivedValue:'La conexión no conserva el ciclo base de Lit.'};
+          el.remove();
+          const stopped=el.ticks;
+          await new Promise(resolve=>setTimeout(resolve,1100));
+          if(disconnected!==1||el.ticks!==stopped)return {passed:false,receivedValue:'Al salir del DOM, delega la desconexión y detén el intervalo.'};
+          document.body.append(el);await settle();
+          return connected===2;
+        }finally{el.remove();el.removeController(observer);}
+      }`),
+      browserTest('lit22-reconnect', 'Al volver al DOM reanuda los incrementos', `async ({document,customElements})=>{
+        await customElements.whenDefined('connection-monitor');
+        const el=document.createElement('connection-monitor');
+        const settle=()=>Promise.race([Promise.resolve(el.updateComplete),new Promise(resolve=>setTimeout(resolve,150))]);
+        try {
+          document.body.append(el);await settle();
+          if(!(el.shadowRoot||el).querySelector('p'))return false;
+          el.remove();
+          document.body.append(el);await settle();
+          const resumed=el.ticks;
+          const deadline=performance.now()+1150;
+          while(el.ticks===resumed&&performance.now()<deadline)await new Promise(resolve=>setTimeout(resolve,25));
+          await settle();
+          const shown=Number((el.shadowRoot||el).querySelector('p')?.textContent?.match(/-?\\d+/)?.[0]);
+          return {passed:el.ticks===resumed+1&&shown===el.ticks,receivedValue:'Al reconectar debe reanudar los incrementos y la vista, sin duplicarlos.'};
+        }finally{el.remove();}
+      }`),
+    ],
     hints: ['LitElement ya tiene trabajo en esos métodos.', 'Llama super.connectedCallback antes de depender del render.', 'Limpia tu recurso y llama también super.disconnectedCallback.'],
     model: 'Tu clase añade una estación a una línea existente. super permite que el tren de Lit siga recorriendo sus estaciones antes o después de tu trabajo.',
     whenToUse: 'Sobrescribe callbacks nativos solo para recursos ligados a conexión; no los uses para observar cualquier propiedad.',
@@ -133,7 +329,24 @@ class BrokenClock extends LitElement {
   }
 }
 customElements.define('broken-clock', BrokenClock);`,
-      tests: [litText('lit22-d1', 'El primer render ocurre', 'broken-clock', 'p', 'Reloj iniciado'), sourceTest('lit22-d2', 'Conserva el callback base', String.raw`connectedCallback\s*\([^)]*\)\s*\{[\s\S]*super\.connectedCallback\s*\(`)],
+      tests: [
+        browserTest('lit22-d1', 'El primer render ocurre', `async ({document,customElements})=>{
+          await customElements.whenDefined('broken-clock');const el=document.createElement('broken-clock');
+          try{document.body.append(el);await Promise.race([Promise.resolve(el.updateComplete),new Promise(resolve=>setTimeout(resolve,150))]);return (el.shadowRoot||el).querySelector('p')?.textContent?.trim()==='Reloj iniciado';}finally{el.remove();}
+        }`),
+        browserTest('lit22-d2', 'Conserva el callback base al conectar de nuevo', `async ({document,customElements})=>{
+          await customElements.whenDefined('broken-clock');const el=document.createElement('broken-clock');
+          if(typeof el.addController!=='function')return false;
+          let connected=0;const observer={hostConnected(){connected++;}};el.addController(observer);
+          try{
+            for(const expected of [1,2]){
+              document.body.append(el);await Promise.race([Promise.resolve(el.updateComplete),new Promise(resolve=>setTimeout(resolve,150))]);
+              if(connected!==expected||(el.shadowRoot||el).querySelector('p')?.textContent?.trim()!=='Reloj iniciado')return false;
+              el.remove();
+            }return true;
+          }finally{el.remove();el.removeController(observer);}
+        }`),
+      ],
       hints: ['Lit inicia su primera actualización al conectar.', 'Tu override reemplazó esa implementación.', 'Delega al método base.'] },
   }),
   lesson({
@@ -180,8 +393,41 @@ class FilterSummary extends LitElement {
   }
 }
 customElements.define('filter-summary', FilterSummary);`,
-    challengeTitle: 'App: cálculo en el ciclo correcto', challengeInstructions: 'Usa changedProperties en willUpdate para recalcular visible cuando cambien items o query.',
-    tests: [browserTest('lit23-filter', 'Cambiar query actualiza el resumen', `async ({document,customElements})=>{await customElements.whenDefined('filter-summary');const el=document.querySelector('filter-summary');el.query='a';await el.updateComplete;return el.shadowRoot.textContent.includes('Coincidencias: 2');}`), sourceTest('lit23-changed', 'Consulta las propiedades cambiadas', String.raw`willUpdate\s*\(\s*changed[\s\S]*changed\.has\s*\(`)],
+    challengeTitle: 'App: cálculo en el ciclo correcto', challengeInstructions: 'Filtra items por el texto de query sin distinguir mayúsculas de minúsculas y conserva el orden. Una búsqueda vacía muestra todos los elementos. Usa el mapa de propiedades cambiadas de willUpdate para actualizar visible antes de renderizar cuando cambie items o query. Si ninguna de esas entradas cambió, conserva el array visible. El párrafo debe mostrar el número de coincidencias actual, también cuando sea cero.',
+    tests: [
+      browserTest('lit23-filter', 'La búsqueda actualiza visible y el número de coincidencias', `async ({document,customElements})=>{
+        await customElements.whenDefined('filter-summary');const el=document.createElement('filter-summary');
+        ${filterSummaryProbe}
+        try{
+          el.items=['Pan','Café','Arroz'];el.query='a';document.body.append(el);await el.updateComplete;
+          if(!matches(['Pan','Café','Arroz']))return false;
+          for(const [query,expected] of [['AR',['Arroz']],['zz',[]],['',['Pan','Café','Arroz']]]){
+            el.query=query;await el.updateComplete;if(!matches(expected))return false;
+          }return true;
+        }finally{el.remove();}
+      }`),
+      browserTest('lit23-items', 'Una lista nueva se filtra aunque la búsqueda no cambie', `async ({document,customElements})=>{
+        await customElements.whenDefined('filter-summary');const el=document.createElement('filter-summary');
+        ${filterSummaryProbe}
+        try{
+          el.items=['Sol','Luna'];el.query='l';document.body.append(el);await el.updateComplete;
+          if(!matches(['Sol','Luna']))return false;
+          el.items=['Ola','Viento','Llama'];await el.updateComplete;if(!matches(['Ola','Llama']))return false;
+          el.items=[];await el.updateComplete;return matches([]);
+        }finally{el.remove();}
+      }`),
+      browserTest('lit23-changed', 'Sin cambios en las entradas se conserva el resultado derivado', `async ({document,customElements})=>{
+        await customElements.whenDefined('filter-summary');const el=document.createElement('filter-summary');
+        ${filterSummaryProbe}
+        try{
+          el.items=['Nube','Lluvia'];el.query='u';document.body.append(el);await el.updateComplete;
+          if(!matches(['Nube','Lluvia']))return false;
+          const previous=el.visible;el.requestUpdate();await el.updateComplete;
+          if(el.visible!==previous)return false;
+          el.query='u';await el.updateComplete;return el.visible===previous;
+        }finally{el.remove();}
+      }`),
+    ],
     hints: ['willUpdate recibe un Map.', 'Recalcula si cambió cualquiera de las dos entradas.', 'render solo consume visible.'],
     model: 'El ciclo es una cadena: setter programa, willUpdate prepara, render describe, update escribe y updated observa el DOM ya cambiado.',
     whenToUse: 'Usa willUpdate para derivados costosos compartidos por render; usa getters para derivados baratos y puros.',
@@ -189,7 +435,7 @@ customElements.define('filter-summary', FilterSummary);`,
     commonErrors: 'crear bucles en updated, medir DOM antes de actualizar o almacenar cada valor derivable.',
     transfer: 'Ubica validación, ordenamiento, analytics y medición DOM en el hook correcto.',
     sources: [source('Reactive update cycle', 'https://lit.dev/docs/components/lifecycle/#reactive-update-cycle', 'Sigue cada fase.', 'Lit')],
-    debug: { title: 'updated crea un bucle de actualizaciones', expected: 'tax-total calcula total sin programarse infinitamente.', observed: 'updated repite el cálculo varias veces; un tope de seguridad evita congelar el laboratorio.',
+    debug: { title: 'updated crea un bucle de actualizaciones', expected: 'total es el subtotal más un 10 % de impuesto, también con cero o decimales. El párrafo muestra ese total desde el primer render y al cambiar subtotal, sin acumular valores ni programar otra actualización para corregir la vista.', observed: 'updated repite el cálculo varias veces; un tope de seguridad evita congelar el laboratorio.',
       starter: `import { LitElement, html } from 'lit';
 class TaxTotal extends LitElement {
   static properties = { subtotal: { type: Number }, total: { state: true } };
@@ -209,7 +455,42 @@ class TaxTotal extends LitElement {
   }
 }
 customElements.define('tax-total', TaxTotal);`,
-      tests: [browserTest('lit23-d0', 'Otro subtotal produce un único total estable', `async ({document,customElements})=>{await customElements.whenDefined('tax-total');const el=document.querySelector('tax-total');el.subtotal=40;await el.updateComplete;await new Promise(resolve=>setTimeout(resolve,30));return el.total===44&&el.shadowRoot?.textContent.includes('44');}`), sourceTest('lit23-d1', 'Deriva antes del render', String.raw`willUpdate\s*\(`), sourceTest('lit23-d2', 'No acumula sobre total anterior', String.raw`this\.total\s*=\s*this\.subtotal\s*\+`) ],
+      tests: [
+        browserTest('lit23-d0', 'El total y la vista siguen subtotales distintos, cero y decimales', String.raw`async ({document,customElements})=>{
+          await customElements.whenDefined('tax-total');const el=document.createElement('tax-total');
+          const matches=expected=>{
+            const numbers=((el.shadowRoot||el).querySelector('p')?.textContent||'').match(/-?\d+(?:[.,]\d+)?/g)||[];
+            return typeof el.total==='number'&&Math.abs(el.total-expected)<1e-9&&numbers.length===1&&Math.abs(Number(numbers[0].replace(',','.'))-expected)<1e-9;
+          };
+          try{
+            el.subtotal=100;document.body.append(el);await el.updateComplete;if(!matches(110))return false;
+            for(const [subtotal,expected] of [[40,44],[19.5,21.45],[0,0],[80,88]]){
+              el.subtotal=subtotal;await el.updateComplete;if(!matches(expected))return false;
+            }return true;
+          }finally{el.remove();}
+        }`),
+        browserTest('lit23-d1', 'El primer render ya contiene el total correcto', String.raw`async ({document,customElements})=>{
+          await customElements.whenDefined('tax-total');const el=document.createElement('tax-total');if(typeof el.addController!=='function')return false;
+          const renders=[];const observer={hostUpdated(){renders.push({total:el.total,text:(el.shadowRoot||el).querySelector('p')?.textContent||''});}};
+          el.addController(observer);
+          try{
+            el.subtotal=70;document.body.append(el);await el.updateComplete;
+            if(renders.length!==1||typeof renders[0].total!=='number'||Math.abs(renders[0].total-77)>1e-9)return false;
+            const numbers=renders[0].text.match(/-?\d+(?:[.,]\d+)?/g)||[];
+            return numbers.length===1&&Math.abs(Number(numbers[0].replace(',','.'))-77)<1e-9;
+          }finally{el.removeController(observer);el.remove();}
+        }`),
+        browserTest('lit23-d2', 'Cambios agrupados producen una sola actualización con el último subtotal', String.raw`async ({document,customElements})=>{
+          await customElements.whenDefined('tax-total');const el=document.createElement('tax-total');if(typeof el.addController!=='function')return false;
+          let renders=0;const observer={hostUpdated(){renders++;}};el.addController(observer);
+          try{
+            el.subtotal=10;document.body.append(el);await el.updateComplete;renders=0;
+            el.subtotal=35;el.subtotal=0;const complete=await el.updateComplete;
+            const numbers=((el.shadowRoot||el).querySelector('p')?.textContent||'').match(/-?\d+(?:[.,]\d+)?/g)||[];
+            return complete===true&&renders===1&&el.total===0&&numbers.length===1&&Number(numbers[0].replace(',','.'))===0;
+          }finally{el.removeController(observer);el.remove();}
+        }`),
+      ],
       hints: ['updated ocurre después y cambiar total programa otro ciclo.', 'El total depende solo de subtotal.', 'Calcula de forma idempotente antes de render.'] },
   }),
   lesson({
@@ -249,12 +530,46 @@ class FocusSearch extends LitElement {
     this.results = [
       'Uno',
       'Dos',
-    ]; /* espera updateComplete y marca status como anunciado */
+    ];
+    // Espera al DOM nuevo antes de avisar a quien escucha este evento.
+    this.dispatchEvent(new CustomEvent('results-ready', {
+      detail: { count: this.results.length },
+    }));
   }
 }
 customElements.define('focus-search', FocusSearch);`,
-    challengeTitle: 'App: DOM en el momento correcto', challengeInstructions: 'Enfoca tras el primer render y espera updateComplete después de cambiar results.',
-    tests: [sourceTest('lit24-first', 'Usa firstUpdated para el foco', String.raw`firstUpdated\s*\([^)]*\)[\s\S]*focus\s*\(`), browserTest('lit24-complete', 'La búsqueda espera y actualiza el status', `async ({document,customElements})=>{await customElements.whenDefined('focus-search');const el=document.querySelector('focus-search');await el.search();return el.shadowRoot.querySelector('[role="status"]').textContent.includes('2 resultados');}`)],
+    challengeTitle: 'App: DOM en el momento correcto', challengeInstructions: 'Enfoca el input una vez tras el primer render, sin quitar el foco después a otros controles. En search(), espera updateComplete después de cambiar results y antes del evento results-ready que ya está escrito. Cada búsqueda debe anunciar una sola vez los dos resultados, con el status actualizado en ese mismo momento; debe funcionar también al pulsar Buscar de nuevo.',
+    tests: [focusOnceTest('lit24-first', 'focus-search'), browserTest('lit24-complete', 'Cada búsqueda anuncia una vez, cuando el status ya muestra los resultados nuevos', String.raw`async ({document,customElements})=>{
+      await customElements.whenDefined('focus-search');
+      const el=document.querySelector('focus-search');
+      if(!el?.matches(':defined')||typeof el.search!=='function')return false;
+      await el.updateComplete;
+      const root=el.shadowRoot||el;
+      const count=()=>{
+        const numbers=(root.querySelector('[role="status"]')?.textContent||'').match(/\d+/g)||[];
+        return numbers.length===1?Number(numbers[0]):null;
+      };
+      for(const size of [0,4]){
+        el.results=Array.from({length:size},(_,index)=>'Previo '+index);
+        await el.updateComplete;
+        if(count()!==size)return false;
+        const announcements=[];
+        const observe=event=>announcements.push({count:event.detail?.count,visible:count()});
+        el.addEventListener('results-ready',observe);
+        try {
+          if(size===0)await el.search();
+          else {
+            const button=root.querySelector('button');
+            if(!button)return false;
+            button.click();
+          }
+          await el.updateComplete;
+          await new Promise(resolve=>setTimeout(resolve,0));
+          if(announcements.length!==1||announcements[0].count!==2||announcements[0].visible!==2||count()!==2)return false;
+        } finally {el.removeEventListener('results-ready',observe);}
+      }
+      return true;
+    }`)],
     hints: ['El input no existe en constructor.', 'firstUpdated corre una sola vez tras crearlo.', 'Después de asignar results, await this.updateComplete.'],
     model: 'render hace una promesa de DOM; updateComplete confirma que esa promesa ya se materializó antes de medir, enfocar o integrar otra API.',
     whenToUse: 'Usa firstUpdated para inicialización DOM única, updated para efectos posteriores condicionados y updateComplete en flujos asíncronos.',
@@ -262,7 +577,7 @@ customElements.define('focus-search', FocusSearch);`,
     commonErrors: 'consultar shadowRoot en constructor, enfocar en cada updated o asumir que una asignación reactiva actualiza DOM de forma síncrona.',
     transfer: 'Diseña la secuencia para medir una lista después de filtrar y para inicializar una gráfica externa.',
     sources: [source('firstUpdated y updated', 'https://lit.dev/docs/components/lifecycle/#firstupdated', 'Distingue hooks.', 'Lit'), source('updateComplete', 'https://lit.dev/docs/components/lifecycle/#updatecomplete', 'Espera updates.', 'Lit')],
-    debug: { title: 'El input es null en constructor', expected: 'search-box enfoca tras render.', observed: 'Consulta renderRoot antes de que render produzca el input.',
+    debug: { title: 'El input es null en constructor', expected: 'search-box enfoca el input tras el primer render, sin recuperar el foco cuando la persona ya lo ha movido a otro control.', observed: 'Consulta renderRoot antes de que render produzca el input.',
       starter: `import { LitElement, html } from 'lit';
 class SearchBox extends LitElement {
   constructor() {
@@ -274,7 +589,7 @@ class SearchBox extends LitElement {
   }
 }
 customElements.define('search-box', SearchBox);`,
-      tests: [browserTest('lit24-d0', 'El input queda enfocado después del primer render', `async ({document,customElements})=>{await customElements.whenDefined('search-box');const el=document.querySelector('search-box');await el.updateComplete;const input=el.shadowRoot?.querySelector('input');return el.shadowRoot?.activeElement===input;}`), sourceTest('lit24-d1', 'Mueve el foco a firstUpdated', String.raw`firstUpdated\s*\(`), sourceTest('lit24-d2', 'Conserva focus', String.raw`querySelector\s*\(\s*['"]input['"]\s*\)\.focus\s*\(`)],
+      tests: [focusOnceTest('lit24-d0', 'search-box')],
       hints: ['constructor ocurre antes del primer template.', 'El hook posterior al primer render existe para este caso.', 'Mueve la consulta completa.'] },
   }),
   lesson({
@@ -305,7 +620,7 @@ customElements.define('status-card', StatusCard);`,
     starter: `import { LitElement, html, css } from 'lit';
 class ThemeCard extends LitElement {
   static styles = css\`
-    /* estiliza :host y usa --card-accent con fallback */
+    /* añade un borde izquierdo a :host; usa --card-accent y reserva #2563eb */
   \`;
   render() {
     return html\`<article>
@@ -315,8 +630,42 @@ class ThemeCard extends LitElement {
   }
 }
 customElements.define('theme-card', ThemeCard);`,
-    challengeTitle: 'App: tarjeta tematizable', challengeInstructions: 'Usa static styles, :host y --card-accent con un fallback legible.',
-    tests: [browserTest('lit25-render', 'La tarjeta conserva su contenido real', `async ({document,customElements})=>{await customElements.whenDefined('theme-card');const el=document.querySelector('theme-card');await el.updateComplete;return el.shadowRoot.textContent.includes('Panel personal');}`), sourceTest('lit25-theme', 'Expone host y una variable con fallback', String.raw`static\s+styles\s*=\s*css\s*\`[\s\S]*:host[\s\S]*var\s*\(\s*--card-accent\s*,`) ],
+    challengeTitle: 'App: tarjeta tematizable', challengeInstructions: 'Conserva el artículo con «Panel personal» y «Tema configurable» en Shadow DOM. En static styles, usa :host para añadir un borde izquierdo visible cuyo color dependa de --card-accent; sin tema debe ser azul #2563eb. Comprueba dos tarjetas con colores distintos, cambia el token desde fuera sin volver a renderizar y permite heredar el tema de un contenedor. El grosor y el resto del diseño quedan a tu elección.',
+    tests: [browserTest('lit25-theme', 'El borde responde al tema, conserva el contenido y recupera el azul de reserva', `async ({document,customElements})=>{
+      await customElements.whenDefined('theme-card');
+      const container=document.createElement('div');
+      const first=document.createElement('theme-card');
+      const second=document.createElement('theme-card');
+      container.append(first,second);
+      first.style.setProperty('--card-accent','#0f766e');
+      second.style.setProperty('--card-accent','#b91c1c');
+      const read=el=>{
+        const article=el.shadowRoot?.querySelector('article');
+        if(!article?.querySelector('h2')?.textContent?.includes('Panel personal')||!article.querySelector('p')?.textContent?.includes('Tema configurable'))return 'Falta el contenido del artículo en Shadow DOM';
+        const style=document.defaultView.getComputedStyle(el);
+        if(parseFloat(style.borderLeftWidth)<=0||['none','hidden'].includes(style.borderLeftStyle))return 'No hay borde izquierdo visible';
+        return style.borderLeftColor;
+      };
+      const check=(color,stage)=>{
+        const a=read(first),b=read(second);
+        return a===color&&b==='rgb(185, 28, 28)'?null:{passed:false,receivedValue:stage+': primera tarjeta '+a+'; segunda '+b+'.'};
+      };
+      try {
+        document.body.append(container);
+        await Promise.all([first.updateComplete,second.updateComplete]);
+        let failure=check('rgb(15, 118, 110)','Temas independientes verde y rojo');
+        if(failure)return failure;
+        first.style.setProperty('--card-accent','#a21caf');
+        failure=check('rgb(162, 28, 175)','Cambio externo a magenta');
+        if(failure)return failure;
+        container.style.setProperty('--card-accent','#c2410c');
+        first.style.removeProperty('--card-accent');
+        failure=check('rgb(194, 65, 12)','Tema naranja heredado del contenedor');
+        if(failure)return failure;
+        container.style.setProperty('--card-accent','initial');
+        return check('rgb(37, 99, 235)','Sin tema, azul de reserva #2563eb')||true;
+      } finally {container.remove();}
+    }`)],
     hints: ['Los estilos pertenecen a la clase, no a cada render.', ':host selecciona el elemento personalizado.', 'var necesita un valor seguro si el consumidor no define tema.'],
     model: 'El tema es una perilla pública, no una ventana a todos los selectores internos.',
     whenToUse: 'Expón custom properties para decisiones de valor —color, espacio, tamaño— que consumidores realmente necesiten ajustar.',
@@ -324,7 +673,7 @@ customElements.define('theme-card', ThemeCard);`,
     commonErrors: 'estilos dentro de render, variables sin fallback, nombres genéricos que colisionan o temas que rompen accesibilidad.',
     transfer: 'Diseña tres tokens públicos para un botón y descarta cinco detalles que deben seguir internos.',
     sources: [source('Styles', 'https://lit.dev/docs/components/styles/', 'Revisa static styles, :host y theming.', 'Lit')],
-    debug: { title: 'El tema no cruza el shadow root', expected: 'brand-chip usa --brand-color.', observed: 'Intenta seleccionar .brand-chip desde la página.',
+    debug: { title: 'El tema no cruza el shadow root', expected: 'El texto Marca conserva su Shadow DOM y toma el color de --brand-color. Cambiar el token desde fuera debe actualizar el color sin volver a renderizar; cada instancia puede tener su propio tema y también heredar el de su contenedor.', observed: 'El span tiene un color fijo; seleccionar sus elementos internos desde la página no lo vuelve configurable.',
       starter: `import { LitElement, html, css } from 'lit';
 class BrandChip extends LitElement {
   static styles = css\`
@@ -337,7 +686,31 @@ class BrandChip extends LitElement {
   }
 }
 customElements.define('brand-chip', BrandChip);`,
-      tests: [sourceTest('lit25-d1', 'Consume el token público', String.raw`var\s*\(\s*--brand-color`), litText('lit25-d2', 'Conserva el contenido', 'brand-chip', 'span', 'Marca')],
+      tests: [browserTest('lit25-d1', 'El texto conserva su contenido y responde al tema de cada instancia', `async ({document,customElements})=>{
+        await customElements.whenDefined('brand-chip');
+        const container=document.createElement('div');
+        const first=document.createElement('brand-chip');
+        const second=document.createElement('brand-chip');
+        container.append(first,second);
+        first.style.setProperty('--brand-color','#0f766e');
+        second.style.setProperty('--brand-color','#b91c1c');
+        const read=el=>{
+          const span=el.shadowRoot?.querySelector('span');
+          return span?.textContent?.includes('Marca')?document.defaultView.getComputedStyle(span).color:'Marca no aparece en el Shadow DOM';
+        };
+        const matches=(el,color)=>read(el)===color;
+        try {
+          document.body.append(container);
+          await Promise.all([first.updateComplete,second.updateComplete]);
+          if(!matches(first,'rgb(15, 118, 110)')||!matches(second,'rgb(185, 28, 28)'))return {passed:false,receivedValue:'Con temas verde y rojo: primera instancia '+read(first)+'; segunda '+read(second)+'.'};
+          first.style.setProperty('--brand-color','#1d4ed8');
+          if(!matches(first,'rgb(29, 78, 216)')||!matches(second,'rgb(185, 28, 28)'))return {passed:false,receivedValue:'Al cambiar solo la primera a azul: primera instancia '+read(first)+'; segunda '+read(second)+'.'};
+          container.style.setProperty('--brand-color','#6b21a8');
+          first.style.removeProperty('--brand-color');
+          if(!matches(first,'rgb(107, 33, 168)')||!matches(second,'rgb(185, 28, 28)'))return {passed:false,receivedValue:'Al heredar el tema morado del contenedor: primera instancia '+read(first)+'; segunda '+read(second)+'.'};
+          return true;
+        } finally {container.remove();}
+      }`)],
       hints: ['El exterior no alcanza span.', 'La cascada sí lleva custom properties.', 'Usa el token dentro de static styles.'] },
   }),
   lesson({
@@ -373,7 +746,7 @@ class AppPanel extends LitElement {
     } /* estiliza slotted header sin depender de h2 */
   \`;
   render() {
-    return html\`<section part="surface">
+    return html\`<section>
       <header><slot name="header"></slot></header>
       <main><slot></slot></main>
       <footer><slot name="actions"></slot></footer>
@@ -381,8 +754,36 @@ class AppPanel extends LitElement {
   }
 }
 customElements.define('app-panel', AppPanel);`,
-    challengeTitle: 'App: panel con extensiones deliberadas', challengeInstructions: 'Conserva los slots, expón surface como part y aplica estilo al slot header.',
-    tests: [browserTest('lit26-slots', 'Expone composición completa', `async ({document,customElements})=>{await customElements.whenDefined('app-panel');const root=document.querySelector('app-panel')?.shadowRoot;return Boolean(root?.querySelector('slot[name="header"]')&&root.querySelector('slot[name="actions"]')&&root.querySelector('[part="surface"]'));}`), sourceTest('lit26-slotted', 'Estiliza contenido proyectado sin asumir su etiqueta', String.raw`::slotted\s*\(\s*\[slot\s*=\s*['"]header['"]\]`) ],
+    challengeTitle: 'App: panel con extensiones deliberadas', challengeInstructions: 'Conserva la proyección del encabezado, el contenido sin nombre y las acciones dentro de la sección, sin copiar ni reemplazar los nodos que aporta la página. Expón esa sección con el nombre público surface para que app-panel::part(surface) pueda cambiar su fondo desde fuera. Usa ::slotted para destacar en negrita (peso 700 o superior) solo el contenido de header, aunque no sea un h2 o se sustituya después; no pongas en negrita el cuerpo ni las acciones.',
+    tests: [
+      surfaceCompositionTest('lit26-slots','app-panel',['header','','actions']),
+      browserTest('lit26-slotted', 'El encabezado proyectado recibe negrita sin depender de su etiqueta', `async ({document,customElements})=>{
+        await customElements.whenDefined('app-panel');
+        const el=document.createElement('app-panel');
+        const body=document.createElement('p');
+        const action=document.createElement('button');
+        body.textContent='Contenido sin destacar';
+        action.textContent='Acción sin destacar';
+        action.slot='actions';
+        el.append(body,action);
+        try {
+          document.body.append(el);
+          await el.updateComplete;
+          for(const tag of ['span','div']){
+            const header=document.createElement(tag);
+            header.slot='header';
+            header.textContent='Encabezado '+tag;
+            el.append(header);
+            const slot=el.shadowRoot?.querySelector('slot[name="header"]');
+            if(!slot?.assignedElements().includes(header))return {passed:false,receivedValue:'El encabezado '+tag+' no se proyecta en header.'};
+            const weight=node=>Number(document.defaultView.getComputedStyle(node).fontWeight);
+            if(weight(header)<700||weight(body)>=700||weight(action)>=700)return {passed:false,receivedValue:'Pesos observados: encabezado '+weight(header)+', cuerpo '+weight(body)+', acción '+weight(action)+'.'};
+            header.remove();
+          }
+          return true;
+        } finally {el.remove();}
+      }`),
+    ],
     hints: ['Los slots ya son parte del contrato; no copies su contenido.', 'part nombra una pieza interna concreta.', 'Selecciona por slot, no por h2.'],
     model: 'Variables ajustan perillas, parts permiten pintar una pieza y slots dejan traer contenido; cada puerta tiene un alcance diferente.',
     whenToUse: 'Usa slots para DOM aportado, custom properties para valores y parts para personalización estructural excepcional.',
@@ -390,7 +791,7 @@ customElements.define('app-panel', AppPanel);`,
     commonErrors: 'parts para cada nodo, ::slotted profundo que no funciona o cambiar nombres públicos como refactor interno.',
     transfer: 'Diseña la personalización de date-picker con tokens, parts y slots mínimos.',
     sources: [source('Styles: theming', 'https://lit.dev/docs/components/styles/#theming', 'Compara mecanismos.', 'Lit'), source('CSS shadow parts', 'https://developer.mozilla.org/en-US/docs/Web/CSS/::part', 'Consulta part y ::part.')],
-    debug: { title: 'El consumidor no puede tematizar la superficie', expected: 'report-card expone part="surface".', observed: 'La sección interna no tiene una puerta pública.',
+    debug: { title: 'El consumidor no puede tematizar la superficie', expected: 'La sección de report-card conserva el contenido del slot y expone el nombre público surface. Desde la página, report-card::part(surface) debe poder cambiar el fondo de esa sección, sin acceder al Shadow DOM ni reemplazar el contenido.', observed: 'La sección interna no tiene una puerta pública para el CSS del consumidor.',
       starter: `import { LitElement, html } from 'lit';
 class ReportCard extends LitElement {
   render() {
@@ -398,7 +799,7 @@ class ReportCard extends LitElement {
   }
 }
 customElements.define('report-card', ReportCard);`,
-      tests: [sourceTest('lit26-d1', 'Expone surface', String.raw`part\s*=\s*['"]surface['"]`), browserTest('lit26-d2', 'La superficie existe', `async ({document,customElements})=>{await customElements.whenDefined('report-card');const el=document.querySelector('report-card');if(!el)return false;await Promise.race([Promise.resolve(el.updateComplete).catch(()=>false),new Promise(resolve=>setTimeout(resolve,150))]);return Boolean(el.shadowRoot?.querySelector('[part="surface"]'));}`)],
+      tests: [surfaceCompositionTest('lit26-d1','report-card',[''])],
       hints: ['El slot resuelve contenido, no estilo de section.', 'Nombra solo la superficie estable.', 'Añade part a la pieza interna.'] },
   }),
 ];

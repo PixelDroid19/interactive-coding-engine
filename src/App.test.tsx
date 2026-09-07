@@ -1,4 +1,5 @@
 // @vitest-environment happy-dom
+// @vitest-environment-options {"happyDOM":{"settings":{"disableIframePageLoading":true}}}
 import React from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
@@ -13,6 +14,8 @@ import { getCurriculumSkillIndex } from './learning/curriculumEvidence';
 import { LEARNING_PROFILE_STORAGE_KEY } from './learning/localLearningRepository';
 import { AuthSessionProvider } from './auth/AuthSessionProvider';
 import { PublishedLessonError } from './services/learningApi';
+import { clearLearningSyncQueue } from './services/learningSync';
+import { disposeLocalGenerationSession, getLocalGenerationSession } from './engine/ai/localGenerationSession';
 
 const { fetchPublishedLessonMock } = vi.hoisted(() => ({
   fetchPublishedLessonMock: vi.fn(),
@@ -105,12 +108,16 @@ function seedPublishedFirstLessonManifest() {
 describe('App navigation persistence', () => {
   beforeEach(() => {
     localStorage.clear();
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('Sin red en las pruebas de navegación.'));
     fetchPublishedLessonMock.mockReset();
     fetchPublishedLessonMock.mockRejectedValue(new Error('Sin conexión durante la prueba.'));
   });
 
   afterEach(() => {
     cleanup();
+    clearLearningSyncQueue();
+    disposeLocalGenerationSession();
+    vi.restoreAllMocks();
   });
 
   it('inicia toda la experiencia en modo oscuro', () => {
@@ -134,6 +141,14 @@ describe('App navigation persistence', () => {
     expect(screen.getByRole('group', { name: 'Lenguaje del ejercicio' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Python' })).toBeTruthy();
     expect(screen.getByText('Clase visual guiada')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Abrir ayuda de IA' })).toBeNull();
+  });
+
+  it('libera la sesión del tutor antes de usar los laboratorios de AI Engineer', () => {
+    renderApp();
+    const previousTutorSession = getLocalGenerationSession();
+    fireEvent.click(screen.getByRole('button', { name: `Ver recorrido: ${AI_ENGINEER_COURSE.title}` }));
+    expect(getLocalGenerationSession()).not.toBe(previousTutorSession);
     expect(screen.queryByRole('button', { name: 'Abrir ayuda de IA' })).toBeNull();
   });
 
@@ -308,7 +323,7 @@ describe('App navigation persistence', () => {
     const firstReflections = Array.from(document.querySelectorAll<HTMLTextAreaElement>('.post-solve-studio textarea'));
     fireEvent.input(firstReflections[0], { target: { value: 'Primero entra el valor, luego cambia el estado y al final puedo observar el nuevo resultado.' } });
     fireEvent.input(firstReflections[1], { target: { value: 'Probaría el límite cero y conservaría el caso uno para comprobar que no hay regresión.' } });
-    fireEvent.click(screen.getByRole('button', { name: /Registrar comprensión/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Registrar y continuar/ }));
     await vi.waitFor(() => expect((screen.getByRole('button', { name: /Siguiente/ }) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/ }));
     expect(await screen.findByText(debug02.title)).toBeTruthy();
@@ -332,7 +347,7 @@ describe('App navigation persistence', () => {
     const reflections = Array.from(document.querySelectorAll<HTMLTextAreaElement>('.post-solve-studio textarea'));
     fireEvent.input(reflections[0], { target: { value: 'Primero entra el valor, luego cambia el estado y al final puedo observar el nuevo resultado.' } });
     fireEvent.input(reflections[1], { target: { value: 'Probaría el límite cero y conservaría el caso uno para comprobar que no hay regresión.' } });
-    fireEvent.click(screen.getByRole('button', { name: /Registrar comprensión/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Registrar y continuar/ }));
     await vi.waitFor(() => expect((screen.getByRole('button', { name: /Siguiente/ }) as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByRole('button', { name: /Siguiente/ }));
     await screen.findByText(debug02.title);

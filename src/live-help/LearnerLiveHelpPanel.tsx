@@ -34,6 +34,8 @@ function chatBody(event: LiveHelpEvent): string | null {
 export function LearnerLiveHelpPanel({
   session, workspaceMatchesSession = true, connectionState, events, error, onClose, onRequest, onAccept, onSendChat, onSendSnapshot, onDecision, onApplyProposal, onEnd,
 }: LearnerLiveHelpPanelProps) {
+  const panelRef = useRef<HTMLElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
   const [message, setMessage] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
   const [pendingDecisions, setPendingDecisions] = useState<Record<string, ProposalDecision>>({});
@@ -48,6 +50,17 @@ export function LearnerLiveHelpPanel({
     return decisions;
   }, [events]);
   const messages = useMemo(() => events.map((event) => ({ event, body: chatBody(event) })).filter((entry): entry is { event: LiveHelpEvent; body: string } => entry.body !== null), [events]);
+
+  useEffect(() => {
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const panel = panelRef.current;
+    closeRef.current?.focus();
+    return () => {
+      if (previous?.isConnected && (document.activeElement === document.body || panel?.contains(document.activeElement))) {
+        previous.focus();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setPendingDecisions((current) => {
@@ -111,10 +124,16 @@ export function LearnerLiveHelpPanel({
   };
 
   return (
-    <aside className="live-help-panel" aria-label="Ayuda del formador" role="complementary">
+    <aside ref={panelRef} className="live-help-panel" aria-label="Ayuda del formador" role="complementary" onKeyDown={(event) => {
+      if (event.key === 'Escape' && !event.defaultPrevented) {
+        event.preventDefault();
+        event.stopPropagation();
+        onClose();
+      }
+    }}>
       <header className="live-help-panel__header">
         <span><Headphones size={16} aria-hidden="true" /> Ayuda del formador</span>
-        <div><small className={`live-help-panel__state is-${connectionState}`}>{session?.status === 'active' ? 'Sesión activa' : session?.status === 'accepted' ? 'Conectando' : session?.status === 'claimed' ? 'Esperando consentimiento' : session?.status === 'requested' ? 'Solicitud enviada' : 'Sin sesión'}</small><button type="button" onClick={onClose} aria-label="Cerrar ayuda en vivo"><X size={16} /></button></div>
+        <div><small className={`live-help-panel__state is-${connectionState}`}>{session?.status === 'active' ? 'Sesión activa' : session?.status === 'accepted' ? 'Conectando' : session?.status === 'claimed' ? 'Esperando consentimiento' : session?.status === 'requested' ? 'Solicitud enviada' : 'Sin sesión'}</small><button ref={closeRef} type="button" onClick={onClose} aria-label="Cerrar ayuda en vivo"><X size={16} /></button></div>
       </header>
       {error && <p className="live-help-panel__notice" role="alert">{error}</p>}
       {notice && <p className="live-help-panel__notice" role="alert">{notice}</p>}

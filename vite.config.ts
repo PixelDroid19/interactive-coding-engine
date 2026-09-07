@@ -46,6 +46,49 @@ function typeScriptLibrariesPlugin() {
             fs.readFileSync(path.join(libraryDirectory, fileName), 'utf8'),
           ]),
       );
+      // Keep published package declarations in the editor's virtual filesystem.
+      // No package JavaScript is bundled or executed by this plugin.
+      const packages = new Map<string, string>();
+      function addPackage(name: string, from: string) {
+        const packageRequire = createRequire(from);
+        let entryPath: string;
+        try {
+          entryPath = packageRequire.resolve(`${name}/package.json`);
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED') throw error;
+          entryPath = packageRequire.resolve(name);
+        }
+        let directory = path.dirname(entryPath);
+        while (!fs.existsSync(path.join(directory, 'package.json'))) {
+          const parent = path.dirname(directory);
+          if (parent === directory) throw new Error(`Missing package metadata: ${name}`);
+          directory = parent;
+        }
+        const metadataPath = path.join(directory, 'package.json');
+        const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+        if (packages.has(name)) {
+          if (packages.get(name) !== metadata.version) throw new Error(`Conflicting editor types: ${name}`);
+          return;
+        }
+        packages.set(name, metadata.version);
+        libraries[`/node_modules/${name}/package.json`] = JSON.stringify({
+          name: metadata.name, version: metadata.version, type: metadata.type,
+          types: metadata.types, typings: metadata.typings, exports: metadata.exports,
+        });
+        function collectDeclarations(relative = '') {
+          for (const entry of fs.readdirSync(path.join(directory, relative), { withFileTypes: true })) {
+            if (entry.name === 'node_modules') continue;
+            const file = path.posix.join(relative, entry.name);
+            if (entry.isDirectory()) collectDeclarations(file);
+            else if (entry.isFile() && file.endsWith('.d.ts')) {
+              libraries[`/node_modules/${name}/${file}`] = fs.readFileSync(path.join(directory, file), 'utf8');
+            }
+          }
+        }
+        collectDeclarations();
+        for (const dependency of Object.keys(metadata.dependencies ?? {})) addPackage(dependency, metadataPath);
+      }
+      for (const name of ['lit', '@lit/task', '@lit/context']) addPackage(name, path.join(process.cwd(), 'package.json'));
       return `export const typeScriptLibraries = ${JSON.stringify(libraries)};`;
     },
   };

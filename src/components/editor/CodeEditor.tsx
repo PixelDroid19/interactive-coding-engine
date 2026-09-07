@@ -278,9 +278,9 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         lessonId,
         activeFilePath: file.path,
         files: Object.fromEntries(Object.entries(currentFiles).map(([path, workspaceFile]) => [path, workspaceFile.content])),
-        diagnostics: diagnostics.state === 'ready'
+        diagnostics: diagnostics.state === 'ready' && diagnostics.filePath === file.path && diagnostics.documentText === file.content
           ? diagnostics.errors || diagnostics.warnings
-            ? `${diagnostics.errors} errores y ${diagnostics.warnings} advertencias`
+            ? [`${diagnostics.errors} errores y ${diagnostics.warnings} advertencias`, ...(diagnostics.details ?? [])].join('\n')
             : 'Sin errores detectados'
           : undefined,
         recentResult: tutorRecentResult,
@@ -297,7 +297,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
       },
     }, tutorSourceIdRef.current);
     return () => clearTutorWorkspace(tutorSourceIdRef.current);
-  }, [diagnostics.errors, diagnostics.state, diagnostics.warnings, file, lessonId, tutorRecentResult, workspaceFiles]);
+  }, [diagnostics, file, lessonId, tutorRecentResult, workspaceFiles]);
 
   if (!compartmentsRef.current) {
     compartmentsRef.current = {

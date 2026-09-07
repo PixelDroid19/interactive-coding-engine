@@ -27,6 +27,11 @@ const cyberResponsiveScss = (() => {
 })();
 
 describe('contratos visuales de superficies principales', () => {
+  it('presenta las instrucciones como texto sin cajas ni franjas laterales decorativas', () => {
+    const practiceBrief = readFileSync(new URL('../styles/components/_practice-brief.scss', import.meta.url), 'utf8');
+    expect(practiceBrief).not.toMatch(/border-(?:left|inline-start):/);
+    expect(practiceBrief).toMatch(/\.practice-brief__row\s*\{[^}]*border:\s*0[^}]*background:\s*transparent/s);
+  });
   it('reserva una fila independiente para la navegación del Centro de aprendizaje', () => {
     expect(scssAggregate).toMatch(
       /\.learning-center\s*\{[^}]*grid-template-rows:\s*auto auto auto minmax\(0,\s*1fr\)/s,
@@ -140,6 +145,10 @@ describe('arquitectura SCSS modular y sistema de temas', () => {
     const cyberModals = readFileSync(new URL('../styles/themes/cyber/_modals.scss', import.meta.url), 'utf8');
 
     expect(baseTokens).toMatch(/--ui-canvas:/);
+    const darkTokens = readFileSync(new URL('../styles/themes/_dark.scss', import.meta.url), 'utf8');
+    expect(darkTokens).toMatch(/--ui-canvas:\s*var\(--bg-main\)/);
+    expect(darkTokens).toMatch(/--ui-text:\s*var\(--color-text-main\)/);
+    expect(darkTokens).toMatch(/--ui-surface-raised:\s*var\(--bg-surface-light\)/);
     expect(cyberTokens).toMatch(/--ui-canvas:\s*#07090e/);
     expect(learningCenter).toMatch(/background:\s*var\(--ui-canvas\)/);
     expect(staffDashboard).toMatch(/background:\s*var\(--ui-surface\)/);

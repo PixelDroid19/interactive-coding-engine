@@ -44,6 +44,19 @@ function harness(options: { cached?: boolean; webGpu?: boolean; output?: string[
 }
 
 describe('LocalGenerationService', () => {
+  it('conserva el corte por tokens aunque llegue en un fragmento sin texto', async () => {
+    const { service, engine } = harness();
+    vi.mocked(engine.chat.completions.create).mockResolvedValue({
+      async *[Symbol.asyncIterator]() {
+        yield { choices: [{ delta: { content: 'La actualización ocurre porque' }, finish_reason: null }] };
+        yield { choices: [{ delta: {}, finish_reason: 'length' }] };
+        yield { choices: [] };
+      },
+    });
+    await expect(service.generate({ messages: [{ role: 'user', content: 'Explica.' }], maxNewTokens: 16 }))
+      .resolves.toMatchObject({ text: 'La actualización ocurre porque', finishReason: 'length' });
+  });
+
   it('inspecciona la configuración y la caché sin crear ni cargar el motor', async () => {
     const { service, createEngine } = harness();
 
@@ -95,8 +108,73 @@ describe('LocalGenerationService', () => {
       stream: true,
     }));
     expect(onProgress).toHaveBeenCalledWith(expect.objectContaining({ progress: 0.5 }));
+    expect(onProgress).toHaveBeenCalledWith(expect.objectContaining({ label: 'Preparando modelo local: 50%' }));
     expect(onChunk).toHaveBeenCalledTimes(2);
     expect(second.text).toBe('Respuesta local en español.');
+  });
+
+  it('desactiva el razonamiento de Qwen3 al pedir un JSON con presupuesto acotado', async () => {
+    const { service, engine } = harness();
+    await service.generate({ messages: [{ role: 'user', content: 'Da una pista.' }], maxNewTokens: 160,
+      expectedFormat: 'json_object', allowInvalidStructuredOutput: true }, { model: 'Qwen3-1.7B-q4f16_1-MLC' });
+    expect(engine.chat.completions.create).toHaveBeenCalledWith(expect.objectContaining({ extra_body: { enable_thinking: false } }));
+  });
+
+  it.each([undefined, true])('conserva el protocolo de los laboratorios con enableThinking=%s', async enableThinking => {
+    const { service, engine } = harness({ output: ['<think>Un ejemplo del laboratorio.</think>', 'Respuesta.'] });
+    const onChunk = vi.fn();
+    const response = await service.generate({ messages: [{ role: 'user', content: 'Compara protocolos.' }], maxNewTokens: 240,
+      ...(enableThinking === undefined ? {} : { enableThinking }) }, { model: 'Qwen3-1.7B-q4f16_1-MLC', onChunk });
+    const sent = vi.mocked(engine.chat.completions.create).mock.calls[0][0];
+    if (enableThinking === undefined) expect(sent).not.toHaveProperty('extra_body');
+    else expect(sent).toHaveProperty('extra_body', { enable_thinking: true });
+    expect(onChunk).toHaveBeenCalledTimes(2);
+    expect(response.text).toContain('<think>');
+  });
+
+  it('no envía la extensión de Qwen3 a otros modelos', async () => {
+    const { service, engine } = harness();
+    const onChunk = vi.fn();
+    await service.generate({ messages: [{ role: 'user', content: 'Explica.' }], maxNewTokens: 240, enableThinking: false },
+      { model: 'Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC', onChunk });
+    expect(vi.mocked(engine.chat.completions.create).mock.calls[0][0]).not.toHaveProperty('extra_body');
+    expect(onChunk).toHaveBeenCalledTimes(2);
+  });
+
+  it('entrega la explicación de Qwen3 sin prefijo interno cuando se pide una respuesta directa', async () => {
+    const { service, engine } = harness({ output: ['<thi', 'nk>\n\n</think>\n\n', 'El cambio de total programa otra actualización.'] });
+    const onChunk = vi.fn();
+    const response = await service.generate({ messages: [{ role: 'user', content: 'Explica el ciclo.' }], maxNewTokens: 240,
+      enableThinking: false }, { model: 'Qwen3-1.7B-q4f16_1-MLC', onChunk });
+    expect(engine.chat.completions.create).toHaveBeenCalledWith(expect.objectContaining({ extra_body: { enable_thinking: false } }));
+    expect(response.text).toBe('El cambio de total programa otra actualización.');
+    expect(onChunk.mock.calls.flat().join('')).toBe(response.text);
+  });
+
+  it('no publica un borrador interno si Qwen3 ignora la petición de respuesta directa', async () => {
+    const { service } = harness({ output: ['<think>', 'Okay, let us inspect the code before answering.'] });
+    const onChunk = vi.fn();
+    await expect(service.generate({ messages: [{ role: 'user', content: 'Explica el ciclo.' }], maxNewTokens: 240,
+      enableThinking: false }, { model: 'Qwen3-1.7B-q4f16_1-MLC', onChunk }))
+      .rejects.toThrow(/respuesta final/);
+    expect(onChunk).not.toHaveBeenCalled();
+  });
+
+  it('valida el JSON de Qwen3 sin tratar su prefijo de razonamiento vacío como contenido', async () => {
+    const { service } = harness({ output: ['<think>\n\n</think>\n\n', '{"question":"¿Qué diferencia observas?"}'] });
+    await expect(service.generate({ messages: [{ role: 'user', content: 'Da una pista.' }], maxNewTokens: 160,
+      expectedFormat: 'json_object', expectedJsonKeys: ['question'] }, { model: 'Qwen3-1.7B-q4f16_1-MLC' }))
+      .resolves.toMatchObject({ text: '{"question":"¿Qué diferencia observas?"}' });
+  });
+
+  it.each([
+    ['Qwen3-1.7B-q4f16_1-MLC', '<think>Estoy pensando.</think>'],
+    ['Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC', '<think>\n</think>'],
+  ])('no oculta contenido fuera del protocolo vacío de Qwen3 (%s)', async (model, prefix) => {
+    const { service } = harness({ output: [prefix, '{"question":"¿Qué diferencia observas?"}'] });
+    await expect(service.generate({ messages: [{ role: 'user', content: 'Da una pista.' }], maxNewTokens: 160,
+      expectedFormat: 'json_object', expectedJsonKeys: ['question'] }, { model }))
+      .rejects.toThrow('objeto JSON válido');
   });
 
   it('activa el modo JSON nativo y conserva la validación de la práctica', async () => {
@@ -209,6 +287,36 @@ describe('LocalGenerationService', () => {
     service.dispose();
     expect(worker.terminate).toHaveBeenCalled();
     expect(engine.unload).toHaveBeenCalled();
+  });
+
+  it('no restaura un motor que termina de prepararse después de liberar su sesión', async () => {
+    const { service, createEngine, engine, worker } = harness();
+    let finish: (engine: WebLlmEngineLike) => void = () => { throw new Error('La preparación no empezó'); };
+    createEngine.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const pending = service.prepareModel();
+    const outcome = pending.then(() => 'ready', error => error.name);
+    await vi.waitFor(() => expect(createEngine).toHaveBeenCalledTimes(1));
+    service.dispose();
+    finish(engine);
+    expect(await outcome).toBe('AbortError');
+    expect(worker.terminate).toHaveBeenCalled();
+    expect(engine.unload).toHaveBeenCalled();
+    await service.prepareModel();
+    expect(createEngine).toHaveBeenCalledTimes(2);
+  });
+
+  it('un fallo tardío de la preparación anterior no descarta el motor nuevo', async () => {
+    const { service, createEngine } = harness();
+    let fail: (reason: Error) => void = () => { throw new Error('La preparación no empezó'); };
+    createEngine.mockImplementationOnce(() => new Promise((_resolve, reject) => { fail = reject; }));
+    const previous = service.prepareModel().catch(() => undefined);
+    await vi.waitFor(() => expect(createEngine).toHaveBeenCalledTimes(1));
+    service.dispose();
+    await service.prepareModel();
+    fail(new Error('Falló la descarga anterior'));
+    await previous;
+    await service.prepareModel();
+    expect(createEngine).toHaveBeenCalledTimes(2);
   });
 
   it('rechaza de forma explícita un equipo sin WebGPU y no crea el motor', async () => {

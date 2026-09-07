@@ -12,6 +12,8 @@ import type { ExamEvaluation } from './exam';
 import type { ExamQuestion } from './exam';
 import { scheduleReview } from './reviewScheduler';
 import { buildCurriculumSkillIndex, type CurriculumSkillTarget } from './curriculumSkills';
+import { queueExerciseAttempt, type ExerciseCompletion } from '../services/learningSync';
+import { checkedAttemptResult } from './checkedAttempt';
 
 const DEFAULT_INDEX = buildCurriculumSkillIndex(
   [FUNDAMENTOS_COURSE, JAVASCRIPT_COURSE, COMPONENT_COURSE, OPEN_CELLS_COURSE, AI_ENGINEER_COURSE],
@@ -38,10 +40,10 @@ function withReview(profile: LearningProfile, target: CurriculumSkillTarget, ski
   return { ...profile, reviews: [...profile.reviews, review] };
 }
 
-function applyTarget(profile: LearningProfile, target: CurriculumSkillTarget, result: EvidenceResult, now: number): LearningProfile {
+function applyTarget(profile: LearningProfile, target: CurriculumSkillTarget, result: EvidenceResult, now: number, attemptId: string): LearningProfile {
   return target.skillIds.reduce((current, skillId) => {
     const next = recordEvidence(current, {
-      id: `curriculum:${target.itemId}:${skillId}:${target.capability}:${result}`,
+      id: `checked:${attemptId}:${target.itemId}:${skillId}:${target.capability}`,
       courseId: target.courseId,
       itemId: target.itemId,
       skillId,
@@ -60,19 +62,22 @@ export function createCurriculumEvidenceRecorder(
   now: () => number = Date.now,
 ) {
   return {
-    async record(itemId: string, result: EvidenceResult = 'success'): Promise<LearningProfile> {
-      const target = index[itemId];
-      if (!target) return repository.load();
-      const timestamp = now();
-      return repository.update((profile) => applyTarget(profile, target, result, timestamp));
+    /** Compatibility for old completion callers: progress is not an assessment. */
+    async record(_itemId: string, _result: EvidenceResult = 'success'): Promise<LearningProfile> {
+      return repository.load();
     },
-    async migrate(progress: UserProgressRecord): Promise<LearningProfile> {
-      const completed = [...new Set([...progress.completedItemIds, ...progress.completedChallenges])];
+    async recordAttempt(itemId: string, completion: ExerciseCompletion): Promise<LearningProfile> {
+      const target = index[itemId];
+      const result = checkedAttemptResult(completion);
+      if (!target || !result || target.source === 'lesson' || target.source === 'reading') return repository.load();
       const timestamp = now();
-      return repository.update((profile) => completed.reduce((current, itemId) => {
-        const target = index[itemId];
-        return target ? applyTarget(current, target, 'success', timestamp) : current;
-      }, profile));
+      const attemptId = crypto.randomUUID();
+      return repository.update((profile) => applyTarget(profile, target, result, timestamp, attemptId));
+    },
+    async migrate(_progress: UserProgressRecord): Promise<LearningProfile> {
+      // Old completion flags lack the checked response, evaluator and time.
+      // Keep existing history intact; do not manufacture new evidence today.
+      return repository.load();
     },
   };
 }
@@ -96,20 +101,10 @@ export function rateCurriculumReview(reviewId: string, rating: ReviewRating): Pr
   return defaultRepository.update((profile) => {
     const review = profile.reviews.find((candidate) => candidate.id === reviewId);
     if (!review) return profile;
-    const result: EvidenceResult = rating === 'again' ? 'failure' : rating === 'hard' ? 'partial' : 'success';
-    const withEvidence = recordEvidence(profile, {
-      id: `review:${reviewId}:${now}`,
-      courseId: review.courseId,
-      itemId: review.itemId,
-      skillId: review.skillId,
-      capability: 'explain',
-      result,
-      source: 'review',
-      timestamp: now,
-    });
     return {
-      ...withEvidence,
-      reviews: withEvidence.reviews.map((candidate) => candidate.id === reviewId ? scheduleReview(candidate, rating, now) : candidate),
+      ...profile,
+      updatedAt: now,
+      reviews: profile.reviews.map((candidate) => candidate.id === reviewId ? scheduleReview(candidate, rating, now) : candidate),
     };
   });
 }
@@ -143,67 +138,42 @@ export function saveExamEvaluation(
         courseId,
         startedAt: now,
         completedAt: now,
-        scores: evaluation.scores,
-        classification: evaluation.classification,
+        scores: {},
+        classification: 'ungraded',
+        kind: 'exam',
+        responses: questions.map(question => ({ prompt: question.prompt, answer: evaluation.responses.find(response => response.capability === question.capability)?.answer.slice(0, 2000) ?? '' })),
       }],
     };
-    return questions.reduce((current, question) => recordEvidence(current, {
-      id: `${attemptId}:${question.capability}`,
-      courseId,
-      itemId: attemptId,
-      skillId: question.skillId,
-      capability: question.capability,
-      result: evaluation.scores[question.capability] >= 0.7 ? 'success' : evaluation.scores[question.capability] >= 0.4 ? 'partial' : 'failure',
-      source: 'exam',
-      timestamp: now,
-    }), withAttempt);
+    return withAttempt;
   });
 }
 
 export function saveLeaderInterview(courseId: string, skillId: string, answers: string[]): Promise<LearningProfile> {
   const now = Date.now();
-  const substantive = answers.filter((answer) => answer.trim().length >= 45).length;
-  const result: EvidenceResult = substantive >= 3 ? 'success' : substantive >= 1 ? 'partial' : 'failure';
-  return defaultRepository.update((profile) => recordEvidence(profile, {
-    id: `leader:${courseId}:${skillId}:${now}`,
-    courseId,
-    itemId: `leader:${courseId}`,
-    skillId,
-    capability: 'transfer',
-    result,
-    source: 'leader',
-    timestamp: now,
+  const prompts = [`Propósito y límites de ${skillId.replace(/-/g, ' ')}`, 'Qué cambia cuando cambia el requisito', 'Cómo comprobar la decisión'];
+  return defaultRepository.update((profile) => ({
+    ...profile,
+    updatedAt: now,
+    exams: [...profile.exams, {
+      id: `leader:${courseId}:${skillId}:${now}`, courseId, startedAt: now, completedAt: now,
+      kind: 'interview', classification: 'ungraded', scores: {},
+      responses: prompts.map((prompt, index) => ({ prompt, answer: (answers[index] ?? '').trim().slice(0, 2000) })),
+    }],
   }));
 }
 
 export function recordPostSolveEvidence(itemId: string, readingAnswer: string, variationAnswer: string): Promise<LearningProfile> {
   const target = DEFAULT_INDEX[itemId] ?? Object.values(DEFAULT_INDEX).find((candidate) => candidate.lessonId === itemId || itemId.startsWith(candidate.itemId));
   if (!target) return defaultRepository.load();
-  const now = Date.now();
-  const readingResult: EvidenceResult = readingAnswer.trim().length >= 70 ? 'success' : 'partial';
-  const variationResult: EvidenceResult = variationAnswer.trim().length >= 55 ? 'success' : 'partial';
-  return defaultRepository.update((profile) => target.skillIds.reduce((current, skillId) => {
-    const explained = recordEvidence(current, {
-      id: `post-solve:${itemId}:${skillId}:explain:${now}`,
-      courseId: target.courseId,
-      itemId,
-      skillId,
-      capability: 'explain',
-      result: readingResult,
-      source: 'variation',
-      timestamp: now,
+  const course = [FUNDAMENTOS_COURSE, JAVASCRIPT_COURSE, COMPONENT_COURSE, OPEN_CELLS_COURSE, AI_ENGINEER_COURSE].find(entry => entry.id === target.courseId);
+  if (course && (readingAnswer.trim() || variationAnswer.trim())) {
+    // Preserve the response for a tutor, but never infer mastery from its length.
+    queueExerciseAttempt(course.slug, itemId, 'challenge', 'partial', {
+      response: { readingAnswer: readingAnswer.trim().slice(0, 2000), variationAnswer: variationAnswer.trim().slice(0, 2000) },
+      diagnostics: { mode: 'self-reflection', evaluation: 'ungraded' },
     });
-    return recordEvidence(explained, {
-      id: `post-solve:${itemId}:${skillId}:modify:${now}`,
-      courseId: target.courseId,
-      itemId,
-      skillId,
-      capability: target.capability === 'debug' ? 'debug' : 'modify',
-      result: variationResult,
-      source: 'variation',
-      timestamp: now,
-    });
-  }, profile));
+  }
+  return defaultRepository.load();
 }
 
 export function saveTutorModelPreference(modelId: string, downloaded = false): Promise<LearningProfile> {

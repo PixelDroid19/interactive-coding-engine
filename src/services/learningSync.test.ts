@@ -10,6 +10,24 @@ beforeEach(() => {
 });
 
 describe('learning sync', () => {
+  it('sincroniza respuestas sin evaluar como sin calificar, nunca como una nota parcial', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 202 }));
+    const sync = await import('./learningSync');
+    sync.queueExerciseAttempt('fundamentos', 'fundamentos-01', 'challenge', 'partial', { score: 100, response: { readingAnswer: 'No sé' }, diagnostics: { evaluation: 'ungraded', mode: 'self-reflection' } });
+    expect(await sync.flushLearningQueue()).toBe(true);
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(body.attempts[0]).toMatchObject({ result: 'ungraded', response: { readingAnswer: 'No sé' } });
+    expect(body.attempts[0]).not.toHaveProperty('score');
+  });
+  it('un error del evaluador conserva el código para revisión sin nota de fracaso', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 202 }));
+    const sync = await import('./learningSync');
+    sync.queueExerciseAttempt('javascript', 'javascript-01-debug', 'debugging', 'failure', { score: 0, response: { files: { 'app.js': 'console.log(' } }, diagnostics: { tests: [{ passed: false, isEvaluationError: true }] } });
+    await sync.flushLearningQueue();
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(body.attempts[0]).toMatchObject({ result: 'ungraded' });
+    expect(body.attempts[0]).not.toHaveProperty('score');
+  });
   it('agrupa eventos y conserva el progreso más avanzado', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 202 }));
     const sync = await import('./learningSync');
@@ -139,7 +157,7 @@ describe('learning sync', () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 202 }));
     const sync = await import('./learningSync');
     const profile = recordEvidence(createEmptyLearningProfile(0), {
-      id: 'local-evidence-01', courseId: 'course-open-cells', itemId: 'open-cells-01',
+      id: 'checked:local-evidence-01', courseId: 'course-open-cells', itemId: 'open-cells-01',
       skillId: 'scoped-elements', capability: 'debug', result: 'partial', source: 'debugging', timestamp: Date.now(),
     });
     sync.queueLearningProfileEvidence(profile, { 'course-open-cells': 'open-cells' });
@@ -155,6 +173,57 @@ describe('learning sync', () => {
     sync.queueLearningProfileEvidence(profile, { 'course-open-cells': 'open-cells' });
     expect(await sync.flushLearningQueue()).toBe(true);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('conserva el perfil histórico sin enviar autoevaluaciones como evidencia comprobada', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 202 }));
+    const sync = await import('./learningSync');
+    const profile = createEmptyLearningProfile(Date.now());
+    profile.evidence = [
+      { id: 'old-completed', courseId: 'course-open-cells', itemId: 'open-cells-01', skillId: 'scoped-elements', capability: 'produce', result: 'success', source: 'challenge', timestamp: Date.now() },
+      { id: 'checked:self-rating', courseId: 'course-open-cells', itemId: 'open-cells-01', skillId: 'scoped-elements', capability: 'explain', result: 'success', source: 'review', timestamp: Date.now() },
+    ];
+    const original = structuredClone(profile);
+    sync.queueLearningProfileEvidence(profile, { 'course-open-cells': 'open-cells' });
+    expect(await sync.flushLearningQueue()).toBe(true);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(profile).toEqual(original);
+  });
+
+  it('retiene la evidencia antigua ya encolada sin transmitirla ni bloquear intentos nuevos', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 202 }));
+    const oldEvidence = { fingerprint: 'old-completed', id: crypto.randomUUID(), courseSlug: 'open-cells', itemKey: 'open-cells-01', skillKey: 'scoped-elements', capability: 'produce', result: 'success', source: 'challenge', occurredAt: new Date().toISOString() };
+    const checkedEvidence = { ...oldEvidence, fingerprint: 'checked:real-attempt', id: crypto.randomUUID() };
+    localStorage.setItem('aula_learning_sync_v1', JSON.stringify({ events: [], progress: {}, feedback: [], evidence: [oldEvidence, checkedEvidence], attempts: [], syncedEvidence: [] }));
+    const sync = await import('./learningSync');
+    expect(await sync.flushLearningQueue()).toBe(true);
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+    expect(body.evidence).toHaveLength(1);
+    expect(body.evidence[0].id).toBe(checkedEvidence.id);
+    expect(JSON.parse(localStorage.getItem('aula_learning_sync_v1')!)).toMatchObject({ evidence: [], unverifiedEvidence: [oldEvidence], syncedEvidence: [checkedEvidence.fingerprint] });
+    vi.resetModules();
+    fetchMock.mockClear();
+    const reloaded = await import('./learningSync');
+    reloaded.queueLearningEvent('open-cells', 'open-cells-01', 'lesson_opened');
+    await reloaded.flushLearningQueue();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(localStorage.getItem('aula_learning_sync_v1')!).unverifiedEvidence).toEqual([oldEvidence]);
+  });
+
+  it('conserva el archivo histórico si falla el guardado y lo persiste al recuperar Storage', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{}', { status: 202 }));
+    const oldEvidence = { fingerprint: 'old-review', id: crypto.randomUUID(), courseSlug: 'open-cells', itemKey: 'open-cells-01', skillKey: 'scoped-elements', capability: 'explain', result: 'success', source: 'review', occurredAt: new Date().toISOString() };
+    localStorage.setItem('aula_learning_sync_v1', JSON.stringify({ events: [], progress: {}, feedback: [], evidence: [oldEvidence] }));
+    const sync = await import('./learningSync');
+    const blocked = vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new DOMException('quota', 'QuotaExceededError'); });
+    await sync.flushLearningQueue();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(sync.getLearningSyncHealth()).toMatchObject({ status: 'queued', persistence: 'session-only' });
+    blocked.mockRestore();
+    sync.queueLearningEvent('open-cells', 'open-cells-01', 'lesson_opened');
+    await sync.flushLearningQueue();
+    expect(JSON.parse(localStorage.getItem('aula_learning_sync_v1')!)).toMatchObject({ evidence: [], unverifiedEvidence: [oldEvidence] });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('sincroniza la respuesta y los diagnósticos de un intento real', async () => {

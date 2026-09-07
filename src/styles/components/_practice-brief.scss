@@ -1,11 +1,10 @@
 .practice-brief {
   display: grid;
-  gap: 0.55rem;
+  gap: 1rem;
   width: 100%;
   color: inherit;
 }
 
-.practice-brief__row,
 .practice-brief__help {
   border: 1px solid color-mix(in srgb, currentColor 20%, transparent);
   border-radius: 0.5rem;
@@ -13,15 +12,9 @@
 }
 
 .practice-brief__row {
-  padding: 0.7rem 0.8rem;
-}
-
-.practice-brief__row.is-action {
-  border-left: 3px solid var(--color-highlighter-yellow, #ffe600);
-}
-
-.practice-brief__row.is-expected {
-  border-left: 3px solid var(--color-success, #34d399);
+  border: 0;
+  background: transparent;
+  padding: 0;
 }
 
 .practice-brief__label {
@@ -45,17 +38,29 @@
 }
 
 .practice-brief__copy > :first-child,
+.practice-brief__context > :first-child,
 .practice-brief__help-content > :first-child { margin-top: 0; }
 
 .practice-brief__copy > :last-child,
+.practice-brief__context > :last-child,
 .practice-brief__help-content > :last-child { margin-bottom: 0; }
 
 .practice-brief__copy p,
+.practice-brief__context p,
 .practice-brief__help-content p {
   max-width: none;
   margin-bottom: 0;
   color: inherit;
   font: inherit;
+}
+
+.practice-brief__context {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .practice-brief__help {

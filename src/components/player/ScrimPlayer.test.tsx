@@ -7,9 +7,20 @@ import { FUNDAMENTOS_SCRIMS } from '../../curriculum/fundamentos/course';
 import { loadLastBranchForLesson } from '../../engine/persistence';
 import { PlaybackEngine } from '../../engine/playbackEngine';
 import { getTutorWorkspace } from '../../learning/tutor/tutorContext';
+import * as testRunner from '../../engine/testRunner';
+
+vi.mock('canvas-confetti', () => ({ default: vi.fn() }));
 
 describe('ScrimPlayer overlay coordination', () => {
   const lesson = FUNDAMENTOS_SCRIMS['fundamentos-01'];
+
+  it('al retomar en el instante del reto espera el gesto de inicio y abre sus comprobaciones', async () => {
+    const challenge = lesson.challenges[0];
+    render(<ScrimPlayer lessonData={{ ...lesson, narrationMode: 'silent' }} initialTimeMs={challenge.timestamp} onBack={() => undefined} />);
+    expect(screen.queryByRole('button', { name: 'Comprobar reto' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Empezar la clase' }));
+    expect(await screen.findByRole('button', { name: 'Comprobar reto' })).toBeTruthy();
+  });
 
   beforeEach(() => {
     localStorage.clear();
@@ -30,7 +41,107 @@ describe('ScrimPlayer overlay coordination', () => {
 
   afterEach(() => {
     cleanup();
+    vi.restoreAllMocks();
     localStorage.clear();
+  });
+
+  it.each([
+    { action: 'skip', durationMs: 60_000, restored: false },
+    { action: 'continue', durationMs: 60_000, restored: false },
+    { action: 'skip', durationMs: 120_000, restored: false },
+    { action: 'continue', durationMs: 120_000, restored: false },
+    { action: 'skip', durationMs: 60_000, restored: true },
+    { action: 'continue', durationMs: 60_000, restored: true },
+  ])('al $action un reto conserva el final o reanuda el tramo restante ($durationMs, recuperado=$restored)', async ({ action, durationMs, restored }) => {
+    const challenge = {
+      ...lesson.challenges[0], id: 'continuidad-reto', timestamp: 60_000,
+      starterCodeDiff: { 'app.js': 'function valor() { return 1; }' },
+      tests: [{ id: 'valor', description: 'Devuelve uno', validatorType: 'function-call' as const, targetFunction: 'valor', args: [], expectedReturn: 1 }],
+    };
+    const continuityLesson: typeof lesson = {
+      ...lesson, id: 'continuidad-clase', narrationMode: 'silent' as const,
+      executionMode: 'logic' as const, durationMs, events: [], snapshots: [], audioTrack: undefined,
+      initialWorkspace: { activeFilePath: 'app.js', files: { 'app.js': {
+        name: 'app.js', path: 'app.js', language: 'javascript', content: 'function valor() { return 1; }',
+      } } }, challenges: [challenge],
+    };
+    if (restored) localStorage.setItem('aula_learner_branches_v1', JSON.stringify({ continuity: {
+      id: 'continuity', lessonId: continuityLesson.id, baseTime: challenge.timestamp, baseSequence: 0,
+      workspace: continuityLesson.initialWorkspace, isForked: true, activeChallengeId: challenge.id,
+      lastSavedAt: Date.now(), executionCount: 0,
+    } }));
+    render(<ScrimPlayer lessonData={continuityLesson} onBack={() => undefined} />);
+    if (restored) fireEvent.click(screen.getByRole('button', { name: 'Continuar donde lo dejé' }));
+    else {
+      fireEvent.click(screen.getByRole('button', { name: 'Empezar la clase' }));
+      fireEvent.click(screen.getByRole('button', { name: `Ir al reto ${challenge.title}` }));
+    }
+    if (action === 'skip') {
+      fireEvent.click(screen.getByRole('button', { name: 'Saltar por ahora' }));
+    } else {
+      fireEvent.click(screen.getByRole('button', { name: 'Comprobar reto' }));
+      fireEvent.click(await screen.findByRole('button', { name: 'Continuar sin escribir' }));
+    }
+    await waitFor(() => {
+      const position = Number(screen.getByRole('slider', { name: 'Progreso de la clase' }).getAttribute('aria-valuenow'));
+      expect(position).toBeGreaterThanOrEqual(60_000);
+      if (durationMs === 60_000) {
+        expect(position).toBe(60_000);
+        expect(screen.queryByRole('button', { name: 'Pausar la clase' })).toBeNull();
+        expect(screen.getByText('✓ Clase completada')).toBeTruthy();
+        expect(screen.queryByRole('button', { name: 'Empezar la clase' })).toBeNull();
+      } else {
+        expect(screen.getByRole('button', { name: 'Pausar la clase' })).toBeTruthy();
+      }
+    });
+  });
+
+  it.each(['edit', 'reset', 'unmount', 'unchanged'] as const)('solo registra la versión evaluada: %s durante la comprobación', async (action) => {
+    const challenge = {
+      ...lesson.challenges[0],
+      id: 'reto-resultado-tardio',
+      tests: [{ id: 'valor', description: 'Devuelve uno', validatorType: 'function-call' as const, targetFunction: 'valor', args: [], expectedReturn: 1 }],
+    };
+    const delayedLesson = {
+      ...lesson, id: 'leccion-resultado-tardio', executionMode: 'logic',
+      initialWorkspace: { activeFilePath: 'app.js', files: { 'app.js': {
+        name: 'app.js', path: 'app.js', language: 'javascript', content: 'function valor() { return 1; }',
+      } } },
+      challenges: [challenge],
+    } as typeof lesson;
+    localStorage.setItem('aula_learner_branches_v1', JSON.stringify({ delayed: {
+      id: 'delayed', lessonId: delayedLesson.id, baseTime: challenge.timestamp, baseSequence: 0,
+      workspace: delayedLesson.initialWorkspace, isForked: true, activeChallengeId: challenge.id,
+      lastSavedAt: Date.now(), executionCount: 0,
+    } }));
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    let entered!: () => void;
+    const evaluating = new Promise<void>((resolve) => { entered = resolve; });
+    let finished!: () => void;
+    const evaluated = new Promise<void>((resolve) => { finished = resolve; });
+    const realValidation = testRunner.runChallengeValidation;
+    vi.spyOn(testRunner, 'runChallengeValidation').mockImplementation(async (...args) => {
+      entered();
+      await pending;
+      const result = await realValidation(...args);
+      finished();
+      return result;
+    });
+    const onAttempt = vi.fn();
+    const view = render(<ScrimPlayer lessonData={delayedLesson} onBack={() => undefined} onChallengeAttempt={onAttempt} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Continuar donde lo dejé' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Comprobar reto' }));
+    await act(async () => { await evaluating; });
+    if (action === 'edit') await act(async () => { await getTutorWorkspace()!.actions.replaceFile('app.js', 'function valor() { return 2; }'); });
+    if (action === 'reset') fireEvent.click(screen.getByRole('button', { name: 'Reiniciar reto' }));
+    if (action === 'unmount') view.unmount();
+    await act(async () => { release(); await evaluated; });
+    if (action === 'unchanged') {
+      expect(onAttempt).toHaveBeenCalledExactlyOnceWith('reto-resultado-tardio', 'success', expect.objectContaining({
+        score: 100, response: { files: { 'app.js': 'function valor() { return 1; }' } },
+      }));
+    } else expect(onAttempt).not.toHaveBeenCalled();
   });
 
   it('shows branch recovery instead of the start gate and blocks explanation actions', async () => {

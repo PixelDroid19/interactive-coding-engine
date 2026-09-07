@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 
 import React from 'react';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LocalModelOption } from '../../engine/ai/localGenerationProtocol';
 import type { LocalGenerationService } from '../../engine/ai/localGenerationService';
@@ -56,6 +56,160 @@ const activity = {
 afterEach(() => { cleanup(); clearTutorWorkspace('test'); localStorage.clear(); });
 
 describe('SocraticTutor', () => {
+  it.each(['success', 'error'] as const)('permite abrir de nuevo la ayuda e ignora el %s del catálogo anterior', async (outcome) => {
+    const service = serviceHarness();
+    let finishOld!: (models: LocalModelOption[]) => void;
+    let failOld!: (reason: Error) => void;
+    vi.mocked(service.listModels)
+      .mockImplementationOnce(() => new Promise((resolve, reject) => { finishOld = resolve; failOld = reject; }))
+      .mockResolvedValueOnce([model]);
+    render(<SocraticTutor enabled activity={activity} service={service} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir ayuda de IA' }));
+    expect((screen.getByRole('button', { name: 'Preparar modelo' }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar ayuda' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir ayuda de IA' }));
+    await screen.findByRole('option', { name: /Qwen 2\.5 Coder/ });
+    await act(async () => {
+      if (outcome === 'success') finishOld([{ ...model, id: 'obsolete', label: 'Catálogo obsoleto' }]);
+      else failOld(new Error('Fallo del catálogo obsoleto'));
+    });
+    expect(screen.queryByRole('option', { name: /Catálogo obsoleto/ })).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByRole('button', { name: 'Preparar modelo' }) as HTMLButtonElement).disabled).toBe(false);
+    expect(service.prepareModel).not.toHaveBeenCalled();
+    expect(service.generate).not.toHaveBeenCalled();
+  });
+
+  it('no inicia otra consulta ni una descarga al cambiar de curso con el catálogo pendiente', async () => {
+    const service = serviceHarness();
+    let finish!: (models: LocalModelOption[]) => void;
+    vi.mocked(service.listModels).mockImplementation(() => new Promise(resolve => { finish = resolve; }));
+    const view = render(<SocraticTutor enabled activity={activity} service={service} />);
+    expect(service.listModels).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir ayuda de IA' }));
+    view.rerender(<SocraticTutor enabled activity={{ ...activity, courseId: 'lit', courseTitle: 'Lit', itemTitle: 'Componentes' }} service={service} />);
+    await act(async () => { finish([model]); });
+    expect(screen.getByRole('heading', { name: 'Componentes' })).toBeTruthy();
+    expect(screen.getByText('Lit')).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Funciones' })).toBeNull();
+    expect((screen.getByRole('button', { name: 'Preparar modelo' }) as HTMLButtonElement).disabled).toBe(false);
+    expect(service.listModels).toHaveBeenCalledTimes(1);
+    expect(service.prepareModel).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Preparar modelo' }));
+    await waitFor(() => expect(service.prepareModel).toHaveBeenCalledWith(model.id, expect.any(Object)));
+  });
+
+  it('conserva un modelo disponible al cambiar de curso después de consultar el catálogo', async () => {
+    const profile = createEmptyLearningProfile();
+    profile.tutor.selectedModel = 'modelo-que-ya-no-esta-en-el-catalogo';
+    localStorage.setItem(LEARNING_PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    const service = serviceHarness();
+    const view = render(<SocraticTutor enabled activity={activity} service={service} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir ayuda de IA' }));
+    await screen.findByRole('option', { name: /Qwen 2\.5 Coder/ });
+    await act(async () => {
+      view.rerender(<SocraticTutor enabled activity={{ ...activity, courseId: 'lit', courseTitle: 'Lit' }} service={service} />);
+    });
+    expect((screen.getByRole('combobox', { name: 'Modelo local' }) as HTMLSelectElement).value).toBe(model.id);
+    expect(screen.getByText(/Memoria gráfica estimada/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Preparar modelo' }));
+    await waitFor(() => expect(service.prepareModel).toHaveBeenCalledWith(model.id, expect.any(Object)));
+  });
+
+  it('retira el error anterior cuando la siguiente consulta del catálogo funciona', async () => {
+    const service = serviceHarness();
+    vi.mocked(service.listModels).mockRejectedValueOnce(new Error('Catálogo temporalmente no disponible')).mockResolvedValueOnce([model]);
+    render(<SocraticTutor enabled activity={activity} service={service} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir ayuda de IA' }));
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    expect(service.listModels).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar ayuda' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir ayuda de IA' }));
+    await screen.findByRole('option', { name: /Qwen 2\.5 Coder/ });
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect((screen.getByRole('button', { name: 'Preparar modelo' }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('cambiar de modelo elimina el estado listo y el progreso del modelo anterior', async () => {
+    const service = serviceHarness();
+    vi.mocked(service.listModels).mockResolvedValue([model, { ...model, id: 'second-model', label: 'Otro modelo' }]);
+    render(<SocraticTutor enabled activity={activity} service={service} />);
+    fireEvent.click(screen.getByRole('button', { name: /abrir ayuda/i }));
+    await screen.findByRole('option', { name: /Otro modelo/ });
+    fireEvent.click(screen.getByRole('button', { name: 'Preparar modelo' }));
+    await screen.findByText(/Modelo listo/);
+    fireEvent.change(screen.getByRole('combobox', { name: 'Modelo local' }), { target: { value: 'second-model' } });
+    expect(screen.queryByText(/Modelo listo/)).toBeNull();
+    expect(screen.queryByRole('progressbar')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Preparar modelo' })).toBeTruthy();
+  });
+
+  it.each(['cancel', 'close', 'course'] as const)('ignora una preparación obsoleta después de %s', async (action) => {
+    const service = serviceHarness();
+    let finish!: (value: LocalModelOption) => void;
+    let report!: NonNullable<Parameters<LocalGenerationService['prepareModel']>[1]>['onProgress'];
+    vi.mocked(service.prepareModel).mockImplementation((_id, options) => {
+      report = options?.onProgress;
+      return new Promise(resolve => { finish = resolve; });
+    });
+    const view = render(<SocraticTutor enabled activity={activity} service={service} />);
+    fireEvent.click(screen.getByRole('button', { name: /abrir ayuda/i }));
+    await screen.findByRole('option', { name: /Qwen 2\.5 Coder/ });
+    fireEvent.click(screen.getByRole('button', { name: 'Preparar modelo' }));
+    if (action === 'cancel') fireEvent.click(screen.getByRole('button', { name: 'Cancelar preparación' }));
+    if (action === 'close') {
+      fireEvent.click(screen.getByRole('button', { name: 'Cerrar ayuda' }));
+      fireEvent.click(screen.getByRole('button', { name: /abrir ayuda/i }));
+    }
+    if (action === 'course') view.rerender(<SocraticTutor enabled activity={{ ...activity, courseId: 'course-lit' }} service={service} />);
+    await act(async () => {
+      report?.({ status: 'download', label: 'Progreso de una operación cancelada', progress: 0.9 });
+      finish({ ...model, cached: true });
+    });
+    expect(screen.queryByText('Progreso de una operación cancelada')).toBeNull();
+    expect(screen.queryByText(/Modelo listo/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Preparar modelo' })).toBeTruthy();
+  });
+
+  it('cambiar de curso cancela la edición pendiente y no arrastra conversación aunque el itemId coincida', async () => {
+    const replaceFile = vi.fn();
+    publishTutorWorkspace({ snapshot: { activeFilePath: 'app.js', files: { 'app.js': 'const valor = 1;' } }, actions: { replaceFile, undoLastChange: vi.fn() } }, 'test');
+    const service = serviceHarness();
+    let finishEdit: ((value: Awaited<ReturnType<LocalGenerationService['generate']>>) => void) | undefined;
+    vi.mocked(service.generate)
+      .mockResolvedValueOnce({ text: JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js' } }], replyStrategy: 'Edita.' }), model: model.id, engine: 'WebLLM', device: 'webgpu', elapsedMs: 1 })
+      .mockImplementationOnce(() => new Promise(resolve => { finishEdit = resolve; }));
+    const { rerender } = render(<SocraticTutor enabled activity={activity} service={service} initialModelReady />);
+    fireEvent.click(screen.getByRole('button', { name: /abrir ayuda/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: /pregunta para la ayuda/i }), { target: { value: 'Cambia el valor a dos' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar pregunta/i }));
+    await waitFor(() => expect(finishEdit).toBeTypeOf('function'));
+    rerender(<SocraticTutor enabled activity={{ ...activity, courseId: 'course-lit', courseTitle: 'Lit' }} service={service} initialModelReady />);
+    await act(async () => { finishEdit!({ text: 'const valor = 2;', model: model.id, engine: 'WebLLM', device: 'webgpu', elapsedMs: 1 }); });
+    expect(replaceFile).not.toHaveBeenCalled();
+    expect(screen.queryByText('Cambia el valor a dos')).toBeNull();
+    expect(screen.queryByText('Modificó app.js')).toBeNull();
+    expect(screen.getByRole('button', { name: /enviar pregunta/i })).toBeTruthy();
+  });
+
+  it('cerrar la ayuda cancela una generación pendiente sin aplicar sus cambios', async () => {
+    const replaceFile = vi.fn();
+    publishTutorWorkspace({ snapshot: { activeFilePath: 'app.js', files: { 'app.js': 'const valor = 1;' } }, actions: { replaceFile, undoLastChange: vi.fn() } }, 'test');
+    const service = serviceHarness();
+    let finishEdit: ((value: Awaited<ReturnType<LocalGenerationService['generate']>>) => void) | undefined;
+    vi.mocked(service.generate)
+      .mockResolvedValueOnce({ text: JSON.stringify({ calls: [{ tool: 'write_file', args: { path: 'app.js' } }], replyStrategy: 'Edita.' }), model: model.id, engine: 'WebLLM', device: 'webgpu', elapsedMs: 1 })
+      .mockImplementationOnce(() => new Promise(resolve => { finishEdit = resolve; }));
+    render(<SocraticTutor enabled activity={activity} service={service} initialModelReady />);
+    fireEvent.click(screen.getByRole('button', { name: /abrir ayuda/i }));
+    fireEvent.change(screen.getByRole('textbox', { name: /pregunta para la ayuda/i }), { target: { value: 'Cambia el valor a dos' } });
+    fireEvent.click(screen.getByRole('button', { name: /enviar pregunta/i }));
+    await waitFor(() => expect(finishEdit).toBeTypeOf('function'));
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar ayuda' }));
+    await act(async () => { finishEdit!({ text: 'const valor = 2;', model: model.id, engine: 'WebLLM', device: 'webgpu', elapsedMs: 1 }); });
+    expect(replaceFile).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /abrir ayuda/i })).toBeTruthy();
+  });
   it('no monta ninguna superficie cuando el curso lo desactiva', () => {
     render(<SocraticTutor enabled={false} activity={activity} service={serviceHarness()} />);
     expect(screen.queryByRole('button', { name: /abrir ayuda/i })).toBeNull();
@@ -69,6 +223,8 @@ describe('SocraticTutor', () => {
     expect(await screen.findByRole('option', { name: /Qwen 2\.5 Coder · 1\.5B/ })).toBeTruthy();
     expect(service.listModels).toHaveBeenCalledTimes(1);
     expect(service.prepareModel).not.toHaveBeenCalled();
+    expect(screen.getByText(/memoria gráfica estimada/i)).toBeTruthy();
+    expect(screen.queryByText('Elige cuánto quieres descargar')).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: /preparar modelo/i }));
     await waitFor(() => expect(service.prepareModel).toHaveBeenCalledWith(model.id, expect.any(Object)));

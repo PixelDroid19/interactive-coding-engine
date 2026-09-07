@@ -71,6 +71,9 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
     ...primaryInstructionParagraphs.slice(1).map((body) => ({ body })),
     ...instructionParts.slice(1),
   ];
+  const isSupportingInstruction = (part: { heading?: string }) => part.heading === 'Si te atascas' || part.heading === 'Antes de empezar';
+  const requiredInstructionParts = extraInstructionParts.filter((part) => !isSupportingInstruction(part));
+  const helpInstructionParts = extraInstructionParts.filter(isSupportingInstruction);
 
   const handleSkipForNow = onSkipForNow || onSkip;
   // Reset hints when challenge changes
@@ -132,10 +135,10 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
       role="dialog"
       aria-modal="false"
       aria-label={`Reto: ${challenge.title}`}
-      className={`modal-dialog fixed bottom-16 right-5 z-50 w-96 max-w-[calc(100vw-32px)] ${isMinimized ? 'h-12' : 'max-h-[80vh] flex flex-col'}`}
-      style={{ position: 'fixed', maxWidth: 420 }}
+      className={`modal-dialog absolute bottom-2 right-3 z-50 w-96 ${isMinimized ? 'h-12' : 'flex flex-col'}`}
+      style={{ position: 'absolute', maxWidth: 'min(420px, calc(100% - 24px))', maxHeight: 'calc(100% - 16px)' }}
     >
-      <div className="modal-header">
+      <div className="modal-header shrink-0">
         <div className="flex items-center gap-2" style={{ fontFamily: 'Patrick Hand, cursive', fontWeight: 700 }}>
           <span className="truncate">{challenge.title}</span>
         </div>
@@ -167,15 +170,21 @@ export const ChallengeDrawer: React.FC<ChallengeDrawerProps> = ({
         <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs font-sans text-zinc-200">
           <>
               <PracticeBrief
-                action={<p className="whitespace-pre-line">{primaryInstruction}</p>}
+                action={<p className="whitespace-pre-line">{instructionParts[0]?.heading && <strong>{instructionParts[0].heading}: </strong>}{primaryInstruction}</p>}
+                context={requiredInstructionParts.length > 0 ? requiredInstructionParts.map((part, index) => (
+                  <p key={`${part.heading ?? 'instruccion'}-${index}`}>
+                    {part.heading && <strong>{part.heading}: </strong>}
+                    <span className="whitespace-pre-line">{part.body}</span>
+                  </p>
+                )) : undefined}
                 expected={challenge.tests.length === 1
                   ? challenge.tests[0].description
                   : `Las ${challenge.tests.length} comprobaciones pasan sin errores.`}
                 help={(
                   <>
-                    {extraInstructionParts.length > 0 && (
+                    {helpInstructionParts.length > 0 && (
                       <ol aria-label="Ayuda del reto">
-                        {extraInstructionParts.map((part, index) => (
+                        {helpInstructionParts.map((part, index) => (
                           <li key={`${part.heading ?? 'ayuda'}-${index}`}>
                             {part.heading && <strong>{part.heading}: </strong>}
                             <span className="whitespace-pre-line">{part.body}</span>

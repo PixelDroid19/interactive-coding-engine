@@ -15,9 +15,9 @@ export function splitPracticeCopy(text: string, priority: PracticeCopyPriority =
 
   const sentences = normalized
     .replace(/\n+/g, ' ')
-    .match(/[^.!?]+(?:[.!?]+|$)/g)
-    ?.map((sentence) => sentence.trim())
-    .filter(Boolean) ?? [normalized];
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
 
   if (sentences.length < 2) return { action: normalized };
 

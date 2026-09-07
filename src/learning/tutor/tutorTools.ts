@@ -7,10 +7,13 @@ export type TutorToolStatus = 'completed' | 'denied' | 'unavailable' | 'failed';
 export interface TutorToolCall { tool: TutorToolName; args: Record<string, unknown>; }
 export interface TutorToolActivity { tool: TutorToolName; label: string; status: TutorToolStatus; detail: string; }
 export interface TutorReinforcementDraft { skillId: string; note: string; evidence: string; }
-export interface TutorToolExecution { activity: TutorToolActivity; observation: string; changedFile?: string; reinforcement?: TutorReinforcementDraft; }
+export interface TutorToolExecution { activity: TutorToolActivity; observation: string; readFiles?: string[]; changedFile?: string; reinforcement?: TutorReinforcementDraft; }
 
 const TOOL_NAMES = new Set<TutorToolName>(['read_lesson', 'read_workspace', 'read_diagnostics', 'run_checks', 'write_file', 'save_reinforcement']);
-const WRITE_INTENT = /\b(corrige|corregir|arregla|arreglar|modifica|modificar|cambia|cambiar|implementa|implementar|completa|completar|escribe|escribir|crea|crear|genera|generar|a[nñ]ade|a[nñ]adir|agrega|agregar|inserta|insertar|reemplaza|reemplazar|pon|apl[ií]calo|hazlo)\b/i;
+// A verb quoted in an exercise or an explanation request is not authorization.
+// Ambiguous requests stay read-only; direct requests keep the existing workflow.
+const WRITE_REQUEST = /^(?:por favor[,\s]+)?(?:¿?puedes\s+|quiero que\s+)?(?:corrige|corregir|corrijas|arregla|arreglar|arregles|modifica|modificar|modifiques|cambia|cambiar|cambies|implementa|implementar|implementes|completa|completar|completes|escribe|escribir|escribas|crea|crear|crees|genera|generar|generes|a[nñ]ade|a[nñ]adir|a[nñ]adas|agrega|agregar|agregues|inserta|insertar|insertes|reemplaza|reemplazar|reemplaces|pon|poner|pongas|aplicalo|hazlo)\b/i;
+const READ_ONLY_REQUEST = /\b(?:no|sin|nunca)\s+(?:(?:quiero|debes|vayas|vas|lo|la|me|que|a)\s+)*(?:escrib\w*|modifi\w*|cambi\w*|corrij\w*|correg\w*|apli\w*|reempla\w*|edit\w*|toc\w*|toqu\w*)\b|\b(?:solo|solamente|unicamente)\s+(?:explica\w*|dime|muestra\w*|orienta\w*)\b/i;
 
 export function parseTutorToolCall(value: unknown): TutorToolCall | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -21,7 +24,10 @@ export function parseTutorToolCall(value: unknown): TutorToolCall | null {
 }
 
 export function allowsTutorWrite(mode: TutorMode, question: string): boolean {
-  return mode === 'collaborate' || (mode === 'auto' && WRITE_INTENT.test(question));
+  if (mode !== 'auto' && mode !== 'collaborate') return false;
+  const request = question.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+  if (READ_ONLY_REQUEST.test(request)) return false;
+  return WRITE_REQUEST.test(request);
 }
 
 function strings(value: unknown): string[] | null {
@@ -44,7 +50,11 @@ export async function executeTutorTool(call: TutorToolCall, input: { mode: Tutor
     if (!requested) return { activity: activity(call.tool, 'Revisó los archivos', 'failed', 'La lista de rutas no es válida.'), observation: 'read_workspace recibió rutas inválidas.' };
     const existing = requested.filter((path) => path in workspace.snapshot.files);
     const observation = existing.map((path) => `--- ${path}\n${workspace.snapshot.files[path]}`).join('\n');
-    return { activity: activity(call.tool, 'Revisó los archivos', 'completed', `${existing.length} ${existing.length === 1 ? 'archivo' : 'archivos'}`), observation: truncateTutorText(observation || 'Ninguna ruta solicitada existe en el ejercicio.', 12_000) };
+    return {
+      activity: activity(call.tool, 'Revisó los archivos', 'completed', `${existing.length} ${existing.length === 1 ? 'archivo' : 'archivos'}`),
+      observation: truncateTutorText(observation || 'Ninguna ruta solicitada existe en el ejercicio.', 12_000),
+      readFiles: existing,
+    };
   }
   if (call.tool === 'read_diagnostics') {
     const detail = `${workspace.snapshot.diagnostics || 'Sin diagnóstico disponible'}. ${workspace.snapshot.recentResult || 'Sin comprobación reciente.'}`;

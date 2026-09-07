@@ -26,7 +26,7 @@ export type LearnerSkill = Readonly<{
   successes: number; lastResult: 'success' | 'partial' | 'failure'; lastPracticedAt: string;
 }>;
 export type LearnerAttempt = Readonly<{
-  id: string; courseSlug: string; itemKey: string; kind: string; result: 'success' | 'partial' | 'failure';
+  id: string; courseSlug: string; itemKey: string; kind: string; result: 'success' | 'partial' | 'failure' | 'ungraded';
   score: number | null; response: Record<string, unknown>; diagnostics: Record<string, unknown>; occurredAt: string;
 }>;
 export type StaffFeedbackEntry = Readonly<{

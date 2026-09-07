@@ -30,6 +30,13 @@ describe('DebuggingView integración', () => {
 
   const exercise = DEBUG_EXERCISES.find(e => e.id === 'fundamentos-01-debug')!;
 
+  it('deja visibles las condiciones de la corrección sin abrir pistas', () => {
+    render(<DebuggingView exercise={{ ...exercise,
+      description: 'Corrige el cálculo. Conserva los datos originales de la lista y devuelve una nueva lista para cada operación sin cambiar las referencias de los elementos que no se hayan editado.',
+    }} onBack={() => {}} />);
+    expect(screen.getByText('Conserva los datos originales de la lista y devuelve una nueva lista para cada operación sin cambiar las referencias de los elementos que no se hayan editado.').closest('details')).toBeNull();
+  });
+
   it('estado inicial: editor dominante, Reto activo, archivos y preview no permanentes', () => {
     const { container } = render(<DebuggingView exercise={exercise} onBack={() => {}} onNext={() => {}} />);
     expect(container.querySelector('.debug-editor-area')).toBeTruthy();
@@ -230,6 +237,29 @@ console.log("Estoy aprendiendo JavaScript");`;
     });
     expect(screen.queryAllByLabelText('error de evaluación')).toHaveLength(0);
     expect(screen.queryByText(/La vista previa todavía no está lista/)).toBeNull();
+  });
+
+  it('renderiza la vista de navegador durante la comprobación y después muestra el resultado', async () => {
+    const domExercise = DEBUG_EXERCISES.find(e => e.id === 'fundamentos-10-debug')!;
+    render(<DebuggingView exercise={{ ...domExercise, executionMode: 'browser', tests: [{
+      id: 'rendered-frame', description: 'La vista permite foco y layout reales', validatorType: 'browser-script',
+      customValidatorScript: '() => true',
+    }] }} onBack={() => {}} />);
+    const iframe = await screen.findByTitle('Vista previa') as HTMLIFrameElement;
+    const frameWindow = {
+      postMessage(message: { validationId: string }) {
+        const panel = iframe.closest('[role="tabpanel"]') as HTMLElement;
+        const rendered = !panel.hidden && panel.style.display !== 'none';
+        queueMicrotask(() => window.dispatchEvent(new MessageEvent('message', {
+          source: frameWindow as any,
+          data: { source: 'aula-validator', type: 'result', validationId: message.validationId, result: { passed: rendered } },
+        })));
+      },
+    };
+    Object.defineProperty(iframe, 'contentWindow', { configurable: true, value: frameWindow });
+    fireEvent.click(screen.getByRole('button', { name: 'Comprobar' }));
+    await waitFor(() => expect(screen.getByText('1 de 1 comprobaciones superadas')).toBeTruthy());
+    expect(screen.getByRole('tab', { name: 'Resultado (1/1)' }).getAttribute('aria-selected')).toBe('true');
   });
 
   it('editar y pulsar Comprobar rápido evalúa la última versión', async () => {

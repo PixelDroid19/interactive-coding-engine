@@ -191,7 +191,7 @@ describe('curso profesional de Web Components y Lit', () => {
   it('cada laboratorio conserva una condición incumplida o una comprobación conductual', () => {
     for (const spec of COMPONENT_COURSE_SPECS) {
       const sourceChecks = spec.debug.tests.filter((test) => test.validatorType === 'source-regex');
-      expect(sourceChecks.length, `laboratorio ${spec.number} no tiene comprobación de código`).toBeGreaterThan(0);
+      expect(spec.debug.tests.length, `laboratorio ${spec.number} no tiene comprobaciones`).toBeGreaterThan(0);
       const hasUnfulfilledSourceCheck = sourceChecks.some(
         (test) => !new RegExp(test.regexPattern || '', 'i').test(spec.debug.starter),
       );

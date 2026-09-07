@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { BrainCircuit, ChevronRight, LockKeyhole, Route, Terminal, X } from 'lucide-react';
 import { ThemeToggle } from '../ThemeToggle';
 import { useTheme } from '../../themes/ThemeProvider';
@@ -13,6 +13,12 @@ import type { LearningCenterSnapshot } from '../../services/learningCenterApi';
 import { AccountMenu } from '../../auth/AccountMenu';
 import { useAuthSession } from '../../auth/AuthSessionProvider';
 import { useModalDialog } from '../useModalDialog';
+import { UiButton } from '../ui/UiButton';
+import { UiSurface } from '../ui/UiSurface';
+import { getNextLearningAction } from '../../learning/nextLearningAction';
+import { createEmptyLearningProfile } from '../../learning/mastery';
+
+const GuidedPractice = lazy(() => import('../learning/GuidedPractice').then(module => ({ default: module.GuidedPractice })));
 
 interface RoadmapHomeProps {
   course: Course;
@@ -58,6 +64,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
   const { themeId } = useTheme();
   const isCyber = themeId === 'cyber';
   const [showLearningCenter, setShowLearningCenter] = useState(false);
+  const [showGuidedPractice, setShowGuidedPractice] = useState(false);
   const [remoteLearningSummary, setRemoteLearningSummary] = useState<{
     userId: string;
     summary: LearningCenterSnapshot['summary'];
@@ -75,6 +82,10 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
   const hasReasoning = course.modules.some((mod) => mod.items.some((item) => item.type === 'reasoning'));
   const visibleLearningSummary = remoteLearningSummary?.userId === studentUserId ? remoteLearningSummary.summary : null;
   const dueReviewCount = studentUserId ? (visibleLearningSummary?.dueReviews ?? 0) : 0;
+  const hasFoundationsPractice = course.slug === 'fundamentos' || course.slug === 'javascript';
+  const nextAction = useMemo(() => getNextLearningAction(course,
+    studentUserId ? progress : { completedItemIds: [], completedChallenges: [], passedSoloProjects: [], savedLearnerBranches: {}, recentActivity: [] },
+    studentUserId ? learningProfile : createEmptyLearningProfile(0), scrims), [course, studentUserId, progress, learningProfile, scrims]);
 
   useEffect(() => {
     setRemoteLearningSummary(null);
@@ -84,7 +95,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
     setBlockedItem((current) => (current?.source === 'personal' && current.userId !== studentUserId ? null : current));
   }, [studentUserId]);
 
-  const enterLesson = (lessonId: string) => {
+  const enterLesson = (lessonId: string, timeMs = 0) => {
     const found = findCourseItem(course, lessonId);
     if (!found) return;
     if (found.item.availability === 'locked') {
@@ -104,7 +115,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
         return;
       }
     }
-    onEnterLesson(found.item, found.moduleId, 0);
+    onEnterLesson(found.item, found.moduleId, timeMs);
   };
 
   const isLocked = (lessonId: string) => {
@@ -335,6 +346,14 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
           </div>
         </section>
 
+        {nextAction && <UiSurface className="guided-invitation" tone="soft">
+          <div><h2>{nextAction.reason === 'resume' ? 'Continúa donde estabas' : nextAction.reason === 'review' ? 'Vuelve a ponerlo en práctica' : 'Tu siguiente paso'}</h2><p>{nextAction.item.title}</p><p>{nextAction.explanation}</p></div>
+          <div className="guided-invitation__actions">
+            <UiButton variant="primary" onClick={() => enterLesson(nextAction.item.id, nextAction.timeMs)}><ChevronRight size={18} />{nextAction.reason === 'resume' ? 'Retomar actividad' : 'Abrir actividad sugerida'}</UiButton>
+            {hasFoundationsPractice && <UiButton variant="secondary" onClick={() => setShowGuidedPractice(true)}><BrainCircuit size={18} />Practicar bases de JavaScript</UiButton>}
+          </div>
+        </UiSurface>}
+
         <div className="rm-canvas">
           <div id="rm-tree" className="rm-tree">
             <svg id="rm-connectors" className="rm-svg" />
@@ -494,6 +513,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
           course={course}
           profile={learningProfile}
           onClose={() => setShowLearningCenter(false)}
+          onOpenGuidedPractice={hasFoundationsPractice ? () => { setShowLearningCenter(false); setShowGuidedPractice(true); } : undefined}
           onSummaryChange={(userId, summary) => {
             if (!userId || !summary || userId !== studentUserId) {
               setRemoteLearningSummary(null);
@@ -503,6 +523,7 @@ export const RoadmapHome: React.FC<RoadmapHomeProps> = ({
           }}
         />
       )}
+      {hasFoundationsPractice && showGuidedPractice && <Suspense fallback={<div role="status">Abriendo práctica guiada…</div>}><GuidedPractice courseSlug={course.slug} onClose={() => setShowGuidedPractice(false)} /></Suspense>}
     </div>
   );
 };

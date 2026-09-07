@@ -1,4 +1,4 @@
-import { appHtml, browserTest, lesson, source, sourceTest } from './helpers';
+import { appHtml, browserTest, lesson, source } from './helpers';
 
 const shadowText = (id: string, description: string, tag: string, selector: string, expected: string) => browserTest(id, description, `async ({document,customElements})=>{await customElements.whenDefined('${tag}');const el=document.querySelector('${tag}');const node=el?.shadowRoot?.querySelector('${selector}')||el?.querySelector('${selector}');return {passed:Boolean(node?.textContent?.includes('${expected}')),receivedValue:node?.textContent||''};}`);
 
@@ -26,7 +26,23 @@ customElements.define('message-box', MessageBox);`,
 }
 customElements.define('summary-panel', SummaryPanel);`,
     challengeTitle: 'App: panel componible', challengeInstructions: 'Construye la estructura de SummaryPanel con los tres slots sin copiar el contenido del consumidor.',
-    tests: [browserTest('wc08-slots', 'Expone los tres puntos de composición', `async ({document,customElements})=>{await customElements.whenDefined('summary-panel');const root=document.querySelector('summary-panel')?.shadowRoot;return Boolean(root?.querySelector('slot[name="title"]')&&root.querySelector('slot:not([name])')&&root.querySelector('slot[name="actions"]'));}`), sourceTest('wc08-no-copy', 'No reemplaza el contenido externo', String.raw`slot\s+name\s*=\s*['"]actions['"]|<slot[^>]+name=['"]actions['"]`)],
+    tests: [browserTest('wc08-slots', 'Expone los tres puntos de composición', `async ({document,customElements})=>{await customElements.whenDefined('summary-panel');const root=document.querySelector('summary-panel')?.shadowRoot;return Boolean(root?.querySelector('slot[name="title"]')&&Array.from(root.querySelectorAll('slot')).some(slot=>slot.name==='')&&root.querySelector('slot[name="actions"]'));}`), browserTest('wc08-no-copy', 'Proyecta los nodos del consumidor sin reemplazarlos', `async ({document,customElements})=>{
+      await customElements.whenDefined('summary-panel');
+      const container=document.createElement('div');container.style.display='none';
+      const el=document.createElement('summary-panel');
+      const title=document.createElement('strong');title.slot='title';title.textContent='Pedido de prueba';
+      const body=document.createElement('p');body.textContent='Contenido externo';
+      const action=document.createElement('button');action.slot='actions';action.textContent='Consultar';
+      el.append(title,body,action);container.append(el);
+      try {
+        document.body.append(container);
+        const root=el.shadowRoot;if(!root)return false;
+        const projected=(name,node)=>Array.from(root.querySelectorAll('slot')).some(slot=>slot.name===name&&slot.assignedElements().includes(node));
+        if(title.parentNode!==el||body.parentNode!==el||action.parentNode!==el||!projected('title',title)||!projected('',body)||!projected('actions',action))return false;
+        const replacement=document.createElement('p');replacement.textContent='Contenido actualizado';body.replaceWith(replacement);
+        return projected('',replacement)&&!projected('',body)&&projected('actions',action);
+      } finally {container.remove();}
+    }`)],
     hints: ['La estructura pertenece al componente; el contenido pertenece al consumidor.', 'Un slot sin name recibe el contenido por defecto.', 'Los nombres title y actions son parte de la API.'],
     model: 'El componente pone estantes con etiquetas; quien lo usa decide qué objetos coloca en cada estante.',
     whenToUse: 'Usa slots cuando el consumidor debe aportar DOM, semántica o controles que el componente no debería serializar.',
@@ -43,7 +59,17 @@ customElements.define('summary-panel', SummaryPanel);`,
   }
 }
 customElements.define('dialog-shell', DialogShell);`,
-      tests: [browserTest('wc08-d1', 'El footer tiene slot actions', `async ({document,customElements})=>{await customElements.whenDefined('dialog-shell');return Boolean(document.querySelector('dialog-shell').shadowRoot.querySelector('footer slot[name="actions"]'));}`), sourceTest('wc08-d2', 'Conserva un slot por defecto', String.raw`<slot\s*>`) ],
+      tests: [browserTest('wc08-d1', 'El footer tiene slot actions', `async ({document,customElements})=>{await customElements.whenDefined('dialog-shell');return Boolean(document.querySelector('dialog-shell').shadowRoot.querySelector('footer slot[name="actions"]'));}`), browserTest('wc08-d2', 'Proyecta el cuerpo y las acciones en destinos distintos', `async ({document,customElements})=>{
+        await customElements.whenDefined('dialog-shell');
+        const container=document.createElement('div');container.style.display='none';
+        const el=document.createElement('dialog-shell');const body=document.createElement('p');body.textContent='Mensaje';
+        const action=document.createElement('button');action.slot='actions';action.textContent='Cerrar';el.append(body,action);container.append(el);
+        try {document.body.append(container);const root=el.shadowRoot;if(!root)return false;
+          const footer=root.querySelector('footer slot[name="actions"]');
+          const bodySlot=Array.from(root.querySelectorAll('slot')).find(slot=>slot.name===''&&slot.assignedElements().includes(body));
+          return Boolean(bodySlot&&!bodySlot.closest('footer')&&footer?.assignedElements().includes(action)&&body.parentNode===el&&action.parentNode===el);
+        } finally {container.remove();}
+      }`) ],
       hints: ['El botón externo usa slot="actions".', 'El receptor debe declarar el mismo nombre.', 'Solo uno de los slots queda sin nombre.'] },
   }),
   lesson({
@@ -78,7 +104,17 @@ customElements.define('tag-list', TagList);`,
 }
 customElements.define('shopping-list', ShoppingList);`,
     challengeTitle: 'App: lista desde estado', challengeInstructions: 'Renderiza Pan, permite addItem y reconstruye la lista desde un array nuevo.',
-    tests: [browserTest('wc09-state', 'Agregar actualiza estado y vista', `async ({document,customElements})=>{await customElements.whenDefined('shopping-list');const el=document.querySelector('shopping-list');el.addItem('Café');return el.items.length===2&&el.querySelectorAll('li').length===2&&el.textContent.includes('Café');}`), sourceTest('wc09-render', 'Concentra la vista en render', String.raw`render\s*\(\s*\)`) ],
+    tests: [browserTest('wc09-state', 'Agregar actualiza estado y vista', `async ({document,customElements})=>{await customElements.whenDefined('shopping-list');const el=document.querySelector('shopping-list');el.addItem('Café');return el.items.length===2&&el.querySelectorAll('li').length===2&&el.textContent.includes('Café');}`), browserTest('wc09-render', 'Usa un array nuevo y reconstruye la vista desde el estado', `async ({document,customElements})=>{
+      await customElements.whenDefined('shopping-list');const container=document.createElement('div');container.style.display='none';
+      const el=document.createElement('shopping-list');container.append(el);
+      try {document.body.append(container);if(!Array.isArray(el.items)||typeof el.render!=='function'||typeof el.addItem!=='function')return false;
+        const original=el.items;const before=[...original];el.addItem('Tomate');
+        if(el.items===original||JSON.stringify(original)!==JSON.stringify(before)||JSON.stringify(el.items)!==JSON.stringify([...before,'Tomate']))return false;
+        el.items=['Arroz','Limón','Sal'];el.render();el.render();
+        if(JSON.stringify(Array.from(el.querySelectorAll('li'),node=>node.textContent.trim()))!==JSON.stringify(el.items))return false;
+        el.items=[];el.render();return el.querySelectorAll('li').length===0;
+      } finally {container.remove();}
+    }`) ],
     hints: ['El array es la fuente; los li son una representación descartable.', 'No hagas push y appendChild por caminos separados.', 'Después de reemplazar el array llama un único render.'],
     model: 'El estado es la receta y el DOM es el plato. Si cambias el plato sin cambiar la receta, ya no puedes reconstruirlo.',
     whenToUse: 'Usa render desde estado cuando varias acciones pueden cambiar la misma vista y necesitas resultados repetibles.',
@@ -100,7 +136,15 @@ customElements.define('shopping-list', ShoppingList);`,
   }
 }
 customElements.define('task-list', TaskList);`,
-      tests: [browserTest('wc09-d1', 'Render es idempotente', `async ({document,customElements})=>{await customElements.whenDefined('task-list');const el=document.querySelector('task-list');el.render();return el.querySelectorAll('p').length===2;}`), sourceTest('wc09-d2', 'Reemplaza la representación', String.raw`(?:innerHTML\s*=|replaceChildren\s*\()`) ],
+      tests: [browserTest('wc09-d1', 'Render es idempotente', `async ({document,customElements})=>{await customElements.whenDefined('task-list');const el=document.querySelector('task-list');el.render();return el.querySelectorAll('p').length===2;}`), browserTest('wc09-d2', 'Reconstruye filas cuando el estado cambia o queda vacío', `async ({document,customElements})=>{
+        await customElements.whenDefined('task-list');const container=document.createElement('div');container.style.display='none';
+        const el=document.createElement('task-list');container.append(el);
+        try {document.body.append(container);if(typeof el.render!=='function')return false;
+          for(const tasks of [['Tres'],['Cuatro','Cinco','Seis'],[]]) {el.tasks=tasks;el.render();el.render();
+            if(JSON.stringify(Array.from(el.querySelectorAll('p'),node=>node.textContent.trim()))!==JSON.stringify(tasks))return false;}
+          return true;
+        } finally {container.remove();}
+      }`) ],
       hints: ['Llamar render dos veces debe dar el mismo DOM.', 'Elimina o reemplaza antes de crear filas.', 'El estado ya contiene la lista completa.'] },
   }),
   lesson({
@@ -154,7 +198,22 @@ class CartApp extends HTMLElement {
 }
 customElements.define('cart-app', CartApp);`,
     challengeTitle: 'App: carrito con dueño claro', challengeInstructions: 'Haz que CartApp pase items por propiedad, escuche line-remove y elimine solo el id recibido.',
-    tests: [browserTest('wc10-flow', 'El evento de un hijo actualiza al padre', `async ({document,customElements})=>{await Promise.all([customElements.whenDefined('cart-app'),customElements.whenDefined('cart-line')]);const app=document.querySelector('cart-app');const button=app?.querySelector('cart-line button');if(!button)return false;button.click();return app.items.length===1&&app.querySelectorAll('cart-line').length===1;}`), sourceTest('wc10-property', 'Pasa objetos por propiedad', String.raw`\.item\s*=\s*item`) ],
+    tests: [browserTest('wc10-flow', 'El evento de un hijo actualiza al padre', `async ({document,customElements})=>{await Promise.all([customElements.whenDefined('cart-app'),customElements.whenDefined('cart-line')]);const app=document.querySelector('cart-app');const button=app?.querySelector('cart-line button');if(!button)return false;button.click();return app.items.length===1&&app.querySelectorAll('cart-line').length===1;}`), browserTest('wc10-property', 'Los objetos y el id solicitado conservan su contrato', `async ({document,customElements,CustomEvent})=>{
+      await Promise.all([customElements.whenDefined('cart-app'),customElements.whenDefined('cart-line')]);
+      const container=document.createElement('div');container.style.display='none';const app=document.createElement('cart-app');container.append(app);
+      try {document.body.append(container);if(typeof app.render!=='function')return false;
+        const probe=document.createElement('cart-line');probe.item={id:'probe',name:'Producto externo'};container.append(probe);
+        if(!probe.textContent.includes('Producto externo'))return false;
+        app.items=[{id:'c',name:'Cuaderno'},{id:'d',name:'Regla'},{id:'e',name:'Goma'}];app.render();
+        const lines=Array.from(app.querySelectorAll('cart-line'));
+        if(lines.length!==3||lines.some((line,index)=>line.hasAttribute('item')||!line.textContent.includes(app.items[index].name)))return false;
+        const button=lines[1].querySelector('button');if(!button)return false;button.click();
+        const correct=()=>JSON.stringify(app.items.map(item=>item.id))==='["c","e"]'&&app.querySelectorAll('cart-line').length===2&&app.textContent.includes('Cuaderno')&&app.textContent.includes('Goma')&&!app.textContent.includes('Regla');
+        if(!correct())return false;
+        app.querySelector('cart-line').dispatchEvent(new CustomEvent('line-remove',{detail:{id:'ausente'},bubbles:true}));
+        return correct();
+      } finally {container.remove();}
+    }`) ],
     hints: ['CartApp es el único dueño de items.', 'CartLine recibe un objeto por propiedad y solo emite el id.', 'El padre reemplaza el array y vuelve a renderizar.'],
     model: 'El padre lleva el libro contable; los hijos leen una página y envían recibos, pero no reescriben el libro por su cuenta.',
     whenToUse: 'Úsalo cuando varios componentes representan o modifican partes del mismo estado.',
@@ -171,7 +230,14 @@ customElements.define('cart-app', CartApp);`,
   }
 }
 customElements.define('inventory-app', InventoryApp);`,
-      tests: [browserTest('wc10-d1', 'La acción cambia la fuente de verdad', `async ({document,customElements})=>{await customElements.whenDefined('inventory-app');const el=document.querySelector('inventory-app');el.querySelector('button').click();return el.products.length===0;}`), sourceTest('wc10-d2', 'Actualiza products', String.raw`this\.products\s*=\s*this\.products\.(?:filter|slice)`) ],
+      tests: [browserTest('wc10-d1', 'La acción cambia la fuente de verdad', `async ({document,customElements})=>{await customElements.whenDefined('inventory-app');const el=document.querySelector('inventory-app');el.querySelector('button').click();return el.products.length===0;}`), browserTest('wc10-d2', 'La eliminación deja datos y representación de acuerdo', `async ({document,customElements})=>{
+        await customElements.whenDefined('inventory-app');const container=document.createElement('div');container.style.display='none';
+        const el=document.createElement('inventory-app');container.append(el);
+        try {document.body.append(container);const button=el.querySelector('button');if(!button||!Array.isArray(el.products)||el.products.length!==1)return false;
+          button.click();if(typeof el.render==='function')el.render();
+          return el.products.length===0&&!el.querySelector('button');
+        } finally {container.remove();}
+      }`) ],
       hints: ['El botón no es la fuente de verdad.', 'Cambia products usando el id.', 'Después representa el nuevo estado.'] },
   }),
   lesson({
@@ -208,7 +274,18 @@ customElements.define('help-disclosure', HelpDisclosure);`,
 }
 customElements.define('action-menu', ActionMenu);`,
     challengeTitle: 'App: menú accesible', challengeInstructions: 'Abre/cierra el menú, sincroniza aria-expanded, enfoca la primera opción y cierra con Escape devolviendo foco.',
-    tests: [browserTest('wc11-a11y', 'Clic abre y actualiza ARIA', `async ({document,customElements})=>{await customElements.whenDefined('action-menu');const el=document.querySelector('action-menu');const trigger=el.querySelector('button');trigger.click();return trigger.getAttribute('aria-expanded')==='true'&&!el.querySelector('[role="menu"]').hidden;}`), sourceTest('wc11-key', 'Atiende Escape', String.raw`key\s*===\s*['"]Escape['"]|case\s+['"]Escape['"]`) ],
+    tests: [browserTest('wc11-a11y', 'Clic abre y actualiza ARIA', `async ({document,customElements})=>{await customElements.whenDefined('action-menu');const el=document.querySelector('action-menu');const trigger=el.querySelector('button');trigger.click();return trigger.getAttribute('aria-expanded')==='true'&&!el.querySelector('[role="menu"]').hidden;}`), browserTest('wc11-key', 'Abrir y Escape mantienen el estado y el foco', `async ({window,document,customElements})=>{
+      await customElements.whenDefined('action-menu');const previousFocus=document.activeElement;
+      const container=document.createElement('div');container.style.cssText='position:fixed;left:-10000px;top:0';
+      const el=document.createElement('action-menu');container.append(el);
+      try {document.body.append(container);const trigger=el.querySelector('button');const menu=el.querySelector('[role="menu"]');const first=menu?.querySelector('[role="menuitem"]');
+        if(!trigger||!menu||!first||!menu.hidden||trigger.getAttribute('aria-expanded')!=='false')return false;
+        trigger.click();if(menu.hidden||trigger.getAttribute('aria-expanded')!=='true'||document.activeElement!==first)return false;
+        first.dispatchEvent(new window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+        if(!menu.hidden||trigger.getAttribute('aria-expanded')!=='false'||document.activeElement!==trigger)return false;
+        trigger.click();trigger.click();return menu.hidden&&trigger.getAttribute('aria-expanded')==='false';
+      } finally {container.remove();if(previousFocus?.isConnected&&typeof previousFocus.focus==='function')previousFocus.focus({preventScroll:true});}
+    }`) ],
     hints: ['Empieza con button nativo, no div con role.', 'ARIA describe el mismo estado que hidden.', 'Guarda trigger para devolverle el foco.'],
     model: 'La accesibilidad es parte del contrato de interacción: nombre, rol, estado, teclado y foco deben contar la misma historia.',
     whenToUse: 'Diseña teclado y foco cuando el componente abre superficies, selecciona opciones o cambia contexto.',
@@ -224,7 +301,12 @@ customElements.define('action-menu', ActionMenu);`,
   }
 }
 customElements.define('save-control', SaveControl);`,
-      tests: [browserTest('wc11-d1', 'Usa un botón nativo', `async ({document,customElements})=>{await customElements.whenDefined('save-control');return Boolean(document.querySelector('save-control')?.querySelector('button')?.textContent.includes('Guardar'));}`), sourceTest('wc11-d2', 'Conserva la acción', String.raw`setAttribute\s*\(\s*['"]saved['"]`) ],
+      tests: [browserTest('wc11-d1', 'Usa un botón nativo', `async ({document,customElements})=>{await customElements.whenDefined('save-control');return Boolean(document.querySelector('save-control')?.querySelector('button')?.textContent.includes('Guardar'));}`), browserTest('wc11-d2', 'Activar el botón guarda realmente', `async ({document,customElements})=>{
+        await customElements.whenDefined('save-control');const container=document.createElement('div');container.style.display='none';const el=document.createElement('save-control');container.append(el);
+        try {document.body.append(container);const button=el.querySelector('button');if(!button||button.disabled||el.hasAttribute('saved'))return false;
+          button.click();return el.hasAttribute('saved');
+        } finally {container.remove();}
+      }`) ],
       hints: ['No repares el div añadiendo muchos atributos.', 'El navegador ya trae un control correcto.', 'Cambia la etiqueta y conserva la acción.'] },
   }),
   lesson({
@@ -259,7 +341,18 @@ customElements.define('code-field', CodeField);`,
 }
 customElements.define('quantity-field', QuantityField);`,
     challengeTitle: 'App: campo que sí pertenece al formulario', challengeInstructions: 'Conecta el input con ElementInternals para que FormData entregue quantity y valida valores menores que uno.',
-    tests: [browserTest('wc12-form', 'FormData recibe el valor', `async ({document,customElements})=>{await customElements.whenDefined('quantity-field');const el=document.querySelector('quantity-field');const input=el.querySelector('input');input.value='3';input.dispatchEvent(new Event('input',{bubbles:true}));return new FormData(document.querySelector('form')).get('quantity')==='3';}`), sourceTest('wc12-internals', 'Usa el contrato de formulario', String.raw`attachInternals\s*\([\s\S]*setFormValue\s*\(`)],
+    tests: [browserTest('wc12-form', 'FormData recibe el valor', `async ({document,customElements})=>{await customElements.whenDefined('quantity-field');const el=document.querySelector('quantity-field');const input=el.querySelector('input');input.value='3';input.dispatchEvent(new Event('input',{bubbles:true}));return new FormData(document.querySelector('form')).get('quantity')==='3';}`), browserTest('wc12-internals', 'Publica el valor inicial y valida la cantidad en el host', `async ({window,document,customElements,Event})=>{
+      await customElements.whenDefined('quantity-field');const form=document.createElement('form');form.style.display='none';
+      const el=document.createElement('quantity-field');el.setAttribute('name','cantidad-prueba');form.append(el);
+      try {document.body.append(form);const input=el.querySelector('input');
+        if(!input||!Array.from(form.elements).includes(el)||new window.FormData(form).get('cantidad-prueba')!=='1')return false;
+        for(const value of ['0','-2']) {input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));
+          if(!el.matches(':invalid')||form.checkValidity())return false;}
+        for(const value of ['1','4']) {input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));
+          if(!el.matches(':valid')||!form.checkValidity()||new window.FormData(form).get('cantidad-prueba')!==value)return false;}
+        return true;
+      } finally {form.remove();}
+    }`)],
     hints: ['El form no descubre automáticamente el input interno.', 'attachInternals conecta el host con el formulario.', 'setFormValue publica el valor actual.'],
     model: 'ElementInternals es el adaptador entre tu implementación interna y el protocolo de formularios del navegador.',
     whenToUse: 'Úsalo para controles reutilizables que deban enviar, validar, resetearse o respetar disabled como un input nativo.',
@@ -278,7 +371,26 @@ customElements.define('quantity-field', QuantityField);`,
   }
 }
 customElements.define('coupon-field', CouponField);`,
-      tests: [browserTest('wc12-d0', 'FormData recibe un código elegido por la persona', `async ({document,customElements,Event})=>{await customElements.whenDefined('coupon-field');const el=document.querySelector('coupon-field');const form=document.createElement('form');el.setAttribute('name','coupon');form.appendChild(el);document.body.appendChild(form);const input=el.querySelector('input');input.value='MIO25';input.dispatchEvent(new Event('input',{bubbles:true}));return new FormData(form).get('coupon')==='MIO25';}`), sourceTest('wc12-d1', 'Adjunta ElementInternals', String.raw`attachInternals\s*\(`), sourceTest('wc12-d2', 'Publica el valor', String.raw`setFormValue\s*\(`)],
+      tests: [browserTest('wc12-d0', 'FormData recibe un código elegido por la persona', `async ({window,document,customElements,Event})=>{
+        await customElements.whenDefined('coupon-field');const form=document.createElement('form');form.style.display='none';
+        const el=document.createElement('coupon-field');el.setAttribute('name','coupon');form.append(el);
+        try {document.body.append(form);const input=el.querySelector('input');if(!input)return false;
+          input.value='MIO25';input.dispatchEvent(new Event('input',{bubbles:true}));return new window.FormData(form).get('coupon')==='MIO25';
+        } finally {form.remove();}
+      }`), browserTest('wc12-d1', 'El host participa y publica el cupón inicial', `async ({window,document,customElements})=>{
+        await customElements.whenDefined('coupon-field');const form=document.createElement('form');form.style.display='none';
+        const el=document.createElement('coupon-field');el.setAttribute('name','coupon');form.append(el);
+        try {document.body.append(form);return Array.from(form.elements).includes(el)&&JSON.stringify(new window.FormData(form).getAll('coupon'))==='["SAVE10"]';}
+        finally {form.remove();}
+      }`), browserTest('wc12-d2', 'Publica cambios, vacío y el nombre del consumidor', `async ({window,document,customElements,Event})=>{
+        await customElements.whenDefined('coupon-field');const form=document.createElement('form');form.style.display='none';
+        const el=document.createElement('coupon-field');el.setAttribute('name','descuento');form.append(el);
+        try {document.body.append(form);const input=el.querySelector('input');if(!input||!Array.from(form.elements).includes(el))return false;
+          for(const value of ['OTRO40','']) {input.value=value;input.dispatchEvent(new Event('input',{bubbles:true}));
+            if(JSON.stringify(new window.FormData(form).getAll('descuento'))!==JSON.stringify([value]))return false;}
+          el.setAttribute('name','promocion');const data=new window.FormData(form);return data.get('promocion')===''&&!data.has('descuento');
+        } finally {form.remove();}
+      }`)],
       hints: ['formAssociated solo anuncia capacidad.', 'La instancia necesita su objeto internals.', 'Publica el valor inicial y cambios.'] },
   }),
   lesson({
@@ -321,7 +433,17 @@ customElements.define('demo-loader', DemoLoader);`,
 }
 customElements.define('user-search', UserSearch);`,
     challengeTitle: 'App: buscador resistente', challengeInstructions: 'Implementa search y render con loading, success, empty y cancelación al desconectar.',
-    tests: [browserTest('wc13-success', 'Muestra una respuesta vigente', `async ({document,customElements})=>{await customElements.whenDefined('user-search');const el=document.querySelector('user-search');await el.search('ana');return el.textContent.includes('Ana');}`), browserTest('wc13-empty', 'Distingue una respuesta vacía', `async ({document,customElements})=>{const el=document.querySelector('user-search');await el.search('nadie');return el.textContent.includes('Sin resultados');}`)],
+    tests: [browserTest('wc13-success', 'Muestra una respuesta vigente', `async ({document,customElements})=>{await customElements.whenDefined('user-search');const el=document.querySelector('user-search');await el.search('ana');return el.textContent.includes('Ana');}`), browserTest('wc13-empty', 'Distingue una respuesta vacía', `async ({document,customElements})=>{const el=document.querySelector('user-search');await el.search('nadie');return el.textContent.includes('Sin resultados');}`), browserTest('wc13-cancel', 'Muestra carga e invalida trabajo al desconectar', `async ({document,customElements})=>{
+      await customElements.whenDefined('user-search');const container=document.createElement('div');container.style.display='none';
+      const el=document.createElement('user-search');container.append(el);
+      try {document.body.append(container);if(typeof el.search!=='function')return false;
+        const pending=el.search('ana');const loading=el.textContent.includes('Cargando');
+        el.remove();const detachedText=el.textContent;await pending;
+        if(!loading||el.textContent!==detachedText||el.textContent.includes('Ana'))return false;
+        container.append(el);await el.search('nadie');if(!el.textContent.includes('Sin resultados'))return false;
+        await el.search('ana');return el.textContent.includes('Ana');
+      } finally {container.remove();}
+    }`)],
     hints: ['Loading no es ausencia de datos; es un estado propio.', 'Cada búsqueda nueva invalida la anterior.', 'Render debe poder explicar cualquier valor de state.'],
     model: 'Una promesa no es una pantalla: el componente traduce el tiempo en estados observables y protege la vista contra respuestas atrasadas.',
     whenToUse: 'Úsalo en búsqueda, carga remota, validación de servidor y cualquier tarea cuyo resultado llegue después.',
@@ -341,7 +463,15 @@ customElements.define('user-search', UserSearch);`,
   }
 }
 customElements.define('latest-result', LatestResult);`,
-      tests: [browserTest('wc13-d1', 'Conserva solo el resultado vigente', `async ({document,customElements})=>{await customElements.whenDefined('latest-result');await new Promise(r=>setTimeout(r,70));return document.querySelector('latest-result').textContent==='Segundo';}`), sourceTest('wc13-d2', 'Identifica la petición vigente', String.raw`(?:AbortController|requestId|_version|_current)`) ],
+      tests: [browserTest('wc13-d1', 'Conserva solo el resultado vigente', `async ({document,customElements})=>{await customElements.whenDefined('latest-result');await new Promise(r=>setTimeout(r,70));return document.querySelector('latest-result').textContent==='Segundo';}`), browserTest('wc13-d2', 'Protege también búsquedas nuevas y resultados vacíos', `async ({document,customElements})=>{
+        await customElements.whenDefined('latest-result');const container=document.createElement('div');container.style.display='none';
+        const el=document.createElement('latest-result');container.append(el);
+        try {document.body.append(container);if(typeof el.load!=='function')return false;
+          await new Promise(resolve=>setTimeout(resolve,70));
+          await Promise.all([el.load('Anterior',30),el.load('Actual',0)]);if(el.textContent!=='Actual')return false;
+          await Promise.all([el.load('Pendiente',0),el.load('',20)]);return el.textContent==='';
+        } finally {container.remove();}
+      }`) ],
       hints: ['El orden de inicio no garantiza el orden de fin.', 'Asigna identidad a cada solicitud o cancela la anterior.', 'Antes de renderizar comprueba que el resultado sigue vigente.'] },
   }),
   lesson({
@@ -380,7 +510,20 @@ customElements.define('toast-message', ToastMessage);`,
 }
 customElements.define('confirm-dialog', ConfirmDialog);`,
     challengeTitle: 'App: diálogo con contrato comprobable', challengeInstructions: 'Implementa open/close, foco y dialog-close sin exponer métodos privados.',
-    tests: [browserTest('wc14-open', 'open muestra mensaje y diálogo', `async ({document,customElements})=>{await customElements.whenDefined('confirm-dialog');const el=document.querySelector('confirm-dialog');el.open('Eliminar archivo');return !el.hidden&&el.querySelector('p').textContent.includes('Eliminar');}`), browserTest('wc14-event', 'Cancelar emite el evento público', `async ({document})=>{const el=document.querySelector('confirm-dialog');let closed=false;el.addEventListener('dialog-close',()=>closed=true,{once:true});el.querySelector('[data-action="cancel"]').click();return closed&&el.hidden;}`)],
+    tests: [browserTest('wc14-open', 'open muestra mensaje y diálogo', `async ({document,customElements})=>{await customElements.whenDefined('confirm-dialog');const el=document.querySelector('confirm-dialog');el.open('Eliminar archivo');return !el.hidden&&el.querySelector('p').textContent.includes('Eliminar');}`), browserTest('wc14-event', 'Cancelar emite el evento público', `async ({document})=>{const el=document.querySelector('confirm-dialog');let closed=false;el.addEventListener('dialog-close',()=>closed=true,{once:true});el.querySelector('[data-action="cancel"]').click();return closed&&el.hidden;}`), browserTest('wc14-contract', 'El contrato público conserva mensaje, foco y cierre', `async ({document,customElements})=>{
+      await customElements.whenDefined('confirm-dialog');const previousFocus=document.activeElement;
+      const container=document.createElement('div');container.style.cssText='position:fixed;left:-10000px;top:0';
+      const el=document.createElement('confirm-dialog');container.append(el);
+      try {document.body.append(container);if(typeof el.open!=='function'||typeof el.close!=='function'||!el.hidden)return false;
+        const surface=el.querySelector('[role="dialog"]');const confirm=el.querySelector('[data-action="confirm"]');
+        if(!surface||surface.getAttribute('aria-modal')!=='true'||!confirm)return false;
+        let closed=0;el.addEventListener('dialog-close',()=>closed++);
+        for(const message of ['Archivar pedido','Cambiar nombre']) {el.open(message);
+          if(el.hidden||el.querySelector('p')?.textContent!==message||document.activeElement!==confirm)return false;
+          const before=closed;el.close();if(!el.hidden||closed!==before+1)return false;}
+        el.open('Confirmar envío');const before=closed;confirm.click();return el.hidden&&closed===before+1;
+      } finally {container.remove();if(previousFocus?.isConnected&&typeof previousFocus.focus==='function')previousFocus.focus({preventScroll:true});}
+    }`)],
     hints: ['La prueba solo debe conocer open, close y dialog-close.', 'El mensaje se configura por método público, no buscando internals desde fuera.', 'Al abrir mueve foco a un control útil.'],
     model: 'Una prueba pública entra por la puerta del componente y observa sus salidas; si necesita desmontar paredes, el contrato está incompleto o la prueba está acoplada.',
     whenToUse: 'Prueba en navegador todo componente que dependa de DOM, Shadow DOM, foco, eventos o ciclo de vida.',
@@ -388,7 +531,7 @@ customElements.define('confirm-dialog', ConfirmDialog);`,
     commonErrors: 'testear innerHTML exacto, llamar métodos privados, simular HTMLElement en Node o publicar sin documentar eventos y CSS hooks.',
     transfer: 'Escribe una matriz de contrato para un date-picker: entradas, salidas, errores, accesibilidad y estilos.',
     sources: [source('Testing de Lit', 'https://lit.dev/docs/tools/testing/', 'Aunque se usará después con Lit, aplica el requisito de navegador a componentes web.', 'Lit'), source('Web Test Runner', 'https://modern-web.dev/docs/test-runner/overview/', 'Consulta pruebas modernas en navegador.', 'Modern Web')],
-    debug: { title: 'La prueba depende de un método privado', expected: 'notification-box expone show y evento notification-close.', observed: 'Solo existe _renderMessage y el consumidor debe conocerlo.',
+    debug: { title: 'La prueba depende de un método privado', expected: 'notification-box muestra mensajes con show y se oculta con close, emitiendo notification-close.', observed: 'Solo existe _renderMessage y el consumidor debe conocerlo.',
       starter: `class NotificationBox extends HTMLElement {
   connectedCallback() {
     this.hidden = true;
@@ -399,7 +542,16 @@ customElements.define('confirm-dialog', ConfirmDialog);`,
   }
 }
 customElements.define('notification-box', NotificationBox);`,
-      tests: [browserTest('wc14-d1', 'Expone un método show estable', `async ({document,customElements})=>{await customElements.whenDefined('notification-box');const el=document.querySelector('notification-box');if(typeof el.show!=='function')return false;el.show('Guardado');return !el.hidden&&el.textContent.includes('Guardado');}`), sourceTest('wc14-d2', 'El método público no comienza por guion bajo', String.raw`\bshow\s*\(`)],
-      hints: ['El consumidor no debería conocer _renderMessage.', 'Nombra el caso de uso público: show.', 'La implementación privada puede seguir existiendo detrás.'] },
+      tests: [browserTest('wc14-d1', 'Expone un método show estable', `async ({document,customElements})=>{await customElements.whenDefined('notification-box');const el=document.querySelector('notification-box');if(typeof el.show!=='function')return false;el.show('Guardado');return !el.hidden&&el.textContent.includes('Guardado');}`), browserTest('wc14-d2', 'show y close funcionan en otra instancia y notifican el cierre', `async ({document,customElements})=>{
+        await customElements.whenDefined('notification-box');const container=document.createElement('div');container.style.display='none';
+        const el=document.createElement('notification-box');container.append(el);
+        try {document.body.append(container);if(typeof el.show!=='function'||typeof el.close!=='function')return false;
+          let closed=0;el.addEventListener('notification-close',()=>closed++);
+          for(const message of ['Pedido enviado','Cambios pendientes']) {el.show(message);if(el.hidden||!el.textContent.includes(message))return false;
+            const before=closed;el.close();if(!el.hidden||closed!==before+1)return false;}
+          return true;
+        } finally {container.remove();}
+      }`)],
+      hints: ['El consumidor no debería conocer _renderMessage.', 'La API pública separa mostrar un mensaje de cerrar la notificación.', 'La implementación privada puede seguir detrás; el cierre debe ocultar y emitir el evento documentado.'] },
   }),
 ];

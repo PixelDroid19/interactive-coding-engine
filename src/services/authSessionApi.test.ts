@@ -59,6 +59,7 @@ describe('sesión de la plataforma', () => {
     localStorage.setItem('aula_learning_sync_v1', '{"events":[{"privado":true}]}');
     localStorage.setItem('aula_learning_center_cache_v1:curso:actor', '{"privado":true}');
     localStorage.setItem('aula_learning_center_cache_v2:user-anterior:curso', '{"privado":true}');
+    localStorage.setItem('aula_guided_v1:user%3Auser-anterior:fundamentos', '{"code":"borrador privado"}');
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ authenticated: false, providers: [] }), {
         status: 200,
@@ -75,6 +76,7 @@ describe('sesión de la plataforma', () => {
     expect(localStorage.getItem('aula_learning_sync_v1')).toBeNull();
     expect(localStorage.getItem('aula_learning_center_cache_v1:curso:actor')).toBeNull();
     expect(localStorage.getItem('aula_learning_center_cache_v2:user-anterior:curso')).toBeNull();
+    expect(localStorage.getItem('aula_guided_v1:user%3Auser-anterior:fundamentos')).toBeNull();
     expect(localStorage.getItem('aula_anonymous_actor_v1')).not.toBe('30000000-0000-4000-8000-000000000003');
   });
 

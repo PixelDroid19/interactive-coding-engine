@@ -3,17 +3,19 @@ import { ChevronDown, CircleCheck, LifeBuoy, PencilLine } from 'lucide-react';
 
 interface PracticeBriefProps {
   action: ReactNode;
+  context?: ReactNode;
   expected: ReactNode;
   help?: ReactNode;
   className?: string;
 }
 
-export function PracticeBrief({ action, expected, help, className = '' }: PracticeBriefProps) {
+export function PracticeBrief({ action, context, expected, help, className = '' }: PracticeBriefProps) {
   return (
     <section className={`practice-brief ${className}`.trim()} aria-label="Instrucciones de la práctica">
       <div className="practice-brief__row is-action">
         <span className="practice-brief__label"><PencilLine size={14} aria-hidden="true" /> Haz esto</span>
         <div className="practice-brief__copy">{action}</div>
+        {context && <div className="practice-brief__context">{context}</div>}
       </div>
 
       <div className="practice-brief__row is-expected">

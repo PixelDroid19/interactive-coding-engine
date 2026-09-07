@@ -1,11 +1,22 @@
-import { appHtml, browserTest, lesson, source, sourceTest } from './helpers';
+import { appHtml, browserTest, lesson, source } from './helpers';
 
 const textTest = (id: string, description: string, tag: string, selector: string, expected: string) => browserTest(id, description, `async ({ document, customElements }) => {
   await customElements.whenDefined('${tag}');
   const host = document.querySelector('${tag}');
   if (host?.updateComplete) await host.updateComplete;
-  const target = '${selector}' === ':host' ? host : (host?.shadowRoot?.querySelector('${selector}') || host?.querySelector('${selector}'));
+  const target = '${selector}' === ':host' ? (host?.shadowRoot || host) : (host?.shadowRoot?.querySelector('${selector}') || host?.querySelector('${selector}'));
   return { passed: Boolean(target?.textContent?.includes('${expected}')), receivedValue: target?.textContent || '' };
+}`);
+
+const instanceTextTest = (id: string, description: string, tag: string, expected: string) => browserTest(id, description, `async ({ document, customElements }) => {
+  await customElements.whenDefined('${tag}');
+  const another = document.createElement('${tag}');
+  try {
+    document.body.append(another);
+    if (another.updateComplete) await another.updateComplete;
+    const text = (another.shadowRoot || another).textContent;
+    return { passed: text.includes('${expected}'), receivedValue: text };
+  } finally { another.remove(); }
 }`);
 
 export const COMPONENT_SPECS_01_TO_07 = [
@@ -30,7 +41,16 @@ customElements.define('sync-indicator', SyncIndicator);`,
 }
 // Registra status-badge sin cambiar la etiqueta del HTML.`,
     challengeTitle: 'App: estado del servicio', challengeInstructions: 'Registra status-badge y haz que muestre “Operativo” con role="status".',
-    tests: [textTest('wc01-text', 'La insignia muestra el estado', 'status-badge', ':host', 'Operativo'), sourceTest('wc01-role', 'Expone un estado accesible', String.raw`setAttribute\s*\(\s*['"]role['"]\s*,\s*['"]status['"]`)],
+    tests: [textTest('wc01-text', 'La insignia muestra el estado', 'status-badge', ':host', 'Operativo'), browserTest('wc01-role', 'Expone el rol de estado en cada instancia', `async ({ document, customElements }) => {
+  await customElements.whenDefined('status-badge');
+  const host = document.querySelector('status-badge');
+  const another = document.createElement('status-badge');
+  try {
+    document.body.append(another);
+    return [host, another].every(element => element.getAttribute('role') === 'status'
+      && (element.shadowRoot || element).textContent.includes('Operativo'));
+  } finally { another.remove(); }
+}`)],
     hints: ['El nombre público debe coincidir con la etiqueta y contener un guion.', 'El contenido puede escribirse cuando el elemento entra al documento.', 'Comprueba la etiqueta completa, no una clase aislada.'],
     model: 'La etiqueta es una toma pública y el registro conecta esa toma con la clase que conoce el comportamiento.',
     whenToUse: 'Úsalo cuando una pieza tenga nombre de dominio, se repita y necesite un contrato que funcione desde HTML normal.',
@@ -45,8 +65,8 @@ customElements.define('sync-indicator', SyncIndicator);`,
   }
 }
 customElements.define('alerta', AppAlert);`,
-      tests: [textTest('wc01-d1', 'La alerta se registra', 'alerta-app', ':host', 'Revisión pendiente'), sourceTest('wc01-d2', 'Usa la etiqueta pública', String.raw`customElements\.define\s*\(\s*['"]alerta-app['"]`)],
-      hints: ['Lee el error de la consola.', 'Un nombre personalizado necesita guion.', 'El registro debe usar alerta-app.'] },
+      tests: [textTest('wc01-d1', 'La alerta se registra', 'alerta-app', ':host', 'Revisión pendiente'), instanceTextTest('wc01-d2', 'Funciona también en otra instancia', 'alerta-app', 'Revisión pendiente')],
+      hints: ['Lee el primer error de la consola antes de mirar el texto de la alerta.', 'Consulta los requisitos del navegador para los nombres de elementos personalizados.', 'Compara el nombre del registro con la etiqueta de index.html: deben identificar el mismo componente.'] },
   }),
   lesson({
     number: 2, module: 1, title: 'HTMLElement y por qué llamamos a super()', appName: 'una tarjeta de perfil con Shadow DOM',
@@ -71,7 +91,18 @@ customElements.define('team-member', TeamMember);`,
 }
 customElements.define('profile-card', ProfileCard);`,
     challengeTitle: 'App: perfil del equipo', challengeInstructions: 'Construye profile-card con Shadow DOM abierto y muestra “Dana” y “UI Engineer”.',
-    tests: [textTest('wc02-name', 'La tarjeta muestra el nombre', 'profile-card', ':host', 'Dana'), sourceTest('wc02-super', 'Inicializa la clase base antes de this', String.raw`constructor\s*\([^)]*\)\s*\{\s*super\s*\(\s*\)`)],
+    tests: [textTest('wc02-name', 'La tarjeta muestra el nombre', 'profile-card', ':host', 'Dana'), browserTest('wc02-super', 'Construye perfiles completos dentro de Shadow DOM', `async ({ document, customElements }) => {
+  await customElements.whenDefined('profile-card');
+  const host = document.querySelector('profile-card');
+  const another = document.createElement('profile-card');
+  try {
+    document.body.append(another);
+    return [host, another].every(element => {
+      const text = element.shadowRoot?.textContent || '';
+      return text.includes('Dana') && text.includes('UI Engineer');
+    });
+  } finally { another.remove(); }
+}`)],
     hints: ['La instancia derivada todavía no está disponible al iniciar su constructor.', 'super() debe ocurrir antes del primer this.', 'Después crea y llena la raíz interna.'],
     model: 'super() construye los cimientos de HTMLElement; solo después la subclase puede usar this sobre una instancia válida.',
     whenToUse: 'Todo constructor de una clase derivada debe llamar super(); si no tienes inicialización propia, omite el constructor.',
@@ -88,8 +119,8 @@ customElements.define('profile-card', ProfileCard);`,
   }
 }
 customElements.define('user-summary', UserSummary);`,
-      tests: [textTest('wc02-d1', 'El resumen renderiza', 'user-summary', ':host', 'Cuenta activa'), sourceTest('wc02-d2', 'super ocurre primero', String.raw`constructor\s*\([^)]*\)\s*\{\s*super\s*\(\s*\)`) ],
-      hints: ['El fallo ocurre antes de attachShadow.', 'this depende del constructor base.', 'Mueve super() antes del primer acceso.'] },
+      tests: [textTest('wc02-d1', 'El resumen renderiza', 'user-summary', ':host', 'Cuenta activa'), instanceTextTest('wc02-d2', 'Otra instancia también se construye correctamente', 'user-summary', 'Cuenta activa')],
+      hints: ['El fallo ocurre antes de que aparezca el contenido.', 'Identifica el primer acceso a this y qué preparación necesita esa instancia.', 'Revisa el orden del constructor: ¿qué trabajo corresponde a la clase base y cuál al componente?'] },
   }),
   lesson({
     number: 3, module: 1, title: 'Conectar, desconectar y limpiar', appName: 'un reloj desmontable sin fugas',
@@ -111,15 +142,35 @@ customElements.define('user-summary', UserSummary);`,
 customElements.define('pulse-indicator', PulseIndicator);`,
     starter: `class SessionClock extends HTMLElement {
   connectedCallback() {
-    // Muestra "Sesión" con la hora y guarda el intervalo.
+    // Muestra "Sesión" con la hora, actualiza cada segundo y guarda el intervalo.
   }
   disconnectedCallback() {
     // Detén exactamente el recurso que iniciaste.
   }
 }
 customElements.define('session-clock', SessionClock);`,
-    challengeTitle: 'App: reloj limpio', challengeInstructions: 'Muestra “Sesión”, actualiza la hora y limpia el intervalo al desconectar.',
-    tests: [textTest('wc03-visible', 'El reloj muestra la sesión', 'session-clock', ':host', 'Sesión'), sourceTest('wc03-clean', 'Libera el intervalo', String.raw`disconnectedCallback\s*\([^)]*\)[\s\S]*clearInterval\s*\(`)],
+    challengeTitle: 'App: reloj limpio', challengeInstructions: 'Muestra “Sesión” con la hora, actualízala cada segundo y limpia el intervalo al desconectar.',
+    tests: [textTest('wc03-visible', 'El reloj muestra la sesión', 'session-clock', ':host', 'Sesión'), browserTest('wc03-clean', 'Actualiza conectado y deja de actualizar al salir', `async ({ window, document, customElements }) => {
+  await customElements.whenDefined('session-clock');
+  const host = document.createElement('session-clock');
+  const container = document.createElement('div');
+  container.style.display = 'none';
+  const waitForTick = () => new Promise(resolve => window.setTimeout(resolve, 1200));
+  try {
+    document.body.append(container);
+    container.append(host);
+    host.textContent = 'Prueba de actualización';
+    await waitForTick();
+    if (!host.textContent.includes('Sesión') || host.textContent.trim() === 'Sesión') return false;
+    host.remove();
+    host.textContent = 'Prueba desconectada';
+    await waitForTick();
+    return host.textContent === 'Prueba desconectada';
+  } finally {
+    host.remove();
+    container.remove();
+  }
+}`)],
     hints: ['Una instancia puede conectarse varias veces.', 'Guarda el id del intervalo en this.', 'La limpieza debe nombrar el mismo recurso.'],
     model: 'Conectar y desconectar son abrir y cerrar: timer, window, observer o red necesitan una operación simétrica.',
     whenToUse: 'Usa el ciclo para trabajo que solo tiene sentido mientras el elemento está en el documento.',
@@ -138,8 +189,30 @@ customElements.define('session-clock', SessionClock);`,
   }
 }
 customElements.define('resize-watch', ResizeWatch);`,
-      tests: [textTest('wc03-d1', 'El indicador se conecta', 'resize-watch', ':host', 'Escuchando'), sourceTest('wc03-d2', 'Conserva el manejador', String.raw`this\._[\w$]+\s*=\s*(?:\([^)]*\)|[\w$]+)\s*=>|\.bind\s*\(\s*this\s*\)`) ],
-      hints: ['Funciones con el mismo texto no son el mismo objeto.', 'Guarda una referencia en this.', 'Usa esa referencia al añadir y retirar.'] },
+      tests: [textTest('wc03-d1', 'El indicador se conecta', 'resize-watch', ':host', 'Escuchando'), browserTest('wc03-d2', 'Escucha conectado y deja de escuchar al salir', `async ({ window, document, customElements }) => {
+  await customElements.whenDefined('resize-watch');
+  const host = document.querySelector('resize-watch');
+  const parent = host.parentNode;
+  const next = host.nextSibling;
+  const originalText = host.textContent;
+  try {
+    for (let cycle = 0; cycle < 2; cycle++) {
+      host.textContent = 'Prueba conectada';
+      window.dispatchEvent(new window.Event('resize'));
+      if (host.textContent === 'Prueba conectada') return false;
+      host.remove();
+      host.textContent = 'Prueba desconectada';
+      window.dispatchEvent(new window.Event('resize'));
+      if (host.textContent !== 'Prueba desconectada') return false;
+      parent.insertBefore(host, next);
+    }
+    return true;
+  } finally {
+    if (!host.isConnected) parent.insertBefore(host, next);
+    host.textContent = originalText;
+  }
+}`)],
+      hints: ['Prueba un resize después de retirar el componente del documento.', 'Dos funciones con el mismo texto siguen siendo objetos distintos.', 'Compara las referencias que reciben los dos métodos del ciclo: ¿la limpieza alcanza al recurso que se creó?'] },
   }),
   lesson({
     number: 4, module: 1, title: 'Shadow DOM como frontera', appName: 'un aviso con estructura y estilos encapsulados',
@@ -165,7 +238,17 @@ customElements.define('private-banner', PrivateBanner);`,
 }
 customElements.define('notice-card', NoticeCard);`,
     challengeTitle: 'App: aviso encapsulado', challengeInstructions: 'Renderiza el aviso y sus estilos dentro de un Shadow DOM abierto.',
-    tests: [textTest('wc04-text', 'El aviso vive dentro del shadow root', 'notice-card', '.box', 'Mantenimiento'), sourceTest('wc04-root', 'Crea la frontera explícita', String.raw`attachShadow\s*\(\s*\{\s*mode\s*:\s*['"]open['"]`)],
+    tests: [textTest('wc04-text', 'El aviso muestra su contenido', 'notice-card', '.box', 'Mantenimiento'), browserTest('wc04-root', 'Encapsula el aviso y sus estilos', `async ({ document, customElements }) => {
+  await customElements.whenDefined('notice-card');
+  const host = document.querySelector('notice-card');
+  const root = host.shadowRoot;
+  const box = root?.querySelector('.box');
+  if (!box || box.getRootNode() !== root || host.querySelector('.box')) return false;
+  const sheets = [...root.querySelectorAll('style')].map(style => style.sheet)
+    .concat([...root.adoptedStyleSheets]);
+  return box.textContent.includes('Mantenimiento a las 18:00')
+    && sheets.some(sheet => sheet && sheet.cssRules.length > 0);
+}`)],
     hints: ['Host y shadowRoot son nodos distintos.', 'Renderiza en la raíz devuelta por attachShadow.', 'Los estilos internos no dependen de style.css.'],
     model: 'Shadow DOM es una pared con puertas diseñadas: protege detalles, no secretos, y obliga a decidir atributos, eventos, slots y parts públicos.',
     whenToUse: 'Úsalo cuando estructura y estilos necesiten una frontera reusable; evítalo si ocultar el DOM rompe una integración que debía ser pública.',
@@ -180,8 +263,13 @@ customElements.define('notice-card', NoticeCard);`,
   }
 }
 customElements.define('secure-note', SecureNote);`,
-      tests: [textTest('wc04-d1', 'La nota queda en su árbol interno', 'secure-note', '.box', 'Nota interna'), sourceTest('wc04-d2', 'Crea Shadow DOM', String.raw`attachShadow\s*\(`)],
-      hints: ['El problema es el árbol, no solo el nombre box.', 'Crea la frontera una vez.', 'Renderiza en shadowRoot.'] },
+      tests: [textTest('wc04-d1', 'La nota muestra su contenido', 'secure-note', '.box', 'Nota interna'), browserTest('wc04-d2', 'La implementación queda dentro de la frontera', `async ({ document, customElements }) => {
+  await customElements.whenDefined('secure-note');
+  const host = document.querySelector('secure-note');
+  const box = host.shadowRoot?.querySelector('.box');
+  return Boolean(box && box.getRootNode() === host.shadowRoot && !host.querySelector('.box'));
+}`)],
+      hints: ['Inspecciona en qué árbol aparece box; cambiar su clase no cambia ese árbol.', 'Distingue el elemento público de la raíz que guarda su implementación.', 'Comprueba qué nodo recibe el contenido y desde dónde puede alcanzarlo un selector exterior.'] },
   }),
   lesson({
     number: 5, module: 2, title: 'Atributos, propiedades y conversión', appName: 'un medidor configurable desde HTML',
@@ -206,7 +294,23 @@ customElements.define('temperature-badge', TemperatureBadge);`,
 }
 customElements.define('progress-meter', ProgressMeter);`,
     challengeTitle: 'App: progreso configurable', challengeInstructions: 'Observa value, conviértelo, limita 0–100 y renderiza “Progreso: N%”.',
-    tests: [browserTest('wc05-change', 'Reacciona a otro valor', `async ({document,customElements})=>{await customElements.whenDefined('progress-meter');const el=document.querySelector('progress-meter');el.setAttribute('value','72');await Promise.resolve();return el.textContent.includes('72%');}`), sourceTest('wc05-observe', 'Observa value', String.raw`observedAttributes\s*=\s*\[[^\]]*['"]value['"]`)],
+    tests: [browserTest('wc05-change', 'Reacciona a otro valor', `async ({document,customElements})=>{await customElements.whenDefined('progress-meter');const el=document.querySelector('progress-meter');const original=el.getAttribute('value');try{el.setAttribute('value','72');await Promise.resolve();return el.textContent.includes('Progreso: 72%');}finally{if(original===null)el.removeAttribute('value');else el.setAttribute('value',original);}}`), browserTest('wc05-observe', 'Limita los extremos y conserva valores intermedios', `async ({ document, customElements }) => {
+  await customElements.whenDefined('progress-meter');
+  const host = document.querySelector('progress-meter');
+  const original = host.getAttribute('value');
+  try {
+    for (const [input, expected] of [['-10', '0'], ['140', '100'], ['42.5', '42.5'], ['0', '0']]) {
+      host.setAttribute('value', input);
+      await Promise.resolve();
+      if (!host.textContent.includes('Progreso: ' + expected + '%')) {
+        return { passed: false, receivedValue: host.textContent, expectedValue: 'Progreso: ' + expected + '%' };
+      }
+    }
+    return true;
+  } finally {
+    if (original === null) host.removeAttribute('value'); else host.setAttribute('value', original);
+  }
+}`)],
     hints: ['Los atributos llegan como strings.', 'Convierte, valida y solo después renderiza.', 'Prueba -10 y 140 además de 72.'],
     model: 'El atributo es una etiqueta escrita; la propiedad es el dato real. La frontera convierte entre HTML y JavaScript.',
     whenToUse: 'Ofrece atributos para configuración declarativa simple y propiedades para objetos, arrays o funciones.',
@@ -222,7 +326,21 @@ customElements.define('progress-meter', ProgressMeter);`,
   }
 }
 customElements.define('score-meter', ScoreMeter);`,
-      tests: [browserTest('wc05-d1', 'Calcula con números', `async ({document,customElements})=>{await customElements.whenDefined('score-meter');const el=document.querySelector('score-meter');el.setAttribute('value','10');return el.textContent==='15';}`), sourceTest('wc05-d2', 'Convierte la entrada', String.raw`Number\s*\(|parse(?:Int|Float)\s*\(`)],
+      tests: [browserTest('wc05-d1', 'Calcula con números', `async ({document,customElements})=>{await customElements.whenDefined('score-meter');const el=document.querySelector('score-meter');el.setAttribute('value','10');return el.textContent==='15';}`), browserTest('wc05-d2', 'Conserva el cálculo con cero, negativos y decimales', `async ({ document, customElements }) => {
+  await customElements.whenDefined('score-meter');
+  const host = document.querySelector('score-meter');
+  const original = host.getAttribute('value');
+  try {
+    for (const [input, expected] of [['0', '5'], ['-5', '0'], ['2.5', '7.5'], ['12', '17']]) {
+      host.setAttribute('value', input);
+      if (host.textContent !== expected) return { passed: false, receivedValue: host.textContent, expectedValue: expected };
+    }
+    return true;
+  } finally {
+    if (original === null) host.removeAttribute('value');
+    else host.setAttribute('value', original);
+  }
+}`)],
       hints: ['Inspecciona typeof value.', 'La apariencia no cambia el tipo.', 'Convierte antes de sumar.'] },
   }),
   lesson({
@@ -258,7 +376,25 @@ customElements.define('favorite-toggle', FavoriteToggle);`,
 }
 customElements.define('setting-toggle', SettingToggle);`,
     challengeTitle: 'App: interruptor observable', challengeInstructions: 'Alterna active, aria-pressed y texto “Activado”/“Desactivado”.',
-    tests: [browserTest('wc06-toggle', 'Un clic sincroniza el estado', `async ({document,customElements})=>{await customElements.whenDefined('setting-toggle');const el=document.querySelector('setting-toggle');el.click();return el.hasAttribute('active')&&el.getAttribute('aria-pressed')==='true'&&el.textContent.includes('Activado');}`), sourceTest('wc06-api', 'Expone active como propiedad', String.raw`(?:get|set)\s+active\s*\(`)],
+    tests: [browserTest('wc06-toggle', 'Un clic sincroniza el estado', `async ({document,customElements})=>{await customElements.whenDefined('setting-toggle');const el=document.querySelector('setting-toggle');const root=el.shadowRoot||el;(root.querySelector('button')||el).click();return el.hasAttribute('active')&&el.getAttribute('aria-pressed')==='true'&&root.textContent.includes('Activado');}`), browserTest('wc06-api', 'La propiedad y los clics mantienen ambos estados sincronizados', `async ({ document, customElements }) => {
+  await customElements.whenDefined('setting-toggle');
+  const host = document.createElement('setting-toggle');
+  const matches = active => host.active === active && host.hasAttribute('active') === active
+    && host.getAttribute('aria-pressed') === String(active)
+    && (host.shadowRoot || host).textContent.includes(active ? 'Activado' : 'Desactivado');
+  const click = () => ((host.shadowRoot || host).querySelector('button') || host).click();
+  try {
+    document.body.append(host);
+    host.active = false;
+    if (!matches(false)) return false;
+    host.active = true;
+    if (!matches(true)) return false;
+    click();
+    if (!matches(false)) return false;
+    click();
+    return matches(true);
+  } finally { host.remove(); }
+}`)],
     hints: ['Un booleano HTML usa presencia/ausencia.', 'Elige una sola fuente de verdad.', 'Actualiza texto y aria-pressed juntos.'],
     model: 'Reflejar coloca un indicador en la puerta: solo merece existir si CSS, accesibilidad o integradores necesitan observarlo.',
     whenToUse: 'Refleja estados simples y públicos; conserva detalles internos como propiedades no reflejadas.',
@@ -274,8 +410,15 @@ customElements.define('setting-toggle', SettingToggle);`,
   }
 }
 customElements.define('privacy-toggle', PrivacyToggle);`,
-      tests: [browserTest('wc06-d1', 'El falso elimina el atributo', `async ({document,customElements})=>{await customElements.whenDefined('privacy-toggle');const el=document.querySelector('privacy-toggle');return !el.hasAttribute('active')&&el.textContent.includes('Inactivo');}`), sourceTest('wc06-d2', 'Controla presencia', String.raw`(?:removeAttribute|toggleAttribute)\s*\(\s*['"]active['"]`)],
-      hints: ['hasAttribute no lee el texto.', 'false significa ausencia.', 'Quita o alterna el atributo.'] },
+      tests: [browserTest('wc06-d1', 'El falso se representa por ausencia', `async ({document,customElements})=>{await customElements.whenDefined('privacy-toggle');const el=document.querySelector('privacy-toggle');return !el.hasAttribute('active')&&el.textContent.includes('Inactivo');}`), browserTest('wc06-d2', 'Una instancia nueva también empieza inactiva', `async ({ document, customElements }) => {
+  await customElements.whenDefined('privacy-toggle');
+  const another = document.createElement('privacy-toggle');
+  try {
+    document.body.append(another);
+    return !another.hasAttribute('active') && another.textContent.includes('Inactivo');
+  } finally { another.remove(); }
+}`)],
+      hints: ['Compara presencia del atributo y texto de su valor: no son la misma pregunta.', 'Consulta cómo representa HTML un estado booleano falso.', 'Revisa qué estado deja la inicialización antes de calcular el texto que verá la persona.'] },
   }),
   lesson({
     number: 7, module: 2, title: 'Eventos públicos con CustomEvent', appName: 'un selector de cantidad desacoplado',
@@ -309,7 +452,45 @@ customElements.define('rating-picker', RatingPicker);`,
 }
 customElements.define('quantity-picker', QuantityPicker);`,
     challengeTitle: 'App: selector desacoplado', challengeInstructions: 'Incrementa, actualiza output y emite quantity-change con detail.value, bubbles y composed.',
-    tests: [browserTest('wc07-event', 'Emite el contrato completo', `async ({document,customElements})=>{await customElements.whenDefined('quantity-picker');const el=document.querySelector('quantity-picker');let event=null;document.addEventListener('quantity-change',e=>event=e,{once:true});el.querySelector('button').click();return event?.detail?.value===2&&event.bubbles&&event.composed;}`), sourceTest('wc07-name', 'Usa un evento de dominio', String.raw`CustomEvent\s*\(\s*['"]quantity-change['"]`)],
+    tests: [browserTest('wc07-event', 'Emite el contrato completo', `async ({ document, customElements }) => {
+  await customElements.whenDefined('quantity-picker');
+  const host = document.querySelector('quantity-picker');
+  const button = (host.shadowRoot || host).querySelector('button');
+  if (!button) return false;
+  let event = null;
+  const receive = value => { event = value; };
+  document.addEventListener('quantity-change', receive);
+  try {
+    button.click();
+    return event?.detail?.value === 2 && event.bubbles && event.composed;
+  } finally { document.removeEventListener('quantity-change', receive); }
+}`), browserTest('wc07-name', 'La salida y el evento avanzan juntos desde otro componente', `async ({ document, customElements }) => {
+  await customElements.whenDefined('quantity-picker');
+  const container = document.createElement('div');
+  const host = document.createElement('quantity-picker');
+  container.attachShadow({ mode: 'open' }).append(host);
+  let event = null;
+  let cameFromComponent = false;
+  const receive = value => { event = value; cameFromComponent = value.composedPath().includes(host); };
+  document.addEventListener('quantity-change', receive);
+  try {
+    document.body.append(container);
+    for (const expected of [2, 3]) {
+      event = null;
+      cameFromComponent = false;
+      const root = host.shadowRoot || host;
+      const button = root.querySelector('button');
+      if (!button) return false;
+      button.click();
+      if (!cameFromComponent || event?.detail?.value !== expected || !event.bubbles || !event.composed
+        || root.querySelector('output')?.textContent.trim() !== String(expected)) return false;
+    }
+    return true;
+  } finally {
+    document.removeEventListener('quantity-change', receive);
+    container.remove();
+  }
+}`)],
     hints: ['El hijo informa; no busca ni modifica al padre.', 'detail lleva el dato estable.', 'bubbles y composed permiten que el aviso viaje.'],
     model: 'Un evento es una carta: nombre dice qué ocurrió, detail lleva datos y las opciones deciden hasta dónde viaja.',
     whenToUse: 'Usa eventos para decisiones nacidas dentro del componente; usa propiedades para datos que entran.',
@@ -330,7 +511,39 @@ customElements.define('quantity-picker', QuantityPicker);`,
   }
 }
 customElements.define('cart-line', CartLine);`,
-      tests: [browserTest('wc07-d1', 'El documento recibe el evento', `async ({document,customElements})=>{await customElements.whenDefined('cart-line');const el=document.querySelector('cart-line');let event=null;document.addEventListener('line-remove',e=>event=e,{once:true});el.shadowRoot.querySelector('button').click();return event?.detail?.id==='a1';}`), sourceTest('wc07-d2', 'Atraviesa la frontera', String.raw`bubbles\s*:\s*true[\s\S]*composed\s*:\s*true|composed\s*:\s*true[\s\S]*bubbles\s*:\s*true`)],
+      tests: [browserTest('wc07-d1', 'El documento recibe el evento', `async ({ document, customElements }) => {
+  await customElements.whenDefined('cart-line');
+  const host = document.querySelector('cart-line');
+  let event = null;
+  const receive = value => { event = value; };
+  document.addEventListener('line-remove', receive);
+  try {
+    host.shadowRoot.querySelector('button').click();
+    return event?.detail?.id === 'a1';
+  } finally { document.removeEventListener('line-remove', receive); }
+}`), browserTest('wc07-d2', 'El evento atraviesa un componente contenedor', `async ({ document, customElements }) => {
+  await customElements.whenDefined('cart-line');
+  const container = document.createElement('div');
+  const root = container.attachShadow({ mode: 'open' });
+  const host = document.createElement('cart-line');
+  root.append(host);
+  let event = null;
+  let cameFromComponent = false;
+  const receive = value => {
+    event = value;
+    cameFromComponent = value.composedPath().includes(host);
+  };
+  document.addEventListener('line-remove', receive);
+  try {
+    document.body.append(container);
+    host.shadowRoot.querySelector('button').click();
+    return { passed: cameFromComponent && event?.detail?.id === 'a1' && event.bubbles && event.composed,
+      receivedValue: { id: event?.detail?.id, bubbles: event?.bubbles, composed: event?.composed } };
+  } finally {
+    document.removeEventListener('line-remove', receive);
+    container.remove();
+  }
+}`)],
       hints: ['El botón vive detrás de una frontera.', 'El evento debe ascender y atravesarla.', 'Corrige opciones, no detail.'] },
   }),
 ];

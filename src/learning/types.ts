@@ -76,7 +76,9 @@ export interface ExamAttempt {
   startedAt: number;
   completedAt?: number;
   scores: Partial<Record<MasteryCapability, number>>;
-  classification?: 'green' | 'yellow' | 'red';
+  classification?: 'green' | 'yellow' | 'red' | 'ungraded';
+  kind?: 'exam' | 'interview';
+  responses?: Array<{ prompt: string; answer: string }>;
 }
 
 export interface TutorMessageRecord {

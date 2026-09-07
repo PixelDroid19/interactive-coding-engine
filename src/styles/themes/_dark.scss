@@ -68,5 +68,30 @@ body.dark {
   --shadow-sketch-lg: 5px 5px 0px var(--color-sketch-shadow);
   --shadow-sketch-hover: 4px 5px 0px var(--color-sketch-shadow);
   --shadow-sketch-pressed: 1px 1px 0px var(--color-sketch-shadow);
-}
 
+  /* Shared controls follow the same normal palette as the rest of the app.
+     Cyber overrides these semantic tokens later in the theme cascade. */
+  --ui-canvas: var(--bg-main);
+  --ui-surface: var(--bg-surface);
+  --ui-surface-raised: var(--bg-surface-light);
+  --ui-surface-soft: var(--bg-surface-dark);
+  --ui-text: var(--color-text-main);
+  --ui-muted: var(--color-text-muted);
+  --ui-border: var(--color-pencil);
+  --ui-border-subtle: #374151;
+  --ui-accent: var(--color-brand);
+  --ui-accent-hover: var(--color-brand-hover);
+  --ui-accent-contrast: var(--color-brand-contrast);
+  --ui-focus: var(--color-primary);
+  --ui-success: #86efac;
+  --ui-warning: #fcd34d;
+  --ui-danger: #fda4af;
+  --ui-label: var(--color-brand);
+  --ui-accent-soft: color-mix(in srgb, var(--color-brand) 12%, var(--bg-surface));
+  --ui-danger-soft: #32151e;
+  --ui-success-soft: #10281f;
+  --ui-warning-soft: #2a230f;
+  --ui-shadow: var(--shadow-sketch);
+  --ui-shadow-raised: var(--shadow-sketch-lg);
+  --ui-panel-shadow: var(--shadow-sketch-lg);
+}

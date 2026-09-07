@@ -1,6 +1,32 @@
-import { appHtml, browserTest, lesson, source, sourceTest } from './helpers';
+import { appHtml, browserTest, lesson, source } from './helpers';
 
-const litText = (id: string, description: string, tag: string, selector: string, expected: string) => browserTest(id, description, `async ({document,customElements})=>{await customElements.whenDefined('${tag}');const el=document.querySelector('${tag}');if(el.updateComplete)await el.updateComplete;const node=el.shadowRoot?.querySelector('${selector}')||el.querySelector('${selector}');return {passed:Boolean(node?.textContent?.includes('${expected}')),receivedValue:node?.textContent||''};}`);
+const litText = (id: string, description: string, tag: string, selector: string, expected: string) => browserTest(id, description, `async ({document,customElements})=>{await customElements.whenDefined('${tag}');const el=document.querySelector('${tag}');if(el.updateComplete)await el.updateComplete;const root=el.shadowRoot??el;const node='${selector}'===':host'?root:root.querySelector('${selector}');return {passed:Boolean(node?.textContent?.includes('${expected}')),receivedValue:node?.textContent||''};}`);
+
+const litDisabled = (id: string, tag: string) => browserTest(id, 'El botón se habilita y deshabilita según locked', `async ({document,customElements})=>{
+  await customElements.whenDefined('${tag}');const el=document.createElement('${tag}');document.body.append(el);
+  try {await el.updateComplete;
+    for(const locked of [false,true,false]){el.locked=locked;el.requestUpdate();await el.updateComplete;const button=(el.shadowRoot??el).querySelector('button');
+      if(!button||button.disabled!==locked||button.hasAttribute('disabled')!==locked)return false;
+    }return true;
+  } finally {el.remove();}
+}`);
+
+const litTemplate = (id: string, tag: string, selector: string, expected: string, price?: number) => browserTest(id, 'El template devuelto produce el contenido solicitado', `async ({document,customElements})=>{
+  await customElements.whenDefined('${tag}');
+  const current=document.querySelector('${tag}');if(!current||typeof current.render!=='function'||typeof current.requestUpdate!=='function'||typeof current.updateComplete?.then!=='function')return false;
+  const [{LitElement,render:renderTemplate},{isTemplateResult,TemplateResultType}]=await Promise.all([import('lit'),import('lit/directive-helpers.js')]);
+  const el=document.createElement('${tag}');if(!(el instanceof LitElement)||typeof el.render!=='function')return false;
+  const render=el.render;let returnedValue;let part;
+  const containsHtml=value=>isTemplateResult(value,TemplateResultType.HTML)||(Array.isArray(value)&&value.some(containsHtml));
+  el.render=function(...args){returnedValue=render.apply(this,args);return returnedValue;};
+  try {document.body.append(el);await el.updateComplete;if(!containsHtml(returnedValue))return false;
+    const output=document.createDocumentFragment();part=renderTemplate(returnedValue,output,{host:el,isConnected:false});
+    const text=output.querySelector('${selector}')?.textContent||'';if(!text.includes(${JSON.stringify(expected)}))return false;
+    const price=${price ?? 'null'};if(price===null)return true;
+    const amounts=[...text.matchAll(/\\$\\s*(\\d+(?:[.,]\\d+)?)/g)].map(match=>Number(match[1].replace(',','.')));
+    return amounts.length===1&&amounts[0]===price;
+  } finally {el.render=render;try{part?.setConnected(false);}finally{el.remove();}}
+}`);
 
 export const COMPONENT_SPECS_15_TO_20 = [
   lesson({
@@ -28,7 +54,16 @@ class ProductCard extends LitElement {
 }
 customElements.define('product-card', ProductCard);`,
     challengeTitle: 'App: primera tarjeta Lit', challengeInstructions: 'Renderiza un article con nombre “Teclado” y precio “$80” usando html.',
-    tests: [litText('lit15-name', 'La tarjeta renderiza el producto', 'product-card', 'article', 'Teclado'), sourceTest('lit15-template', 'Usa un template Lit', String.raw`return\s+html\s*\``)],
+    tests: [
+      litText('lit15-name', 'La tarjeta renderiza el producto', 'product-card', 'article', 'Teclado'),
+      browserTest('lit15-price', 'El mismo artículo contiene el precio de 80 dólares', `async ({document,customElements})=>{
+        await customElements.whenDefined('product-card');const el=document.querySelector('product-card');await el.updateComplete;
+        const article=(el.shadowRoot??el).querySelector('article');const text=article?.textContent||'';
+        const amounts=[...text.matchAll(/\\$\\s*(\\d+(?:[.,]\\d+)?)/g)].map(match=>Number(match[1].replace(',','.')));
+        return text.includes('Teclado')&&amounts.length===1&&amounts[0]===80;
+      }`),
+      litTemplate('lit15-template', 'product-card', 'article', 'Teclado', 80),
+    ],
     hints: ['LitElement sigue registrándose con customElements.define.', 'render describe la vista y devuelve html, no modifica innerHTML.', 'La salida aparecerá en el shadow root que Lit prepara.'],
     model: 'Lit es una capa de automatización sobre la casa ya construida: sigue usando clases, custom elements, Shadow DOM, propiedades y eventos del navegador.',
     whenToUse: 'Úsalo cuando render y actualización reactiva reducirán código repetido; un custom element pequeño puede seguir siendo nativo.',
@@ -44,7 +79,10 @@ class AccountCard extends LitElement {
   }
 }
 customElements.define('account-card', AccountCard);`,
-      tests: [litText('lit15-d1', 'La cuenta aparece en Shadow DOM', 'account-card', 'p', 'Cuenta activa'), sourceTest('lit15-d2', 'render devuelve html', String.raw`render\s*\([^)]*\)\s*\{\s*return\s+html`) ],
+      tests: [browserTest('lit15-d1', 'La cuenta aparece en Shadow DOM', `async ({document,customElements})=>{
+        await customElements.whenDefined('account-card');const el=document.querySelector('account-card');await el.updateComplete;
+        return Boolean(el.shadowRoot?.querySelector('p')?.textContent?.includes('Cuenta activa'));
+      }`), litTemplate('lit15-d2', 'account-card', 'p', 'Cuenta activa')],
       hints: ['Lit llama render y espera un resultado.', 'No escribas el host con innerHTML.', 'Devuelve un template html.'] },
   }),
   lesson({
@@ -81,8 +119,25 @@ class OrderSummary extends LitElement {
   }
 }
 customElements.define('order-summary', OrderSummary);`,
-    challengeTitle: 'App: bindings del pedido', challengeInstructions: 'Muestra “Luis” y “$42” y desactiva el botón con un binding booleano.',
-    tests: [browserTest('lit16-bindings', 'Texto y booleano llegan a destinos correctos', `async ({document,customElements})=>{await customElements.whenDefined('order-summary');const el=document.querySelector('order-summary');await el.updateComplete;const b=el.shadowRoot.querySelector('button');return el.shadowRoot.textContent.includes('Luis')&&el.shadowRoot.textContent.includes('$42')&&b.disabled;}`), sourceTest('lit16-boolean', 'Usa binding booleano', String.raw`\?disabled\s*=\s*\$\{`) ],
+    challengeTitle: 'App: bindings del pedido', challengeInstructions: 'Muestra customer y total como texto: al inicio, “Luis” y “$42”. Enlaza locked al estado disabled del botón. Al cambiar los datos, la vista debe actualizarse sin interpretar el nombre como HTML.',
+    tests: [
+      browserTest('lit16-bindings', 'El pedido inicial muestra cliente, total y bloqueo', `async ({document,customElements})=>{
+        await customElements.whenDefined('order-summary');const el=document.querySelector('order-summary');await el.updateComplete;const root=el.shadowRoot??el;const text=root.textContent||'';
+        const amounts=[...text.matchAll(/\\$\\s*(\\d+(?:[.,]\\d+)?)/g)].map(match=>Number(match[1].replace(',','.')));
+        return text.includes('Luis')&&amounts.length===1&&amounts[0]===42&&root.querySelector('button')?.disabled===true;
+      }`),
+      litDisabled('lit16-boolean', 'order-summary'),
+      browserTest('lit16-text', 'Actualiza cliente y total sin interpretar el nombre como HTML', `async ({document,customElements})=>{
+        await customElements.whenDefined('order-summary');const el=document.createElement('order-summary');document.body.append(el);
+        try {await el.updateComplete;
+          for(const state of [{customer:'Ada',total:0},{customer:'<em data-customer-probe>Nora</em>',total:73.5},{customer:'Sol & Mar',total:9}]){
+            el.customer=state.customer;el.total=state.total;el.requestUpdate();await el.updateComplete;const root=el.shadowRoot??el;const text=root.textContent||'';
+            const amounts=[...text.matchAll(/\\$\\s*(\\d+(?:[.,]\\d+)?)/g)].map(match=>Number(match[1].replace(',','.')));
+            if(!text.includes(state.customer)||amounts.length!==1||amounts[0]!==state.total||root.querySelector('[data-customer-probe]'))return false;
+          }return true;
+        } finally {el.remove();}
+      }`),
+    ],
     hints: ['El texto usa una expresión en el contenido.', 'disabled no necesita el string "true".', 'El prefijo ? controla presencia booleana.'],
     model: 'Cada expresión tiene un enchufe distinto: texto llena contenido, .propiedad entrega datos ricos, ?booleano controla presencia, @evento conecta comportamiento.',
     whenToUse: 'Elige el binding por la API del nodo receptor, no por cómo luce el valor en JavaScript.',
@@ -90,7 +145,7 @@ customElements.define('order-summary', OrderSummary);`,
     commonErrors: 'usar atributo para objetos, escribir disabled="false", interpolar listeners como texto o construir HTML con strings no confiables.',
     transfer: 'Clasifica bindings para input.value, aria-label, disabled, click y una propiedad items.',
     sources: [source('Templates', 'https://lit.dev/docs/templates/overview/', 'Aprende posiciones y expresiones.', 'Lit'), source('Expressions', 'https://lit.dev/docs/templates/expressions/', 'Compara bindings.', 'Lit')],
-    debug: { title: 'false deja el botón desactivado', expected: 'permission-button queda habilitado cuando locked=false.', observed: 'Usa disabled="false" como atributo presente.',
+    debug: { title: 'false deja el botón desactivado', expected: 'permission-button queda habilitado cuando locked=false y se desactiva cuando locked=true, también después de cambiar el valor.', observed: 'Usa disabled="false" como atributo presente.',
       starter: `import { LitElement, html } from 'lit';
 class PermissionButton extends LitElement {
   constructor() {
@@ -102,7 +157,7 @@ class PermissionButton extends LitElement {
   }
 }
 customElements.define('permission-button', PermissionButton);`,
-      tests: [browserTest('lit16-d1', 'El botón refleja el booleano', `async ({document,customElements})=>{await customElements.whenDefined('permission-button');const el=document.querySelector('permission-button');await el.updateComplete;return !el.shadowRoot.querySelector('button').disabled;}`), sourceTest('lit16-d2', 'Usa ?disabled', String.raw`\?disabled\s*=`)],
+      tests: [browserTest('lit16-d1', 'El botón comienza habilitado con locked=false', `async ({document,customElements})=>{await customElements.whenDefined('permission-button');const el=document.querySelector('permission-button');await el.updateComplete;const button=(el.shadowRoot??el).querySelector('button');return Boolean(button)&&!button.disabled;}`), litDisabled('lit16-d2', 'permission-button')],
       hints: ['Un atributo presente activa disabled.', 'No serialices false.', 'Usa el binding booleano de Lit.'] },
   }),
   lesson({
@@ -140,7 +195,29 @@ class SessionPanel extends LitElement {
 }
 customElements.define('session-panel', SessionPanel);`,
     challengeTitle: 'App: panel con ramas completas', challengeInstructions: 'Renderiza los estados sin sesión, sesión vacía y sesión con notificaciones.',
-    tests: [litText('lit17-empty', 'Sin usuario ofrece iniciar sesión', 'session-panel', ':host', 'Inicia sesión'), browserTest('lit17-list', 'Con usuario renderiza la colección', `async ({document,customElements})=>{await customElements.whenDefined('session-panel');const el=document.querySelector('session-panel');el.user={name:'Mara'};el.notifications=['Pago','Envío'];el.requestUpdate();await el.updateComplete;return el.shadowRoot.querySelectorAll('li').length===2&&el.shadowRoot.textContent.includes('Mara');}`)],
+    tests: [
+      litText('lit17-empty', 'Sin usuario ofrece iniciar sesión', 'session-panel', ':host', 'Inicia sesión'),
+      browserTest('lit17-session-empty', 'Con sesión y sin avisos explica el estado vacío', `async ({document,customElements})=>{
+        await customElements.whenDefined('session-panel');const el=document.createElement('session-panel');document.body.append(el);
+        try {await el.updateComplete;el.user={name:'Mara'};el.notifications=[];el.requestUpdate();await el.updateComplete;
+          const root=el.shadowRoot??el;const text=root.textContent||'';
+          return text.includes('Mara')&&text.includes('Sin notificaciones')&&!text.includes('Inicia sesión')&&root.querySelectorAll('li').length===0;
+        } finally {el.remove();}
+      }`),
+      browserTest('lit17-list', 'Actualiza nombre, avisos y ramas al cambiar la sesión', `async ({document,customElements})=>{
+        await customElements.whenDefined('session-panel');const el=document.createElement('session-panel');document.body.append(el);
+        try {await el.updateComplete;
+          for(const state of [{user:{name:'Mara'},notifications:['Pago','Envío']},{user:{name:'Nora'},notifications:['Entrega confirmada']},{user:{name:'Nora'},notifications:[]},{user:null,notifications:[]}]){
+            el.user=state.user;el.notifications=state.notifications;el.requestUpdate();await el.updateComplete;
+            const root=el.shadowRoot??el;const text=root.textContent||'';const rows=[...root.querySelectorAll('li')].map(row=>row.textContent.trim());
+            if(!state.user){if(!text.includes('Inicia sesión')||text.includes('Nora')||text.includes('Sin notificaciones')||rows.length)return false;}
+            else {if(!text.includes(state.user.name)||text.includes('Inicia sesión')||(state.user.name==='Nora'&&text.includes('Mara')))return false;
+              if(rows.length!==state.notifications.length||rows.some((row,index)=>row!==state.notifications[index]))return false;
+              if(state.notifications.length?text.includes('Sin notificaciones'):!text.includes('Sin notificaciones'))return false;}
+          }return true;
+        } finally {el.remove();}
+      }`),
+    ],
     hints: ['Decide primero la rama de sesión.', 'Dentro de la sesión decide vacío o lista.', 'map devuelve un template por elemento.'],
     model: 'El template es una tabla de decisiones visible: cada estado válido necesita una salida, incluida la ausencia intencional.',
     whenToUse: 'Usa ternarios para dos ramas locales, funciones para decisiones con nombre y map para listas pequeñas sin identidad compleja.',
@@ -162,7 +239,16 @@ class CartCount extends LitElement {
   }
 }
 customElements.define('cart-count', CartCount);`,
-      tests: [litText('lit17-d1', 'Cero tiene una rama humana', 'cart-count', 'div', 'Sin artículos'), sourceTest('lit17-d2', 'Usa una decisión explícita', String.raw`\?\s*html\s*\``)],
+      tests: [litText('lit17-d1', 'Cero tiene una rama humana', 'cart-count', 'div', 'Sin artículos'), browserTest('lit17-d2', 'La vista cambia entre cantidad y ausencia de artículos', `async ({document,customElements})=>{
+        await customElements.whenDefined('cart-count');const el=document.createElement('cart-count');document.body.append(el);
+        try {await el.updateComplete;
+          for(const count of [2,5,0]){el.count=count;el.requestUpdate();await el.updateComplete;const root=el.shadowRoot??el;const text=(root.textContent||'').replace(/\\s+/g,' ').trim();
+            const quantities=[...text.matchAll(/(\\d+)\\s+artículos\\b/g)].map(match=>Number(match[1]));
+            if(count===0){if(!text.includes('Sin artículos')||quantities.length||/\\b0\\b/.test(text))return false;}
+            else if(quantities.length!==1||quantities[0]!==count||text.includes('Sin artículos'))return false;
+          }return true;
+        } finally {el.remove();}
+      }`)],
       hints: ['0 es un dato válido, no ausencia.', 'Escribe las dos salidas.', 'Un ternario hace explícito el caso vacío.'] },
   }),
   lesson({
@@ -197,8 +283,29 @@ class UserChip extends LitElement {
   }
 }
 customElements.define('user-chip', UserChip);`,
-    challengeTitle: 'App: ficha reactiva', challengeInstructions: 'Declara name y online, inicializa defaults y muestra “Ada — En línea” desde los atributos.',
-    tests: [litText('lit18-attr', 'Convierte atributos al contrato', 'user-chip', 'span', 'Ada — En línea'), sourceTest('lit18-properties', 'Declara ambas propiedades', String.raw`static\s+properties\s*=\s*\{[\s\S]*name[\s\S]*online`) ],
+    challengeTitle: 'App: ficha reactiva', challengeInstructions: 'Declara name y online, inicializa un nombre por defecto y online en false, y muestra “Ada — En línea” desde los atributos. La ficha debe actualizar el nombre y el estado al cambiar las propiedades o añadir/quitar atributos, sin llamar render manualmente.',
+    tests: [browserTest('lit18-attr', 'Los atributos actualizan nombre y presencia de online', `async ({document,customElements})=>{
+      await customElements.whenDefined('user-chip');const el=document.createElement('user-chip');
+      if(typeof el.updateComplete?.then!=='function')return false;
+      try {el.setAttribute('name','Ada');el.setAttribute('online','');document.body.append(el);await el.updateComplete;
+        const text=()=>(el.shadowRoot??el).querySelector('span')?.textContent?.replace(/\\s+/g,' ').trim()||'';
+        if(el.name!=='Ada'||el.online!==true||text()!=='Ada — En línea')return false;
+        el.setAttribute('name','Mara');el.removeAttribute('online');await el.updateComplete;
+        if(el.name!=='Mara'||el.online!==false||!text().includes('Mara')||text().includes('En línea'))return false;
+        el.setAttribute('name','Sol');el.setAttribute('online','false');await el.updateComplete;
+        return el.name==='Sol'&&el.online===true&&text()==='Sol — En línea';
+      } finally {el.remove();}
+    }`), browserTest('lit18-properties', 'Los defaults y cambios de propiedades llegan a la vista', `async ({document,customElements})=>{
+      await customElements.whenDefined('user-chip');const el=document.createElement('user-chip');
+      if(typeof el.updateComplete?.then!=='function')return false;
+      try {document.body.append(el);await el.updateComplete;if(typeof el.name!=='string'||el.online!==false)return false;
+        for(const [name,online] of [['Nora',true],['Leo',true],['Leo',false],['Inés',false],['Inés',true]]){
+          el.name=name;el.online=online;await el.updateComplete;
+          const text=(el.shadowRoot??el).querySelector('span')?.textContent?.replace(/\\s+/g,' ').trim()||'';
+          if(online?text!==name+' — En línea':!text.includes(name)||text.includes('En línea'))return false;
+        }return true;
+      } finally {el.remove();}
+    }`) ],
     hints: ['En JavaScript del curso usamos static properties, no decoradores.', 'El tipo Boolean interpreta presencia del atributo.', 'Inicializa defaults después de super().'],
     model: 'Lit instala sensores en propiedades declaradas: al cambiar una referencia, programa una actualización y render vuelve a describir la vista.',
     whenToUse: 'Declara como pública la entrada que el consumidor debe controlar; no publiques detalles internos solo para hacerlos reactivos.',
@@ -221,7 +328,23 @@ class LiveCounter extends LitElement {
   }
 }
 customElements.define('live-counter', LiveCounter);`,
-      tests: [browserTest('lit18-d1', 'El método produce una actualización', `async ({document,customElements})=>{await customElements.whenDefined('live-counter');const el=document.querySelector('live-counter');el.increment();await el.updateComplete;return el.shadowRoot.textContent.includes('2');}`), sourceTest('lit18-d2', 'count es reactiva', String.raw`static\s+properties\s*=\s*\{[\s\S]*count`) ],
+      tests: [browserTest('lit18-d1', 'Cada incremento actualiza el número exacto', `async ({document,customElements})=>{
+        await customElements.whenDefined('live-counter');const el=document.createElement('live-counter');
+        if(typeof el.updateComplete?.then!=='function'||typeof el.increment!=='function')return false;
+        try {document.body.append(el);await el.updateComplete;
+          const matches=value=>el.count===value&&(el.shadowRoot??el).querySelector('span')?.textContent?.trim()===String(value);
+          if(!matches(1))return false;
+          for(const value of [2,3,4]){el.increment();await el.updateComplete;if(!matches(value))return false;}return true;
+        } finally {el.remove();}
+      }`), browserTest('lit18-d2', 'Cambiar count directamente también actualiza la vista', `async ({document,customElements})=>{
+        await customElements.whenDefined('live-counter');const el=document.createElement('live-counter');
+        if(typeof el.updateComplete?.then!=='function')return false;
+        try {document.body.append(el);await el.updateComplete;
+          for(const count of [7,0,12]){el.count=count;await el.updateComplete;
+            if((el.shadowRoot??el).querySelector('span')?.textContent?.trim()!==String(count))return false;
+          }return true;
+        } finally {el.remove();}
+      }`) ],
       hints: ['Cambiar una propiedad común no avisa a Lit.', 'Declara el contrato reactivo.', 'No llames render manualmente.'] },
   }),
   lesson({
@@ -262,7 +385,29 @@ class InventoryCounter extends LitElement {
 }
 customElements.define('inventory-counter', InventoryCounter);`,
     challengeTitle: 'App: inventario con frontera clara', challengeInstructions: 'Mantén capacity pública y _reserved interna; muestra “Disponibles: N” y limita reservas.',
-    tests: [browserTest('lit19-state', 'La acción actualiza estado interno', `async ({document,customElements})=>{await customElements.whenDefined('inventory-counter');const el=document.querySelector('inventory-counter');await el.updateComplete;el.shadowRoot.querySelector('button').click();await el.updateComplete;return el.shadowRoot.textContent.includes('Disponibles: 4')&&!el.hasAttribute('_reserved');}`), sourceTest('lit19-private', 'Declara state interno', String.raw`_reserved\s*:\s*\{\s*state\s*:\s*true`) ],
+    tests: [browserTest('lit19-state', 'Las reservas se actualizan y respetan el límite', `async ({document,customElements})=>{
+      await customElements.whenDefined('inventory-counter');
+      for(const capacity of [0,2,5]){const el=document.createElement('inventory-counter');if(typeof el.updateComplete?.then!=='function')return false;
+        try {el.setAttribute('capacity',String(capacity));document.body.append(el);await el.updateComplete;
+          const matches=reserved=>el.capacity===capacity&&el._reserved===reserved&&!el.hasAttribute('_reserved')&&(el.shadowRoot??el).querySelector('span')?.textContent?.trim()==='Disponibles: '+(capacity-reserved);
+          if(!matches(0))return false;
+          for(let attempt=1;attempt<=capacity+2;attempt++){const button=(el.shadowRoot??el).querySelector('button');if(!button)return false;button.click();await el.updateComplete;if(!matches(Math.min(attempt,capacity)))return false;}
+        } finally {el.remove();}
+      }return true;
+    }`), browserTest('lit19-private', 'Solo capacity es una entrada y las reservas son estado interno', `async ({document,customElements})=>{
+      await customElements.whenDefined('inventory-counter');const el=document.createElement('inventory-counter');
+      if(typeof el.updateComplete?.then!=='function'||typeof el.reserve!=='function')return false;
+      try {el.setAttribute('capacity','2');document.body.append(el);await el.updateComplete;
+        if(el.constructor.getPropertyOptions?.('_reserved')?.state!==true||(el.constructor.observedAttributes||[]).includes('_reserved'))return false;
+        const matches=available=>(el.shadowRoot??el).querySelector('span')?.textContent?.trim()==='Disponibles: '+available;
+        if(el._reserved!==0||!matches(2))return false;
+        el.setAttribute('_reserved','99');await el.updateComplete;if(el._reserved!==0||!matches(2))return false;
+        el.removeAttribute('_reserved');await el.updateComplete;
+        el.capacity=4;await el.updateComplete;if(el.capacity!==4||!matches(4))return false;
+        el.reserve();await el.updateComplete;if(el.capacity!==4||el._reserved!==1||!matches(3)||el.hasAttribute('_reserved'))return false;
+        el.setAttribute('capacity','5');await el.updateComplete;return el.capacity===5&&el._reserved===1&&matches(4);
+      } finally {el.remove();}
+    }`) ],
     hints: ['capacity llega de fuera; _reserved nace y cambia dentro.', 'state:true actualiza sin crear atributo.', 'Disponible se deriva, no necesita otra propiedad.'],
     model: 'La API pública es el tablero que usa el conductor; el estado interno es el mecanismo bajo el capó. Ambos reaccionan, pero solo uno se promete al consumidor.',
     whenToUse: 'Usa estado interno para interacción, caché visual y datos derivados que el consumidor no debe configurar.',
@@ -283,7 +428,26 @@ class DataPanel extends LitElement {
   }
 }
 customElements.define('data-panel', DataPanel);`,
-      tests: [browserTest('lit19-d0', 'La carga funciona sin publicar un atributo', `async ({document,customElements})=>{await customElements.whenDefined('data-panel');const el=document.querySelector('data-panel');await el.updateComplete;return el._loading===true&&!el.hasAttribute('loading')&&el.shadowRoot?.textContent.includes('Cargando');}`), sourceTest('lit19-d1', 'Usa estado interno', String.raw`_loading\s*:\s*\{\s*state\s*:\s*true`), sourceTest('lit19-d2', 'No refleja loading público', String.raw`this\._loading`) ],
+      tests: [browserTest('lit19-d0', 'La carga empieza sin publicar un atributo', `async ({document,customElements})=>{
+        await customElements.whenDefined('data-panel');const el=document.createElement('data-panel');if(typeof el.updateComplete?.then!=='function')return false;
+        try {document.body.append(el);await el.updateComplete;return el._loading===true&&!el.hasAttribute('loading')&&!el.hasAttribute('_loading')&&(el.shadowRoot??el).querySelector('p')?.textContent?.trim()==='Cargando';}finally{el.remove();}
+      }`), browserTest('lit19-d1', 'El estado interno cambia entre Cargando y Listo', `async ({document,customElements})=>{
+        await customElements.whenDefined('data-panel');const el=document.createElement('data-panel');if(typeof el.updateComplete?.then!=='function')return false;
+        try {document.body.append(el);await el.updateComplete;if(el.constructor.getPropertyOptions?.('_loading')?.state!==true)return false;
+          for(const loading of [false,true,false]){el._loading=loading;await el.updateComplete;
+            if((el.shadowRoot??el).querySelector('p')?.textContent?.trim()!==(loading?'Cargando':'Listo')||el.hasAttribute('loading')||el.hasAttribute('_loading'))return false;
+          }return true;
+        }finally{el.remove();}
+      }`), browserTest('lit19-d2', 'Los atributos no controlan el proceso de carga', `async ({document,customElements})=>{
+        await customElements.whenDefined('data-panel');const el=document.createElement('data-panel');if(typeof el.updateComplete?.then!=='function')return false;
+        try {document.body.append(el);await el.updateComplete;
+          const observed=el.constructor.observedAttributes||[];if(observed.includes('loading')||observed.includes('_loading'))return false;
+          for(const attribute of ['loading','_loading']){el.setAttribute(attribute,'false');await el.updateComplete;
+            if(el._loading!==true||(el.shadowRoot??el).querySelector('p')?.textContent?.trim()!=='Cargando')return false;
+            el.removeAttribute(attribute);await el.updateComplete;if(el._loading!==true)return false;
+          }return true;
+        }finally{el.remove();}
+      }`) ],
       hints: ['La carga pertenece al proceso interno.', 'Renombra y declara state:true.', 'Actualiza render para leer la misma fuente.'] },
   }),
   lesson({
@@ -330,8 +494,43 @@ class TaskBoard extends LitElement {
   }
 }
 customElements.define('task-board', TaskBoard);`,
-    challengeTitle: 'App: tablero inmutable', challengeInstructions: 'Implementa addTask y complete sin push ni mutar la tarea existente.',
-    tests: [browserTest('lit20-add', 'Agregar crea una fila nueva', `async ({document,customElements})=>{await customElements.whenDefined('task-board');const el=document.querySelector('task-board');const before=el.tasks;el.addTask('Practicar');await el.updateComplete;return before!==el.tasks&&el.shadowRoot.querySelectorAll('li').length===2;}`), browserTest('lit20-complete', 'Completar reemplaza la tarea', `async ({document})=>{const el=document.querySelector('task-board');const before=el.tasks[0];el.complete(1);await el.updateComplete;return before!==el.tasks[0]&&el.shadowRoot.textContent.includes('✓');}`)],
+    challengeTitle: 'App: tablero inmutable', challengeInstructions: 'Implementa addTask y complete creando un array nuevo, sin modificar el array anterior ni sus objetos. Cada tarea nueva debe conservar el texto recibido y tener un id propio. Al completar, reemplaza solo la tarea del id indicado y conserva las referencias de las demás; un id inexistente no cambia las tareas.',
+    tests: [browserTest('lit20-add', 'Agregar conserva los datos anteriores y añade el texto recibido', `async ({document,customElements})=>{
+      await customElements.whenDefined('task-board');const el=document.createElement('task-board');
+      if(typeof el.updateComplete?.then!=='function'||typeof el.addTask!=='function')return false;
+      try {document.body.append(el);await el.updateComplete;
+        if(!Array.isArray(el.tasks)||el.tasks.length!==1||el.tasks[0]?.text!=='Leer')return false;
+        for(const text of ['Practicar','Repasar y enseñar']){
+          const before=el.tasks;const saved=before.map(task=>({ref:task,id:task.id,text:task.text,done:task.done}));
+          el.addTask(text);await el.updateComplete;const after=el.tasks;
+          if(!Array.isArray(after)||after===before||after.length!==saved.length+1||before.length!==saved.length)return false;
+          if(saved.some((task,index)=>before[index]!==task.ref||task.ref.id!==task.id||task.ref.text!==task.text||task.ref.done!==task.done||after[index]!==task.ref))return false;
+          const added=after[after.length-1];if(!added||added.text!==text||added.done)return false;
+          const ids=after.map(task=>task?.id);if(ids.some(id=>!(typeof id==='string'&&id.length>0)&&!(typeof id==='number'&&Number.isFinite(id)))||new Set(ids).size!==ids.length)return false;
+          const rows=[...(el.shadowRoot??el).querySelectorAll('li')].map(row=>row.textContent.trim());
+          if(rows.length!==after.length||rows.some((row,index)=>row!==after[index].text))return false;
+        }return true;
+      } finally {el.remove();}
+    }`), browserTest('lit20-complete', 'Completar cambia solo el id pedido sin mutar datos anteriores', `async ({document,customElements})=>{
+      await customElements.whenDefined('task-board');const el=document.createElement('task-board');
+      if(typeof el.updateComplete?.then!=='function'||typeof el.complete!=='function')return false;
+      try {document.body.append(el);await el.updateComplete;
+        el.tasks=[{id:11,text:'Leer'},{id:23,text:'Practicar'},{id:37,text:'Revisar'}];await el.updateComplete;
+        for(const id of [23,11,999]){
+          const before=el.tasks;const saved=before.map(task=>({ref:task,id:task.id,text:task.text,done:task.done}));
+          const target=saved.findIndex(task=>task.id===id);el.complete(id);await el.updateComplete;const after=el.tasks;
+          if(!Array.isArray(after)||after.length!==saved.length||before.length!==saved.length||(target>=0&&after===before))return false;
+          if(saved.some((task,index)=>before[index]!==task.ref||task.ref.id!==task.id||task.ref.text!==task.text||task.ref.done!==task.done))return false;
+          for(let index=0;index<saved.length;index++){const current=after[index],previous=saved[index];
+            if(!current||current.id!==previous.id||current.text!==previous.text)return false;
+            if(index===target){if(current===previous.ref||current.done!==true)return false;}
+            else if(current!==previous.ref||current.done!==previous.done)return false;
+          }
+          const rows=[...(el.shadowRoot??el).querySelectorAll('li')].map(row=>row.textContent.replace(/\\s+/g,' ').trim());
+          if(rows.length!==after.length||rows.some((row,index)=>row!==after[index].text+(after[index].done?' ✓':'')))return false;
+        }return true;
+      } finally {el.remove();}
+    }`)],
     hints: ['Lit compara la referencia del array.', 'spread agrega sin mutar; map reemplaza un elemento por id.', 'También crea un objeto nuevo para la tarea modificada.'],
     model: 'Una referencia nueva es un sobre nuevo que avisa del cambio. Editar silenciosamente el contenido del mismo sobre puede pasar desapercibido.',
     whenToUse: 'Prefiere actualizaciones inmutables en estado reactivo, especialmente cuando datos pasan entre componentes.',
@@ -355,7 +554,23 @@ class NoteList extends LitElement {
   }
 }
 customElements.define('note-list', NoteList);`,
-      tests: [browserTest('lit20-d1', 'add produce un render', `async ({document,customElements})=>{await customElements.whenDefined('note-list');const el=document.querySelector('note-list');el.add();await el.updateComplete;return el.shadowRoot.textContent.includes('Segunda');}`), sourceTest('lit20-d2', 'Reemplaza notes', String.raw`this\.notes\s*=\s*\[\.\.\.this\.notes`) ],
+      tests: [browserTest('lit20-d1', 'Cada llamada añade Segunda y actualiza las filas', `async ({document,customElements})=>{
+        await customElements.whenDefined('note-list');const el=document.createElement('note-list');
+        if(typeof el.updateComplete?.then!=='function'||typeof el.add!=='function')return false;
+        try {document.body.append(el);await el.updateComplete;const expected=['Primera'];
+          const matches=()=>{const rows=[...(el.shadowRoot??el).querySelectorAll('p')].map(row=>row.textContent.trim());return rows.length===expected.length&&rows.every((row,index)=>row===expected[index]);};
+          if(!matches())return false;for(let count=0;count<2;count++){el.add();await el.updateComplete;expected.push('Segunda');if(!matches())return false;}return true;
+        }finally{el.remove();}
+      }`), browserTest('lit20-d2', 'Agregar reemplaza notes sin modificar el array anterior', `async ({document,customElements})=>{
+        await customElements.whenDefined('note-list');const el=document.createElement('note-list');
+        if(typeof el.updateComplete?.then!=='function'||typeof el.add!=='function')return false;
+        try {document.body.append(el);await el.updateComplete;if(!Array.isArray(el.notes))return false;
+          for(let count=0;count<2;count++){const before=el.notes;const saved=before.slice();el.add();await el.updateComplete;
+            if(!Array.isArray(el.notes)||el.notes===before||before.length!==saved.length||before.some((note,index)=>note!==saved[index])||el.notes.length!==saved.length+1)return false;
+            if(saved.some((note,index)=>el.notes[index]!==note)||el.notes[el.notes.length-1]!=='Segunda')return false;
+          }return true;
+        }finally{el.remove();}
+      }`) ],
       hints: ['push conserva la referencia.', 'Asigna un array nuevo.', 'No llames requestUpdate para ocultar la mutación.'] },
   }),
 ];

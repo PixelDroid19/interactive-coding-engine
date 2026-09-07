@@ -22,7 +22,7 @@ const ROLES = new Set<UserRole>(['student', 'tutor', 'admin']);
 const SAFE_RETURN_TO = /^\/(?!\/)(?!.*[\\\u0000-\u001f\u007f]).*$/;
 const LAST_USER_KEY = 'aula_last_authenticated_user_v1';
 const PRIVATE_KEYS = ['aula_user_progress_v1', 'aula_learning_profile_v1', 'aula_learning_sync_v1'] as const;
-const PRIVATE_PREFIXES = ['aula_course_progress_cache_v1:', 'aula_learning_center_cache_v1:', 'aula_learning_center_cache_v2:'] as const;
+const PRIVATE_PREFIXES = ['aula_course_progress_cache_v1:', 'aula_learning_center_cache_v1:', 'aula_learning_center_cache_v2:', 'aula_guided_v1:user%3A'] as const;
 
 function clearPrivateDeviceState(): void {
   clearLearningSyncQueue();

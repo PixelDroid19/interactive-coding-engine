@@ -9,8 +9,9 @@ export interface ExamQuestion {
 }
 
 export interface ExamEvaluation {
-  classification: 'green' | 'yellow' | 'red';
-  scores: Record<ExamQuestion['capability'], number>;
+  classification: 'ungraded';
+  scores: Partial<Record<ExamQuestion['capability'], number>>;
+  responses: Array<{ capability: ExamQuestion['capability']; prompt: string; answer: string }>;
   feedback: string[];
 }
 
@@ -73,34 +74,16 @@ export function buildExamQuestions(
   }));
 }
 
-function writtenScore(capability: ExamQuestion['capability'], answer: string): number {
-  const normalized = answer.trim().toLowerCase();
-  if (normalized.length < 12) return 0.1;
-  const lengthScore = Math.min(0.55, normalized.length / 180);
-  const terms: Record<ExamQuestion['capability'], RegExp[]> = {
-    recognize: [/prop[oó]sito|sirve|permite|agrupa|representa/, /c[oó]digo|nombre|valor|instrucci[oó]n/],
-    explain: [/ejemplo|por ejemplo/, /entrada|recibe|dato/, /salida|devuelve|resultado/],
-    modify: [/cambi|modific/, /prueba|comprobar|verificar|test/, /entrada|caso|valor/],
-    debug: [/hip[oó]tesis|posible|sospech/, /prueba|experimento|test/, /error|consola|resultado|línea|linea/],
-  };
-  const termScore = terms[capability].filter((pattern) => pattern.test(normalized)).length / terms[capability].length * 0.45;
-  return Number(Math.min(1, lengthScore + termScore).toFixed(2));
-}
-
 export function evaluateExamAnswers(
   questions: ExamQuestion[],
   answers: Partial<Record<ExamQuestion['capability'], string>>,
 ): ExamEvaluation {
-  const scores = Object.fromEntries(CAPABILITIES.map((capability) => [capability, 0])) as ExamEvaluation['scores'];
-  for (const question of questions) scores[question.capability] = writtenScore(question.capability, answers[question.capability] ?? '');
-  const average = Object.values(scores).reduce((sum, score) => sum + score, 0) / CAPABILITIES.length;
-  const classification = average >= 0.72 && Math.min(...Object.values(scores)) >= 0.45
-    ? 'green'
-    : average >= 0.35
-      ? 'yellow'
-      : 'red';
-  const feedback = CAPABILITIES
-    .filter((capability) => scores[capability] < 0.55)
-    .map((capability) => `Refuerza ${capability === 'recognize' ? 'reconocer el propósito' : capability === 'explain' ? 'explicar con entradas y salida' : capability === 'modify' ? 'modificar y verificar' : 'formular hipótesis y pruebas'}.`);
-  return { classification, scores, feedback };
+  // Written answers require a human/content-aware review. Keywords and length
+  // describe neither correctness nor the ability to transfer a concept.
+  return {
+    classification: 'ungraded',
+    scores: {},
+    responses: questions.map(question => ({ capability: question.capability, prompt: question.prompt, answer: (answers[question.capability] ?? '').trim().slice(0, 2000) })),
+    feedback: ['Contrasta una de tus explicaciones con un ejemplo que puedas ejecutar.', 'Si algo todavía no está claro, conserva la pregunta y vuelve a la práctica de ese concepto.'],
+  };
 }

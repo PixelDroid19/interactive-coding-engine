@@ -1,6 +1,7 @@
 import type { Course, CurriculumItem } from '../types/curriculum';
 import type { CurriculumSkillTarget } from './curriculumSkills';
-import type { LearningProfile, MasteryCapability } from './types';
+import type { LearningEvidence, LearningProfile, MasteryCapability } from './types';
+import { isCheckedPracticeEvidence } from './checkedAttempt';
 
 export interface MasteryGap {
   skillId: string;
@@ -15,9 +16,16 @@ export interface ItemReadiness {
   message?: string;
 }
 
-const KNOWLEDGE_CAPABILITIES: MasteryCapability[] = ['recognize', 'explain'];
-const APPLICATION_CAPABILITIES: MasteryCapability[] = ['produce', 'modify', 'transfer', 'debug'];
-const MASTERY_THRESHOLD = 0.55;
+// Completion flags and self-ratings in old profiles are not checked answers.
+export function latestCoursePractice(profile: LearningProfile, courseId: string): LearningEvidence[] {
+  const latest = new Map<string, LearningEvidence>();
+  for (const evidence of profile.evidence) {
+    if (evidence.courseId !== courseId || !isCheckedPracticeEvidence(evidence.id, evidence.source)) continue;
+    const key = `${evidence.itemId}:${evidence.skillId}:${evidence.capability}`;
+    if ((latest.get(key)?.timestamp ?? -Infinity) <= evidence.timestamp) latest.set(key, evidence);
+  }
+  return [...latest.values()].sort((a, b) => b.timestamp - a.timestamp);
+}
 
 function anchorFor(item: CurriculumItem): string {
   if (item.type === 'scrim') return item.scrimDataId;
@@ -36,37 +44,14 @@ function groupsFor(course: Course): Array<{ anchor: string; items: CurriculumIte
   return groups;
 }
 
-function bestScore(profile: LearningProfile, skillId: string, capabilities: MasteryCapability[]): number {
-  return Math.max(0, ...capabilities.map((capability) => profile.skills[skillId]?.capabilities[capability]?.score ?? 0));
-}
-
-function recoveryFor(
-  previousItems: CurriculumItem[],
-  missing: MasteryGap[],
-): string | undefined {
-  const needsKnowledge = missing.some((gap) => KNOWLEDGE_CAPABILITIES.includes(gap.capability));
-  if (needsKnowledge) {
-    return previousItems.find((item) => item.type === 'reading' || item.type === 'reasoning')?.id
-      ?? previousItems.find((item) => item.type === 'scrim')?.id
-      ?? previousItems[0]?.id;
-  }
-  const needsApplication = missing.some((gap) => APPLICATION_CAPABILITIES.includes(gap.capability));
-  if (needsApplication) {
-    return previousItems.find((item) => item.type === 'challenge')?.id
-      ?? previousItems.find((item) => item.type === 'scrim')?.id
-      ?? previousItems.find((item) => item.type === 'debugging')?.id
-      ?? previousItems[0]?.id;
-  }
-  return previousItems.find((item) => item.type === 'reading' || item.type === 'reasoning')?.id
-    ?? previousItems[0]?.id;
-}
-
 export function getItemReadiness(
   course: Course,
   itemId: string,
   profile: LearningProfile,
   index: Record<string, CurriculumSkillTarget>,
 ): ItemReadiness {
+  const item = course.modules.flatMap(module => module.items).find(candidate => candidate.id === itemId);
+  if (item?.availability === 'locked') return { unlocked: false, missing: [], message: item.availabilityReason ?? 'Esta actividad no está disponible por ahora.' };
   // El contenido creado por el estudiante o publicado desde el estudio no forma
   // parte del índice curricular estático y debe poder abrirse para revisarlo.
   if (!index[itemId]) return { unlocked: true, missing: [] };
@@ -75,26 +60,16 @@ export function getItemReadiness(
   if (groupIndex <= 0) return { unlocked: true, missing: [] };
   const previous = groups[groupIndex - 1];
   const targets = Object.values(index).filter((target) => target.courseId === course.id && target.lessonId === previous.anchor);
-  const skillIds = [...new Set(targets.flatMap((target) => target.skillIds))];
-  if (skillIds.length === 0) return { unlocked: true, missing: [] };
-  const hasApplicationTarget = targets.some((target) => APPLICATION_CAPABILITIES.includes(target.capability));
-  const missing: MasteryGap[] = [];
-
-  for (const skillId of skillIds) {
-    const knowledge = bestScore(profile, skillId, KNOWLEDGE_CAPABILITIES);
-    if (knowledge < MASTERY_THRESHOLD) missing.push({ skillId, capability: 'explain', score: knowledge });
-    if (hasApplicationTarget) {
-      const application = bestScore(profile, skillId, APPLICATION_CAPABILITIES);
-      if (application < MASTERY_THRESHOLD) missing.push({ skillId, capability: 'modify', score: application });
-    }
-  }
-
+  const targetIds = new Set(targets.map(target => target.itemId));
+  const pending = latestCoursePractice(profile, course.id).filter(evidence => targetIds.has(evidence.itemId) && evidence.result !== 'success');
+  const missing: MasteryGap[] = pending.map(evidence => ({ skillId: evidence.skillId, capability: evidence.capability, score: evidence.result === 'partial' ? 0.55 : 0.15 }));
   if (missing.length === 0) return { unlocked: true, missing: [] };
-  const firstSkill = missing[0].skillId.replace(/-/g, ' ');
+  const recovery = previous.items.find(candidate => candidate.id === pending[0].itemId)
+    ?? previous.items.find(candidate => candidate.type === 'scrim');
   return {
-    unlocked: false,
+    unlocked: true,
     missing,
-    recoveryItemId: recoveryFor(previous.items, missing),
-    message: `Antes de continuar, refuerza ${firstSkill}. Te llevamos al punto exacto que falta practicar.`,
+    recoveryItemId: recovery?.availability === 'locked' ? undefined : recovery?.id,
+    message: 'Puedes continuar o retomar la práctica que quedó pendiente. No necesitas reiniciar el curso.',
   };
 }

@@ -118,10 +118,10 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
             <h1 ref={titleRef} tabIndex={-1} className="reasoning-title outline-none focus:outline-none">{item.title}</h1>
             <PracticeBrief
               action={reasoningPracticeCopy.action}
+              context={reasoningPracticeCopy.context && <p>{reasoningPracticeCopy.context}</p>}
               expected={expectedResult}
               help={item.hints.length > 0 ? (
                 <div className="reasoning-hints-compact">
-                  {reasoningPracticeCopy.context && <p>{reasoningPracticeCopy.context}</p>}
                   <header className="reasoning-hints-header">
                     <h2><Lightbulb size={18} className="reasoning-hint-icon" /> Pistas graduadas</h2>
                     <span className="reasoning-hints-count">{revealedHints} / {item.hints.length}</span>
@@ -254,7 +254,7 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
             title={item.title}
             instructions={activity.prompt}
             kind="reasoning"
-            continueLabel="Registrar comprensión"
+            continueLabel="Registrar y continuar"
             onComplete={async (readingAnswer, variationAnswer) => {
               await recordPostSolveEvidence(item.id, readingAnswer, variationAnswer);
               setPostSolveComplete(true);
@@ -265,7 +265,7 @@ export function ReasoningPracticeView({ item, onBack, onBackToRoadmap, onPreviou
 
       <footer className="reasoning-footer">
         <button type="button" onClick={onPrevious} disabled={!onPrevious}><ChevronLeft size={16} /> Anterior</button>
-        <span>{postSolveComplete ? '✓ Actividad comprendida' : result?.allPassed ? 'Explica el modelo antes de continuar' : 'Comprueba el modelo antes de continuar'}</span>
+        <span>{postSolveComplete ? '✓ Actividad resuelta' : result?.allPassed ? 'Puedes reflexionar sobre tu solución o continuar' : 'Comprueba el modelo antes de continuar'}</span>
         <button type="button" onClick={onNext} disabled={!onNext || !result?.allPassed || !postSolveComplete}>Siguiente <ArrowRight size={16} /></button>
       </footer>
     </div>

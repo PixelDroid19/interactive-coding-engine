@@ -51,6 +51,37 @@ afterEach(() => {
 });
 
 describe('panel de ayuda en vivo de la alumna', () => {
+  it('enfoca el cierre, permite Escape y devuelve el foco sin solicitar una sesión', () => {
+    const onRequest = vi.fn();
+    function Host() {
+      const [open, setOpen] = React.useState(false);
+      return <><button onClick={() => setOpen(true)}>Abrir acompañamiento</button>{open && <LearnerLiveHelpPanel
+        {...baseProps} session={null} events={[]} onRequest={onRequest}
+        onClose={() => setOpen(false)} onApplyProposal={() => ({ outcome: 'conflict' })}
+      />}</>;
+    }
+    render(<Host />);
+    const launcher = screen.getByRole('button', { name: 'Abrir acompañamiento' });
+    launcher.focus();
+    fireEvent.click(launcher);
+    const close = screen.getByRole('button', { name: 'Cerrar ayuda en vivo' });
+    expect(document.activeElement).toBe(close);
+    fireEvent.keyDown(close, { key: 'Escape' });
+    expect(screen.queryByRole('complementary', { name: 'Ayuda del formador' })).toBeNull();
+    expect(document.activeElement).toBe(launcher);
+    expect(onRequest).not.toHaveBeenCalled();
+  });
+
+  it('no roba el foco si se cierra después de volver al editor', () => {
+    const editor = document.createElement('textarea');
+    document.body.append(editor);
+    const view = render(<LearnerLiveHelpPanel {...baseProps} onApplyProposal={() => ({ outcome: 'conflict' })} />);
+    editor.focus();
+    view.unmount();
+    expect(document.activeElement).toBe(editor);
+    editor.remove();
+  });
+
   it('presenta la propuesta sin aplicarla hasta que la alumna pulsa Aplicar cambio', () => {
     const onApplyProposal = vi.fn().mockReturnValue({ outcome: 'applied', revision: 1 });
     render(<ThemeProvider><LearnerLiveHelpPanel {...baseProps} onApplyProposal={onApplyProposal} /></ThemeProvider>);

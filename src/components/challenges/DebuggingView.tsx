@@ -133,6 +133,8 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
       if (exercise.executionMode === 'logic' && language !== 'python') {
         await logicRunnerRef.current?.run();
       } else if (previewRef.current) {
+        // Un iframe oculto no puede recibir foco, aunque su programa sea correcto.
+        if (exercise.executionMode === 'browser') setActiveTab('preview');
         // Las prácticas DOM necesitan una vista recién ejecutada antes de evaluar.
         await previewRef.current.reloadPreview();
         const currentIframe = previewRef.current.getIframeElement();
@@ -546,10 +548,10 @@ export const DebuggingView: React.FC<DebuggingViewProps> = ({
                   <div className="debug-panel-scroll">
                     <PracticeBrief
                       action={debugPracticeCopy.action}
+                      context={debugPracticeCopy.context && <p>{debugPracticeCopy.context}</p>}
                       expected={exercise.expectedBehavior}
                       help={(
                         <>
-                          {debugPracticeCopy.context && <p>{debugPracticeCopy.context}</p>}
                           <p><strong>Ahora ocurre:</strong> {exercise.observedBehavior}</p>
                           {testsFunctionDirectly && (
                             <p>

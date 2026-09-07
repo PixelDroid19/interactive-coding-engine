@@ -19,17 +19,19 @@ import { CreatorStudio } from './components/studio/CreatorStudio';
 import { ReasoningPracticeView } from './components/reasoning/ReasoningPracticeView';
 import { CourseCatalog } from './components/curriculum/CourseCatalog';
 import { SocraticTutor } from './components/tutor/SocraticTutor';
+import { disposeLocalGenerationSession } from './engine/ai/localGenerationSession';
 import type { TutorActivityContext } from './learning/tutor/tutorContext';
 import { createEmptyLearningProfile } from './learning/mastery';
 import type { LearningProfile } from './learning/types';
 import { getItemReadiness, type ItemReadiness } from './learning/unlockPolicy';
-import { getCurriculumSkillIndex, loadLearningProfile } from './learning/curriculumEvidence';
+import { curriculumEvidence, getCurriculumSkillIndex, loadLearningProfile } from './learning/curriculumEvidence';
+import { checkedAttemptResult } from './learning/checkedAttempt';
 import { X } from 'lucide-react';
 import { fetchPublishedLesson, PublishedLessonError } from './services/learningApi';
 import { fetchPublishedCourses, getCachedPublishedCourses, type PublishedCourseSummary } from './services/courseCatalogApi';
 import { applyPublishedManifest, fetchPublishedManifest, getCachedPublishedManifest } from './services/courseManifestApi';
 import { fetchCourseProgress, getCachedCourseProgress, mergeRemoteProgress } from './services/courseProgressApi';
-import { flushLearningQueue, queueExerciseAttempt, queueLearningEvent, queueLearningProfileEvidence, queueLessonProgress, submitLessonFeedback } from './services/learningSync';
+import { flushLearningQueue, queueExerciseAttempt, queueLearningEvent, queueLearningProfileEvidence, queueLessonProgress, submitLessonFeedback, type ExerciseCompletion } from './services/learningSync';
 import { useAuthSession } from './auth/AuthSessionProvider';
 
 const COURSE_SLUG_BY_ID: Record<string, string> = Object.fromEntries(
@@ -474,6 +476,14 @@ export default function App() {
     });
   };
 
+  const recordCheckedAttempt = (kind: 'debugging' | 'challenge' | 'project', result: 'success' | 'partial' | 'failure', completion: ExerciseCompletion, itemId = activeItem?.id) => {
+    if (!itemId) return;
+    queueExerciseAttempt(course.slug, itemId, kind, result, completion);
+    // The persistence layer reports storage failures through its visible status.
+    // A storage failure must not turn a successful code check into a failed one.
+    void curriculumEvidence.recordAttempt(itemId, completion).catch(() => undefined);
+  };
+
   const handleSelectItem = (item: CurriculumItem, moduleId: string, initialTimeMs = 0) => {
     if (item.availability === 'locked') {
       setNavigationBlocker({ unlocked: false, missing: [], message: item.availabilityReason ?? 'Esta actividad no está disponible por ahora.' });
@@ -636,6 +646,11 @@ export default function App() {
     && course.id !== AI_ENGINEER_COURSE.id
     && ['scrim', 'debugging', 'solo-project', 'reading', 'reasoning'].includes(currentView),
   );
+  useEffect(() => {
+    // AI Engineer owns its lab models. A hidden tutor from another course must
+    // not keep a second model resident; downloaded artifacts remain cached.
+    if (course.id === AI_ENGINEER_COURSE.id) disposeLocalGenerationSession();
+  }, [course.id]);
   return (
     <div className={currentView === 'scrim' ? 'app-screen' : undefined}>
       {currentView === 'catalog' && (
@@ -762,6 +777,7 @@ export default function App() {
               { itemType: activeItem.type, durationMs },
             );
           }}
+          onChallengeAttempt={(challengeId, result, completion) => recordCheckedAttempt('challenge', result, completion, challengeId)}
           onFeedback={(kind) => submitLessonFeedback(course.slug, activeItem.id, kind)}
           liveHelpContext={{ courseSlug: course.slug, lessonKey: activeItem.id, surface: 'lesson' }}
         />
@@ -783,10 +799,9 @@ export default function App() {
           onCompleted={(completion) => {
             queueLessonProgress(course.slug, activeItem.id, 'completed', 0);
             queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
-            queueExerciseAttempt(course.slug, activeItem.id, 'debugging', 'success', completion);
             refreshProgress();
           }}
-          onAttempt={(result, completion) => queueExerciseAttempt(course.slug, activeItem.id, 'debugging', result, completion)}
+          onAttempt={(result, completion) => recordCheckedAttempt('debugging', result, completion)}
           liveHelpContext={{ courseSlug: course.slug, lessonKey: activeItem.id, surface: 'debug' }}
         />
       )}
@@ -801,7 +816,7 @@ export default function App() {
           navigationState={navigationState}
           liveHelpContext={{ courseSlug: course.slug, lessonKey: activeItem.id, surface: 'lesson' }}
           assistant={tutorActivity && tutorEnabled ? (
-            <SocraticTutor enabled={tutorEnabled} activity={tutorActivity} placement="reading" />
+            <SocraticTutor key={`${authenticatedStudentUserId ?? 'visitor'}:${identityRevision}`} enabled={tutorEnabled} activity={tutorActivity} placement="reading" />
           ) : undefined}
         />
       )}
@@ -818,10 +833,9 @@ export default function App() {
           onCompleted={(completion) => {
             queueLessonProgress(course.slug, activeItem.id, 'completed', 0);
             queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
-            queueExerciseAttempt(course.slug, activeItem.id, 'challenge', 'success', completion);
             refreshProgress();
           }}
-          onAttempt={(result, completion) => queueExerciseAttempt(course.slug, activeItem.id, 'challenge', result, completion)}
+          onAttempt={(result, completion) => recordCheckedAttempt('challenge', result, completion)}
         />
       )}
 
@@ -840,10 +854,10 @@ export default function App() {
           onCompleted={(completion) => {
             queueLessonProgress(course.slug, activeItem.id, 'completed', 0);
             queueLearningEvent(course.slug, activeItem.id, 'item_completed', { itemType: activeItem.type });
-            queueExerciseAttempt(course.slug, activeItem.id, 'project', 'success', completion);
+            if (checkedAttemptResult(completion) === null) queueExerciseAttempt(course.slug, activeItem.id, 'project', 'ungraded', completion);
             refreshProgress();
           }}
-          onAttempt={(result, completion) => queueExerciseAttempt(course.slug, activeItem.id, 'project', result, completion)}
+          onAttempt={(result, completion) => recordCheckedAttempt('project', result, completion)}
           liveHelpContext={{ courseSlug: course.slug, lessonKey: activeItem.id, surface: 'challenge' }}
         />
       )}
@@ -875,8 +889,8 @@ export default function App() {
         />
       )}
 
-      {tutorActivity && currentView !== 'reading' && (
-        <SocraticTutor enabled={tutorEnabled} activity={tutorActivity} />
+      {tutorActivity && tutorEnabled && currentView !== 'reading' && (
+        <SocraticTutor key={`${authenticatedStudentUserId ?? 'visitor'}:${identityRevision}`} enabled={tutorEnabled} activity={tutorActivity} />
       )}
     </div>
   );

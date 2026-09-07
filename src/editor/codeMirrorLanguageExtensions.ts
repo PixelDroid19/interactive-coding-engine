@@ -33,6 +33,9 @@ export interface EditorDiagnosticStatus {
   errors: number;
   warnings: number;
   state: 'ready' | 'error';
+  filePath?: string;
+  documentText?: string;
+  details?: string[];
 }
 
 const IDENTIFIER_BEFORE_CURSOR = /[A-Za-z_$][\w$]*$/;
@@ -170,33 +173,38 @@ export function createSemanticLintExtensions(
     linter(async (view) => {
       const syntax = collectCodeMirrorSyntaxDiagnostics(view.state);
       const path = getFilePath();
-      if (!path || !/\.(?:js|jsx|ts|tsx)$/i.test(path)) {
+      const doc = view.state.doc;
+      const documentText = doc.toString();
+      const report = (diagnostics: Diagnostic[], state: EditorDiagnosticStatus['state']) => {
+        if (getFilePath() !== path || view.state.doc !== doc) return;
         onStatus({
-          errors: syntax.filter((diagnostic) => diagnostic.severity === 'error').length,
-          warnings: syntax.filter((diagnostic) => diagnostic.severity === 'warning').length,
-          state: 'ready',
+          errors: diagnostics.filter(diagnostic => diagnostic.severity === 'error').length,
+          warnings: diagnostics.filter(diagnostic => diagnostic.severity === 'warning').length,
+          state,
+          filePath: path ?? undefined,
+          documentText,
+          details: diagnostics.slice(0, 8).map(diagnostic => {
+            const from = Math.max(0, Math.min(doc.length, diagnostic.from));
+            const line = doc.lineAt(from);
+            return `${path ?? 'archivo'}:${line.number}:${from - line.from + 1}: ${diagnostic.message.slice(0, 300)}`;
+          }),
         });
+      };
+      if (!path || !/\.(?:js|jsx|ts|tsx)$/i.test(path)) {
+        report(syntax, 'ready');
         return syntax;
       }
 
       try {
         const semantic = languageDiagnosticsToCodeMirror(
           await client.diagnostics(path),
-          view.state.doc.length,
+          doc.length,
         );
         const merged = mergeDiagnostics(syntax, semantic);
-        onStatus({
-          errors: merged.filter((diagnostic) => diagnostic.severity === 'error').length,
-          warnings: merged.filter((diagnostic) => diagnostic.severity === 'warning').length,
-          state: 'ready',
-        });
+        report(merged, 'ready');
         return merged;
       } catch {
-        onStatus({
-          errors: syntax.filter((diagnostic) => diagnostic.severity === 'error').length,
-          warnings: syntax.filter((diagnostic) => diagnostic.severity === 'warning').length,
-          state: 'error',
-        });
+        report(syntax, 'error');
         return syntax;
       }
     }, { delay: 400 }),

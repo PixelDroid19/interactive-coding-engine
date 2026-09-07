@@ -69,6 +69,7 @@ interface ScrimPlayerProps {
   language?: CourseLanguage;
   onLanguageChange?: (language: CourseLanguage) => void;
   onCompleted?: () => void;
+  onChallengeAttempt?: (challengeId: string, result: 'success' | 'partial' | 'failure', completion: import('../../services/learningSync').ExerciseCompletion) => void;
   onFeedback?: (kind: 'positive' | 'negative') => Promise<'sent' | 'queued'>;
   liveHelpContext?: LiveHelpContext;
 }
@@ -88,6 +89,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   language = 'javascript',
   onLanguageChange,
   onCompleted,
+  onChallengeAttempt,
   onFeedback,
   liveHelpContext,
 }) => {
@@ -142,6 +144,14 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   const isForkedRef = useRef(false);
   const timeRef = useRef(initialTimeMs);
   const workspaceRef = useRef(workspace);
+  const challengeValidationContext = useRef({ activeChallenge, lessonData });
+  challengeValidationContext.current = { activeChallenge, lessonData };
+  const challengeValidationPending = useRef(false);
+  const playerMounted = useRef(true);
+  useEffect(() => {
+    playerMounted.current = true;
+    return () => { playerMounted.current = false; };
+  }, []);
   const lastSaveRef = useRef(0);
   const lastTimeUiRef = useRef(0);
   const volumeRef = useRef(volume);
@@ -714,21 +724,41 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   // Validate active challenge
   const handleValidateChallenge = async () => {
     if (!activeChallenge) return 'No hay un reto activo para comprobar.';
-    if (isLogicMode) {
-      await logicRunnerRef.current?.run();
-    } else {
-      await previewRef.current?.reloadPreview();
-      await new Promise((resolve) => setTimeout(resolve, 180));
-    }
-    const iframe = isLogicMode ? null : previewRef.current?.getIframeElement();
-    const result = await runChallengeValidation(activeChallenge, workspaceRef.current, iframe);
-    setValidationResult(result);
+    if (challengeValidationPending.current) return 'Ya hay una comprobación en curso.';
+    challengeValidationPending.current = true;
+    const submittedWorkspace = workspaceRef.current;
+    const submittedContext = challengeValidationContext.current;
+    const isCurrent = () => playerMounted.current
+      && workspaceRef.current.files === submittedWorkspace.files
+      && challengeValidationContext.current.activeChallenge === submittedContext.activeChallenge
+      && challengeValidationContext.current.lessonData === submittedContext.lessonData;
+    try {
+      if (isLogicMode) {
+        await logicRunnerRef.current?.run();
+      } else {
+        await previewRef.current?.reloadPreview();
+        await new Promise((resolve) => setTimeout(resolve, 180));
+      }
+      if (!isCurrent()) return 'El reto cambió durante la comprobación. Comprueba la versión actual.';
+      const iframe = isLogicMode ? null : previewRef.current?.getIframeElement();
+      const result = await runChallengeValidation(activeChallenge, submittedWorkspace, iframe);
+      if (!isCurrent()) return 'El reto cambió durante la comprobación. Comprueba la versión actual.';
+      setValidationResult(result);
 
-    if (result.allPassed) {
-      markChallengeCompleted(activeChallenge.id);
-      // Do not auto mark lesson completed; wait for continue
+      onChallengeAttempt?.(activeChallenge.id, result.allPassed ? 'success' : result.passedCount > 0 ? 'partial' : 'failure', {
+        score: result.totalCount > 0 ? Math.round(result.passedCount / result.totalCount * 100) : 0,
+        response: { files: Object.fromEntries(Object.entries(submittedWorkspace.files).map(([path, file]) => [path, file.content])) },
+        diagnostics: { tests: result.tests },
+      });
+
+      if (result.allPassed) {
+        markChallengeCompleted(activeChallenge.id);
+        // Do not auto mark lesson completed; wait for continue
+      }
+      return `${result.passedCount} de ${result.totalCount} comprobaciones superadas. ${result.feedbackMessage}`;
+    } finally {
+      challengeValidationPending.current = false;
     }
-    return `${result.passedCount} de ${result.totalCount} comprobaciones superadas. ${result.feedbackMessage}`;
   };
 
   const handleResetChallenge = () => {
@@ -765,6 +795,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
   };
 
   const handleSkipChallenge = () => {
+    setAwaitingStart(false);
     if (activeChallenge) markChallengeSkipped(activeChallenge.id);
     const skipTime = (activeChallenge?.timestamp || timeRef.current) + 500;
     const reconstructed = reconstructWorkspaceAt(
@@ -790,11 +821,13 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
     if (engineRef.current) {
       engineRef.current.seek(skipTime);
-      engineRef.current.play();
+      // Seeking to the end completes the lesson; play() there means replay.
+      if (skipTime < lessonData.durationMs) engineRef.current.play();
     }
   };
 
   const handleContinueAfterChallenge = () => {
+    setAwaitingStart(false);
     const nextTime = (activeChallenge?.timestamp || timeRef.current) + 1000;
     const reconstructed = reconstructWorkspaceAt(
       lessonData.initialWorkspace,
@@ -819,7 +852,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
     if (engineRef.current) {
       engineRef.current.seek(nextTime);
-      engineRef.current.play();
+      if (nextTime < lessonData.durationMs) engineRef.current.play();
     }
   };
 
@@ -1452,6 +1485,19 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
             />
           )}
         </section>
+        {/* Keep the challenge within the usable workspace, below the wrapping header. */}
+        {activeChallenge && (
+          <ChallengeDrawer
+            challenge={activeChallenge}
+            validationResult={validationResult}
+            onValidate={handleValidateChallenge}
+            onReset={handleResetChallenge}
+            onSkip={handleSkipChallenge}
+            onContinue={handleContinueAfterChallenge}
+            isOpen={isChallengeDrawerOpen}
+            onClose={handleCloseChallengeDrawer}
+          />
+        )}
       </main>
 
       {/* Closure pedagógico */}
@@ -1504,20 +1550,6 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
           <button onClick={handleRepeatFromEnd} className="scrim-repeat-btn ml-auto neu-pill-btn text-xs" aria-label="Repetir desde el inicio">Repetir</button>
           {onNextLesson && <button onClick={onNextLesson} className="scrim-next-btn neu-pill-btn btn-brand text-xs" aria-label="Siguiente lección">Siguiente</button>}
         </div>
-      )}
-
-      {/* Embedded Challenge Drawer if active */}
-      {activeChallenge && (
-        <ChallengeDrawer
-          challenge={activeChallenge}
-          validationResult={validationResult}
-          onValidate={handleValidateChallenge}
-          onReset={handleResetChallenge}
-          onSkip={handleSkipChallenge}
-          onContinue={handleContinueAfterChallenge}
-          isOpen={isChallengeDrawerOpen}
-          onClose={handleCloseChallengeDrawer}
-        />
       )}
 
       {/* Explain Modal */}

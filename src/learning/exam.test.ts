@@ -15,7 +15,7 @@ describe('modo examen por capacidades', () => {
     expect(questions.every((question) => question.skillId === 'funciones')).toBe(true);
   });
 
-  it('clasifica verde, amarillo o rojo con criterios observables por respuesta', () => {
+  it('conserva respuestas sin atribuir comprensión por extensión ni palabras clave', () => {
     const profile = createEmptyLearningProfile();
     const questions = buildExamQuestions(profile, 'course-js', ['funciones']);
     const strong = evaluateExamAnswers(questions, {
@@ -32,10 +32,20 @@ describe('modo examen por capacidades', () => {
     });
     const weak = evaluateExamAnswers(questions, { recognize: 'No sé', explain: '', modify: '', debug: '' });
 
-    expect(strong.classification).toBe('green');
-    expect(medium.classification).toBe('yellow');
-    expect(weak.classification).toBe('red');
-    expect(strong.scores.debug).toBeGreaterThan(weak.scores.debug);
+    for (const evaluation of [strong, medium, weak]) {
+      expect(evaluation.classification).toBe('ungraded');
+      expect(evaluation.scores).toEqual({});
+    }
+    expect(strong.responses[1].answer).toContain('recibe una entrada');
+    expect(weak.responses[0].answer).toBe('No sé');
+  });
+
+  it('un listado de palabras de la rúbrica no genera una nota ni un diagnóstico de dominio', () => {
+    const questions = buildExamQuestions(createEmptyLearningProfile(), 'course-js', ['funciones']);
+    const filler = 'propósito código por ejemplo entrada salida cambia prueba hipótesis error '.repeat(3);
+    const result = evaluateExamAnswers(questions, { recognize: filler, explain: filler, modify: filler, debug: filler });
+    expect(result.classification).toBe('ungraded');
+    expect(result.scores).toEqual({});
   });
 
   it('usa un concepto visible del curso cuando todavía no existe evidencia', () => {

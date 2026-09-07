@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import type { LearningProfile } from '../../learning/types';
 import { UiButton } from '../ui/UiButton';
 
@@ -21,13 +21,26 @@ export const LeaderMode: React.FC<LeaderModeProps> = ({ courseId, profile, onCom
   ];
   const [answers, setAnswers] = useState(['', '', '']);
   const [done, setDone] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const working = useRef(false);
+  const save = async () => {
+    if (working.current) return;
+    working.current = true;
+    setSaving(true);
+    setError('');
+    try { await onComplete(skillId, answers); setDone(true); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : 'No pudimos guardar. Tus respuestas siguen aquí.'); }
+    finally { working.current = false; setSaving(false); }
+  };
 
-  if (done) return <div className="learning-empty"><strong>Entrevista registrada.</strong><p>Tu siguiente repaso usará esta evidencia de transferencia.</p></div>;
+  if (done) return <div className="learning-empty"><strong>Entrevista registrada, sin calificar.</strong><p>Conservamos tus respuestas para revisarlas. Escribir más no acredita transferencia.</p></div>;
   return (
     <section className="leader-mode">
       <div className="learning-notebook__intro"><h3>Defiende tus decisiones</h3><p>Responde como si otra persona fuera a mantener tu código. No buscamos una frase perfecta.</p></div>
-      {prompts.map((prompt, index) => <label key={prompt}>{prompt}<textarea rows={3} value={answers[index]} onChange={(event) => setAnswers((current) => current.map((answer, answerIndex) => answerIndex === index ? event.target.value : answer))} /></label>)}
-      <UiButton variant="primary" disabled={answers.some((answer) => answer.trim().length < 20)} onClick={async () => { await onComplete(skillId, answers); setDone(true); }}>Registrar entrevista</UiButton>
+      {prompts.map((prompt, index) => <label key={prompt}>{prompt}<textarea rows={3} maxLength={2000} disabled={saving} value={answers[index]} onChange={(event) => setAnswers((current) => current.map((answer, answerIndex) => answerIndex === index ? event.target.value : answer))} /></label>)}
+      {error && <p role="alert">{error}</p>}
+      <UiButton variant="primary" disabled={saving || !answers.some(answer => answer.trim())} onClick={() => void save()}>{saving ? 'Guardando…' : 'Registrar entrevista'}</UiButton>
     </section>
   );
 };
