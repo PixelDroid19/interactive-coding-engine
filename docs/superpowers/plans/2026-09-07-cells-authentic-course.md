@@ -73,3 +73,15 @@ Files: original feature generator and tests, Cells course registration and readi
 - [x] Exercise the real application lab: repaired lifecycle/navigation, 30/30 contracts.
 
 Remaining acceptance work: review lesson-specific component behaviors and advanced application examples against the actual learning objectives; validate exported projects independently. The broad course migration is still open.
+
+## Task 5a: Observable disabled action contract
+
+- [x] Match lesson 11: Boolean property, reflected attribute and native disabled state remain synchronized.
+- [x] Suppress public actions while disabled, including synthetic clicks; restore interaction on attribute removal.
+- [x] Verify Enter and Space each emit one action when enabled and none while disabled in Chromium.
+- [x] Include the regression test, public API documentation and default-slot metadata in generated component packages.
+- [x] Preserve complete shared dependency reuse across all five application projects.
+
+Evidence: browser regression first failed with `disabled must reflect and disable the native control`, then passed after implementation. The complete suite exposed the preliminary audit's explicit-attribute requirement; the component now declares it without weakening the audit. Final `npm test -- --maxWorkers=2 --reporter=dot`: 1318 passed, 2 skipped; lint and production build passed. Browser verification passed five applications, eight component families, the player challenge, feature states, mutation detection and mobile checks. Existing build warnings remain. Exported test execution in an external CLI and ZIP handoff are not proven by these checks.
+
+Next: mutually exclusive state-panel behavior, actual search/list/catalog interaction, advanced examples and independent exported-project validation. Audio and subtitles remain unchanged.

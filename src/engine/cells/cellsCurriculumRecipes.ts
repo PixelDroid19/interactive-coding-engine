@@ -72,7 +72,7 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
   const childAction = `@academy-action-button-activate=\${this.handleAction}`;
   switch (artifact.id) {
     case 'action-button':
-      return `<button type="button" class="primary-action" ${action}><academy-type-text as="span"><slot>\${this.label || this.t('${prefix}.action')}</slot></academy-type-text></button>`;
+      return `<button type="button" class="primary-action" ?disabled=\${this.disabled} ${action}><academy-type-text as="span"><slot>\${this.label || this.t('${prefix}.action')}</slot></academy-type-text></button>`;
     case 'status-badge':
       return `<button type="button" class="status-stage" ${action}>
           <span class="status-dot"></span>
@@ -190,6 +190,7 @@ function componentStyles(artifact: OpenCellsArtifact, blueprint: ComponentBluepr
 
 .eyebrow { margin: 0; color: ${blueprint.accent}; font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
 .primary-action, .language button { border: 0; border-radius: 999px; padding: .85rem 1.2rem; background: ${blueprint.accent}; color: white; font-weight: 800; cursor: pointer; }
+${artifact.id === 'action-button' ? '.primary-action:disabled { opacity: .55; cursor: not-allowed; }\n' : ''}
 .status-stage, .profile, .notice, .price, .collection header, .language { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
 .status-stage, .notice, .price { border-left: .35rem solid ${blueprint.accent}; padding: 1rem; background: #f8fafc; }
 .status-stage, .price { width: 100%; border-top: 0; border-right: 0; border-bottom: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
@@ -258,6 +259,7 @@ ${registry}
     return {
       ...super.properties,
       ${blueprint.propertyName}: { type: String, attribute: '${blueprint.attribute}' },
+${artifact.id === 'action-button' ? '      disabled: { type: Boolean, attribute: \'disabled\', reflect: true },\n' : ''}
     };
   }
 
@@ -268,10 +270,12 @@ ${registry}
   constructor() {
     super();
     this.${blueprint.propertyName} = ${JSON.stringify(blueprint.defaultValue)};
+${artifact.id === 'action-button' ? '    this.disabled = false;\n' : ''}
   }
 
   handleAction(event) {
     event?.stopPropagation();
+${artifact.id === 'action-button' ? '    if (this.disabled) return;\n' : ''}
     this.emitEvent('${blueprint.eventName}', { ${blueprint.propertyName}: this.${blueprint.propertyName} });
   }
 
@@ -468,6 +472,33 @@ ${artifact.id === 'action-button' ? '    component.label = "";\n' : ''}
     expect(event.composed).toBe(true);
     expect(event.cancelable).toBe(true);
   });
+${artifact.id === 'action-button' ? `
+  it('sincroniza disabled y no emite acciones mientras está bloqueado', async () => {
+    const component = await renderComponent();
+    const events = [];
+    component.addEventListener('academy-action-button-activate', (event) => events.push(event));
+    component.disabled = true;
+    await component.updateComplete;
+    const button = component.shadowRoot.querySelector('button');
+    expect(component.hasAttribute('disabled')).toBe(true);
+    expect(button.disabled).toBe(true);
+    button.click();
+    button.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+    expect(events.length).toBe(0);
+    component.removeAttribute('disabled');
+    await component.updateComplete;
+    expect(component.disabled).toBe(false);
+    expect(button.disabled).toBe(false);
+    button.click();
+    expect(events.length).toBe(1);
+    component.setAttribute('disabled', '');
+    await component.updateComplete;
+    expect(component.disabled).toBe(true);
+    expect(button.disabled).toBe(true);
+    button.click();
+    expect(events.length).toBe(1);
+  });
+` : ''}
 });
 `,
   };
@@ -483,9 +514,12 @@ ${artifact.id === 'action-button' ? '    component.label = "";\n' : ''}
           name: className,
           tagName: artifact.tagName,
           description: blueprint.description.es,
-          members: [{ kind: 'field', name: blueprint.propertyName, attribute: blueprint.attribute, type: { text: 'string' }, default: JSON.stringify(blueprint.defaultValue), description: blueprint.description.es }],
+          members: [
+            { kind: 'field', name: blueprint.propertyName, attribute: blueprint.attribute, type: { text: 'string' }, default: JSON.stringify(blueprint.defaultValue), description: blueprint.description.es },
+            ...(artifact.id === 'action-button' ? [{ kind: 'field', name: 'disabled', attribute: 'disabled', type: { text: 'boolean' }, default: 'false', reflects: true, description: 'Bloquea la interacción y la emisión de acciones.' }] : []),
+          ],
           events: [{ name: `${artifact.tagName}-${blueprint.eventName}`, type: { text: `CustomEvent<{ ${blueprint.propertyName}: string }>` }, description: blueprint.action.es }],
-          slots: [],
+          slots: artifact.id === 'action-button' ? [{ name: '', description: 'Etiqueta alternativa a la propiedad label.' }] : [],
           cssProperties: [{ name: `--${artifact.id}-accent`, default: blueprint.accent, description: 'Acento visual público.' }],
         }],
         exports: [{ kind: 'custom-element-definition', name: artifact.tagName, declaration: { name: className, module: sourcePath } }],
@@ -494,7 +528,7 @@ ${artifact.id === 'action-button' ? '    component.label = "";\n' : ''}
   };
   files['README.md'] = {
     ...files['README.md'],
-    content: `# ${artifact.tagName}\n\n${blueprint.description.es}\n\n## Evento\n\n\`${artifact.tagName}-${blueprint.eventName}\` comunica \`${blueprint.propertyName}\`.\n\n- \`cells component:dev\`\n- \`cells component:test\`\n- \`cells component:documentation\`\n`,
+    content: `# ${artifact.tagName}\n\n${blueprint.description.es}\n\n## Evento\n\n\`${artifact.tagName}-${blueprint.eventName}\` comunica \`${blueprint.propertyName}\`.\n${artifact.id === 'action-button' ? '\n## Contrato público\n\n`label` configura el texto; el slot por defecto permite sustituirlo. `disabled` es una propiedad Boolean reflejada en el atributo homónimo. Su presencia bloquea el botón nativo y evita emitir acciones, también por teclado. Elimina el atributo o asigna `false` a la propiedad para habilitarlo; `disabled="false"` sigue siendo un atributo presente.\n' : ''}\n- \`cells component:dev\`\n- \`cells component:test\`\n- \`cells component:documentation\`\n`,
   };
   const manifest = JSON.parse(files['package.json'].content);
   manifest.learningArtifact = artifact.id;

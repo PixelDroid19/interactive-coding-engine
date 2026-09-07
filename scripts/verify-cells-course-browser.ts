@@ -77,6 +77,39 @@ try {
     const results = await checkWorkspace(createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS[artifact]).snapshot, artifact);
     const failures = results.filter((result) => !result.passed);
     if (failures.length) throw new Error(`${artifact}: ${JSON.stringify(failures)}`);
+    if (artifact === 'action-button') {
+      const frame = page.frames()[1];
+      await frame.evaluate(`(async () => {
+        const host = document.querySelector('academy-action-button');
+        window.actionEvents = [];
+        host.addEventListener('academy-action-button-activate', (event) => window.actionEvents.push(event.detail));
+        host.disabled = true;
+        await host.updateComplete;
+        const button = host.shadowRoot.querySelector('button');
+        if (!host.hasAttribute('disabled') || !button.disabled) throw new Error('disabled must reflect and disable the native control');
+        button.click();
+        button.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+        if (window.actionEvents.length) throw new Error('Disabled action emitted an event');
+        host.removeAttribute('disabled');
+        await host.updateComplete;
+        if (host.disabled || button.disabled) throw new Error('Removing disabled must restore interaction');
+        button.focus();
+      })()`);
+      const button = page.frameLocator('iframe').locator('academy-action-button button');
+      await button.press('Enter');
+      await button.press('Space');
+      await frame.evaluate(`(async () => {
+        if (window.actionEvents.length !== 2) throw new Error('Enter and Space must each emit one intention');
+        const host = document.querySelector('academy-action-button');
+        host.setAttribute('disabled', '');
+        await host.updateComplete;
+      })()`);
+      await page.keyboard.press('Enter');
+      await page.keyboard.press('Space');
+      await frame.evaluate(`(() => {
+        if (window.actionEvents.length !== 2) throw new Error('Disabled keyboard interaction emitted an intention');
+      })()`);
+    }
   }
   await checkWorkspace(createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS['product-card']).snapshot, 'player-challenge');
   const challengeResults = await page.evaluate<boolean[]>(`(async (tests) => {
@@ -119,7 +152,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await checkWorkspace(complete, 'mobile-feature');
   if (mobile.some((result) => !result.passed)) throw new Error('The narrow-viewport feature checks failed.');
-  console.log(JSON.stringify({ applications: 5, selectionRoutes: ['home', 'favorites', 'search'], complete: results.length, starterFails: starter.filter((result) => !result.passed).map((result) => result.id), mutationCaught: true, mobile: mobile.length }));
+  console.log(JSON.stringify({ applications: 5, selectionRoutes: ['home', 'favorites', 'search'], disabledAction: ['property', 'attribute', 'click', 'synthetic-click', 'Enter', 'Space', 'reenable'], complete: results.length, starterFails: starter.filter((result) => !result.passed).map((result) => result.id), mutationCaught: true, mobile: mobile.length }));
 } finally {
   await browser.close();
 }
