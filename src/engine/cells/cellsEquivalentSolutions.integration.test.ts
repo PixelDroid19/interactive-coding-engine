@@ -5,6 +5,22 @@ import { createCellsComponentWorkspace } from './cellsRecipes';
 import { writeCellsFile } from './cellsVirtualFileSystem';
 
 describe('soluciones equivalentes de las prácticas Cells', () => {
+  it('accepts class-based scoped composition and a shared-style getter', () => {
+    const workspace = createCellsComponentWorkspace({ name: 'academy-learning-card' });
+    const path = 'src/academy-learning-card.js';
+    const source = workspace.snapshot.files[path].content
+      .replace(/static get scopedElements\(\) \{[\s\S]*?\n  \}/, `static get scopedElements() {
+    const dependencies = [AcademyTypeText, AcademyActionButton, ...this.configurationScopedElements()];
+    return this.scopedElementsFromClasses(dependencies);
+  }`)
+      .replace('static styles = styles;', `static get styles() { return [styles, getComponentSharedStyles('academy-learning-card-shared-styles')]; }`);
+    const revised = writeCellsFile(workspace, path, source);
+    const failed = auditCellsProject(revised.snapshot).results.filter((result) => !result.passed);
+    expect(failed).toEqual([]);
+    const missing = writeCellsFile(revised, path, source.replace('AcademyTypeText, AcademyActionButton,', 'AcademyTypeText,'));
+    expect(auditCellsProject(missing.snapshot).results.find((result) => result.id === 'scoped-components')?.passed).toBe(false);
+  });
+
   it('acepta una API de componente correcta aunque cambien orden, variables y payload intermedio', () => {
     let workspace = createCellsComponentWorkspace({ name: 'academy-learning-card' });
     const sourcePath = 'src/academy-learning-card.js';

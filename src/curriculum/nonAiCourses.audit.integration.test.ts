@@ -164,9 +164,15 @@ describe('auditoría exhaustiva de las clases fuera de AI Engineer', () => {
       const readings = items.filter((item): item is ReadingItem => item.type === 'reading');
       const reasoning = items.filter((item): item is ReasoningExerciseItem => item.type === 'reasoning');
 
-      expect(readings, `${course.id} no tiene una lectura por clase`).toHaveLength(Object.keys(scrims).length);
+      const linkedReadings = readings.filter((reading) => reading.relatedLessonId);
+      expect(linkedReadings, `${course.id} no tiene una lectura por clase`).toHaveLength(Object.keys(scrims).length);
       for (const reading of readings) {
-        expect(lessonIds.has(reading.relatedLessonId ?? ''), `${reading.id} apunta a una clase inexistente`).toBe(true);
+        if (reading.relatedLessonId) {
+          expect(lessonIds.has(reading.relatedLessonId), `${reading.id} apunta a una clase inexistente`).toBe(true);
+        } else {
+          expect(reading.id).toBe('open-cells-feature-account');
+          expect(reading.handsOnLab).toBe('open-cells-feature-playground');
+        }
         expect(reading.summary.trim().length, `${reading.id} no orienta al estudiante`).toBeGreaterThan(50);
         expect(reading.sections.length, `${reading.id} desarrolla poco el concepto`).toBeGreaterThanOrEqual(3);
         expect(reading.sections.some((section) => Boolean(section.example?.trim())), `${reading.id} no ofrece ejemplo`).toBe(true);

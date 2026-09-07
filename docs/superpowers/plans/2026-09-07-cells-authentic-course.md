@@ -1,0 +1,63 @@
+# Authentic Cells course implementation plan
+
+> **For agentic workers:** Use superpowers:executing-plans inline. The repository prohibits unsolicited subagents. Do not create a worktree, commit, push, deploy, or modify external references.
+
+**Goal:** Make the educational workspaces use executable Cells-shaped contracts and compose original components into useful features.
+
+**Architecture:** Keep Lit 3 and the existing public learning runtime. Implement class-based scoped registration and shared styles in that runtime, reuse complete curriculum dependencies, and add a feature whose pages communicate through public properties and events. Do not claim proprietary-runtime equivalence.
+
+**Tech Stack:** TypeScript generators, Lit 3, ScopedElementsMixin, Vite, Vitest, browser contract runner.
+
+**Spec:** User-approved design: original neutral variants, `WidgetMixin(ScopedElementsMixin(LitElement))`, property getters, class-based scoped configuration, shared styles, translations and business events. A data manager is optional and owns external integration, not presentation.
+
+## Global constraints
+
+- External reference repositories are read-only and must never be copied into this repository.
+- Keep existing lesson IDs, progress, recorded audio and subtitles stable.
+- Spanish learning copy; original neutral names, styles and demo data.
+- Verify public behavior, not a single mandatory source spelling.
+- The platform itself uses the commands declared in its AGENTS.md. Exported component projects use the educational Cells CLI.
+
+## Task 1: Executable composition contracts
+
+Files: `src/engine/cells/cellsRecipes.ts`, a focused runtime-contract test, `cellsProjectAudit.ts`, curriculum recipe tests.
+
+- [x] Add failing tests that execute generated runtime modules: class mapping by `is`, inherited registrations, invalid classes, configurable dependencies and isolated shared styles.
+- [x] Run targeted Vitest tests and confirm the missing behavior fails.
+- [x] Implement original helpers; generate `is`, class arrays and shared-style getters in curriculum hosts.
+- [x] Accept class-based registration and getter styles in preliminary audits without replacing browser evidence.
+- [x] Re-run runtime, recipe, practice and editor suites.
+
+## Task 2: Reuse complete components
+
+Files: `cellsCurriculumRecipes.ts`, `lessonProjects.ts`, recipe integration tests.
+
+- [x] Add regression evidence for missing transitive dependencies and missing child locale resources.
+- [x] Replace simplified dependency copies with full generated components, preserving module paths, style pairs and locale catalogs.
+- [x] Wire child business events instead of broad click handlers; ensure presentational components contain no data-manager requirement.
+- [x] Verify nested render, language changes and public event details in a real browser.
+
+## Task 3: First feature and instructional alignment
+
+Files: original feature generator and tests, Cells course registration and reading/practice content.
+
+- [x] Build an original account-detail feature with summary and movements views, translated labels and scoped variants.
+- [x] Drive navigation and filtering through properties/events; make data an input, without mandatory networking.
+- [x] Add a course entry explaining the files, contracts and an observable modification task.
+- [x] Validate loading, empty, error, success, return navigation and filter behavior.
+
+## Completion gate
+
+- [x] Personally review all diffs and unexpected changes.
+- [x] Run strongest relevant automated suites, typecheck and production build.
+- [x] Exercise the local course and generated feature in a browser, including a narrow viewport.
+- [x] Report exact changes, evidence and remaining curriculum migration; do not claim all 84 lessons rebuilt from a first vertical slice.
+
+## Evidence and remaining work
+
+- `npm test -- --maxWorkers=2 --reporter=dot`: 1316 passed, 2 skipped. An unconstrained run concurrent with the production build hit the existing 5-second audit timeout; the bounded rerun passed without changing timeouts.
+- `npm run lint` and `npm run build`: passed. Existing bundle-size and Pyodide externalization warnings remain.
+- `npm run cells:verify:browser`: eight component families, actual player challenge bridge, instrumented coverage, 16 feature checks, failing starter, disconnected-filter mutation and 390px viewport passed.
+- Real local UI: opened the supplemental reading, edited the root through CodeMirror, ran 32/32 lab contracts, opened the preview and navigated to movements. Lesson 06: start gate, play, pause, edit/fork, reload preview and return to tape/roadmap exercised.
+- No external components copied; no audio/subtitle edits, commit, push or deploy. No proprietary-runtime equivalence claimed.
+- Remaining: migrate the rest of the course's application examples and evaluate each recorded lesson against the expanded features. Optional data-manager integration is not implemented. External CLI parity tests remain skipped; ZIP export has not been independently exercised this turn.

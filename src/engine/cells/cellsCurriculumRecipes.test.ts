@@ -23,6 +23,13 @@ describe('recipes acumulativas del currículo Cells', () => {
     const list = createOpenCellsLessonWorkspace(16).snapshot;
     expect(list.files['src/components/academy-product-card.js']).toBeDefined();
     expect(list.files['src/academy-product-list.js'].content).toContain("from './components/academy-product-card.js'");
+    expect(list.files['src/components/academy-product-card.css.js']).toBeDefined();
+    expect(list.files['src/components/academy-action-button.js']).toBeDefined();
+    expect(list.files['src/components/academy-status-badge.js']).toBeDefined();
+    expect(list.files['src/components/academy-product-card.js'].content).toContain('WidgetMixin(ScopedElementsMixin(LitElement))');
+    const locales = JSON.parse(list.files['demo/locales/locales.json'].content);
+    expect(locales.es['product.card.action']).toBe('Ver detalle');
+    expect(locales.es['action.button.action']).toBe('Activar');
   });
 
   it('mantiene preview ejecutable para todas las lecciones', () => {

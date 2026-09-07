@@ -17,13 +17,14 @@ export interface OpenCellsLessonProject {
 }
 
 export const OPEN_CELLS_ARTIFACTS: Record<string, OpenCellsArtifact> = {
+  'account-detail': { id: 'account-detail', tagName: 'academy-account-detail', label: 'Detalle de cuenta y movimientos', kind: 'component', firstLesson: 85, dependencies: ['action-button'] },
   'action-button': { id: 'action-button', tagName: 'academy-action-button', label: 'Botón de acción', kind: 'component', firstLesson: 1, dependencies: [] },
   'status-badge': { id: 'status-badge', tagName: 'academy-status-badge', label: 'Indicador de estado', kind: 'component', firstLesson: 2, dependencies: [] },
-  'state-panel': { id: 'state-panel', tagName: 'academy-state-panel', label: 'Panel de estados', kind: 'component', firstLesson: 3, dependencies: ['status-badge'] },
+  'state-panel': { id: 'state-panel', tagName: 'academy-state-panel', label: 'Panel de estados', kind: 'component', firstLesson: 3, dependencies: ['status-badge', 'action-button'] },
   'product-card': { id: 'product-card', tagName: 'academy-product-card', label: 'Producto reutilizable', kind: 'component', firstLesson: 6, dependencies: ['action-button', 'status-badge'] },
   'user-summary': { id: 'user-summary', tagName: 'academy-user-summary', label: 'Resumen de usuario', kind: 'component', firstLesson: 10, dependencies: ['status-badge'] },
   'notice-banner': { id: 'notice-banner', tagName: 'academy-notice-banner', label: 'Aviso recuperable', kind: 'component', firstLesson: 13, dependencies: ['action-button', 'status-badge'] },
-  'product-list': { id: 'product-list', tagName: 'academy-product-list', label: 'Lista de productos', kind: 'component', firstLesson: 16, dependencies: ['product-card'] },
+  'product-list': { id: 'product-list', tagName: 'academy-product-list', label: 'Lista de productos', kind: 'component', firstLesson: 16, dependencies: ['product-card', 'action-button'] },
   'price-tag': { id: 'price-tag', tagName: 'academy-price-tag', label: 'Precio formateado', kind: 'component', firstLesson: 17, dependencies: ['status-badge'] },
   'search-filter': { id: 'search-filter', tagName: 'academy-search-filter', label: 'Filtro de búsqueda', kind: 'component', firstLesson: 21, dependencies: ['action-button'] },
   'language-switcher': { id: 'language-switcher', tagName: 'academy-language-switcher', label: 'Selector de idioma', kind: 'component', firstLesson: 23, dependencies: ['action-button'] },

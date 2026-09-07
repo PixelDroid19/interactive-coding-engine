@@ -53,6 +53,7 @@ const APP_MISSIONS: Record<CellsAppPracticeStage, string> = {
 };
 
 function componentMission(stage: CellsComponentPracticeStage, artifact: OpenCellsArtifact): string {
+  if (artifact.id === 'account-detail') return 'El host importa el botón compartido, pero aún no lo registra ni comunica el cambio de vista. Repara esas dos conexiones en src/academy-account-detail.js. Comprueba después navegación, filtros, retorno, estados e idioma desde la interfaz. No hace falta añadir un data manager.';
   const subject = `${artifact.label} (${artifact.tagName})`;
   return ({
     scaffold: `${subject} todavía no expone su entrada pública ni el comando de documentación. Completa package.json y comprueba cómo lo consumirían la demo, las pruebas y otra aplicación.`,

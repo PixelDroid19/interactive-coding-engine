@@ -96,6 +96,25 @@ function addTagReference(
 
 function collectCustomElementTags(files: Array<Pick<WorkspaceFile, 'path' | 'content' | 'language'>>): Map<string, CellsTypeReference> {
   const knownPaths = new Set(files.map((file) => normalizeWorkspacePath(file.path)));
+  const sourcesByPath = new Map(files.map((file) => [normalizeWorkspacePath(file.path), file.content]));
+  const canonicalReference = (reference: CellsTypeReference | undefined, visited = new Set<string>()): CellsTypeReference | undefined => {
+    if (!reference) return undefined;
+    const key = `${reference.modulePath}:${reference.exportName}`;
+    if (visited.has(key)) return reference;
+    visited.add(key);
+    const source = sourcesByPath.get(reference.modulePath) ?? '';
+    for (const match of source.matchAll(/export\s*\{([^}]+)\}\s*from\s*['"]([^'"]+)['"]/g)) {
+      const target = resolveLocalModulePath(reference.modulePath, match[2]);
+      if (!target || !knownPaths.has(target)) continue;
+      for (const binding of match[1].split(',')) {
+        const names = binding.trim().split(/\s+as\s+/);
+        if ((names[1] ?? names[0]) === reference.exportName) {
+          return canonicalReference({ modulePath: target, exportName: names[0] }, visited);
+        }
+      }
+    }
+    return reference;
+  };
   const tags = new Map<string, CellsTypeReference | null>();
 
   for (const file of files) {
@@ -103,7 +122,7 @@ function collectCustomElementTags(files: Array<Pick<WorkspaceFile, 'path' | 'con
     const sourcePath = normalizeWorkspacePath(file.path);
     const classes = exportedClassReferences(file.content, sourcePath);
     const imports = parseNamedLocalImports(file.content, sourcePath, knownPaths);
-    const referenceFor = (name: string) => classes.get(name) ?? imports.get(name);
+    const referenceFor = (name: string) => canonicalReference(classes.get(name) ?? imports.get(name));
 
     for (const match of file.content.matchAll(/customElements\.define\s*\(\s*(['"])([a-z][a-z0-9]*(?:-[a-z0-9]+)+)\1\s*,\s*([A-Za-z_$][\w$]*)\s*\)/g)) {
       addTagReference(tags, match[2], referenceFor(match[3]));
@@ -135,10 +154,16 @@ function buildWidgetMixinDeclaration(): string {
     '  /** Emite un evento público del componente con detalle y opciones DOM. */',
     '  emitEvent(type: string, detail?: unknown, options?: CustomEventInit): boolean;',
     '}',
+    'export interface CellsWidgetConstructorApi {',
+    '  /** Clases opcionales que el host añade a su composición. */',
+    '  configurationScopedElements(): Array<CustomElementConstructor & { readonly is: string }>;',
+    '  /** Construye el registro local usando el is público de cada clase. */',
+    '  scopedElementsFromClasses(classes: Array<CustomElementConstructor & { readonly is: string }>): Record<string, CustomElementConstructor>;',
+    '}',
     '',
     'export function WidgetMixin<TBase extends abstract new (...args: any[]) => HTMLElement>(',
     '  base: TBase,',
-    '): TBase & (abstract new (...args: any[]) => InstanceType<TBase> & CellsWidgetApi);',
+    '): TBase & CellsWidgetConstructorApi & (abstract new (...args: any[]) => InstanceType<TBase> & CellsWidgetApi);',
   ].join('\n');
 }
 

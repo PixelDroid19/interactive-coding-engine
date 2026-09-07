@@ -5,6 +5,7 @@ import { addOpenCellsReasoning } from './reasoning';
 import { createOpenCellsGuidedLessons } from './guidedLessons';
 import { enrichOpenCellsSections } from './lessonStructure';
 import { OPEN_CELLS_ADVANCED_UNITS } from './advancedUnits';
+import { ACCOUNT_FEATURE_READING } from './accountFeatureReading';
 
 function reading(
   number: number,
@@ -174,6 +175,7 @@ export const OPEN_CELLS_COURSE: Course = {
     { id: 'open-cells-mod-8-bridge-datos', title: 'Bridge y datos', description: 'Mediación, data managers, estados, carreras y cleanup.', items: learningBlock(OPEN_CELLS_UNITS_07_TO_68.slice(48, 56)) },
     { id: 'open-cells-mod-9-produccion', title: 'Producción y compatibilidad', description: 'Tests integrados, seguridad, paridad y entrega.', items: learningBlock(OPEN_CELLS_UNITS_07_TO_68.slice(56, 62)) },
     { id: 'open-cells-mod-10-operacion', title: 'Operación y evolución', description: 'Ciclo de vida, navegación avanzada, entrega, observabilidad y evolución segura.', items: learningBlock(OPEN_CELLS_ADVANCED_UNITS) },
+    { id: 'open-cells-mod-features', title: 'Features propias en Cells', description: 'Integra componentes, vistas, estados y eventos en proyectos continuables.', items: [ACCOUNT_FEATURE_READING] },
   ],
 };
 

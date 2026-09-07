@@ -1,4 +1,5 @@
 import type { WorkspaceSnapshot } from '../../types/scrim';
+import { featureBrowserContract } from './cellsFeatureBrowserContracts';
 
 function moduleUrl(source: string): string {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(source)}`;
@@ -499,6 +500,7 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
     await setContractLanguage('es');
     const propertyName = ${JSON.stringify(contractPropertyName)};
     const propertyValue = ${JSON.stringify(contractPropertyValue)};
+    const originalPropertyValue = propertyName ? element[propertyName] : undefined;
     if (propertyName) element[propertyName] = propertyValue;
     element.requestUpdate?.();
     await element.updateComplete;
@@ -508,14 +510,19 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
     const scoped = element.constructor.scopedElements || {};
     const expectedScopedTags = ${JSON.stringify(contractScopedTags)};
     invokedMethods.push('scopedElements');
-    check('browser-scoped', 'Resuelve sus dependencias scoped', expectedScopedTags.length > 0 && expectedScopedTags.every((tag) => typeof scoped[tag] === 'function'), 'Cada dependencia importada desde components debe resolverse como clase dentro del registro local.');
+    check('browser-scoped', 'Resuelve sus dependencias scoped', expectedScopedTags.every((tag) => typeof scoped[tag] === 'function'), 'Cada dependencia importada desde components debe resolverse como clase dentro del registro local; un control nativo puede no necesitar dependencias.');
 
+    if (propertyName) element[propertyName] = originalPropertyValue;
+    element.requestUpdate?.();
+    await element.updateComplete;
+    const spanishLocaleText = element.shadowRoot?.textContent?.replace(/\\s+/g, ' ').trim() || '';
     await setContractLanguage('en');
     element.requestUpdate?.();
     await element.updateComplete;
     const englishText = element.shadowRoot?.textContent?.replace(/\\s+/g, ' ').trim() || '';
-    check('browser-render-en', 'Cambia el idioma sin recrear el host', Boolean(englishText && englishText !== spanishText), 'El mismo host debe producir otro texto al cambiar el catálogo a inglés.');
+    check('browser-render-en', 'Cambia el idioma sin recrear el host', Boolean(englishText && englishText !== spanishLocaleText), 'El mismo host debe traducir sus textos propios; el dato de prueba del consumidor no tiene por qué traducirse.');
 
+    if (propertyName) element[propertyName] = propertyValue;
     let event = null;
     const eventName = ${JSON.stringify(contractEventName)};
     if (eventName) element.addEventListener(eventName, (received) => { event = received; }, { once: true });
@@ -524,6 +531,7 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
       : typeof element.handleContinue === 'function' ? element.handleContinue.bind(element) : null;
     if (action) { invokedMethods.push(element.handleAction ? 'handleAction' : 'handleContinue'); action(); }
     check('browser-event', 'Emite el evento público documentado', Boolean(eventName && event && (!propertyName || event.detail?.[propertyName] === propertyValue) && event.bubbles && event.composed), 'La acción pública debe emitir el evento documentado con detail, bubbles y composed observables.');
+    ${featureBrowserContract(definedTag)}
   } catch (error) {
     check('browser-runner', 'El componente puede probarse en aislamiento', false, error?.message || String(error));
   }
@@ -740,7 +748,8 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
               window.parent.postMessage({ source: 'aula-validator', type: 'missing-tag', validationId: event.data.validationId, tag: missingTag }, '*');
               return;
             }
-            const validator = new Function('return (' + String(event.data.script || '') + ');')();
+            const validatorModule = 'data:text/javascript;charset=utf-8,' + encodeURIComponent('export default (' + String(event.data.script || '') + ');');
+            const { default: validator } = await import(validatorModule);
             if (typeof validator !== 'function') throw new Error('la comprobación no es una función');
             const raw = await validator({ window, document, customElements, HTMLElement, Event, CustomEvent });
             const normalized = typeof raw === 'boolean' ? { passed: raw } : raw;

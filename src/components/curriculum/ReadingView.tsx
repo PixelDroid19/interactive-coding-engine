@@ -64,12 +64,13 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
       'open-cells-delivery-playground': { stage: 'delivery', project: 'capstone', title: 'Capstone Cells completo' },
     } as const)[reading.handsOnLab as string] ?? null;
 
-  const cellsComponentLab: { stage: CellsComponentPracticeStage; title: string } | null =
+  const cellsComponentLab: { stage: CellsComponentPracticeStage; title: string; artifactId?: string } | null =
     ({
       'open-cells-component-scaffold-playground': { stage: 'scaffold', title: 'Proyecto · manifiesto y entradas' },
       'open-cells-component-api-playground': { stage: 'api', title: 'Proyecto · API pública' },
       'open-cells-component-styles-playground': { stage: 'styles', title: 'Proyecto · SCSS y css.js generado' },
       'open-cells-playground': { stage: 'composition', title: 'Proyecto · composición scoped' },
+      'open-cells-feature-playground': { stage: 'composition', title: 'Feature · detalle de cuenta y movimientos', artifactId: 'account-detail' },
       'open-cells-component-i18n-playground': { stage: 'i18n', title: 'Proyecto · traducciones' },
       'open-cells-component-demo-playground': { stage: 'demo', title: 'Proyecto · demo consumidora' },
       'open-cells-component-tests-playground': { stage: 'tests', title: 'Proyecto · pruebas públicas' },
@@ -81,6 +82,8 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
     cellsComponentLab && Number.isInteger(openCellsLessonNumber)
       ? openCellsArtifactForLesson(openCellsLessonNumber)
       : null;
+  const footerTargetsLab = Boolean(cellsComponentLab && !navigationState?.hasNext);
+  const footerAction = footerTargetsLab ? 'Volver al laboratorio' : 'Ir a la práctica';
 
   useEffect(() => {
     titleRef.current?.focus({ preventScroll: true });
@@ -413,13 +416,13 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
                     <span>02</span>
                     <div>
                       <p>Ahora construye tú</p>
-                      <h2 id="reading-lab-title">{cellsComponentLab.title}</h2>
+                      <h2 id="reading-lab-title" tabIndex={-1}>{cellsComponentLab.title}</h2>
                     </div>
                   </div>
                   <CellsLearningLab
                     key={reading.id}
                     componentStage={cellsComponentLab.stage}
-                    componentArtifactId={componentArtifact?.id}
+                    componentArtifactId={cellsComponentLab.artifactId ?? componentArtifact?.id}
                     lessonId={reading.relatedLessonId ?? reading.id.replace(/-lectura$/, '')}
                     liveHelpContext={liveHelpContext}
                   />
@@ -563,17 +566,21 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
 
               <footer className="reading-footer">
                 <p className="reading-footer-text text-sm text-zinc-300">
-                  Cuando lo tengas claro, pasa al ejercicio. Puedes volver a esta lectura cuando quieras.
+                  {footerTargetsLab ? 'Vuelve al laboratorio para comprobar el proyecto y exportarlo. La lectura seguirá aquí cuando la necesites.' : 'Cuando lo tengas claro, pasa al ejercicio. Puedes volver a esta lectura cuando quieras.'}
                 </p>
                 <button
                   type="button"
-                  onClick={onNext}
-                  disabled={!navigationState?.hasNext}
+                  onClick={footerTargetsLab ? () => {
+                    const heading = mainRef.current?.querySelector<HTMLElement>('#reading-lab-title');
+                    heading?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    heading?.focus({ preventScroll: true });
+                  } : onNext}
+                  disabled={!footerTargetsLab && !navigationState?.hasNext}
                   className="reading-cta-btn neu-pill-btn btn-brand justify-center px-5 py-2.5 text-sm font-bold disabled:opacity-40"
-                  aria-label="Ir a la práctica"
+                  aria-label={footerAction}
                   data-augmented-ui={isCyber ? "reading-cta tr-clip bl-clip border inlay" : undefined}
                 >
-                  <span>Ir a la práctica</span>
+                  <span>{footerAction}</span>
                   <ArrowRight size={14} className="reading-cta-arrow" />
                 </button>
               </footer>

@@ -31,6 +31,21 @@ export const WidgetMixin = (Base) => {
   if (typeof Base !== 'function') throw academyWidgetError('ACADEMY_WIDGET_INVALID_BASE');
 
   return class extends Base {
+    static configurationScopedElements() {
+      return [];
+    }
+
+    static scopedElementsFromClasses(classes) {
+      if (!Array.isArray(classes)) throw academyWidgetError('ACADEMY_SCOPED_INVALID_CLASSES');
+      const entries = classes.map((Component) => {
+        if (typeof Component !== 'function' || typeof Component.is !== 'string' || !/^[a-z][a-z0-9]*(-[a-z0-9]+)+$/.test(Component.is)) {
+          throw academyWidgetError('ACADEMY_SCOPED_INVALID_CLASS');
+        }
+        return [Component.is, Component];
+      });
+      return { ...super.scopedElements, ...Object.fromEntries(entries) };
+    }
+
     constructor(...args) {
       super(...args);
       this.__academyLanguageUpdate = () => this.requestUpdate?.();
@@ -459,6 +474,7 @@ export class ${className} extends WidgetMixin(ScopedElementsMixin(LitElement)) {
 import { LitElement, html } from 'lit';
 
 export class AcademyTypeText extends LitElement {
+  static get is() { return 'academy-type-text'; }
   static get properties() {
     return {
       ...super.properties,
@@ -521,6 +537,20 @@ export class AcademyActionButton extends LitElement {
 }
 `, 'javascript'),
     'src/mixins/WidgetMixin.js': file('src/mixins/WidgetMixin.js', widgetMixinSource(), 'javascript'),
+    'src/styles/shared-styles.js': file('src/styles/shared-styles.js', `
+const registry = new Map();
+
+/** Register Lit CSSResult values before importing the consuming components. */
+export function registerComponentSharedStyles(name, styles) {
+  if (typeof name !== 'string' || !name.trim()) throw new TypeError('A shared style name is required.');
+  if (!Array.isArray(styles)) throw new TypeError('Shared styles must be an array of Lit styles.');
+  registry.set(name, [...styles]);
+}
+
+export function getComponentSharedStyles(name) {
+  return [...(registry.get(name) ?? [])];
+}
+`, 'javascript'),
     'src/runtime/academy-intl-msg.js': file('src/runtime/academy-intl-msg.js', intlMsgRuntimeSource(), 'javascript'),
     'locales/locales.json': file('locales/locales.json', `${JSON.stringify(localeCatalog, null, 2)}\n`, 'json'),
     'demo/locales/locales.json': file('demo/locales/locales.json', `${JSON.stringify(localeCatalog, null, 2)}\n`, 'json'),
@@ -756,7 +786,9 @@ declare module '@open-wc/scoped-elements/lit-element.js' {
 }
 
 interface CellsTestExpectation {
+  readonly not: CellsTestExpectation;
   toBe(expected: unknown): void;
+  toBeNull(): void;
   toBeUndefined(): void;
   toContain(expected: unknown): void;
   toEqual(expected: unknown): void;

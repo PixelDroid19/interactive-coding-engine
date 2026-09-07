@@ -15,7 +15,7 @@ describe('curso Open Cells', () => {
   it('entrega 84 unidades progresivas y laboratorios de proyecto al cerrar cada bloque', () => {
     const allItems = OPEN_CELLS_COURSE.modules.flatMap((module) => module.items);
     const items = allItems.filter((item) => item.type === 'reading');
-    expect(items).toHaveLength(84);
+    expect(items).toHaveLength(85);
     const practice = items[5];
     expect(practice?.type).toBe('reading');
     if (practice?.type === 'reading') {
@@ -41,6 +41,7 @@ describe('curso Open Cells', () => {
       'open-cells-54-lectura',
       'open-cells-62-lectura',
       'open-cells-68-lectura',
+      'open-cells-feature-account',
     ]);
     expect(items[4]?.type === 'reading' && items[4].handsOnLab).toBe('open-cells-component-scaffold-playground');
     expect(items[13]?.type === 'reading' && items[13].handsOnLab).toBe('open-cells-component-styles-playground');

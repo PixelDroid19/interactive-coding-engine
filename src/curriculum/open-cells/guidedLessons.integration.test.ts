@@ -44,6 +44,10 @@ describe('recorrido guiado completo de Open Cells', () => {
   it('registra 84 clases separadas con lectura, razonamiento y cierres de proyecto', () => {
     expect(lessons).toHaveLength(84);
     for (const module of OPEN_CELLS_COURSE.modules) {
+      if (module.id === 'open-cells-mod-features') {
+        expect(module.items).toEqual([expect.objectContaining({ id: 'open-cells-feature-account', type: 'reading', handsOnLab: 'open-cells-feature-playground' })]);
+        continue;
+      }
       for (let index = 0; index < module.items.length; index += 3) {
         const block = module.items.slice(index, index + 3);
         expect(block.map((item) => item.type)).toEqual([
@@ -52,7 +56,7 @@ describe('recorrido guiado completo de Open Cells', () => {
       }
     }
     expect(OPEN_CELLS_COURSE.modules.flatMap((module) => module.items)
-      .filter((item) => item.type === 'reading' && item.handsOnLab)).toHaveLength(14);
+      .filter((item) => item.type === 'reading' && item.handsOnLab)).toHaveLength(15);
   });
 
   it('las cintas no desvían la práctica hacia checkpoints genéricos', () => {

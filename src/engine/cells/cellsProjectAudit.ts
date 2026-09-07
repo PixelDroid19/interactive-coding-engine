@@ -57,7 +57,11 @@ export function auditCellsComponent(workspace: WorkspaceSnapshot): { results: Ce
     ?? metadataDeclarations[0];
   const documentedProperties = (declaration?.members ?? []).filter((member: any) => member.kind === 'field' && member.name);
   const documentedEvent = (declaration?.events ?? [])[0];
-  const scopedRegistry = source.match(/static\s+get\s+scopedElements\s*\(\)\s*\{\s*return\s*\{([\s\S]*?)\}\s*;?\s*\}/)?.[1] ?? '';
+  const scopedRegistry = source.match(/static\s+get\s+scopedElements\s*\(\)\s*\{([\s\S]*?)\n\s*\}/)?.[1]?.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '') ?? '';
+  const classListName = scopedRegistry.match(/(?:return\s+|\.\.\.)[\w$]+\.scopedElementsFromClasses\(\s*([\w$]+)\s*\)/)?.[1];
+  const classList = classListName
+    ? scopedRegistry.match(new RegExp(`(?:const|let)\\s+${classListName}\\s*=\\s*\\[([^\\]]*)\\]`))?.[1] ?? ''
+    : '';
   const publicProperties = source.match(/static\s+get\s+properties\s*\(\)\s*\{\s*return\s*\{([\s\S]*?)\n\s*\};\s*\}/)?.[1]
     ?? source.match(/static\s+properties\s*=\s*\{([\s\S]*?)\n\s*\};/)?.[1]
     ?? '';
@@ -69,10 +73,11 @@ export function auditCellsComponent(workspace: WorkspaceSnapshot): { results: Ce
     );
   });
   const localImports = Array.from(source.matchAll(/import\s+\{\s*([A-Za-z_$][\w$]*)\s*\}\s+from\s+['"]\.\/components\/([^'"]+)\.js['"]/g), (match) => ({ className: match[1], tagName: match[2] }));
-  const scopedImportsComplete = localImports.length > 0
-    && /\.\.\.super\.scopedElements\b/.test(scopedRegistry)
+  const scopedImportsComplete = (localImports.length > 0 || !/<[a-z][a-z0-9]*-[a-z]/.test(source))
     && localImports.every((dependency) => (
-      new RegExp(`['"]${dependency.tagName}['"]\\s*:\\s*${dependency.className}\\b`).test(scopedRegistry)
+      (/\.\.\.super\.scopedElements\b/.test(scopedRegistry)
+        && new RegExp(`['"]${dependency.tagName}['"]\\s*:\\s*${dependency.className}\\b`).test(scopedRegistry))
+      || classList.split(',').some((entry) => entry.trim() === dependency.className)
     ));
   const translationCalls = Array.from(source.matchAll(/this\.t\(['"]([^'"]+)['"]/g), (match) => match[1]);
   const uniqueCalls = [...new Set(translationCalls)];
@@ -92,7 +97,8 @@ export function auditCellsComponent(workspace: WorkspaceSnapshot): { results: Ce
     && scssSource
     && cssModuleSource.includes(scssSource)
     && importedStyleName
-    && new RegExp(`static\\s+styles\\s*=\\s*${importedStyleName}\\s*;`).test(source)
+    && (new RegExp(`static\\s+styles\\s*=\\s*${importedStyleName}\\s*;`).test(source)
+      || new RegExp(`static\\s+get\\s+styles\\s*\\(\\)\\s*\\{\\s*return\\s*\\[\\s*${importedStyleName}\\s*(?:,|\\])`).test(source))
     && !/static\s+styles\s*=\s*css`/.test(source),
   );
 
@@ -102,7 +108,7 @@ export function auditCellsComponent(workspace: WorkspaceSnapshot): { results: Ce
     test('cells-mixins', 'Compone los mixins Cells', /WidgetMixin\(ScopedElementsMixin\(LitElement\)\)/.test(source), 'La clase debe componer WidgetMixin y ScopedElementsMixin.', sourcePath),
     test('public-property', 'Declara la API pública documentada', documentedProperties.length > 0 && /\.\.\.super\.properties\b/.test(publicProperties) && publicPropertyContracts.every(Boolean), 'Cada propiedad de custom-elements.json debe existir con tipo y atributo coherentes en el getter de propiedades.', sourcePath),
     test('scoped-components', 'Registra dependencias scoped', scopedImportsComplete, 'Cada clase importada desde components debe quedar asociada a su tag dentro de scopedElements.', sourcePath),
-    test('translated-copy', 'Traduce el texto visible', uniqueCalls.length >= 2 && !/this\.t\([^)]*\)\s*\|\|/.test(source), 'Usa this.t con claves reales y sin ocultar errores con un fallback vacío.', sourcePath),
+    test('translated-copy', 'Traduce el texto visible', uniqueCalls.length >= 1 && !/this\.t\([^)]*\)\s*\|\|/.test(source), 'Usa this.t con claves reales y sin ocultar errores con un fallback vacío.', sourcePath),
     test('locale-parity', 'Mantiene EN y ES sincronizados', enKeys.length > 0 && JSON.stringify(enKeys) === JSON.stringify(esKeys), 'El catálogo fuente debe contener exactamente las mismas claves en EN y ES.', 'locales/locales.json'),
     test('locale-placeholders', 'Conserva placeholders entre idiomas', esKeys.every((key) => JSON.stringify(placeholders(localeCatalog.es?.[key])) === JSON.stringify(placeholders(localeCatalog.en?.[key]))), 'Cada clave debe conservar los mismos nombres de placeholder en EN y ES.', 'locales/locales.json'),
     test('public-event', 'Emite el evento público documentado', Boolean(eventSuffix && new RegExp(`this\\.emitEvent\\(\\s*['"]${eventSuffix}['"]\\s*,\\s*[^)\\s][^)]*\\)`, 's').test(source)), 'El evento declarado en metadata debe salir mediante emitEvent con un detail útil.', sourcePath),

@@ -98,7 +98,7 @@ describe('auditoría integrada del material de aprendizaje', () => {
 
   it('todas las lecturas explican, ejemplifican, anticipan errores y conectan con la práctica', () => {
     const readings = courses.flatMap((course) => itemsOf(course, 'reading')) as ReadingItem[];
-    expect(readings).toHaveLength(216);
+    expect(readings).toHaveLength(217);
     expect(new Set(readings.map((reading) => reading.id)).size).toBe(readings.length);
 
     for (const reading of readings) {

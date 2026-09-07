@@ -95,6 +95,7 @@ export interface ReadingItem extends BaseCurriculumItem {
   handsOnLab?:
     | 'embeddings-webgpu'
     | 'open-cells-playground'
+    | 'open-cells-feature-playground'
     | 'open-cells-component-scaffold-playground'
     | 'open-cells-component-api-playground'
     | 'open-cells-component-styles-playground'

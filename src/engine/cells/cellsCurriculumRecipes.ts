@@ -1,7 +1,7 @@
-import type { OpenCellsArtifact } from '../../curriculum/open-cells/lessonProjects';
-import type { WorkspaceFile } from '../../types/scrim';
+import { OPEN_CELLS_ARTIFACTS, type OpenCellsArtifact } from '../../curriculum/open-cells/lessonProjects';
 import { createCellsComponentWorkspace, type CellsComponentPracticeStage } from './cellsRecipes';
 import { createVersionedCellsWorkspace, type VersionedCellsWorkspace, writeCellsFile } from './cellsVirtualFileSystem';
+import { createCellsAccountFeaturePractice, createCellsAccountFeatureWorkspace } from './cellsAccountFeature';
 
 interface ComponentBlueprint {
   propertyName: string;
@@ -16,7 +16,7 @@ interface ComponentBlueprint {
 }
 
 const BLUEPRINTS: Record<string, ComponentBlueprint> = {
-  'action-button': blueprint('label', 'label', 'Continuar', 'Guardar', 'activate', '#2563eb', 'Reusable action', 'Acción reutilizable', 'One button, one public intention.', 'Un botón, una intención pública.', 'Activate', 'Activar'),
+  'action-button': blueprint('label', 'label', '', 'Guardar', 'activate', '#2563eb', 'Reusable action', 'Acción reutilizable', 'One button, one public intention.', 'Un botón, una intención pública.', 'Activate', 'Activar'),
   'status-badge': blueprint('status', 'status', 'Disponible', 'Sin conexión', 'inspect', '#059669', 'Observable status', 'Estado observable', 'Color and text describe the same state.', 'Color y texto describen el mismo estado.', 'Inspect', 'Inspeccionar'),
   'state-panel': blueprint('state', 'state', 'loading', 'error', 'retry', '#d97706', 'Request states', 'Estados de una petición', 'Loading, empty, error and success cannot overlap.', 'Loading, empty, error y success no se mezclan.', 'Retry', 'Reintentar'),
   'product-card': blueprint('productName', 'product-name', 'Café de origen', 'Té verde', 'select', '#7c3aed', 'A reusable product', 'Un producto reutilizable', 'The card presents data and returns a selection.', 'La tarjeta presenta datos y devuelve una selección.', 'View detail', 'Ver detalle'),
@@ -65,53 +65,14 @@ function classNameFor(tagName: string): string {
   return tagName.split('-').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join('');
 }
 
-function localDependencySource(tagName: string, accent: string): string {
-  const className = classNameFor(tagName);
-  const dependency = BLUEPRINTS[tagName.replace(/^academy-/, '')];
-  const propertyName = dependency?.propertyName ?? 'value';
-  const attribute = dependency?.attribute ?? 'value';
-  const defaultValue = dependency?.defaultValue ?? '';
-  const eventName = dependency?.eventName ?? 'activate';
-  const isButton = tagName.includes('button');
-  return `import { LitElement, css, html } from 'lit';
-
-export class ${className} extends LitElement {
-  static get properties() {
-    return {
-      ...super.properties,
-      ${propertyName}: { type: String, attribute: '${attribute}' },
-    };
-  }
-  static styles = css\`
-    :host { display: inline-flex; }
-    button, span, article { border: 1px solid ${accent}; border-radius: 999px; padding: .55rem .85rem; background: #fff; color: #172033; font: 700 .78rem/1 system-ui, sans-serif; }
-    button { cursor: pointer; box-shadow: 0 .2rem 0 ${accent}; }
-  \`;
-  constructor() {
-    super();
-    this.${propertyName} = ${JSON.stringify(defaultValue)};
-  }
-  handleAction() { this.dispatchEvent(new CustomEvent('${tagName}-${eventName}', { detail: { ${propertyName}: this.${propertyName} }, bubbles: true, composed: true })); }
-  render() { return ${isButton
-    ? `html\`<button type="button" @click=\${this.handleAction}><slot>\${this.${propertyName}}</slot></button>\``
-    : tagName.includes('product-card')
-      ? `html\`<article><slot>\${this.${propertyName}}</slot></article>\``
-      : `html\`<span><slot>\${this.${propertyName}}</slot></span>\``}; }
-}
-`;
-}
-
 function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint, prefix: string): string {
   const value = `\${this.${blueprint.propertyName}}`;
   const translated = (key: string) => `\${this.t('${prefix}.${key}')}`;
   const action = `@click=\${this.handleAction}`;
-  const dependency = (id: string) => `academy-${id}`;
+  const childAction = `@academy-action-button-activate=\${this.handleAction}`;
   switch (artifact.id) {
     case 'action-button':
-      return `<div class="action-stage">
-          <academy-type-text as="h2">${translated('title')}</academy-type-text>
-          <button class="primary-action" ${action}>${value}</button>
-        </div>`;
+      return `<button type="button" class="primary-action" ${action}><academy-type-text as="span"><slot>\${this.label || this.t('${prefix}.action')}</slot></academy-type-text></button>`;
     case 'status-badge':
       return `<button type="button" class="status-stage" ${action}>
           <span class="status-dot"></span>
@@ -125,17 +86,17 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
           <p>${translated('description')}</p>
           <academy-action-button
             .label=\${this.t('${prefix}.action')}
-            ${action}
+            ${childAction}
           ></academy-action-button>
         </div>`;
     case 'product-card':
       return `<article class="product-card">
-          <academy-status-badge status="Disponible"></academy-status-badge>
+          <academy-status-badge .status=\${this.t('${prefix}.status')}></academy-status-badge>
           <h2>${value}</h2>
           <p>${translated('description')}</p>
           <academy-action-button
             .label=\${this.t('${prefix}.action')}
-            ${action}
+            ${childAction}
           ></academy-action-button>
         </article>`;
     case 'user-summary':
@@ -145,23 +106,23 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
             <h2>${value}</h2>
             <p>${translated('description')}</p>
           </div>
-          <academy-status-badge status="Activo"></academy-status-badge>
+          <academy-status-badge .status=\${this.t('${prefix}.status')}></academy-status-badge>
           <button type="button" class="primary-action" ${action}>${translated('action')}</button>
         </div>`;
     case 'notice-banner':
       return `<aside class="notice" role="status">
-          <academy-status-badge status="Aviso"></academy-status-badge>
+          <academy-status-badge .status=\${this.t('${prefix}.status')}></academy-status-badge>
           <p>${value}</p>
           <academy-action-button
             .label=\${this.t('${prefix}.action')}
-            ${action}
+            ${childAction}
           ></academy-action-button>
         </aside>`;
     case 'product-list':
       return `<section class="collection">
           <header>
             <h2>${value}</h2>
-            <academy-action-button .label=\${this.t('${prefix}.action')} ${action}></academy-action-button>
+            <academy-action-button .label=\${this.t('${prefix}.action')} ${childAction}></academy-action-button>
           </header>
           <div class="product-grid">
             <academy-product-card product-name="Café"></academy-product-card>
@@ -173,7 +134,7 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
       return `<button type="button" class="price" ${action}>
           <small>${translated('title')}</small>
           <strong>${value}</strong>
-          <academy-status-badge status="IVA incluido"></academy-status-badge>
+          <academy-status-badge .status=\${this.t('${prefix}.status')}></academy-status-badge>
         </button>`;
     case 'search-filter':
       return `<form class="search" @submit=\${this.handleSubmit}>
@@ -188,9 +149,9 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
         </form>`;
     case 'language-switcher':
       return `<div class="language">
-          <academy-type-text as="h2">${translated('title')}</academy-type-text>
-          <button class=\${this.locale === 'es' ? 'active' : ''} @click=\${() => this.chooseLocale('es')}>ES</button>
-          <button class=\${this.locale === 'en' ? 'active' : ''} @click=\${() => this.chooseLocale('en')}>EN</button>
+          <p>${translated('description')}</p>
+          <academy-action-button .label=\${this.t('${prefix}.spanish')} @academy-action-button-activate=\${() => this.chooseLocale('es')}></academy-action-button>
+          <academy-action-button .label=\${this.t('${prefix}.english')} @academy-action-button-activate=\${() => this.chooseLocale('en')}></academy-action-button>
         </div>`;
     case 'catalog-shell':
       return `<main class="catalog">
@@ -201,7 +162,6 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
         </main>`;
     default:
       return `<article class="state-grid">
-          <h2>${translated('title')}</h2>
           <strong>${value}</strong>
           <p>${translated('description')}</p>
           <button class="primary-action" ${action}>${translated('action')}</button>
@@ -212,8 +172,8 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
 function componentStyles(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint): string {
   const layout = artifact.id === 'product-list' || artifact.id === 'catalog-shell' ? 'min(52rem, 100%)' : 'min(34rem, 100%)';
   return `:host {
-  display: block;
-  width: ${layout};
+  display: ${artifact.id === 'action-button' ? 'inline-block' : 'block'};
+  width: ${artifact.id === 'action-button' ? 'auto' : layout};
   color: #172033;
   font-family: system-ui, sans-serif;
 }
@@ -247,6 +207,7 @@ function componentStyles(artifact: OpenCellsArtifact, blueprint: ComponentBluepr
 }
 
 export function createCellsCurriculumComponentWorkspace(artifact: OpenCellsArtifact): VersionedCellsWorkspace {
+  if (artifact.id === 'account-detail') return createCellsAccountFeatureWorkspace(createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS['action-button']));
   const blueprint = BLUEPRINTS[artifact.id];
   if (!blueprint) throw new Error(`No existe recipe visual para ${artifact.id}.`);
   const base = createCellsComponentWorkspace({ name: artifact.tagName });
@@ -260,7 +221,7 @@ export function createCellsCurriculumComponentWorkspace(artifact: OpenCellsArtif
     return { id, tag, className: classNameFor(tag) };
   });
   const imports = dependencyImports.map((dependency) => `import { ${dependency.className} } from './components/${dependency.tag}.js';`).join('\n');
-  const registry = dependencyImports.map((dependency) => `      '${dependency.tag}': ${dependency.className},`).join('\n');
+  const registry = dependencyImports.map((dependency) => `      ${dependency.className},`).join('\n');
   const unitDependencyImports = dependencyImports
     .map((dependency) => `import { ${dependency.className} } from '../../src/components/${dependency.tag}.js';`)
     .join('\n');
@@ -275,14 +236,21 @@ export function createCellsCurriculumComponentWorkspace(artifact: OpenCellsArtif
   const source = `import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { WidgetMixin } from './mixins/WidgetMixin.js';
+import { getComponentSharedStyles } from './styles/shared-styles.js';
 import styles from './${artifact.tagName}.css.js';
 ${imports}
 
 export class ${className} extends WidgetMixin(ScopedElementsMixin(LitElement)) {
+  static get is() { return '${artifact.tagName}'; }
+
   static get scopedElements() {
+    const classes = [
+${registry}
+      ...this.configurationScopedElements(),
+    ];
     return {
       ...super.scopedElements,
-${registry}
+      ...this.scopedElementsFromClasses(classes),
     };
   }
 
@@ -293,26 +261,28 @@ ${registry}
     };
   }
 
-  static styles = styles;
+  static get styles() {
+    return [styles, getComponentSharedStyles('${artifact.tagName}-shared-styles')];
+  }
 
   constructor() {
     super();
     this.${blueprint.propertyName} = ${JSON.stringify(blueprint.defaultValue)};
   }
 
-  handleAction() {
+  handleAction(event) {
+    event?.stopPropagation();
     this.emitEvent('${blueprint.eventName}', { ${blueprint.propertyName}: this.${blueprint.propertyName} });
   }
 
-  handleSubmit(event) { event.preventDefault(); this.handleAction(); }
-  chooseLocale(locale) { this.${blueprint.propertyName} = locale; this.handleAction(); }
+${artifact.id === 'search-filter' ? '  handleSubmit(event) { event.preventDefault(); this.handleAction(); }\n' : ''}${artifact.id === 'language-switcher' ? `  chooseLocale(locale) { this.${blueprint.propertyName} = locale; this.handleAction(); }\n` : ''}
 
   render() {
     return html\`
-      <section class="surface">
-        <p class="eyebrow">\${this.t('${prefix}.eyebrow')}</p>
+      ${artifact.id === 'action-button' ? markup : `<section class="surface">
+        ${dependencyIds.includes('type-text') ? `<academy-type-text as="h2">\${this.t('${prefix}.title')}</academy-type-text>` : `<h2>\${this.t('${prefix}.title')}</h2>`}
         ${markup}
-      </section>
+      </section>`}
     \`;
   }
 }
@@ -321,30 +291,50 @@ ${registry}
   files[`src/${artifact.tagName}.scss`] = { ...files[`src/${artifact.tagName}.scss`], content: styles };
   files[`src/${artifact.tagName}.css.js`] = { ...files[`src/${artifact.tagName}.css.js`], content: `import { css } from 'lit';\n\nexport default css\`\n${styles}\n\`;\n` };
 
+  const dependencyCatalogs: Array<Record<string, Record<string, string>>> = [];
+  for (const path of Object.keys(files)) {
+    if (path.startsWith('src/components/')) delete files[path];
+  }
   for (const dependency of dependencyImports) {
     const path = `src/components/${dependency.tag}.js`;
-    files[path] = {
-      path,
-      name: `${dependency.tag}.js`,
-      language: 'javascript',
-      content: dependency.tag === 'academy-type-text' && files[path]
-        ? files[path].content
-        : localDependencySource(dependency.tag, BLUEPRINTS[dependency.id]?.accent ?? blueprint.accent),
-    };
+    if (dependency.id === 'type-text') {
+      files[path] = { ...base.snapshot.files[path] };
+      continue;
+    }
+    const dependencyWorkspace = createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS[dependency.id]).snapshot;
+    dependencyCatalogs.push(JSON.parse(dependencyWorkspace.files['locales/locales.json'].content));
+    for (const [childPath, childFile] of Object.entries(dependencyWorkspace.files)) {
+      if (!childPath.startsWith('src/')) continue;
+      const isRootArtifact = childPath.startsWith(`src/${dependency.tag}.`);
+      const target = isRootArtifact ? childPath.replace('src/', 'src/components/') : childPath;
+      if (!isRootArtifact && !childPath.startsWith('src/components/')) continue;
+      const content = target === path
+        ? childFile.content.replaceAll("from './components/", "from './").replaceAll("from './mixins/", "from '../mixins/").replaceAll("from './styles/", "from '../styles/")
+        : childFile.content;
+      files[target] = { ...childFile, path: target, name: target.split('/').at(-1)!, content };
+    }
   }
 
   const catalog = {
     en: {
+      ...Object.assign({}, ...dependencyCatalogs.map((catalog) => catalog.en)),
       [`${prefix}.eyebrow`]: artifact.label,
       [`${prefix}.title`]: blueprint.title.en,
       [`${prefix}.description`]: blueprint.description.en,
       [`${prefix}.action`]: blueprint.action.en,
+      [`${prefix}.status`]: artifact.id === 'price-tag' ? 'Tax included' : artifact.id === 'notice-banner' ? 'Notice' : 'Available',
+      [`${prefix}.spanish`]: 'Spanish',
+      [`${prefix}.english`]: 'English',
     },
     es: {
+      ...Object.assign({}, ...dependencyCatalogs.map((catalog) => catalog.es)),
       [`${prefix}.eyebrow`]: artifact.label,
       [`${prefix}.title`]: blueprint.title.es,
       [`${prefix}.description`]: blueprint.description.es,
       [`${prefix}.action`]: blueprint.action.es,
+      [`${prefix}.status`]: artifact.id === 'price-tag' ? 'Impuestos incluidos' : artifact.id === 'notice-banner' ? 'Aviso' : 'Disponible',
+      [`${prefix}.spanish`]: 'Español',
+      [`${prefix}.english`]: 'Inglés',
     },
   };
   for (const path of ['locales/locales.json', 'demo/locales/locales.json', 'test/unit/locales/locales.json']) {
@@ -456,15 +446,16 @@ describe('${artifact.tagName}', () => {
     const component = await renderComponent();
     expect(${className}.properties.${blueprint.propertyName}.attribute).toBe('${blueprint.attribute}');
 ${unitDependencyAssertions}
-    expect(component.shadowRoot.textContent).toContain(${JSON.stringify(blueprint.title.es)});
+    expect(component.shadowRoot.textContent).toContain(${JSON.stringify(artifact.id === 'action-button' ? blueprint.demoValue : blueprint.title.es)});
   });
 
   it('cambia a inglés sobre el mismo host', async () => {
     const component = await renderComponent();
+${artifact.id === 'action-button' ? '    component.label = "";\n' : ''}
     await globalThis.IntlMsg.setLanguage('en');
     await globalThis.IntlMsg.loadUrlResourcesComplete;
     await component.updateComplete;
-    expect(component.shadowRoot.textContent).toContain(${JSON.stringify(blueprint.title.en)});
+    expect(component.shadowRoot.textContent).toContain(${JSON.stringify(artifact.id === 'action-button' ? blueprint.action.en : blueprint.title.en)});
   });
 
   it('emite una intención pública completa desde el control visible', async () => {
@@ -518,6 +509,7 @@ export function createCellsCurriculumPracticeWorkspace(
   stage: CellsComponentPracticeStage = 'composition',
 ): VersionedCellsWorkspace {
   const complete = createCellsCurriculumComponentWorkspace(artifact);
+  if (artifact.id === 'account-detail') return createCellsAccountFeaturePractice(complete);
   const blueprint = BLUEPRINTS[artifact.id];
   if (!blueprint) throw new Error(`No existe práctica visual para ${artifact.id}.`);
   const sourcePath = `src/${artifact.tagName}.js`;
@@ -549,7 +541,7 @@ export function createCellsCurriculumPracticeWorkspace(
     const dependencyClass = classNameFor(dependencyTag);
     const source = complete.snapshot.files[sourcePath].content
       .replace(
-        `      '${dependencyTag}': ${dependencyClass},`,
+        `      ${dependencyClass},`,
         `      // TODO: registra ${dependencyTag}; la clase ya está importada.`,
       )
       .replace(

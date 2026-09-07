@@ -504,29 +504,55 @@ export function createOpenCellsGuidedLesson(reading: ReadingItem): ScrimLessonDa
     instructions: 'Antes de empezar, recuerda que scopedElements mantiene las dependencias dentro del host y que un evento público atraviesa el Shadow DOM. Punto de partida: trabaja únicamente en src/academy-product-card.js; el botón ya está importado, pero falta conectarlo al registro local y comunicar la selección. Cómo comprobarlo: ejecuta las tres pruebas con nombres de producto distintos y confirma que no aparece ningún registro global. Abre las pistas una a la vez si necesitas orientación sin recibir el código terminado.',
     starterCodeDiff: {
       'src/academy-product-card.js': completeFiles['src/academy-product-card.js']
-        .replace("      'academy-action-button': AcademyActionButton,", '      // TODO: registra el botón importado dentro de este host.')
+        .replace('      AcademyActionButton,', '      // TODO: registra el botón importado dentro de este host.')
         .replace("    this.emitEvent('select', { productName: this.productName });", '    // TODO: comunica la selección con el nombre actual del producto.'),
     },
     tests: [
       {
         id: 'cells06-product-scoped-button',
         description: 'El registro scoped asocia el botón con su clase',
-        validatorType: 'source-regex' as const,
-        regexPattern: "static\\s+get\\s+scopedElements[\\s\\S]*['\"]academy-action-button['\"]\\s*:\\s*AcademyActionButton",
+        validatorType: 'browser-script' as const,
+        customValidatorScript: `async ({ document, customElements }) => {
+          await customElements.whenDefined('academy-product-card');
+          const host = document.querySelector('academy-product-card');
+          await host.updateComplete;
+          const button = host.shadowRoot.querySelector('academy-action-button');
+          await button?.updateComplete;
+          return Boolean(button?.shadowRoot?.querySelector('button'));
+        }`,
         errorMessage: 'El botón todavía no se resuelve dentro del host del producto.',
       },
       {
         id: 'cells06-product-event',
         description: 'La selección emite el nombre variable del producto',
-        validatorType: 'source-regex' as const,
-        regexPattern: "emitEvent\\s*\\(\\s*['\"]select['\"]\\s*,\\s*\\{[\\s\\S]*productName\\s*:\\s*this\\.productName",
+        validatorType: 'browser-script' as const,
+        customValidatorScript: `async ({ document, customElements }) => {
+          await customElements.whenDefined('academy-product-card');
+          const host = document.querySelector('academy-product-card');
+          const original = host.productName;
+          try {
+            for (const name of ['Té de montaña', 'Cacao tostado', 'Café suave']) {
+              host.productName = name;
+              await host.updateComplete;
+              const button = host.shadowRoot.querySelector('academy-action-button');
+              await button?.updateComplete;
+              let received;
+              const observe = (event) => { received = event; };
+              host.addEventListener('academy-product-card-select', observe);
+              try { button?.shadowRoot?.querySelector('button')?.click(); }
+              finally { host.removeEventListener('academy-product-card-select', observe); }
+              if (received?.detail?.productName !== name || !received.bubbles || !received.composed) return false;
+            }
+            return true;
+          } finally { host.productName = original; await host.updateComplete; }
+        }`,
         errorMessage: 'La acción todavía no publica un detail basado en el producto actual.',
       },
       {
         id: 'cells06-product-no-global',
         description: 'La dependencia permanece local al componente',
-        validatorType: 'source-regex' as const,
-        regexPattern: "^(?![\\s\\S]*customElements\\.define\\(\\s*['\"]academy-action-button)",
+        validatorType: 'browser-script' as const,
+        customValidatorScript: `({ customElements }) => !customElements.get('academy-action-button')`,
         errorMessage: 'La dependencia scoped no debe registrarse globalmente.',
       },
     ],

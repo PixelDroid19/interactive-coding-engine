@@ -57,4 +57,14 @@ describe('ReadingView con laboratorios Cells', () => {
       { lessonId: 'open-cells-19', artifactId: 'product-list', liveHelpContext: context19 },
     ]);
   });
+
+  it('routes a supplementary feature project without requiring a numbered audio lesson', () => {
+    const reading: ReadingItem = {
+      ...cellsReading(6), id: 'open-cells-feature-account', relatedLessonId: undefined,
+      handsOnLab: 'open-cells-feature-playground' as ReadingItem['handsOnLab'],
+    };
+    render(<ReadingView reading={reading} onBack={vi.fn()} />);
+    expect(screen.getByTestId('cells-learning-lab').getAttribute('data-artifact-id')).toBe('account-detail');
+    expect(screen.getByRole('button', { name: 'Volver al laboratorio' }).hasAttribute('disabled')).toBe(false);
+  });
 });

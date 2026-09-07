@@ -5,12 +5,24 @@ import { buildWorkspaceSemanticFiles } from '../../editor/workspaceSemanticFiles
 import { createCellsComponentWorkspace } from './cellsRecipes';
 import { createCellsAppWorkspace } from './cellsAppRecipes';
 import { createOpenCellsLessonWorkspace } from '../../curriculum/open-cells/lessonWorkspaces';
+import { createCellsCurriculumComponentWorkspace } from './cellsCurriculumRecipes';
+import { OPEN_CELLS_ARTIFACTS } from '../../curriculum/open-cells/lessonProjects';
 
 function replaceWorkspace(service: TypeScriptLanguageService, workspace: ReturnType<typeof createCellsComponentWorkspace>['snapshot']): void {
   service.replaceWorkspace(buildWorkspaceSemanticFiles(Object.values(workspace.files)));
 }
 
 describe('inteligencia del editor Cells', () => {
+  it('recognizes the feature pages, public properties and reused component classes', () => {
+    const workspace = createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS['account-detail']).snapshot;
+    const service = new TypeScriptLanguageService(typeScriptLibraries);
+    replaceWorkspace(service, workspace);
+    const diagnostics = Object.values(workspace.files)
+      .filter((file) => file.path.startsWith('src/pages/') || file.path === 'src/academy-account-detail.js' || file.path === 'test/unit/academy-account-detail.test.js')
+      .filter((file) => file.language === 'javascript')
+      .flatMap((file) => service.diagnostics(file.path).map((entry) => `${file.path}: ${entry.message}`));
+    expect(diagnostics).toEqual([]);
+  });
   it('reconoce los paquetes del scaffold sin marcar imports válidos como errores', () => {
     const workspace = createCellsComponentWorkspace({ name: 'academy-learning-card' }).snapshot;
     const service = new TypeScriptLanguageService(typeScriptLibraries);
