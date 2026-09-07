@@ -14,6 +14,22 @@ function classNameFor(tagName: string): string {
   return tagName.split('-').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join('');
 }
 
+export function sharedStylesRuntimeSource(): string {
+  return `const registry = new Map();
+
+/** Register Lit CSSResult values before importing the consuming components. */
+export function registerComponentSharedStyles(name, styles) {
+  if (typeof name !== 'string' || !name.trim()) throw new TypeError('A shared style name is required.');
+  if (!Array.isArray(styles)) throw new TypeError('Shared styles must be an array of Lit styles.');
+  registry.set(name, [...styles]);
+}
+
+export function getComponentSharedStyles(name) {
+  return [...(registry.get(name) ?? [])];
+}
+`;
+}
+
 export function widgetMixinSource(): string {
   return `function academyWidgetError(code) {
   const error = /** @type {Error & { code: string }} */ (new Error('Academy widget error: ' + code));
@@ -537,20 +553,7 @@ export class AcademyActionButton extends LitElement {
 }
 `, 'javascript'),
     'src/mixins/WidgetMixin.js': file('src/mixins/WidgetMixin.js', widgetMixinSource(), 'javascript'),
-    'src/styles/shared-styles.js': file('src/styles/shared-styles.js', `
-const registry = new Map();
-
-/** Register Lit CSSResult values before importing the consuming components. */
-export function registerComponentSharedStyles(name, styles) {
-  if (typeof name !== 'string' || !name.trim()) throw new TypeError('A shared style name is required.');
-  if (!Array.isArray(styles)) throw new TypeError('Shared styles must be an array of Lit styles.');
-  registry.set(name, [...styles]);
-}
-
-export function getComponentSharedStyles(name) {
-  return [...(registry.get(name) ?? [])];
-}
-`, 'javascript'),
+    'src/styles/shared-styles.js': file('src/styles/shared-styles.js', sharedStylesRuntimeSource(), 'javascript'),
     'src/runtime/academy-intl-msg.js': file('src/runtime/academy-intl-msg.js', intlMsgRuntimeSource(), 'javascript'),
     'locales/locales.json': file('locales/locales.json', `${JSON.stringify(localeCatalog, null, 2)}\n`, 'json'),
     'demo/locales/locales.json': file('demo/locales/locales.json', `${JSON.stringify(localeCatalog, null, 2)}\n`, 'json'),

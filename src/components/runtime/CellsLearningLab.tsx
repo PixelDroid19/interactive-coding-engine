@@ -113,6 +113,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
   const [syncedWorkspace, setSyncedWorkspace] = useState<WorkspaceSnapshot>(starter.snapshot);
   const [generation, setGeneration] = useState(0);
   const [previewHtml, setPreviewHtml] = useState('');
+  const [previewRevision, setPreviewRevision] = useState(0);
   const [previewDemo, setPreviewDemo] = useState<CellsPreviewBuild['componentDemo']>();
   const [previewState, setPreviewState] = useState<'idle' | 'building' | 'fresh' | 'stale' | 'error'>('idle');
   const [tests, setTests] = useState<CellsTestResult[]>([]);
@@ -235,6 +236,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
   const applyPreviewBuild = (request: number, build: CellsPreviewBuild): boolean => {
     if (request !== previewRequestRef.current) return false;
     setPreviewHtml(build.html);
+    setPreviewRevision(request);
     setPreviewDemo(build.componentDemo);
     setPreviewState('fresh');
     return true;
@@ -974,6 +976,7 @@ export const CellsLearningLab: React.FC<CellsLearningLabProps> = ({
                   />
                 ) : (
                   <iframe
+                    key={previewRevision}
                     ref={iframeRef}
                     title="Vista previa de la aplicación Cells"
                     sandbox="allow-scripts"

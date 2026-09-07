@@ -561,7 +561,10 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
     const firstCard = cards[0];
     await firstCard?.updateComplete;
     const firstId = firstCard?.product?.id;
-    firstCard?.shadowRoot?.querySelector('button')?.click();
+    const cardAction = firstCard?.shadowRoot?.querySelector('academy-action-button');
+    await cardAction?.updateComplete;
+    const cardButton = cardAction?.shadowRoot?.querySelector('button') ?? firstCard?.shadowRoot?.querySelector('button');
+    cardButton?.click();
     invokedMethods.push('handleProductSelected', 'onPageLeave');
     const detail = await waitFor(() => document.querySelector('academy-product-detail-page'), 'la navegación al detalle');
     await detail?.updateComplete;

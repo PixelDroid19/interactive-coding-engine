@@ -188,6 +188,21 @@ describe('CellsLearningLab live preview', () => {
     expect(screen.queryByText('100%')).toBeNull();
   });
 
+  it('reinicia la aplicación al pedir otra vista previa aunque el código no cambie', async () => {
+    render(<CellsLearningLab lessonId="cells-preview-restart" variant="application" />);
+    await waitFor(() => expect(runtime.builds).toHaveLength(1));
+    const build = { type: 'preview:built', payload: { html: '<main>Aplicación</main>', warnings: [] } };
+    await act(async () => { runtime.builds[0].resolve(build); });
+    const previousFrame = screen.getByTitle('Vista previa de la aplicación Cells');
+
+    fireEvent.click(screen.getByRole('button', { name: /^Vista previa$/ }));
+    await waitFor(() => expect(runtime.builds).toHaveLength(2));
+    await act(async () => { runtime.builds[1].resolve(build); });
+
+    expect(previousFrame.isConnected).toBe(false);
+    expect(screen.getByTitle('Vista previa de la aplicación Cells')).not.toBe(previousFrame);
+  });
+
   it('aplica y describe los catálogos generados en vez de fingir un comando genérico', async () => {
     const generatedWorkspace: WorkspaceSnapshot = {
       files: {

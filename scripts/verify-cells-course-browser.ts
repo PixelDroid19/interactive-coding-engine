@@ -5,6 +5,7 @@ import { OPEN_CELLS_SCRIMS } from '../src/curriculum/open-cells/course';
 import { createCellsCurriculumComponentWorkspace, createCellsCurriculumPracticeWorkspace } from '../src/engine/cells/cellsCurriculumRecipes';
 import { buildCellsPreviewDocument } from '../src/engine/cells/cellsPreviewCompiler';
 import { instrumentCellsSource } from '../src/engine/cells/cellsPreviewInstrumentation';
+import { createCellsProjectWorkspace } from '../src/engine/cells/cellsAppRecipes';
 import type { WorkspaceSnapshot } from '../src/types/scrim';
 
 const executablePath = process.env.CELLS_BROWSER_EXECUTABLE
@@ -15,7 +16,7 @@ const complete = createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS['a
 
 async function checkWorkspace(workspace: WorkspaceSnapshot, runId: string) {
   await page.goto('about:blank');
-  await page.setContent('<iframe title="Cells contract fixture" style="width:100%;height:850px;border:0"></iframe>');
+  await page.setContent('<iframe title="Cells contract fixture" sandbox="allow-scripts" style="width:100%;height:850px;border:0"></iframe>');
   await page.evaluate((expectedRun) => {
     const target = window as typeof window & { cellsResults?: unknown };
     target.cellsResults = undefined;
@@ -30,6 +31,48 @@ async function checkWorkspace(workspace: WorkspaceSnapshot, runId: string) {
 }
 
 try {
+  for (const project of ['museum', 'climate', 'relay', 'capstone', 'store'] as const) {
+    const application = await checkWorkspace(createCellsProjectWorkspace(project).snapshot, 'application-' + project);
+    if (application.some((result) => !result.passed)) throw new Error(project + ': ' + JSON.stringify(application));
+  }
+  const applicationFlow = await page.frames()[1].evaluate(`(async () => {
+    const { navigate } = await import('@open-cells/core');
+    const { switchAppLanguage } = await import('workspace:/app/scripts/app-messages.js');
+    const waitForPage = async (tag) => {
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        const page = document.querySelector(tag);
+        if (page) { await page.updateComplete; return page; }
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      throw new Error('Missing page: ' + tag);
+    };
+    for (const route of ['home', 'favorites', 'search']) {
+      await navigate(route);
+      const current = await waitForPage('academy-' + route + '-page');
+      const card = current.shadowRoot.querySelector('academy-product-card');
+      await card?.updateComplete;
+      const action = card?.shadowRoot?.querySelector('academy-action-button');
+      await action?.updateComplete;
+      if (!action?.shadowRoot?.querySelector('button')) throw new Error(route + ' must reuse the complete scoped action');
+      await switchAppLanguage('en');
+      await card.updateComplete;
+      await action.updateComplete;
+      if (!action.shadowRoot.textContent.includes('View details')) throw new Error(route + ' did not translate its action');
+      const expectedId = card.product.id;
+      action.shadowRoot.querySelector('button').click();
+      const detail = await waitForPage('academy-product-detail-page');
+      if (detail.productId !== expectedId) throw new Error(route + ' lost the selected product');
+      if (customElements.get('academy-action-button')) throw new Error('Action leaked into the global registry');
+      await switchAppLanguage('es');
+    }
+    return true;
+  })()`);
+  if (!applicationFlow) throw new Error('Application navigation was not verified.');
+  const plainPreview = buildCellsPreviewDocument(createCellsProjectWorkspace('museum').snapshot).html;
+  await page.locator('iframe').evaluate((iframe: HTMLIFrameElement, content) => { iframe.srcdoc = content; }, plainPreview);
+  await page.frameLocator('iframe').locator('academy-home-page').waitFor({ state: 'visible', timeout: 15_000 });
+  await page.frameLocator('iframe').getByRole('button', { name: 'Ver detalle' }).first().click();
+  await page.frameLocator('iframe').locator('academy-product-detail-page').waitFor({ state: 'visible', timeout: 15_000 });
   for (const artifact of ['action-button', 'status-badge', 'state-panel', 'product-card', 'product-list', 'search-filter', 'language-switcher', 'catalog-shell']) {
     const results = await checkWorkspace(createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS[artifact]).snapshot, artifact);
     const failures = results.filter((result) => !result.passed);
@@ -76,7 +119,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await checkWorkspace(complete, 'mobile-feature');
   if (mobile.some((result) => !result.passed)) throw new Error('The narrow-viewport feature checks failed.');
-  console.log(JSON.stringify({ complete: results.length, starterFails: starter.filter((result) => !result.passed).map((result) => result.id), mutationCaught: true, mobile: mobile.length }));
+  console.log(JSON.stringify({ applications: 5, selectionRoutes: ['home', 'favorites', 'search'], complete: results.length, starterFails: starter.filter((result) => !result.passed).map((result) => result.id), mutationCaught: true, mobile: mobile.length }));
 } finally {
   await browser.close();
 }

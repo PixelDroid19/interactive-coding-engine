@@ -61,3 +61,15 @@ Files: original feature generator and tests, Cells course registration and readi
 - Real local UI: opened the supplemental reading, edited the root through CodeMirror, ran 32/32 lab contracts, opened the preview and navigated to movements. Lesson 06: start gate, play, pause, edit/fork, reload preview and return to tape/roadmap exercised.
 - No external components copied; no audio/subtitle edits, commit, push or deploy. No proprietary-runtime equivalence claimed.
 - Remaining: migrate the rest of the course's application examples and evaluate each recorded lesson against the expanded features. Optional data-manager integration is not implemented. External CLI parity tests remain skipped; ZIP export has not been independently exercised this turn.
+
+## Task 4: Application composition migration
+
+- [x] Keep all six page routes and public product-object selection payloads stable.
+- [x] Use scoped class helpers and SCSS/css.js shared-style composition in all generated pages and the application card variant.
+- [x] Reuse the complete educational action component with its typography and locale files.
+- [x] Wire Favorites and Search selections to the named detail route.
+- [x] Verify all five application projects in a sandboxed browser, including plain preview outside test mode.
+- [x] Add a regression for rebuilding identical app code: a fresh iframe must restart the application.
+- [x] Exercise the real application lab: repaired lifecycle/navigation, 30/30 contracts.
+
+Remaining acceptance work: review lesson-specific component behaviors and advanced application examples against the actual learning objectives; validate exported projects independently. The broad course migration is still open.

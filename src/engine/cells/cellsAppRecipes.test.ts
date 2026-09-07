@@ -43,11 +43,21 @@ describe('scaffold de aplicación Cells', () => {
     expect(routes).toContain('action: async () => import(');
   });
 
+  it('entrega los estilos de cada página como fuente SCSS y módulo ejecutable', () => {
+    for (const tag of ['academy-home-page', 'academy-product-detail-page', 'academy-not-found-page', 'academy-favorites-page', 'academy-cart-page', 'academy-search-page']) {
+      const prefix = `app/pages/${tag}/${tag}`;
+      const scss = workspace.files[`${prefix}.scss`]?.content;
+      expect(scss, `${tag} necesita su fuente de estilos editable`).toBeTruthy();
+      expect(workspace.files[`${prefix}.css.js`]?.content).toContain(scss);
+      expect(workspace.files[`${prefix}.js`].content).toContain(`from './${tag}.css.js'`);
+    }
+  });
+
   it('inicializa IntlMsg antes del router y traduce desde las instancias Cells', () => {
     const entry = workspace.files['app/scripts/app.js'].content;
     const messages = workspace.files['app/scripts/app-messages.js'].content;
     const pages = Object.entries(workspace.files)
-      .filter(([path]) => /^app\/pages\/[^/]+\/[^/]+\.js$/.test(path))
+      .filter(([path]) => /^app\/pages\/([^/]+)\/\1\.js$/.test(path))
       .map(([, source]) => source.content);
 
     expect(entry).toContain("import { initializeAppMessages } from './app-messages.js'");
@@ -65,9 +75,9 @@ describe('scaffold de aplicación Cells', () => {
     const card = workspace.files['app/components/academy-product-card/academy-product-card.js'].content;
     const suite = workspace.files['test/unit/app.test.js'].content;
 
-    expect(page).toContain("'academy-product-card': AcademyProductCard");
+    expect(page).toContain('this.scopedElementsFromClasses([AcademyProductCard');
     expect(card).toContain('WidgetMixin(ScopedElementsMixin(LitElement))');
-    expect(card).toContain('...super.scopedElements');
+    expect(card).toContain('this.scopedElementsFromClasses([AcademyActionButton');
     expect(card).not.toContain('customElements.define(AcademyProductCard.is');
     expect(card).toContain("this.t('home.productLabel')");
     expect(suite).toContain("customElements.get('academy-product-card')");

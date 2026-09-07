@@ -1,5 +1,8 @@
+import { APP_COMPONENT_STYLES } from './cellsAppStyles';
 import type { WorkspaceFile, WorkspaceSnapshot } from '../../types/scrim';
-import { intlMsgRuntimeSource, scopedRegistryTestSetupSource, widgetMixinSource } from './cellsRecipes';
+import { intlMsgRuntimeSource, scopedRegistryTestSetupSource, sharedStylesRuntimeSource, widgetMixinSource } from './cellsRecipes';
+import { createCellsCurriculumComponentWorkspace } from './cellsCurriculumRecipes';
+import { OPEN_CELLS_ARTIFACTS } from '../../curriculum/open-cells/lessonProjects';
 import { createVersionedCellsWorkspace, writeCellsFile, type VersionedCellsWorkspace } from './cellsVirtualFileSystem';
 
 export interface CellsAppScaffold {
@@ -16,6 +19,8 @@ export function createCellsAppWorkspace(scaffold: CellsAppScaffold): VersionedCe
     throw new Error('La aplicación debe comenzar por academy- u open-cells-, terminar en -app y usar kebab-case.');
   }
   const namespace = scaffold.namespace ?? '@open-cells-learning';
+  const actionWorkspace = createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS['action-button']).snapshot;
+  const actionCatalog = JSON.parse(actionWorkspace.files['locales/locales.json'].content);
   const globalCatalog = {
     en: { 'app.title': 'Cells catalog', 'app.back': 'Back' },
     es: { 'app.title': 'Catálogo Cells', 'app.back': 'Volver' },
@@ -69,8 +74,8 @@ export function createCellsAppWorkspace(scaffold: CellsAppScaffold): VersionedCe
     es: { 'search.title': 'Busca en el catálogo', 'search.label': '¿Qué estás buscando?', 'search.results': 'resultados' },
   };
   const mergedCatalog = {
-    en: Object.assign({}, globalCatalog.en, homeCatalog.en, detailCatalog.en, notFoundCatalog.en, favoritesCatalog.en, cartCatalog.en, searchCatalog.en),
-    es: Object.assign({}, globalCatalog.es, homeCatalog.es, detailCatalog.es, notFoundCatalog.es, favoritesCatalog.es, cartCatalog.es, searchCatalog.es),
+    en: Object.assign({}, actionCatalog.en, globalCatalog.en, homeCatalog.en, detailCatalog.en, notFoundCatalog.en, favoritesCatalog.en, cartCatalog.en, searchCatalog.en),
+    es: Object.assign({}, actionCatalog.es, globalCatalog.es, homeCatalog.es, detailCatalog.es, notFoundCatalog.es, favoritesCatalog.es, cartCatalog.es, searchCatalog.es),
   };
   const files: Record<string, WorkspaceFile> = {
     '.open-cells-academy-recipe.json': file('.open-cells-academy-recipe.json', `${JSON.stringify({
@@ -228,7 +233,7 @@ export function createNativeAdapter({ publish, navigate }) {
 }
 `, 'javascript'),
     'app/pages/academy-home-page/academy-home-page.js': file('app/pages/academy-home-page/academy-home-page.js', `
-import { LitElement, css, html } from 'lit';
+import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { PageMixin } from '@open-cells/page-mixin';
 import { AcademyProductCard } from '../../components/academy-product-card/academy-product-card.js';
@@ -236,12 +241,15 @@ import { WidgetMixin } from '../../runtime/widget-mixin.js';
 import { PRODUCT_SELECTED_CHANNEL } from '../../scripts/channels.js';
 import { switchAppLanguage } from '../../scripts/app-messages.js';
 
+import styles from './academy-home-page.css.js';
+import { getComponentSharedStyles } from '../../styles/shared-styles.js';
+
 export class AcademyHomePage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-home-page'; }
   static get scopedElements() {
     return {
       ...super.scopedElements,
-      'academy-product-card': AcademyProductCard,
+      ...this.scopedElementsFromClasses([AcademyProductCard, ...this.configurationScopedElements()]),
     };
   }
   static get properties() {
@@ -251,19 +259,9 @@ export class AcademyHomePage extends PageMixin(WidgetMixin(ScopedElementsMixin(L
       lastSelection: { state: true },
     };
   }
-  static styles = css\`
-    :host { display: block; min-height: 100vh; background: #eef2f6; color: #102a43; font-family: Inter, system-ui, sans-serif; }
-    main { max-width: 64rem; margin: auto; padding: clamp(1.5rem,5vw,4rem); }
-    header { display: grid; gap: 1rem; margin-bottom: 2rem; }
-    .eyebrow { color: #067a6f; font-size: .72rem; font-weight: 900; letter-spacing: .15em; text-transform: uppercase; }
-    h1 { margin: 0; max-width: 12ch; font-size: clamp(2.2rem,7vw,4.5rem); line-height: .95; }
-    nav { display: flex; gap: .65rem; flex-wrap: wrap; }
-    nav button { border: 1px solid #b8c6d4; border-radius: 999px; padding: .65rem 1rem; background: white; color: #102a43; cursor: pointer; }
-    .language { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
-    .language span { font-weight: 800; }
-    .language button[aria-pressed="true"] { border-color: #067a6f; background: #d9f4ed; color: #045c54; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(15rem,1fr)); gap: 1rem; }
-  \`;
+  static get styles() {
+    return [styles, getComponentSharedStyles('academy-home-page-shared-styles')];
+  }
 
   constructor() {
     super();
@@ -319,24 +317,28 @@ export class AcademyHomePage extends PageMixin(WidgetMixin(ScopedElementsMixin(L
 customElements.define(AcademyHomePage.is, AcademyHomePage);
 `, 'javascript'),
     'app/pages/academy-product-detail-page/academy-product-detail-page.js': file('app/pages/academy-product-detail-page/academy-product-detail-page.js', `
-import { LitElement, css, html } from 'lit';
+import { LitElement, html } from 'lit';
+import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { PageMixin } from '@open-cells/page-mixin';
 import { WidgetMixin } from '../../runtime/widget-mixin.js';
 
-export class AcademyProductDetailPage extends PageMixin(WidgetMixin(LitElement)) {
+import styles from './academy-product-detail-page.css.js';
+import { getComponentSharedStyles } from '../../styles/shared-styles.js';
+
+export class AcademyProductDetailPage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-product-detail-page'; }
+  static get scopedElements() {
+    return this.scopedElementsFromClasses(this.configurationScopedElements());
+  }
   static get properties() {
     return {
       ...super.properties,
       productId: { state: true },
     };
   }
-  static styles = css\`
-    :host { display: grid; min-height: 100vh; place-items: center; background: #e6eff7; color: #102a43; font-family: Inter, system-ui, sans-serif; }
-    main { width: min(38rem, calc(100% - 2rem)); padding: 2.5rem; border-radius: 1.5rem; background: white; box-shadow: 0 1.2rem 3rem rgb(16 42 67 / 16%); }
-    .visual { display: grid; height: 12rem; place-items: center; border-radius: 1rem; background: linear-gradient(135deg, #ffe4a8, #f7b267); font-size: 4rem; }
-    button { margin-top: 1rem; border: 0; border-radius: 999px; padding: .75rem 1rem; background: #0b6e69; color: white; font-weight: 800; cursor: pointer; }
-  \`;
+  static get styles() {
+    return [styles, getComponentSharedStyles('academy-product-detail-page-shared-styles')];
+  }
 
   constructor() {
     super();
@@ -362,17 +364,21 @@ export class AcademyProductDetailPage extends PageMixin(WidgetMixin(LitElement))
 customElements.define(AcademyProductDetailPage.is, AcademyProductDetailPage);
 `, 'javascript'),
     'app/pages/academy-not-found-page/academy-not-found-page.js': file('app/pages/academy-not-found-page/academy-not-found-page.js', `
-import { LitElement, css, html } from 'lit';
+import { LitElement, html } from 'lit';
+import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { PageMixin } from '@open-cells/page-mixin';
 import { WidgetMixin } from '../../runtime/widget-mixin.js';
-export class AcademyNotFoundPage extends PageMixin(WidgetMixin(LitElement)) {
+import styles from './academy-not-found-page.css.js';
+import { getComponentSharedStyles } from '../../styles/shared-styles.js';
+
+export class AcademyNotFoundPage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-not-found-page'; }
-  static styles = css\`
-    :host { display: grid; min-height: 100vh; place-items: center; background: #102a43; color: white; font-family: Inter, system-ui, sans-serif; text-align: center; }
-    main { padding: 2rem; }
-    .code { color: #7ee0cf; font-size: clamp(5rem, 18vw, 10rem); font-weight: 950; line-height: 1; }
-    button { border: 1px solid #7ee0cf; border-radius: 999px; padding: .8rem 1.2rem; background: transparent; color: white; font-weight: 800; cursor: pointer; }
-  \`;
+  static get scopedElements() {
+    return this.scopedElementsFromClasses(this.configurationScopedElements());
+  }
+  static get styles() {
+    return [styles, getComponentSharedStyles('academy-not-found-page-shared-styles')];
+  }
 
   render() {
     return html\`
@@ -388,17 +394,20 @@ export class AcademyNotFoundPage extends PageMixin(WidgetMixin(LitElement)) {
 customElements.define(AcademyNotFoundPage.is, AcademyNotFoundPage);
 `, 'javascript'),
     'app/pages/academy-favorites-page/academy-favorites-page.js': file('app/pages/academy-favorites-page/academy-favorites-page.js', `
-import { LitElement, css, html } from 'lit';
+import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { PageMixin } from '@open-cells/page-mixin';
 import { AcademyProductCard } from '../../components/academy-product-card/academy-product-card.js';
 import { WidgetMixin } from '../../runtime/widget-mixin.js';
+import styles from './academy-favorites-page.css.js';
+import { getComponentSharedStyles } from '../../styles/shared-styles.js';
+
 export class AcademyFavoritesPage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-favorites-page'; }
   static get scopedElements() {
     return {
       ...super.scopedElements,
-      'academy-product-card': AcademyProductCard,
+      ...this.scopedElementsFromClasses([AcademyProductCard, ...this.configurationScopedElements()]),
     };
   }
   static get properties() {
@@ -407,16 +416,17 @@ export class AcademyFavoritesPage extends PageMixin(WidgetMixin(ScopedElementsMi
       favorites: { state: true },
     };
   }
-  static styles = css\`
-    :host { display: block; min-height: 100vh; background: #fff2e2; color: #3f2d20; font-family: Inter, system-ui, sans-serif; }
-    main { max-width: 56rem; margin: auto; padding: 3rem 1.5rem; }
-    .shelf { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; }
-    button { border: 0; background: transparent; color: #8a3b12; font-weight: 800; cursor: pointer; }
-  \`;
+  static get styles() {
+    return [styles, getComponentSharedStyles('academy-favorites-page-shared-styles')];
+  }
 
   constructor() {
     super();
     this.favorites = [{ id: 'first', name: 'Selección guardada', price: 4 }];
+  }
+
+  handleProductSelected(event) {
+    this.navigate('product-detail', { id: event.detail.id });
   }
 
   render() {
@@ -425,7 +435,7 @@ export class AcademyFavoritesPage extends PageMixin(WidgetMixin(ScopedElementsMi
         <button @click=${'${'}() => this.navigate('home')}>← ${'${'}this.t('app.back')}</button>
         <p>${'${'}this.t('favorites.kicker')}</p>
         <h1>${'${'}this.t('favorites.title')}</h1>
-        <div class="shelf">
+        <div class="shelf" @academy-product-card-select=${'${'}this.handleProductSelected}>
           ${'${'}this.favorites.map((product) => html\`
             <academy-product-card .product=${'${'}product}></academy-product-card>
           \`)}
@@ -437,24 +447,27 @@ export class AcademyFavoritesPage extends PageMixin(WidgetMixin(ScopedElementsMi
 customElements.define(AcademyFavoritesPage.is, AcademyFavoritesPage);
 `, 'javascript'),
     'app/pages/academy-cart-page/academy-cart-page.js': file('app/pages/academy-cart-page/academy-cart-page.js', `
-import { LitElement, css, html } from 'lit';
+import { LitElement, html } from 'lit';
+import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { PageMixin } from '@open-cells/page-mixin';
 import { WidgetMixin } from '../../runtime/widget-mixin.js';
-export class AcademyCartPage extends PageMixin(WidgetMixin(LitElement)) {
+import styles from './academy-cart-page.css.js';
+import { getComponentSharedStyles } from '../../styles/shared-styles.js';
+
+export class AcademyCartPage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-cart-page'; }
+  static get scopedElements() {
+    return this.scopedElementsFromClasses(this.configurationScopedElements());
+  }
   static get properties() {
     return {
       ...super.properties,
       items: { state: true },
     };
   }
-  static styles = css\`
-    :host { display: block; min-height: 100vh; background: #f3f8f4; color: #173b2c; font-family: Inter, system-ui, sans-serif; }
-    main { max-width: 46rem; margin: auto; padding: 3rem 1.5rem; }
-    .row, .total { display: flex; justify-content: space-between; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid #b8cfc1; }
-    .total { margin-top: 1rem; border: 0; font-size: 1.25rem; font-weight: 900; }
-    button { border: 0; border-radius: 999px; padding: .75rem 1rem; background: #176b4d; color: white; font-weight: 800; cursor: pointer; }
-  \`;
+  static get styles() {
+    return [styles, getComponentSharedStyles('academy-cart-page-shared-styles')];
+  }
 
   constructor() {
     super();
@@ -485,17 +498,20 @@ export class AcademyCartPage extends PageMixin(WidgetMixin(LitElement)) {
 customElements.define(AcademyCartPage.is, AcademyCartPage);
 `, 'javascript'),
     'app/pages/academy-search-page/academy-search-page.js': file('app/pages/academy-search-page/academy-search-page.js', `
-import { LitElement, css, html } from 'lit';
+import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { PageMixin } from '@open-cells/page-mixin';
 import { AcademyProductCard } from '../../components/academy-product-card/academy-product-card.js';
 import { WidgetMixin } from '../../runtime/widget-mixin.js';
+import styles from './academy-search-page.css.js';
+import { getComponentSharedStyles } from '../../styles/shared-styles.js';
+
 export class AcademySearchPage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-search-page'; }
   static get scopedElements() {
     return {
       ...super.scopedElements,
-      'academy-product-card': AcademyProductCard,
+      ...this.scopedElementsFromClasses([AcademyProductCard, ...this.configurationScopedElements()]),
     };
   }
   static get properties() {
@@ -505,14 +521,9 @@ export class AcademySearchPage extends PageMixin(WidgetMixin(ScopedElementsMixin
       products: { state: true },
     };
   }
-  static styles = css\`
-    :host { display: block; min-height: 100vh; background: #eef1ff; color: #20234a; font-family: Inter, system-ui, sans-serif; }
-    main { max-width: 58rem; margin: auto; padding: 3rem 1.5rem; }
-    label { display: grid; gap: .5rem; font-weight: 800; }
-    input { min-height: 3.25rem; border: 2px solid #5962c8; border-radius: 1rem; padding: 0 1rem; background: white; }
-    .results { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin-top: 1.5rem; }
-    button { border: 0; background: transparent; color: #343b9b; font-weight: 800; cursor: pointer; }
-  \`;
+  static get styles() {
+    return [styles, getComponentSharedStyles('academy-search-page-shared-styles')];
+  }
 
   constructor() {
     super();
@@ -530,6 +541,10 @@ export class AcademySearchPage extends PageMixin(WidgetMixin(ScopedElementsMixin
       : this.products;
   }
 
+  handleProductSelected(event) {
+    this.navigate('product-detail', { id: event.detail.id });
+  }
+
   render() {
     return html\`
       <main>
@@ -543,7 +558,7 @@ export class AcademySearchPage extends PageMixin(WidgetMixin(ScopedElementsMixin
           >
         </label>
         <p>${'${'}this.results.length} ${'${'}this.t('search.results')}</p>
-        <div class="results">
+        <div class="results" @academy-product-card-select=${'${'}this.handleProductSelected}>
           ${'${'}this.results.map((product) => html\`
             <academy-product-card .product=${'${'}product}></academy-product-card>
           \`)}
@@ -555,43 +570,49 @@ export class AcademySearchPage extends PageMixin(WidgetMixin(ScopedElementsMixin
 customElements.define(AcademySearchPage.is, AcademySearchPage);
 `, 'javascript'),
     'app/components/academy-product-card/academy-product-card.js': file('app/components/academy-product-card/academy-product-card.js', `
-import { LitElement, css, html } from 'lit';
+import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { WidgetMixin } from '../../runtime/widget-mixin.js';
+import { AcademyActionButton } from '../shared/academy-action-button.js';
 
+import styles from './academy-product-card.css.js';
+import { getComponentSharedStyles } from '../../styles/shared-styles.js';
+
+/** Application variant: accepts a product object and emits academy-product-card-select with a copy. */
 export class AcademyProductCard extends WidgetMixin(ScopedElementsMixin(LitElement)) {
   static get is() { return 'academy-product-card'; }
   static get scopedElements() {
-    return { ...super.scopedElements };
+    return this.scopedElementsFromClasses([AcademyActionButton, ...this.configurationScopedElements()]);
   }
   static get properties() {
     return {
       ...super.properties,
-      product: { type: Object },
+      product: { type: Object, attribute: false },
     };
   }
-  static styles = css\`
-    :host { display: block; }
-    article { display: grid; gap: .8rem; min-height: 12rem; padding: 1.25rem; border: 1px solid #cbd6e2; border-radius: 1.25rem; background: white; box-shadow: 0 .7rem 1.8rem rgb(16 42 67 / 10%); }
-    h2, p { margin: 0; }
-    .price { color: #067a6f; font-size: 1.25rem; font-weight: 900; }
-    button { align-self: end; justify-self: start; border: 0; border-radius: 999px; padding: .7rem 1rem; background: #102a43; color: white; font-weight: 800; cursor: pointer; }
-  \`;
+  static get styles() {
+    return [styles, getComponentSharedStyles('academy-product-card-shared-styles')];
+  }
   constructor() { super(); this.product = { id: '', name: '', price: 0 }; }
-  selectProduct() { this.emitEvent('select', { ...this.product }); }
+  selectProduct(event) {
+    event?.stopPropagation();
+    this.emitEvent('select', { ...this.product });
+  }
   render() {
     return html\`
       <article>
         <span>${'${'}this.t('home.productLabel')}</span>
         <h2>${'${'}this.product.name}</h2>
         <p class="price">${'${'}this.product.price} €</p>
-        <button @click=${'${'}this.selectProduct}>${'${'}this.t('home.viewDetail')}</button>
+        <academy-action-button .label=${'${'}this.t('home.viewDetail')} @academy-action-button-activate=${'${'}this.selectProduct}></academy-action-button>
       </article>
     \`;
   }
 }
 `, 'javascript'),
     'app/runtime/widget-mixin.js': file('app/runtime/widget-mixin.js', widgetMixinSource(), 'javascript'),
+    'app/styles/shared-styles.js': file('app/styles/shared-styles.js', sharedStylesRuntimeSource(), 'javascript'),
+    'app/components/shared/locales/locales.json': file('app/components/shared/locales/locales.json', JSON.stringify(actionCatalog, null, 2), 'json'),
     'app/runtime/academy-intl-msg.js': file('app/runtime/academy-intl-msg.js', intlMsgRuntimeSource(), 'javascript'),
     'app/data/academy-product-data-manager.js': file('app/data/academy-product-data-manager.js', `
 export class AcademyProductDataManager extends EventTarget {
@@ -760,7 +781,9 @@ describe('academy-store-app', () => {
     await card.updateComplete;
     const received = new Promise((resolve) => page.addEventListener('academy-product-card-select', resolve, { once: true }));
 
-    card.shadowRoot.querySelector('button').click();
+    const action = card.shadowRoot.querySelector('academy-action-button');
+    await action.updateComplete;
+    action.shadowRoot.querySelector('button').click();
     const event = await received;
 
     expect(event.detail).toEqual({ id: 'tea', name: 'Té', price: 4 });
@@ -796,6 +819,16 @@ describe('academy-store-app', () => {
 # ${scaffold.name}
 
 Aplicación Cells educativa con páginas declarativas, rutas lazy, canales con último valor, cleanup y un data manager cancelable.
+
+## Composición propia
+
+Las páginas de app/pages/ añaden PageMixin a WidgetMixin(ScopedElementsMixin(LitElement)). Registran clases locales con scopedElementsFromClasses y configurationScopedElements. Cada página mantiene su fuente SCSS y su módulo css.js; app/styles/shared-styles.js permite aportar estilos compartidos antes de importar los componentes.
+
+La tarjeta de app/components/academy-product-card/ es una variante de aplicación: recibe product con id, name y price, y emite academy-product-card-select con una copia de ese objeto. Compone el mismo academy-action-button completo que se estudia en las lecciones de componentes, incluida su tipografía scoped. No registra los hijos globalmente ni importa componentes privados.
+
+Inicio, Favoritos y Búsqueda atienden la selección y navegan al detalle por nombre. La página decide la navegación; la tarjeta y el botón solo comunican la intención. El data manager se mantiene separado y no es un requisito de estos componentes de presentación.
+
+Comprueba el recorrido con cells app:test y después en la demo: selecciona un producto desde cada lista, vuelve al inicio y cambia el idioma. Las traducciones del botón compartido viajan con el proyecto exportado.
 `, 'markdown'),
     'types/open-cells-app.d.ts': file('types/open-cells-app.d.ts', `
 declare module 'lit' {
@@ -822,6 +855,21 @@ declare module '@open-cells/core' {
 }
 `, 'typescript'),
   };
+  for (const source of Object.values(actionWorkspace.files)) {
+    if (!source.path.startsWith('src/components/') && !source.path.startsWith('src/academy-action-button.')) continue;
+    const path = source.path.replace(/^src\/(?:components\/)?/, 'app/components/shared/');
+    const content = source.content
+      .replaceAll("from './components/", "from './")
+      .replaceAll("from './mixins/WidgetMixin.js'", "from '../../runtime/widget-mixin.js'")
+      .replaceAll("from './styles/", "from '../../styles/");
+    files[path] = file(path, content, source.language);
+  }
+  for (const [tag, scss] of Object.entries(APP_COMPONENT_STYLES)) {
+    const folder = tag.endsWith('-page') ? 'pages' : 'components';
+    const prefix = `app/${folder}/${tag}/${tag}`;
+    files[`${prefix}.scss`] = file(`${prefix}.scss`, scss, 'css');
+    files[`${prefix}.css.js`] = file(`${prefix}.css.js`, `import { css } from 'lit';\nexport default css\`\n${scss}\n\`;\n`, 'javascript');
+  }
   const snapshot: WorkspaceSnapshot = { files, activeFilePath: 'app/pages/academy-home-page/academy-home-page.js' };
   return createVersionedCellsWorkspace(snapshot);
 }

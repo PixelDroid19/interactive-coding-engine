@@ -139,7 +139,7 @@ export function auditCellsApplication(workspace: WorkspaceSnapshot): { results: 
   const pagePath = 'app/pages/academy-home-page/academy-home-page.js';
   const page = workspace.files[pagePath]?.content ?? '';
   const pageSources = Object.entries(workspace.files)
-    .filter(([path]) => /^app\/pages\/[^/]+\/[^/]+\.js$/.test(path))
+    .filter(([path]) => /^app\/pages\/([^/]+)\/\1\.js$/.test(path))
     .map(([, source]) => source.content);
   const managerPath = 'app/data/academy-product-data-manager.js';
   const manager = workspace.files[managerPath]?.content ?? '';
@@ -160,7 +160,7 @@ export function auditCellsApplication(workspace: WorkspaceSnapshot): { results: 
     test('cells-page', 'Compone una página Cells', /class\s+AcademyHomePage\s+extends\s+PageMixin\(WidgetMixin\(ScopedElementsMixin\(LitElement\)\)\)/.test(page), 'La página termina en -page y combina PageMixin con las capacidades del widget.', pagePath),
     test('page-properties', 'Preserva propiedades heredadas de la página', /static\s+get\s+properties\s*\(\)\s*\{[\s\S]*\.\.\.super\.properties/.test(page), 'El getter de propiedades debe conservar el contrato heredado de PageMixin y WidgetMixin.', pagePath),
     test('page-i18n', 'Traduce textos desde cada host Cells', pageSources.length > 0 && pageSources.every((source) => /WidgetMixin/.test(source) && /this\.t\(['"]/.test(source) && !/const\s+t\s*=/.test(source)), 'Cada página debe usar this.t y reaccionar al cambio de idioma sin recrearse.', pagePath),
-    test('page-scoped-elements', 'Mantiene las dependencias internas en el registro scoped', /static\s+get\s+scopedElements\s*\(\)\s*\{[\s\S]*\.\.\.super\.scopedElements[\s\S]*['"]academy-product-card['"]\s*:\s*AcademyProductCard/.test(page) && /WidgetMixin\(ScopedElementsMixin\(LitElement\)\)/.test(card) && !/customElements\.define\(AcademyProductCard\.is/.test(card), 'La tarjeta debe resolverse dentro de scopedElements y no registrarse globalmente.', cardPath),
+    test('page-scoped-elements', 'Mantiene las dependencias internas en el registro scoped', (/static\s+get\s+scopedElements\s*\(\)\s*\{[\s\S]*\.\.\.super\.scopedElements[\s\S]*['"]academy-product-card['"]\s*:\s*AcademyProductCard/.test(page) || /scopedElementsFromClasses\(\s*\[\s*AcademyProductCard\b/.test(page)) && /WidgetMixin\(ScopedElementsMixin\(LitElement\)\)/.test(card) && !/customElements\.define\(AcademyProductCard\.is/.test(card), 'La tarjeta debe resolverse dentro de scopedElements y no registrarse globalmente.', cardPath),
     test('page-lifecycle', 'Limpia canales al abandonar la página', /onPageEnter\s*\(\)/.test(page) && /onPageLeave\s*\(\)\s*\{[\s\S]*this\.unsubscribe\(PRODUCT_SELECTED_CHANNEL\)/.test(page), 'Toda suscripción de página necesita cleanup observable en onPageLeave.', pagePath),
     test('channel-subscribe', 'Recibe el último valor del canal', /this\.subscribe\(PRODUCT_SELECTED_CHANNEL/.test(page), 'La página observa el canal estable al entrar.', pagePath),
     test('channel-publish', 'Publica un payload estable', /this\.publish\(\s*PRODUCT_SELECTED_CHANNEL\s*,\s*[^)\s][^)]*\)/s.test(page), 'La selección publica un producto explícito en el mismo canal.', pagePath),
