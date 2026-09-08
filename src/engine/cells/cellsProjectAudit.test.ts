@@ -3,6 +3,7 @@ import { createCellsAppPracticeWorkspace, createCellsAppWorkspace } from './cell
 import { auditCellsApplication, auditCellsComponent } from './cellsProjectAudit';
 import { createCellsComponentWorkspace, createCellsPracticeWorkspace } from './cellsRecipes';
 import { writeCellsFile } from './cellsVirtualFileSystem';
+import { createOpenCellsLessonWorkspace } from '../../curriculum/open-cells/lessonWorkspaces';
 
 describe('auditCellsComponent', () => {
   it.each([
@@ -45,6 +46,15 @@ describe('auditCellsComponent', () => {
 });
 
 describe('auditCellsApplication', () => {
+  it('acepta rutas compuestas pero rechaza un módulo desconectado de la tabla', () => {
+    const workspace = createOpenCellsLessonWorkspace(76);
+    const result = (snapshot: typeof workspace.snapshot) => auditCellsApplication(snapshot).results.find((item) => item.id === 'declarative-routes')?.passed;
+    expect(result(workspace.snapshot)).toBe(true);
+    const path = 'app/scripts/app-routes.js';
+    const disconnected = writeCellsFile(workspace, path, workspace.snapshot.files[path].content.replace('...CATALOG_ROUTES,', ''));
+    expect(result(disconnected.snapshot)).toBe(false);
+  });
+
   it('acepta la aplicación completa con i18n, lifecycle, scopedElements y pruebas conductuales', () => {
     const audit = auditCellsApplication(createCellsAppWorkspace({ name: 'academy-store-app' }).snapshot);
     expect(audit.results.filter((result) => !result.passed)).toEqual([]);

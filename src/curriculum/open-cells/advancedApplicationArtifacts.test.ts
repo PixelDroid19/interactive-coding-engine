@@ -3,6 +3,36 @@ import { describe, expect, it } from 'vitest';
 import { createOpenCellsLessonWorkspace } from './lessonWorkspaces';
 import { advancedApplicationArtifactForLesson } from './advancedApplicationArtifacts';
 
+describe('contrato de retención de páginas', () => {
+  async function retention() {
+    const source = advancedApplicationArtifactForLesson(77)!.source;
+    return (await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)).PageRetention;
+  }
+
+  it('libera la página menos reciente sin confundir salida con destrucción', async () => {
+    const PageRetention = await retention();
+    const cache = new PageRetention(2);
+    const released: string[] = [];
+    let departures = 0;
+    const first = { cleanup: () => released.push('first'), onPageLeave: () => departures++ };
+    const second = { cleanup: () => released.push('second'), onPageLeave: () => departures++ };
+    cache.keep('first', first);
+    cache.keep('second', second);
+    cache.keep('first', first);
+    cache.keep('third', {});
+    expect(released).toEqual(['second']);
+    expect(departures).toBe(0);
+    expect([...cache.pages.keys()]).toEqual(['first', 'third']);
+  });
+
+  it('rechaza límites que no pueden garantizar una retención finita', async () => {
+    const PageRetention = await retention();
+    for (const limit of [-1, 0, 1.5, NaN, Infinity, '2', null]) {
+      expect(() => new PageRetention(limit)).toThrow(RangeError);
+    }
+  });
+});
+
 describe('frontera de rutas delegadas', () => {
   async function resolver() {
     const source = advancedApplicationArtifactForLesson(76)!.source;

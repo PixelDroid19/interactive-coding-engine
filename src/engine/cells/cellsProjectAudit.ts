@@ -1,5 +1,6 @@
 import type { WorkspaceSnapshot } from '../../types/scrim';
 import type { CellsCoverageResult, CellsTestResult } from './cellsWorkerProtocol';
+import { normalizeCellsPath } from './cellsVirtualFileSystem';
 
 function test(id: string, title: string, passed: boolean, message: string, filePath?: string): CellsTestResult {
   return { id, title, passed, message, ...(filePath ? { filePath } : {}) };
@@ -132,8 +133,25 @@ export function auditCellsComponent(workspace: WorkspaceSnapshot): { results: Ce
   };
 }
 
+function composedRouteSource(workspace: WorkspaceSnapshot, path: string, visited = new Set<string>()): string {
+  if (visited.has(path)) return '';
+  visited.add(path);
+  const source = workspace.files[path]?.content ?? '';
+  const parts = [source];
+  for (const match of source.matchAll(/import\s*\{\s*([\w$]+)\s*\}\s*from\s*['"](\.[^'"]+)['"]/g)) {
+    if (!source.includes('...' + match[1])) continue;
+    try {
+      const dependency = normalizeCellsPath(path.slice(0, path.lastIndexOf('/') + 1) + match[2]);
+      parts.push(composedRouteSource(workspace, dependency, visited));
+    } catch {
+      // An invalid virtual import cannot contribute route declarations.
+    }
+  }
+  return parts.join('\n');
+}
+
 export function auditCellsApplication(workspace: WorkspaceSnapshot): { results: CellsTestResult[]; coverage: CellsCoverageResult } {
-  const routes = workspace.files['app/scripts/app-routes.js']?.content ?? '';
+  const routes = composedRouteSource(workspace, 'app/scripts/app-routes.js');
   const appEntry = workspace.files['app/scripts/app.js']?.content ?? '';
   const appMessages = workspace.files['app/scripts/app-messages.js']?.content ?? '';
   const pagePath = 'app/pages/academy-home-page/academy-home-page.js';
@@ -154,7 +172,7 @@ export function auditCellsApplication(workspace: WorkspaceSnapshot): { results: 
   const results = [
     test('app-entry', 'Arranca desde una entrada Cells', /startApp\s*\(\s*\{/.test(appEntry), 'La entrada debe entregar rutas y mainNode al runtime público de Cells.', 'app/scripts/app.js'),
     test('app-i18n-bootstrap', 'Espera IntlMsg antes de iniciar el router', /import\s+\{\s*initializeAppMessages\s*\}/.test(appEntry) && appEntry.indexOf('await initializeAppMessages') >= 0 && appEntry.indexOf('await initializeAppMessages') < appEntry.indexOf('startApp({') && /installIntlMsg\(\{\s*catalogs:\s*appCatalogs/.test(appMessages) && /await\s+appIntlMsg\.loadUrlResourcesComplete/.test(appMessages), 'La entrada debe instalar los catálogos EN/ES, esperar sus recursos y solo después iniciar Cells.', 'app/scripts/app-messages.js'),
-    test('declarative-routes', 'Declara rutas lazy por nombre', /name:\s*['"]home['"]/.test(routes) && /path:\s*['"]\/product\/:id['"]/.test(routes) && /action:\s*async\s*\(\)\s*=>\s*import\(/.test(routes), 'Cada ruta declara path, name, component y carga lazy.', 'app/scripts/app-routes.js'),
+    test('declarative-routes', 'Declara rutas lazy por nombre', /name:\s*['"]home['"]/.test(routes) && /name:\s*['"]product-detail['"]/.test(routes) && /path:\s*['"]\/[^'"]*\/:id['"]/.test(routes) && /action:\s*async\s*\(\)\s*=>\s*import\(/.test(routes), 'Cada ruta declara path, name, component y carga lazy.', 'app/scripts/app-routes.js'),
     test('single-route-table', 'Conserva una única tabla de rutas', Boolean(routes) && workspace.files['app/scripts/routes.js'] === undefined, 'La aplicación no debe mantener dos archivos divergentes con la misma tabla.', 'app/scripts/app-routes.js'),
     test('not-found-route', 'Reserva una ruta para direcciones desconocidas', (routes.match(/notFound:\s*true/g) ?? []).length === 1, 'La tabla debe declarar exactamente una ruta notFound.', 'app/scripts/app-routes.js'),
     test('cells-page', 'Compone una página Cells', /class\s+AcademyHomePage\s+extends\s+PageMixin\(WidgetMixin\(ScopedElementsMixin\(LitElement\)\)\)/.test(page), 'La página termina en -page y combina PageMixin con las capacidades del widget.', pagePath),

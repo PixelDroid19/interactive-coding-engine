@@ -96,14 +96,19 @@ export function delegateRoute(url) {
 }
 ` },
   77: { path: 'app/runtime/page-retention.js', source: `export class PageRetention {
-  constructor(limit = 2) { this.limit = limit; this.pages = new Map(); }
+  constructor(limit = 2) {
+    if (!Number.isSafeInteger(limit) || limit < 1) throw new RangeError('El límite debe ser un entero positivo.');
+    this.limit = limit;
+    this.pages = new Map();
+  }
   keep(name, page) {
     this.pages.delete(name);
     this.pages.set(name, page);
     while (this.pages.size > this.limit) {
       const oldest = this.pages.keys().next().value;
-      this.pages.get(oldest)?.onPageLeave?.();
+      const evicted = this.pages.get(oldest);
       this.pages.delete(oldest);
+      evicted?.cleanup?.();
     }
   }
 }
