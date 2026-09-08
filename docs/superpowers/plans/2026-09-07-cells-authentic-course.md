@@ -166,3 +166,12 @@ Remaining: application examples 74–84 still require their lesson-specific impl
 - [x] Verify every document link against the generated workspace and preserve course/guided-lesson integration checks.
 
 Evidence: the new documentation test first failed because the previous document linked no owners. The completed document resolves all eight required owners plus its locale initialization link. Targeted documentation, course and guided-lesson suites: 16 passed; TypeScript passed. This change documents the actual application; it does not add a new router, service connection or visual architecture editor. Recorded narration and subtitle sources remain unchanged. Next: connect the lesson 75 navigation policy to an observable application transition, then continue 76–84.
+
+## Task 5j: Pending-change navigation decisions (75, in progress)
+
+- [x] Replace the inert confirmation marker with an asynchronous, typed allow/cancel decision. Confirm only when changes are pending; missing or rejected confirmation fails closed.
+- [x] Test that the decision stays pending until the answer arrives, accepts only true, and preserves cancellation when the provider is absent or throws.
+- [ ] Connect the policy to the actual application/router boundary, with one effective transition and stale-confirmation protection.
+- [ ] Exercise the confirmation UI, cancellation, accepted navigation and repeated attempts in the playground and the exported application.
+
+Evidence: two policy tests failed on the original immediate confirm marker. The revised artifact passes all four advanced-artifact tests; combined guided-lesson and course checks pass 19 tests, and TypeScript passes. The installed public router invokes its interceptor synchronously, so passing this async function directly as that callback would be incorrect. The application integration must adapt the decision explicitly. This checkpoint does not claim that the visible application is already protected.

@@ -52,9 +52,27 @@ El botón, la tipografía y el registro de estilos compartidos son capacidades t
 
 Antes de añadir persistencia de favoritos, escribe qué servicio conserva los ids, qué página lo consulta y qué evento solicita un cambio. Conserva la tarjeta sin conocimiento de almacenamiento. Define dos casos observables: guardar un proyecto y volver a abrir la página sin duplicarlo. Solo después conecta los archivos y comprueba ambos recorridos.
 ` },
-  75: { path: 'app/routing/pending-changes-interceptor.js', source: `export function pendingChangesInterceptor({ target, hasPendingChanges }) {
+  75: { path: 'app/routing/pending-changes-interceptor.js', source: `/**
+ * @typedef {{ page: string, params?: Record<string, unknown> }} NavigationTarget
+ * @typedef {{ action: 'allow' | 'cancel', target: NavigationTarget, reason?: 'pending-changes' | 'confirmation-unavailable' }} NavigationDecision
+ */
+
+/**
+ * Decide antes de navegar; no renderiza ni modifica el historial.
+ * @param {{ target: NavigationTarget, hasPendingChanges: boolean, confirmLeave?: (target: NavigationTarget) => boolean | Promise<boolean> }} request
+ * @returns {Promise<NavigationDecision>}
+ */
+export async function pendingChangesInterceptor({ target, hasPendingChanges, confirmLeave }) {
   if (!hasPendingChanges) return { action: 'allow', target };
-  return { action: 'confirm', target, reason: 'pending-changes' };
+  if (typeof confirmLeave !== 'function') return { action: 'cancel', target, reason: 'confirmation-unavailable' };
+  try {
+    const accepted = await confirmLeave(target);
+    return accepted === true
+      ? { action: 'allow', target }
+      : { action: 'cancel', target, reason: 'pending-changes' };
+  } catch {
+    return { action: 'cancel', target, reason: 'confirmation-unavailable' };
+  }
 }
 ` },
   76: { path: 'app/scripts/delegated-routes.js', source: `export function delegateRoute(url) {
