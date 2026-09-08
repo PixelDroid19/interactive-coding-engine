@@ -9,7 +9,7 @@ describe('contrato de retención de páginas', () => {
     return (await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)).PageRetention;
   }
 
-  it('libera la página menos reciente sin confundir salida con destrucción', async () => {
+  it('libera la instancia montada más antigua sin renovar su turno al volver', async () => {
     const PageRetention = await retention();
     const cache = new PageRetention(2);
     const released: string[] = [];
@@ -20,9 +20,9 @@ describe('contrato de retención de páginas', () => {
     cache.keep('second', second);
     cache.keep('first', first);
     cache.keep('third', {});
-    expect(released).toEqual(['second']);
+    expect(released).toEqual(['first']);
     expect(departures).toBe(0);
-    expect([...cache.pages.keys()]).toEqual(['first', 'third']);
+    expect([...cache.pages.keys()]).toEqual(['second', 'third']);
   });
 
   it('rechaza límites que no pueden garantizar una retención finita', async () => {
@@ -30,6 +30,20 @@ describe('contrato de retención de páginas', () => {
     for (const limit of [-1, 0, 1.5, NaN, Infinity, '2', null]) {
       expect(() => new PageRetention(limit)).toThrow(RangeError);
     }
+  });
+
+  it('libera al desmontar una sola vez y no retira otra instancia con el mismo nombre', async () => {
+    const PageRetention = await retention();
+    const cache = new PageRetention(2);
+    let releases = 0;
+    const page = { cleanup: () => releases++ };
+    cache.keep('home', page);
+    cache.release('home', {});
+    expect(cache.pages.size).toBe(1);
+    cache.release('home', page);
+    cache.release('home', page);
+    expect(cache.pages.size).toBe(0);
+    expect(releases).toBe(1);
   });
 });
 

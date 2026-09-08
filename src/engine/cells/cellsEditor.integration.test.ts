@@ -65,8 +65,8 @@ describe('inteligencia del editor Cells', () => {
     expect(diagnostics, diagnostics.map((diagnostic) => diagnostic.message).join('\n')).toEqual([]);
   });
 
-  it('entiende imports locales y APIs de páginas Cells en una app completa', () => {
-    const workspace = createCellsAppWorkspace({ name: 'academy-store-app' }).snapshot;
+  it.each([0, 77])('entiende imports locales y APIs de páginas Cells en una app completa (%i)', (lesson) => {
+    const workspace = (lesson ? createOpenCellsLessonWorkspace(lesson) : createCellsAppWorkspace({ name: 'academy-store-app' })).snapshot;
     const service = new TypeScriptLanguageService(typeScriptLibraries);
     replaceWorkspace(service, workspace);
     const files = Object.values(workspace.files).filter((file) => file.language === 'javascript' && file.path.startsWith('app/'));

@@ -1,4 +1,5 @@
 import { APP_COMPONENT_STYLES } from './cellsAppStyles';
+import { adaptStudioWorkspace } from './studioWorkspace';
 import type { WorkspaceFile, WorkspaceSnapshot } from '../../types/scrim';
 import { intlMsgRuntimeSource, scopedRegistryTestSetupSource, sharedStylesRuntimeSource, widgetMixinSource } from './cellsRecipes';
 import { createCellsCurriculumComponentWorkspace } from './cellsCurriculumRecipes';
@@ -864,7 +865,7 @@ declare module '@open-cells/page-mixin' {
   };
 }
 declare module '@open-cells/core' {
-  export function startApp(config: { mainNode: string; routes: unknown[]; initialTemplate: string; debug: false }): Promise<unknown>;
+  export function startApp(config: { mainNode: string; routes: unknown[]; initialTemplate: string; viewLimit?: number; debug: false }): Promise<unknown>;
 }
 `, 'typescript'),
   };
@@ -1005,7 +1006,8 @@ function applyProjectCopy(base: VersionedCellsWorkspace, project: CellsAppProjec
     }
     return [path, { ...source, content }];
   }));
-  return createVersionedCellsWorkspace({ ...base.snapshot, files }, base.generation);
+  const workspace = createVersionedCellsWorkspace({ ...base.snapshot, files }, base.generation);
+  return project === 'capstone' ? adaptStudioWorkspace(workspace) : workspace;
 }
 
 const APP_ARTIFACT_FOCUS: Record<string, { route: string; path: string }> = {

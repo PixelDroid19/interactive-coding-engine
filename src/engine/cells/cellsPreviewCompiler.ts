@@ -60,12 +60,14 @@ export function navigate(page, params = {}) {
   return renderRoute(page, params);
 }
 
-export function startApp({ mainNode, routes, initialTemplate, debug = false, interceptor = () => ({ intercept: false }) }) {
+export function startApp({ mainNode, routes, initialTemplate, viewLimit, debug = false, interceptor = () => ({ intercept: false }) }) {
   if (debug !== false) throw new Error('El playground solo inicia Cells con debug desactivado.');
   const outlet = document.getElementById(mainNode);
   if (!outlet) throw new Error('No se encontró el outlet ' + mainNode);
   let activePage = null;
   let currentRoute = null;
+  const retainedPages = new Map();
+  const retain = Number.isSafeInteger(viewLimit) && viewLimit > 0;
   renderRoute = async (name, params = {}) => {
     const route = routes.find((candidate) => candidate.name === name) || routes.find((candidate) => candidate.notFound);
     if (!route) throw new Error('No existe la ruta ' + name + ' ni una ruta notFound.');
@@ -83,8 +85,25 @@ export function startApp({ mainNode, routes, initialTemplate, debug = false, int
     }
     activePage?.onPageLeave?.();
     await route.action();
-    const page = document.createElement(route.component);
-    outlet.replaceChildren(page);
+    let page = retain ? retainedPages.get(route.name) : undefined;
+    if (!page) {
+      page = document.createElement(route.component);
+      if (retain) {
+        if (retainedPages.size >= viewLimit) {
+          const oldest = retainedPages.keys().next().value;
+          retainedPages.get(oldest).remove();
+          retainedPages.delete(oldest);
+        }
+        retainedPages.set(route.name, page);
+        outlet.append(page);
+      } else outlet.replaceChildren(page);
+    }
+    if (retain) {
+      for (const candidate of retainedPages.values()) {
+        candidate.hidden = candidate !== page;
+        candidate.setAttribute('state', candidate === page ? 'active' : 'cached');
+      }
+    }
     activePage = page;
     currentRoute = { page: route.name, params: structuredClone(params) };
     if (page.params) page.params = structuredClone(params);
@@ -821,7 +840,7 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
     window.addEventListener('unhandledrejection', (event) => reportPreviewError(event.reason?.message || event.reason || 'Promesa rechazada en la vista previa.'));
   </script>
   <style>${isApplication
-    ? 'body{margin:0;background:#f5f2eb;color:#171717;font-family:system-ui,sans-serif}'
+    ? 'body{margin:0;background:#f5f2eb;color:#171717;font-family:system-ui,sans-serif}[hidden][state="cached"]{display:none}'
     : 'html,body{min-height:100%;margin:0;box-sizing:border-box}body{display:grid;place-items:center;padding:clamp(1rem,4vw,2.5rem);background:linear-gradient(180deg,#fff 0%,#faf8ec 100%);font-family:system-ui,-apple-system,sans-serif}[data-cells-demo-subject]{width:min(100%,34rem);display:block}'}</style>
 </head>
 <body>

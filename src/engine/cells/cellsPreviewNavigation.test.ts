@@ -12,6 +12,33 @@ async function runtime() {
 }
 
 describe('navegación interceptada en el playground', () => {
+  it('respeta viewLimit conservando instancias y desmontando la más antigua', async () => {
+    const core = await runtime();
+    document.body.innerHTML = '<main id="app"></main>';
+    const disconnected: string[] = [];
+    class RetainedPage extends HTMLElement {
+      disconnectedCallback() { disconnected.push(this.dataset.page!); }
+    }
+    customElements.define('retention-contract-page', RetainedPage);
+    await core.startApp({ mainNode: 'app', initialTemplate: 'home', viewLimit: 2, routes:
+      ['home', 'detail', 'search'].map((name) => ({ name, path: '/' + name, component: 'retention-contract-page', action: async () => {} })),
+    });
+    const first = document.querySelector('retention-contract-page') as HTMLElement;
+    first.dataset.page = 'home';
+    first.textContent = 'Estado conservado';
+    await core.navigate('detail');
+    expect(first.isConnected).toBe(true);
+    expect(first.hidden).toBe(true);
+    await core.navigate('home');
+    expect(first.hidden).toBe(false);
+    expect(first.textContent).toBe('Estado conservado');
+    await core.navigate('search');
+    expect(first.isConnected).toBe(false);
+    expect(disconnected).toEqual(['home']);
+    expect(document.querySelector('#app')!.children.length).toBe(2);
+    expect(document.querySelectorAll('#app > :not([hidden])').length).toBe(1);
+  });
+
   it('entrega parámetros mediante la propiedad de la página antes de llamar onPageEnter sin argumentos', async () => {
     const core = await runtime();
     document.body.innerHTML = '<main id="app"></main>';

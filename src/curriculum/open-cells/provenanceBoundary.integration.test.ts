@@ -21,7 +21,8 @@ describe('frontera neutral del curso Open Cells', () => {
       .filter((path) => !path.endsWith('provenanceBoundary.integration.test.ts'))
       .flatMap((path) => {
         const source = readFileSync(path, 'utf8');
-        const isLearningContent = path.startsWith('src/curriculum/open-cells') || path.startsWith('docs/guiones/open-cells');
+        const isLearningContent = !/\.test\.tsx?$/.test(path)
+          && (path.startsWith('src/curriculum/open-cells') || path.startsWith('docs/guiones/open-cells'));
         return [
           isLearningContent && /https?:\/\//i.test(source) && 'URL externa',
           /\/run\/media\//i.test(source) && 'ruta externa',

@@ -26,7 +26,7 @@ El catálogo actual usa productos de demostración en su constructor. El data ma
 
 | Emisor → receptor | Entrada o evento | Quién decide el siguiente paso |
 | --- | --- | --- |
-| Página → tarjeta | Propiedad product con id, name y price. | La tarjeta decide cómo presentarla, no cómo cargarla. |
+| Página → tarjeta | Propiedad product con id y name del proyecto educativo. | La tarjeta decide cómo presentarla, no cómo cargarla. |
 | Tarjeta → página | academy-product-card-select; detail contiene una copia del producto. | handleProductSelected de la página. |
 | Página → canal | academy:studio:project:selected, declarado en [channels.js](../app/scripts/channels.js). | Cada suscriptor interpreta la selección; el canal no navega. |
 | Página → router | navigate('product-detail', { id: product.id }). | El router resuelve la ruta nombrada y carga su módulo. |
@@ -43,7 +43,7 @@ El botón, la tipografía y el registro de estilos compartidos son capacidades t
 ## Criterios de aceptación
 
 1. Cambia un id de los datos de demostración y selecciona esa tarjeta. El detalle debe mostrar el nuevo id, no un valor fijo.
-2. El evento de la tarjeta conserva id, name y price; la propiedad original no se modifica al emitirlo.
+2. El evento de la tarjeta conserva id y name; la propiedad original no se modifica al emitirlo. El estudio no maneja precios ni compras.
 3. Sal del catálogo y vuelve. onPageLeave retira la suscripción y onPageEnter la establece para la nueva visita.
 4. Selecciona desde Inicio, Favoritos y Búsqueda. Las tres superficies solicitan product-detail con el id elegido.
 5. Ejecuta cells app:test y cells app:build -c prod.js tras exportar. Consulta [app.test.js](../test/unit/app.test.js): sus pruebas verifican contratos aislados, no sustituyen el recorrido en navegador.
@@ -102,7 +102,8 @@ export function delegateRoute(url) {
     this.pages = new Map();
   }
   keep(name, page) {
-    this.pages.delete(name);
+    if (this.pages.get(name) === page) return;
+    if (this.pages.has(name)) this.release(name, this.pages.get(name));
     this.pages.set(name, page);
     while (this.pages.size > this.limit) {
       const oldest = this.pages.keys().next().value;
@@ -110,6 +111,11 @@ export function delegateRoute(url) {
       this.pages.delete(oldest);
       evicted?.cleanup?.();
     }
+  }
+  release(name, page) {
+    if (this.pages.get(name) !== page) return;
+    this.pages.delete(name);
+    page?.cleanup?.();
   }
 }
 ` },
