@@ -7,6 +7,7 @@ import { connectPendingChangesWorkspace } from './pendingChangesWorkspace';
 import { connectDelegatedRoutesWorkspace } from './delegatedRoutesWorkspace';
 import { connectPageRetentionWorkspace } from './pageRetentionWorkspace';
 import { connectFeatureFlagsWorkspace } from './featureFlagsWorkspace';
+import { connectOfflineShellWorkspace } from './offlineShellWorkspace';
 
 function applicationProjectFor(number: number): CellsAppProject {
   if (number <= 46) return 'store';
@@ -28,6 +29,7 @@ export function createOpenCellsLessonWorkspace(number: number): VersionedCellsWo
   const withArtifact = number === 75 ? connectPendingChangesWorkspace(artifactWorkspace)
     : number === 76 ? connectDelegatedRoutesWorkspace(artifactWorkspace)
     : number === 77 ? connectPageRetentionWorkspace(artifactWorkspace)
-    : number === 78 ? connectFeatureFlagsWorkspace(artifactWorkspace) : artifactWorkspace;
+    : number === 78 ? connectFeatureFlagsWorkspace(artifactWorkspace)
+    : number === 79 ? connectOfflineShellWorkspace(artifactWorkspace) : artifactWorkspace;
   return createVersionedCellsWorkspace({ ...withArtifact.snapshot, activeFilePath: advanced.path }, 0);
 }

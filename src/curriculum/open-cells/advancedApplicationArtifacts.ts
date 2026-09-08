@@ -1,3 +1,5 @@
+import { offlineWorkerSource } from './offlineShellSources';
+
 export interface AdvancedApplicationArtifact {
   path: string;
   source: string;
@@ -129,19 +131,7 @@ export function resolveFeatureFlags(input = {}) {
   };
 }
 ` },
-  79: { path: 'service-worker.js', source: `const SHELL_CACHE = 'academy-shell-v1';
-const SHELL_FILES = ['/', '/index.html'];
-
-self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(SHELL_CACHE).then((cache) => cache.addAll(SHELL_FILES)));
-});
-
-self.addEventListener('fetch', (event) => {
-  if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request).catch(() => caches.match('/index.html')));
-  }
-});
-` },
+  79: { path: 'service-worker.js', source: offlineWorkerSource },
   80: { path: 'app/observability/trace.js', source: `export function createTrace(name, correlationId, now = performance.now()) {
   return {
     name,
