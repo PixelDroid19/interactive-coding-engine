@@ -73,10 +73,73 @@ try {
   await page.frameLocator('iframe').locator('academy-home-page').waitFor({ state: 'visible', timeout: 15_000 });
   await page.frameLocator('iframe').getByRole('button', { name: 'Ver detalle' }).first().click();
   await page.frameLocator('iframe').locator('academy-product-detail-page').waitFor({ state: 'visible', timeout: 15_000 });
-  for (const artifact of ['action-button', 'status-badge', 'state-panel', 'product-card', 'product-list', 'search-filter', 'language-switcher', 'catalog-shell']) {
+  for (const artifact of ['action-button', 'status-badge', 'state-panel', 'product-card', 'product-list', 'search-filter', 'language-switcher', 'catalog-shell', 'lifecycle-panel', 'context-panel']) {
     const results = await checkWorkspace(createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS[artifact]).snapshot, artifact);
     const failures = results.filter((result) => !result.passed);
     if (failures.length) throw new Error(`${artifact}: ${JSON.stringify(failures)}`);
+    if (artifact === 'context-panel') {
+      await page.frames()[1].evaluate(`(async () => {
+        const provider = document.querySelector('academy-density-provider');
+        const consumers = provider?.querySelectorAll('academy-context-panel');
+        if (consumers?.length !== 2) throw new Error('The context demo must connect two actual consumers to one provider');
+        provider.density = 'compacta';
+        await provider.updateComplete;
+        await Promise.all([...consumers].map((host) => host.updateComplete));
+        if ([...consumers].some((host) => host.shadowRoot.querySelector('[data-density]')?.getAttribute('data-density') !== 'compacta')) throw new Error('Provider changes did not reach both consumers');
+        const other = document.createElement('academy-density-provider');
+        other.density = 'cómoda';
+        document.body.append(other);
+        other.append(consumers[1]);
+        await other.updateComplete;
+        await consumers[1].updateComplete;
+        if (consumers[1].density !== 'cómoda' || consumers[0].density !== 'compacta') throw new Error('Context scope did not follow the subtree');
+        provider.density = 'cómoda';
+        await provider.updateComplete;
+        other.density = 'compacta';
+        await other.updateComplete;
+        await Promise.all([...consumers].map((host) => host.updateComplete));
+        if (consumers[0].density !== 'cómoda' || consumers[1].density !== 'compacta') throw new Error('Providers interfered after reparenting');
+        consumers[1].remove();
+        other.density = 'cómoda';
+        await other.updateComplete;
+        if (consumers[1].density !== 'compacta') throw new Error('Disconnected context consumer kept its subscription');
+        other.append(consumers[1]);
+        await consumers[1].updateComplete;
+        if (consumers[1].density !== 'cómoda') throw new Error('Reconnected consumer did not request the current context');
+      })()`);
+    }
+    if (artifact === 'lifecycle-panel') {
+      await page.frames()[1].evaluate(`(async () => {
+        const host = document.querySelector('academy-lifecycle-panel');
+        await window.IntlMsg.setLanguage('es');
+        await host.updateComplete;
+        const readCount = () => host.shadowRoot.querySelector('output')?.getAttribute('data-observation-count');
+        if (readCount() !== '0') throw new Error('Lifecycle must expose its actual observation count');
+        window.dispatchEvent(new Event('offline'));
+        await host.updateComplete;
+        if (readCount() !== '1') throw new Error('Connected observer missed the event');
+        const parent = host.parentNode;
+        host.remove();
+        window.dispatchEvent(new Event('online'));
+        await host.updateComplete;
+        if (readCount() !== '1') throw new Error('Detached observer kept receiving events');
+        parent.append(host);
+        await host.updateComplete;
+        window.dispatchEvent(new Event('offline'));
+        await host.updateComplete;
+        if (readCount() !== '2') throw new Error('Reconnection duplicated the observer');
+        for (let index = 0; index < 3; index += 1) {
+          host.connectionState = 'Etiqueta ' + index;
+          await host.updateComplete;
+        }
+        window.dispatchEvent(new Event('online'));
+        await host.updateComplete;
+        if (readCount() !== '3') throw new Error('Rendering installed extra listeners');
+        await window.IntlMsg.setLanguage('en');
+        await host.updateComplete;
+        if (!host.shadowRoot.textContent.includes('Observed changes: 3')) throw new Error('Lifecycle lost translations after reconnect');
+      })()`);
+    }
     if (artifact === 'status-badge') {
       await page.frames()[1].evaluate(`(async () => {
         const host = document.querySelector('academy-status-badge');

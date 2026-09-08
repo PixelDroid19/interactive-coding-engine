@@ -2,6 +2,7 @@ import { OPEN_CELLS_ARTIFACTS, type OpenCellsArtifact } from '../../curriculum/o
 import { createCellsComponentWorkspace, type CellsComponentPracticeStage } from './cellsRecipes';
 import { createVersionedCellsWorkspace, type VersionedCellsWorkspace, writeCellsFile } from './cellsVirtualFileSystem';
 import { createCellsAccountFeaturePractice, createCellsAccountFeatureWorkspace } from './cellsAccountFeature';
+import { advancedComponentRecipe } from './cellsAdvancedComponentRecipes';
 
 interface ComponentBlueprint {
   propertyName: string;
@@ -27,7 +28,7 @@ const BLUEPRINTS: Record<string, ComponentBlueprint> = {
   'search-filter': blueprint('query', 'query', 'café', 'té', 'search', '#0f766e', 'Catalog search', 'Búsqueda del catálogo', 'The filter emits a query; it does not own the results.', 'El filtro emite una consulta; no es dueño de los resultados.', 'Search', 'Buscar'),
   'language-switcher': blueprint('locale', 'locale', 'es', 'en', 'change', '#9333ea', 'Language selector', 'Selector de idioma', 'The shell owns the locale and components consume it.', 'El shell posee el idioma y los componentes lo consumen.', 'Change language', 'Cambiar idioma'),
   'catalog-shell': blueprint('section', 'section', 'Destacados', 'Novedades', 'navigate', '#0f766e', 'Catalog composition', 'Composición del catálogo', 'Filter, list and notices collaborate through public contracts.', 'Filtro, lista y avisos colaboran mediante contratos públicos.', 'Open section', 'Abrir sección'),
-  'lifecycle-panel': blueprint('connectionState', 'connection-state', 'conectado', 'reconectado', 'inspect', '#0f766e', 'Lifecycle evidence', 'Evidencia del ciclo de vida', 'Subscriptions have a visible owner and cleanup.', 'Las suscripciones tienen propietario y limpieza visibles.', 'Reconnect', 'Reconectar'),
+  'lifecycle-panel': blueprint('connectionState', 'connection-state', 'conectado', 'reconectado', 'inspect', '#0f766e', 'Lifecycle evidence', 'Evidencia del ciclo de vida', 'Subscriptions have a visible owner and cleanup.', 'Las suscripciones tienen propietario y limpieza visibles.', 'Inspect state', 'Inspeccionar estado'),
   'context-panel': blueprint('density', 'density', 'cómoda', 'compacta', 'change', '#2563eb', 'Shared context', 'Contexto compartido', 'Two consumers observe one scoped provider.', 'Dos consumidores observan un proveedor con alcance.', 'Change context', 'Cambiar contexto'),
   'media-tile': blueprint('imageLabel', 'image-label', 'Paisaje de ejemplo', 'Diagrama accesible', 'open', '#c2410c', 'Configurable media', 'Recurso configurable', 'The consumer owns the resource and its accessible description.', 'El consumidor controla el recurso y su descripción accesible.', 'Inspect media', 'Inspeccionar recurso'),
   'theme-preview': blueprint('theme', 'theme', 'claro', 'oscuro', 'change', '#7c3aed', 'Theme contract', 'Contrato de tema', 'Tokens change the environment without duplicating the component.', 'Los tokens cambian el ambiente sin duplicar el componente.', 'Change theme', 'Cambiar tema'),
@@ -234,8 +235,9 @@ export function createCellsCurriculumComponentWorkspace(artifact: OpenCellsArtif
     expect(${dependency.id.replaceAll('-', '_')}.constructor).toBe(${dependency.className});
     expect(customElements.get('${dependency.tag}')).toBeUndefined();`)
     .join('\n');
-  const markup = renderMarkup(artifact, blueprint, prefix);
-  const styles = componentStyles(artifact, blueprint);
+  const advanced = advancedComponentRecipe(artifact.id);
+  const markup = advanced?.markup ?? renderMarkup(artifact, blueprint, prefix);
+  const styles = componentStyles(artifact, blueprint) + (advanced?.styles ?? '');
   const isCollection = artifact.id === 'product-list' || artifact.id === 'catalog-shell';
   const compact = artifact.id === 'action-button' || artifact.id === 'status-badge';
   const source = `import { LitElement, html } from 'lit';
@@ -244,6 +246,7 @@ import { WidgetMixin } from './mixins/WidgetMixin.js';
 import { getComponentSharedStyles } from './styles/shared-styles.js';
 import styles from './${artifact.tagName}.css.js';
 ${imports}
+${advanced?.imports ?? ''}
 
 export class ${className} extends WidgetMixin(ScopedElementsMixin(LitElement)) {
   static get is() { return '${artifact.tagName}'; }
@@ -265,6 +268,7 @@ ${registry}
       ${blueprint.propertyName}: { type: String, attribute: '${blueprint.attribute}' },
 ${artifact.id === 'action-button' ? '      disabled: { type: Boolean, attribute: \'disabled\', reflect: true },\n' : ''}
 ${isCollection ? "      items: { type: Array, attribute: false },\n      query: { type: String, attribute: 'query' },\n" : ''}
+${advanced?.properties ?? ''}
     };
   }
 
@@ -277,6 +281,7 @@ ${isCollection ? "      items: { type: Array, attribute: false },\n      query: 
     this.${blueprint.propertyName} = ${JSON.stringify(blueprint.defaultValue)};
 ${artifact.id === 'action-button' ? '    this.disabled = false;\n' : ''}
 ${isCollection ? "    this.items = [{ id: 'coffee', name: 'Café' }, { id: 'tea', name: 'Té' }, { id: 'cocoa', name: 'Cacao' }];\n    this.query = '';\n" : ''}
+${advanced?.initialize ?? ''}
   }
 
   handleAction(event) {
@@ -325,6 +330,7 @@ ${artifact.id === 'product-list' ? `  get visibleItems() {
       </section>`}
     \`;
   }
+${advanced?.methods ?? ''}
 }
 `;
   files[sourcePath] = { ...files[sourcePath], content: source };
@@ -358,6 +364,7 @@ ${artifact.id === 'product-list' ? `  get visibleItems() {
   const catalog = {
     en: {
       ...Object.assign({}, ...dependencyCatalogs.map((catalog) => catalog.en)),
+      ...advanced?.locales?.en,
       [`${prefix}.eyebrow`]: artifact.label,
       [`${prefix}.title`]: blueprint.title.en,
       [`${prefix}.description`]: blueprint.description.en,
@@ -370,6 +377,7 @@ ${artifact.id === 'product-list' ? `  get visibleItems() {
     },
     es: {
       ...Object.assign({}, ...dependencyCatalogs.map((catalog) => catalog.es)),
+      ...advanced?.locales?.es,
       [`${prefix}.eyebrow`]: artifact.label,
       [`${prefix}.title`]: blueprint.title.es,
       [`${prefix}.description`]: blueprint.description.es,
@@ -408,6 +416,7 @@ ${artifact.id === 'product-list' ? `  get visibleItems() {
         </select>
       </label>
     </form>
+    ${advanced?.demoControls ?? ''}
     <${artifact.tagName}
       data-cells-demo-subject
       ${blueprint.attribute}="${blueprint.demoValue}"
@@ -431,7 +440,8 @@ ${artifact.id === 'product-list' ? `  get visibleItems() {
   };
   files['demo/demo.js'] = {
     ...files['demo/demo.js'],
-    content: `import { installIntlMsg } from '../src/runtime/academy-intl-msg.js';
+    content: `${advanced?.demoImports ?? ''}
+import { installIntlMsg } from '../src/runtime/academy-intl-msg.js';
 const intlMsg = installIntlMsg({ language: document.documentElement.lang || 'es' });
 intlMsg.localesHost = new URL('./locales/locales.json', import.meta.url).href;
 void intlMsg.loadUrlResources();
@@ -441,7 +451,7 @@ const subject = document.querySelector('${artifact.tagName}');
 const control = document.querySelector('#control-value');
 const locale = document.querySelector('#locale');
 const eventLog = document.querySelector('#event-log');
-control?.addEventListener('input', (event) => { subject.${blueprint.propertyName} = event.target.value; });
+control?.addEventListener('input', (event) => { subject.${blueprint.propertyName} = event.target.value;${advanced?.demoControlChanged ? ` ${advanced.demoControlChanged}` : ''} });
 locale?.addEventListener('change', async (event) => {
   await intlMsg.setLanguage(event.target.value);
   document.documentElement.lang = event.target.value;
@@ -449,6 +459,7 @@ locale?.addEventListener('change', async (event) => {
 });
 subject?.addEventListener('${artifact.tagName}-${blueprint.eventName}', (event) => { if (eventLog) eventLog.textContent = event.type + ' · ' + JSON.stringify(event.detail); });
 export { ${className} };
+${advanced?.demoSetup ?? ''}
 `,
   };
   files[`test/unit/${artifact.tagName}.test.js`] = {
@@ -627,6 +638,7 @@ ${artifact.id === 'catalog-shell' ? `
     expect(component.items.length).toBe(2);
   });
 ` : ''}
+${advanced?.tests ?? ''}
 });
 `,
   };
@@ -649,10 +661,12 @@ ${artifact.id === 'catalog-shell' ? `
               { kind: 'field', name: 'items', type: { text: 'Array<{ id: string, name: string }>' }, description: 'Productos del consumidor; se asignan como propiedad, no como atributo.' },
               { kind: 'field', name: 'query', attribute: 'query', type: { text: 'string' }, default: '""', description: 'Filtro por nombre sin distinguir mayúsculas y sin modificar items.' },
             ] : []),
+            ...advanced?.members ?? [],
           ],
           events: [
             { name: `${artifact.tagName}-${blueprint.eventName}`, type: { text: `CustomEvent<{ ${blueprint.propertyName}: string }>` }, description: blueprint.action.es },
             ...(isCollection ? [{ name: `${artifact.tagName}-select`, type: { text: 'CustomEvent<{ id: string, productName: string }>' }, description: 'Selecciona el producto concreto, incluso si comparte nombre con otro.' }] : []),
+            ...advanced?.events ?? [],
           ],
           slots: artifact.id === 'action-button' ? [{ name: '', description: 'Etiqueta alternativa a la propiedad label.' }] : artifact.id === 'state-panel' ? [{ name: '', description: 'Contenido del consumidor, visible únicamente en success.' }] : [],
           cssProperties: [{ name: `--${artifact.id}-accent`, default: blueprint.accent, description: 'Acento visual público.' }],
@@ -685,6 +699,11 @@ ${artifact.id === 'catalog-shell' ? `
     files['README.md'].content += '\n## Envío accesible\n\nLa búsqueda reutiliza el botón scoped del curso. Clic y Enter emiten una sola consulta con el texto actual; Enter durante composición de texto no envía. La búsqueda no decide qué resultados mostrar: esa responsabilidad pertenece al consumidor.\n';
   }
   const manifest = JSON.parse(files['package.json'].content);
+  files['README.md'].content += advanced?.readme ?? '';
+  for (const [path, content] of Object.entries(advanced?.files ?? {})) {
+    files[path] = { path, name: path.split('/').at(-1)!, content, language: path.endsWith('.ts') ? 'typescript' : path.endsWith('.json') ? 'json' : 'javascript' };
+  }
+  manifest.dependencies = { ...manifest.dependencies, ...advanced?.dependencies };
   manifest.learningArtifact = artifact.id;
   manifest.learningDependencies = artifact.dependencies;
   files['package.json'] = { ...files['package.json'], content: `${JSON.stringify(manifest, null, 2)}\n` };

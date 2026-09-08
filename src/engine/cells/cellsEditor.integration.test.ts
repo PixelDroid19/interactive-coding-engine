@@ -43,13 +43,13 @@ describe('inteligencia del editor Cells', () => {
   });
 
   it('no inventa errores en los componentes variados ni en sus pruebas públicas', () => {
-    for (const lesson of [1, 3, 6, 10, 16, 21, 23, 37]) {
+    for (const lesson of [1, 3, 6, 10, 16, 21, 23, 37, 69, 70]) {
       const workspace = createOpenCellsLessonWorkspace(lesson).snapshot;
       const service = new TypeScriptLanguageService(typeScriptLibraries);
       replaceWorkspace(service, workspace);
       const protagonist = Object.values(workspace.files).find((file) => /^src\/[^/]+\.js$/.test(file.path) && file.content.includes('WidgetMixin('));
       const testFile = Object.values(workspace.files).find((file) => /^test\/unit\/[^/]+\.test\.js$/.test(file.path));
-      const diagnostics = [protagonist, testFile]
+      const diagnostics = [protagonist, testFile, ...Object.values(workspace.files).filter((file) => file.path.startsWith('src/context/'))]
         .filter((file): file is NonNullable<typeof file> => Boolean(file))
         .flatMap((file) => service.diagnostics(file.path).map((entry) => `${file.path}: ${entry.message}`));
       expect(diagnostics, `lección ${lesson}\n${diagnostics.join('\n')}`).toEqual([]);

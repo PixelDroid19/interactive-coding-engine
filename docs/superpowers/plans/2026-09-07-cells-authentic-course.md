@@ -1,6 +1,6 @@
 # Authentic Cells course implementation plan
 
-> **For agentic workers:** Use superpowers:executing-plans inline. The repository prohibits unsolicited subagents. Do not create a worktree, commit, push, deploy, or modify external references.
+> **For agentic workers:** Use superpowers:executing-plans inline. The repository prohibits unsolicited subagents. Do not create a worktree, deploy, or modify external references. The user's subsequent active goal authorizes progressive verified commits and pushes on the existing branch.
 
 **Goal:** Make the educational workspaces use executable Cells-shaped contracts and compose original components into useful features.
 
@@ -116,3 +116,12 @@ Red evidence: missing scoped search action, missing keyboard query, and disconne
 - [x] Reproduce valid JSON import-attribute false positives with the real TypeScript library set, and preserve genuine syntax errors plus unavailable-service fallback in integration tests.
 
 Final evidence: 1321 tests passed / 2 skipped; lint and build passed with existing warnings. Chromium catches a restored oversized indicator and passes the compact version alongside all component/application flows. In the actual lesson 12 player: start/pause/seek/reload, visible `Sin errores`, compact status, `error` retry with `{ state: "error" }` in the event inspector, transition to `empty` removing retry, and English translation were checked. No audio changes or deployment. Remaining: advanced component/application examples and independent ZIP/CLI execution.
+
+## Task 5e: Lifecycle and subtree context (69–70)
+
+- [x] Observe online/offline only while connected; preserve callback identity and count actual signals without duplicate subscriptions after reconnection.
+- [x] Use the public `@lit/context` controllers with a shared module identity, a demo provider and two real consumers, without global application state.
+- [x] Verify independent providers, reparenting, disconnect cleanup and renewed subscriptions on reconnect in Chromium.
+- [x] Include controller dependency, context source files, editor declarations, generated regression tests and explanatory README in the context package.
+
+Red evidence: missing lifecycle observation count and missing two-consumer provider failed before implementation. Final validation: `npm test -- --maxWorkers=4` passed 1321 tests / 2 skipped; lint, build and complete browser verification passed. The unconstrained full suite hit the existing 5-second exhaustive-catalog timeout twice; limiting worker concurrency passed without changing assertions or timeouts. A demo-practice string-mutation regression was corrected in generated whitespace, preserving its expected failing contract. Browser behavior was executed; exported test source was checked by the editor, but independent ZIP/CLI execution is still pending. No audio, subtitle or deployment changes. Remaining: examples 71–84 and independent export validation. Recursive packaging of a future component that embeds the context panel will need to retain its auxiliary context modules and dependency; no current component does so.

@@ -83,6 +83,7 @@ export function startApp({ mainNode, routes, initialTemplate, debug = false }) {
 
 const IMPORT_MAP: Record<string, string> = {
   lit: 'https://esm.sh/lit@3.3.3',
+  '@lit/context': 'https://esm.sh/@lit/context@1.1.6',
   'lit/': 'https://esm.sh/lit@3.3.3/',
   '@webcomponents/scoped-custom-element-registry': 'https://esm.sh/@webcomponents/scoped-custom-element-registry@0.0.10',
   '@open-wc/scoped-elements/lit-element.js': moduleUrl(SCOPED_ELEMENTS_RUNTIME),

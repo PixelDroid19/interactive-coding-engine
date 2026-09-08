@@ -775,6 +775,8 @@ declare module 'lit' {
   export class LitElement extends HTMLElement {
     /** Promesa que termina cuando Lit ha actualizado el DOM. */
     readonly updateComplete: Promise<boolean>;
+    connectedCallback(): void;
+    disconnectedCallback(): void;
   }
   /** Crea una plantilla HTML segura a partir de valores enlazados. */
   export function html(strings: TemplateStringsArray, ...values: unknown[]): unknown;
