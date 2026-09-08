@@ -3,6 +3,17 @@ import { describe, expect, it } from 'vitest';
 import { createOpenCellsLessonWorkspace } from './lessonWorkspaces';
 import { advancedApplicationArtifactForLesson } from './advancedApplicationArtifacts';
 
+describe('feature flag resolution', () => {
+  it('enables only explicit booleans and safely defaults malformed inputs', async () => {
+    const source = advancedApplicationArtifactForLesson(78)!.source;
+    const { resolveFeatureFlags } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+    expect(resolveFeatureFlags({ compactCatalog: true })).toEqual({ compactCatalog: true });
+    for (const input of [undefined, null, {}, { compactCatalog: false }, { compactCatalog: 'true' }, { compactCatalog: 1 }]) {
+      expect(resolveFeatureFlags(input)).toEqual({ compactCatalog: false });
+    }
+  });
+});
+
 describe('contrato de retención de páginas', () => {
   async function retention() {
     const source = advancedApplicationArtifactForLesson(77)!.source;

@@ -123,7 +123,7 @@ export function delegateRoute(url) {
 
 export function resolveFeatureFlags(input = {}) {
   return {
-    compactCatalog: typeof input.compactCatalog === 'boolean'
+    compactCatalog: typeof input?.compactCatalog === 'boolean'
       ? input.compactCatalog
       : DEFAULT_FLAGS.compactCatalog,
   };
