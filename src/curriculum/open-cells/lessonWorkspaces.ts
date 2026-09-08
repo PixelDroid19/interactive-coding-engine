@@ -3,6 +3,7 @@ import { createCellsCurriculumComponentWorkspace } from '../../engine/cells/cell
 import { createVersionedCellsWorkspace, writeCellsFile, type VersionedCellsWorkspace } from '../../engine/cells/cellsVirtualFileSystem';
 import { openCellsArtifactForLesson, openCellsProjectForLesson } from './lessonProjects';
 import { advancedApplicationArtifactForLesson } from './advancedApplicationArtifacts';
+import { connectPendingChangesWorkspace } from './pendingChangesWorkspace';
 
 function applicationProjectFor(number: number): CellsAppProject {
   if (number <= 46) return 'store';
@@ -20,6 +21,7 @@ export function createOpenCellsLessonWorkspace(number: number): VersionedCellsWo
     : createCellsProjectWorkspace(applicationProjectFor(number), artifact.id);
   const advanced = advancedApplicationArtifactForLesson(number);
   if (!advanced) return base;
-  const withArtifact = writeCellsFile(base, advanced.path, advanced.source);
+  const artifactWorkspace = writeCellsFile(base, advanced.path, advanced.source);
+  const withArtifact = number === 75 ? connectPendingChangesWorkspace(artifactWorkspace) : artifactWorkspace;
   return createVersionedCellsWorkspace({ ...withArtifact.snapshot, activeFilePath: advanced.path }, 0);
 }

@@ -778,6 +778,7 @@ describe('academy-store-app', () => {
     page.publish = vi.fn();
     page.navigate = vi.fn();
     const card = page.shadowRoot.querySelector('academy-product-card');
+    card.product = { id: 'chosen-project', name: 'Proyecto elegido', price: 7 };
     await card.updateComplete;
     const received = new Promise((resolve) => page.addEventListener('academy-product-card-select', resolve, { once: true }));
 
@@ -786,11 +787,11 @@ describe('academy-store-app', () => {
     action.shadowRoot.querySelector('button').click();
     const event = await received;
 
-    expect(event.detail).toEqual({ id: 'tea', name: 'Té', price: 4 });
+    expect(event.detail).toEqual({ id: 'chosen-project', name: 'Proyecto elegido', price: 7 });
     expect(event.bubbles).toBe(true);
     expect(event.composed).toBe(true);
     expect(page.publish).toHaveBeenCalledWith('academy:store:product:selected', event.detail);
-    expect(page.navigate).toHaveBeenCalledWith('product-detail', { id: 'tea' });
+    expect(page.navigate).toHaveBeenCalledWith('product-detail', { id: 'chosen-project' });
   });
 
   it('publica success y empty como estados diferentes', async () => {
