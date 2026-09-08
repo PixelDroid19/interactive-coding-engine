@@ -97,3 +97,13 @@ Next: mutually exclusive state-panel behavior, actual search/list/catalog intera
 Browser red evidence: `Missing exclusive state: loading`; after the state guard, the generic runner also correctly exposed its invalid fixture via `browser-event`. The final browser flow passes all state assertions. The editor integration identified a DOM typing issue in the exported test; using the standard attribute accessor fixed it without suppressing diagnostics. No audio or subtitle changes.
 
 Final verification: full suite 1318 passed / 2 skipped, lint passed, production build passed with existing warnings, browser checks passed. Remaining: search/list/catalog, advanced examples and exported-project execution.
+
+## Task 5c: Search, configurable collection and catalog composition
+
+- [x] Reuse the complete scoped action in search; send one current query for click or Enter, without submitting during text composition.
+- [x] Accept consumer-owned `items` and `query` in the list, render actual scoped cards, show no-results feedback and preserve the input array.
+- [x] Bridge search and clear intents in the catalog through public properties/events only.
+- [x] Reemit selections with a stable ID and product name, including duplicate-name fixtures.
+- [x] Ship metadata, README contracts and regression tests with all three generated packages.
+
+Red evidence: missing scoped search action, missing keyboard query, and disconnected catalog data each failed in Chromium before the corresponding correction. Final browser flow verifies Enter, composition, filtering, exact duplicate-name selection, empty results and clearing; all five applications and previous component/feature checks still pass. Full suite: 1318 passed / 2 skipped; targeted editor and curriculum checks: 24 passed; lint and production build passed with existing warnings. Exported test source is validated by editor diagnostics, but execution outside the platform remains a separate pending gate.

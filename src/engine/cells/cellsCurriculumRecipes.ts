@@ -22,7 +22,7 @@ const BLUEPRINTS: Record<string, ComponentBlueprint> = {
   'product-card': blueprint('productName', 'product-name', 'Café de origen', 'Té verde', 'select', '#7c3aed', 'A reusable product', 'Un producto reutilizable', 'The card presents data and returns a selection.', 'La tarjeta presenta datos y devuelve una selección.', 'View detail', 'Ver detalle'),
   'user-summary': blueprint('userName', 'user-name', 'Ada', 'Lina', 'open', '#0891b2', 'User summary', 'Resumen de usuario', 'A small public API keeps private layout replaceable.', 'Una API pequeña permite cambiar el diseño interno.', 'Open profile', 'Abrir perfil'),
   'notice-banner': blueprint('message', 'message', 'Todo está sincronizado', 'No pudimos cargar los datos', 'dismiss', '#dc2626', 'Recoverable notice', 'Aviso recuperable', 'The message explains the state and offers one action.', 'El mensaje explica el estado y ofrece una acción.', 'Dismiss', 'Descartar'),
-  'product-list': blueprint('category', 'category', 'Bebidas', 'Favoritos', 'filter', '#4f46e5', 'Product collection', 'Colección de productos', 'The list composes cards without copying their implementation.', 'La lista compone tarjetas sin copiar su implementación.', 'Filter list', 'Filtrar lista'),
+  'product-list': blueprint('category', 'category', 'Bebidas', 'Favoritos', 'filter', '#4f46e5', 'Product collection', 'Colección de productos', 'The list composes cards without copying their implementation.', 'La lista compone tarjetas sin copiar su implementación.', 'Show all', 'Mostrar todos'),
   'price-tag': blueprint('price', 'price', '12,00 €', '19,90 €', 'explain', '#be123c', 'Formatted price', 'Precio formateado', 'Formatting remains inside a reusable visual contract.', 'El formato permanece dentro de un contrato visual reutilizable.', 'Explain price', 'Explicar precio'),
   'search-filter': blueprint('query', 'query', 'café', 'té', 'search', '#0f766e', 'Catalog search', 'Búsqueda del catálogo', 'The filter emits a query; it does not own the results.', 'El filtro emite una consulta; no es dueño de los resultados.', 'Search', 'Buscar'),
   'language-switcher': blueprint('locale', 'locale', 'es', 'en', 'change', '#9333ea', 'Language selector', 'Selector de idioma', 'The shell owns the locale and components consume it.', 'El shell posee el idioma y los componentes lo consumen.', 'Change language', 'Cambiar idioma'),
@@ -125,10 +125,9 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
             <academy-action-button .label=\${this.t('${prefix}.action')} ${childAction}></academy-action-button>
           </header>
           <div class="product-grid">
-            <academy-product-card product-name="Café"></academy-product-card>
-            <academy-product-card product-name="Té"></academy-product-card>
-            <academy-product-card product-name="Cacao"></academy-product-card>
+            \${this.visibleItems.map((item) => html\`<academy-product-card .productName=\${item.name} @academy-product-card-select=\${(event) => this.handleSelection(event, item)}></academy-product-card>\`)}
           </div>
+          \${this.visibleItems.length === 0 ? html\`<p role="status">\${this.t('${prefix}.empty')}</p>\` : ''}
         </section>`;
     case 'price-tag':
       return `<button type="button" class="price" ${action}>
@@ -143,9 +142,10 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
             <input
               .value=\${this.query}
               @input=\${(event) => { this.query = event.target.value; }}
+              @keydown=\${this.handleInputKeydown}
             >
           </label>
-          <button type="submit" class="primary-action">${translated('action')}</button>
+          <academy-action-button .label=\${this.t('${prefix}.action')} @academy-action-button-activate=\${this.handleSubmit}></academy-action-button>
         </form>`;
     case 'language-switcher':
       return `<div class="language">
@@ -155,9 +155,9 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
         </div>`;
     case 'catalog-shell':
       return `<main class="catalog">
-          <academy-search-filter .query=\${this.section}></academy-search-filter>
+          <academy-search-filter .query=\${this.query} @academy-search-filter-search=\${this.handleSearch}></academy-search-filter>
           <academy-notice-banner .message=\${this.t('${prefix}.description')}></academy-notice-banner>
-          <academy-product-list .category=\${this.section}></academy-product-list>
+          <academy-product-list .category=\${this.section} .items=\${this.items} .query=\${this.query} @academy-product-list-filter=\${this.resetSearch} @academy-product-list-select=\${this.handleSelection}></academy-product-list>
           <button type="button" class="primary-action" ${action}>${translated('action')}</button>
         </main>`;
     default:
@@ -234,6 +234,7 @@ export function createCellsCurriculumComponentWorkspace(artifact: OpenCellsArtif
     .join('\n');
   const markup = renderMarkup(artifact, blueprint, prefix);
   const styles = componentStyles(artifact, blueprint);
+  const isCollection = artifact.id === 'product-list' || artifact.id === 'catalog-shell';
   const source = `import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { WidgetMixin } from './mixins/WidgetMixin.js';
@@ -260,6 +261,7 @@ ${registry}
       ...super.properties,
       ${blueprint.propertyName}: { type: String, attribute: '${blueprint.attribute}' },
 ${artifact.id === 'action-button' ? '      disabled: { type: Boolean, attribute: \'disabled\', reflect: true },\n' : ''}
+${isCollection ? "      items: { type: Array, attribute: false },\n      query: { type: String, attribute: 'query' },\n" : ''}
     };
   }
 
@@ -271,6 +273,7 @@ ${artifact.id === 'action-button' ? '      disabled: { type: Boolean, attribute:
     super();
     this.${blueprint.propertyName} = ${JSON.stringify(blueprint.defaultValue)};
 ${artifact.id === 'action-button' ? '    this.disabled = false;\n' : ''}
+${isCollection ? "    this.items = [{ id: 'coffee', name: 'Café' }, { id: 'tea', name: 'Té' }, { id: 'cocoa', name: 'Cacao' }];\n    this.query = '';\n" : ''}
   }
 
   handleAction(event) {
@@ -280,7 +283,36 @@ ${artifact.id === 'state-panel' ? "    if (this.state !== 'error') return;\n" : 
     this.emitEvent('${blueprint.eventName}', { ${blueprint.propertyName}: this.${blueprint.propertyName} });
   }
 
-${artifact.id === 'state-panel' ? "  get visibleState() { return ['loading', 'empty', 'error', 'success'].includes(this.state) ? this.state : 'loading'; }\n" : ''}${artifact.id === 'search-filter' ? '  handleSubmit(event) { event.preventDefault(); this.handleAction(); }\n' : ''}${artifact.id === 'language-switcher' ? `  chooseLocale(locale) { this.${blueprint.propertyName} = locale; this.handleAction(); }\n` : ''}
+${artifact.id === 'state-panel' ? "  get visibleState() { return ['loading', 'empty', 'error', 'success'].includes(this.state) ? this.state : 'loading'; }\n" : ''}${artifact.id === 'search-filter' ? `  handleSubmit(event) { event.preventDefault(); this.handleAction(event); }
+
+  handleInputKeydown(event) {
+    if (event.key === 'Enter' && !event.isComposing) this.handleSubmit(event);
+  }
+` : ''}${artifact.id === 'language-switcher' ? `  chooseLocale(locale) { this.${blueprint.propertyName} = locale; this.handleAction(); }\n` : ''}
+${artifact.id === 'product-list' ? `  get visibleItems() {
+    const query = String(this.query ?? '').trim().toLocaleLowerCase();
+    return (Array.isArray(this.items) ? this.items : []).filter((item) => item && typeof item.name === 'string' && item.name.toLocaleLowerCase().includes(query));
+  }
+
+  handleSelection(event, item) {
+    event.stopPropagation();
+    this.emitEvent('select', { id: item.id, productName: item.name });
+  }
+` : ''}${artifact.id === 'catalog-shell' ? `  handleSearch(event) {
+    event.stopPropagation();
+    this.query = String(event.detail.query ?? '').trim();
+  }
+
+  resetSearch(event) {
+    event.stopPropagation();
+    this.query = '';
+  }
+
+  handleSelection(event) {
+    event.stopPropagation();
+    this.emitEvent('select', { id: event.detail.id, productName: event.detail.productName });
+  }
+` : ''}
 
   render() {
     return html\`
@@ -331,6 +363,7 @@ ${artifact.id === 'state-panel' ? "  get visibleState() { return ['loading', 'em
       [`${prefix}.spanish`]: 'Spanish',
       [`${prefix}.english`]: 'English',
       ...(artifact.id === 'state-panel' ? { 'state.panel.loading': 'Loading data', 'state.panel.empty': 'No results', 'state.panel.error': 'We could not load the data', 'state.panel.success': 'Data available' } : {}),
+      ...(artifact.id === 'product-list' ? { 'product.list.empty': 'No products match this search.' } : {}),
     },
     es: {
       ...Object.assign({}, ...dependencyCatalogs.map((catalog) => catalog.es)),
@@ -342,6 +375,7 @@ ${artifact.id === 'state-panel' ? "  get visibleState() { return ['loading', 'em
       [`${prefix}.spanish`]: 'Español',
       [`${prefix}.english`]: 'Inglés',
       ...(artifact.id === 'state-panel' ? { 'state.panel.loading': 'Cargando datos', 'state.panel.empty': 'No hay resultados', 'state.panel.error': 'No pudimos cargar los datos', 'state.panel.success': 'Datos disponibles' } : {}),
+      ...(artifact.id === 'product-list' ? { 'product.list.empty': 'No hay productos para esta búsqueda.' } : {}),
     },
   };
   for (const path of ['locales/locales.json', 'demo/locales/locales.json', 'test/unit/locales/locales.json']) {
@@ -523,6 +557,73 @@ ${artifact.id === 'state-panel' ? `
     expect(retries[0].detail).toEqual({ state: 'error' });
   });
 ` : ''}
+${artifact.id === 'search-filter' ? `
+  it('envía la consulta por botón y Enter sin duplicar ni interrumpir composición', async () => {
+    const component = await renderComponent();
+    const queries = [];
+    component.addEventListener('academy-search-filter-search', (event) => queries.push(event.detail.query));
+    const input = component.shadowRoot.querySelector('input');
+    input.value = 'por botón';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await component.updateComplete;
+    await activate(component);
+    input.value = 'por teclado';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, isComposing: true }));
+    expect(queries).toEqual(['por botón', 'por teclado']);
+  });
+` : ''}
+${artifact.id === 'product-list' ? `
+  it('filtra datos del consumidor y devuelve el identificador de la tarjeta elegida', async () => {
+    const component = await renderComponent();
+    const products = [{ id: 'a', name: 'Café' }, { id: 'b', name: 'Té' }, { id: 'c', name: 'Té' }];
+    component.items = products;
+    component.query = ' TÉ ';
+    await component.updateComplete;
+    const cards = component.shadowRoot.querySelectorAll('academy-product-card');
+    expect(cards.length).toBe(2);
+    const received = new Promise((resolve) => component.addEventListener('academy-product-list-select', resolve, { once: true }));
+    await cards[1].updateComplete;
+    await activate(cards[1]);
+    const event = await received;
+    expect(event.detail).toEqual({ id: 'c', productName: 'Té' });
+    expect(event.bubbles).toBe(true);
+    expect(event.composed).toBe(true);
+    component.query = 'sin coincidencias';
+    await component.updateComplete;
+    expect(component.shadowRoot.querySelectorAll('academy-product-card').length).toBe(0);
+    expect(component.shadowRoot.textContent).toContain('No hay productos para esta búsqueda.');
+    expect(component.items).toBe(products);
+    expect(products.length).toBe(3);
+  });
+` : ''}
+${artifact.id === 'catalog-shell' ? `
+  it('conecta búsqueda y limpieza con la lista sin modificar los productos', async () => {
+    const component = await renderComponent();
+    component.items = [{ id: 'first', name: 'Café' }, { id: 'second', name: 'Té' }];
+    await component.updateComplete;
+    const search = component.shadowRoot.querySelector('academy-search-filter');
+    await search.updateComplete;
+    const input = search.shadowRoot.querySelector('input');
+    input.value = 'TÉ';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await search.updateComplete;
+    await activate(search);
+    await component.updateComplete;
+    const list = component.shadowRoot.querySelector('academy-product-list');
+    await list.updateComplete;
+    expect(list.items).toBe(component.items);
+    expect(list.shadowRoot.querySelectorAll('academy-product-card').length).toBe(1);
+    await activate(list);
+    await component.updateComplete;
+    await search.updateComplete;
+    await list.updateComplete;
+    expect(input.value).toBe('');
+    expect(list.shadowRoot.querySelectorAll('academy-product-card').length).toBe(2);
+    expect(component.items.length).toBe(2);
+  });
+` : ''}
 });
 `,
   };
@@ -541,8 +642,15 @@ ${artifact.id === 'state-panel' ? `
           members: [
             { kind: 'field', name: blueprint.propertyName, attribute: blueprint.attribute, type: { text: artifact.id === 'state-panel' ? "'error' | 'loading' | 'empty' | 'success'" : 'string' }, default: JSON.stringify(blueprint.defaultValue), description: blueprint.description.es },
             ...(artifact.id === 'action-button' ? [{ kind: 'field', name: 'disabled', attribute: 'disabled', type: { text: 'boolean' }, default: 'false', reflects: true, description: 'Bloquea la interacción y la emisión de acciones.' }] : []),
+            ...(isCollection ? [
+              { kind: 'field', name: 'items', type: { text: 'Array<{ id: string, name: string }>' }, description: 'Productos del consumidor; se asignan como propiedad, no como atributo.' },
+              { kind: 'field', name: 'query', attribute: 'query', type: { text: 'string' }, default: '""', description: 'Filtro por nombre sin distinguir mayúsculas y sin modificar items.' },
+            ] : []),
           ],
-          events: [{ name: `${artifact.tagName}-${blueprint.eventName}`, type: { text: `CustomEvent<{ ${blueprint.propertyName}: string }>` }, description: blueprint.action.es }],
+          events: [
+            { name: `${artifact.tagName}-${blueprint.eventName}`, type: { text: `CustomEvent<{ ${blueprint.propertyName}: string }>` }, description: blueprint.action.es },
+            ...(isCollection ? [{ name: `${artifact.tagName}-select`, type: { text: 'CustomEvent<{ id: string, productName: string }>' }, description: 'Selecciona el producto concreto, incluso si comparte nombre con otro.' }] : []),
+          ],
           slots: artifact.id === 'action-button' ? [{ name: '', description: 'Etiqueta alternativa a la propiedad label.' }] : artifact.id === 'state-panel' ? [{ name: '', description: 'Contenido del consumidor, visible únicamente en success.' }] : [],
           cssProperties: [{ name: `--${artifact.id}-accent`, default: blueprint.accent, description: 'Acento visual público.' }],
         }],
@@ -563,6 +671,15 @@ ${artifact.id === 'state-panel' ? `
         content: `<!doctype html>\n<html lang="es"><head><title>Estado ${state}</title></head><body><${artifact.tagName} state="${state}"></${artifact.tagName}><script type="module" src="./demo.js"></script></body></html>\n`,
       };
     }
+  }
+  if (isCollection) {
+    files['README.md'].content += '\n## Datos y selección\n\nAsigna `items` como un array de `{ id, name }` y `query` como texto. El filtro ignora mayúsculas y espacios exteriores, conserva el array original y muestra un mensaje cuando no hay coincidencias. Cada selección emite `select` con `{ id, productName }`, no solo el nombre: dos productos pueden llamarse igual.\n';
+    files['README.md'].content += artifact.id === 'catalog-shell'
+      ? '\nEl catálogo entrega propiedades a la búsqueda y la lista. Recibe sus eventos públicos, actualiza `query` y reemite la selección desde su propio host. “Mostrar todos” limpia el filtro y sincroniza el campo de búsqueda. No consulta el Shadow DOM de sus hijos ni necesita un data manager.\n'
+      : '\nEl evento `filter` solicita mostrar todos; el consumidor puede responder asignando `query = ""`. La lista recibe datos, no realiza peticiones.\n';
+  }
+  if (artifact.id === 'search-filter') {
+    files['README.md'].content += '\n## Envío accesible\n\nLa búsqueda reutiliza el botón scoped del curso. Clic y Enter emiten una sola consulta con el texto actual; Enter durante composición de texto no envía. La búsqueda no decide qué resultados mostrar: esa responsabilidad pertenece al consumidor.\n';
   }
   const manifest = JSON.parse(files['package.json'].content);
   manifest.learningArtifact = artifact.id;

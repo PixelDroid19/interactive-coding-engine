@@ -139,6 +139,61 @@ try {
         if (window.actionEvents.length !== 2) throw new Error('Disabled keyboard interaction emitted an intention');
       })()`);
     }
+    if (artifact === 'search-filter') {
+      await page.frames()[1].evaluate(`(async () => {
+        const host = document.querySelector('academy-search-filter');
+        const action = host.shadowRoot.querySelector('academy-action-button');
+        if (!action) throw new Error('Search must reuse the scoped action');
+        await action.updateComplete;
+        window.searchEvents = [];
+        host.addEventListener('academy-search-filter-search', (event) => window.searchEvents.push(event.detail.query));
+      })()`);
+      const search = page.frameLocator('iframe').locator('academy-search-filter');
+      await search.locator('input').fill('consulta por clic');
+      await search.locator('academy-action-button button').click();
+      await search.locator('input').fill('consulta por teclado');
+      await search.locator('input').press('Enter');
+      await page.frames()[1].evaluate(`(() => {
+        document.querySelector('academy-search-filter').shadowRoot.querySelector('input').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', isComposing: true, bubbles: true }));
+        if (JSON.stringify(window.searchEvents) !== JSON.stringify(['consulta por clic', 'consulta por teclado'])) throw new Error('Search must emit one exact query per gesture: ' + JSON.stringify(window.searchEvents));
+      })()`);
+    }
+    if (artifact === 'catalog-shell') {
+      const frame = page.frames()[1];
+      await frame.evaluate(`(async () => {
+        const host = document.querySelector('academy-catalog-shell');
+        await window.IntlMsg.setLanguage('es');
+        host.items = [{ id: 'coffee-1', name: 'Café' }, { id: 'tea-2', name: 'Té' }, { id: 'tea-3', name: 'Té' }];
+        host.query = '';
+        window.catalogSelections = [];
+        host.addEventListener('academy-catalog-shell-select', (event) => window.catalogSelections.push(event.detail));
+        await host.updateComplete;
+        const list = host.shadowRoot.querySelector('academy-product-list');
+        await list.updateComplete;
+        if (list.items !== host.items) throw new Error('Catalog must pass consumer data to the list');
+      })()`);
+      const catalog = page.frameLocator('iframe').locator('academy-catalog-shell');
+      const search = catalog.locator('academy-search-filter input');
+      const cards = catalog.locator('academy-product-list academy-product-card');
+      await search.fill(' TÉ ');
+      await search.press('Enter');
+      await frame.waitForFunction(`document.querySelector('academy-catalog-shell').shadowRoot.querySelector('academy-product-list').shadowRoot.querySelectorAll('academy-product-card').length === 2`);
+      await cards.nth(1).locator('academy-action-button button').click();
+      await frame.evaluate(`(() => {
+        if (JSON.stringify(window.catalogSelections) !== JSON.stringify([{ id: 'tea-3', productName: 'Té' }])) throw new Error('Selection must preserve the exact item, including duplicate names');
+      })()`);
+      await search.fill('no existe');
+      await search.press('Enter');
+      await catalog.locator('academy-product-list').getByText('No hay productos para esta búsqueda.', { exact: true }).waitFor();
+      if (await cards.count() !== 0) throw new Error('No-results search kept old cards');
+      await catalog.locator('academy-product-list academy-action-button').filter({ hasText: 'Mostrar todos' }).getByRole('button').click();
+      await frame.waitForFunction(`document.querySelector('academy-catalog-shell').shadowRoot.querySelector('academy-product-list').shadowRoot.querySelectorAll('academy-product-card').length === 3`);
+      if (await search.inputValue() !== '') throw new Error('Clearing results did not reset the search input');
+      await frame.evaluate(`(() => {
+        const host = document.querySelector('academy-catalog-shell');
+        if (host.items.length !== 3 || host.items[2].id !== 'tea-3') throw new Error('Filtering mutated the input collection');
+      })()`);
+    }
   }
   await checkWorkspace(createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS['product-card']).snapshot, 'player-challenge');
   const challengeResults = await page.evaluate<boolean[]>(`(async (tests) => {
@@ -181,7 +236,7 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = await checkWorkspace(complete, 'mobile-feature');
   if (mobile.some((result) => !result.passed)) throw new Error('The narrow-viewport feature checks failed.');
-  console.log(JSON.stringify({ applications: 5, selectionRoutes: ['home', 'favorites', 'search'], disabledAction: ['property', 'attribute', 'click', 'synthetic-click', 'Enter', 'Space', 'reenable'], complete: results.length, starterFails: starter.filter((result) => !result.passed).map((result) => result.id), mutationCaught: true, mobile: mobile.length }));
+  console.log(JSON.stringify({ applications: 5, selectionRoutes: ['home', 'favorites', 'search'], disabledAction: ['property', 'attribute', 'click', 'synthetic-click', 'Enter', 'Space', 'reenable'], statePanel: ['loading', 'empty', 'error', 'success', 'unknown', 'retry', 'i18n'], catalogFlow: ['shared-action', 'Enter', 'composition', 'filter', 'duplicate-name-selection', 'empty', 'clear'], complete: results.length, starterFails: starter.filter((result) => !result.passed).map((result) => result.id), mutationCaught: true, mobile: mobile.length }));
 } finally {
   await browser.close();
 }
