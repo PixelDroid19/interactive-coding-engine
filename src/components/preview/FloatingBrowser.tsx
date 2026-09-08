@@ -126,7 +126,7 @@ export const FloatingBrowser = forwardRef<FloatingBrowserRef, FloatingBrowserPro
       setPos({
         x: Math.max(8, window.innerWidth - width - 18),
         y: isNarrowViewport
-          ? narrowTop
+          ? Math.max(narrowTop, window.innerHeight - height - 120)
           : 52,
       });
     };

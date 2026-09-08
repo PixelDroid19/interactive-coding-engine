@@ -179,6 +179,9 @@ describe('FloatingBrowser en viewport móvil', () => {
     const browserWindow = toolbar.parentElement as HTMLElement;
 
     await waitFor(() => expect(browserWindow.style.height).toBe('430px'));
+    // Keep the wrapped player header and editor controls reachable above the preview.
+    expect(Number.parseFloat(browserWindow.style.top)).toBeGreaterThanOrEqual(200);
+    expect(Number.parseFloat(browserWindow.style.top) + 430).toBeLessThanOrEqual(724);
   });
 });
 
