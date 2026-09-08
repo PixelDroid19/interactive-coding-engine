@@ -77,6 +77,35 @@ try {
     const results = await checkWorkspace(createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS[artifact]).snapshot, artifact);
     const failures = results.filter((result) => !result.passed);
     if (failures.length) throw new Error(`${artifact}: ${JSON.stringify(failures)}`);
+    if (artifact === 'state-panel') {
+      await page.frames()[1].evaluate(`(async () => {
+        const host = document.querySelector('academy-state-panel');
+        await window.IntlMsg.setLanguage('es');
+        const retries = [];
+        host.addEventListener('academy-state-panel-retry', (event) => retries.push(event));
+        for (const [state, text] of [['loading', 'Cargando datos'], ['empty', 'No hay resultados'], ['error', 'No pudimos cargar los datos'], ['success', 'Datos disponibles'], ['unexpected', 'Cargando datos']]) {
+          host.state = state;
+          await host.updateComplete;
+          const panel = host.shadowRoot.querySelector('[data-state]');
+          const expected = state === 'unexpected' ? 'loading' : state;
+          if (!panel || panel.dataset.state !== expected) throw new Error('Missing exclusive state: ' + state);
+          if (!panel.textContent.includes(text)) throw new Error('Missing translated state message: ' + state);
+          if (panel.getAttribute('aria-busy') !== String(expected === 'loading')) throw new Error('Incorrect loading semantics');
+          if (panel.getAttribute('role') !== (expected === 'error' ? 'alert' : 'status')) throw new Error('Incorrect state announcement');
+          if (Boolean(panel.querySelector('slot')) !== (expected === 'success')) throw new Error('Results are visible outside success');
+          const action = panel.querySelector('academy-action-button');
+          if (Boolean(action) !== (state === 'error')) throw new Error('Retry must exist only for errors');
+          if (action) { await action.updateComplete; action.shadowRoot.querySelector('button').click(); }
+          else host.handleAction();
+          if (retries.length !== (['loading', 'empty'].includes(state) ? 0 : 1)) throw new Error('Retry emitted outside error state');
+        }
+        if (retries[0].detail.state !== 'error' || !retries[0].bubbles || !retries[0].composed) throw new Error('Retry lost its public contract');
+        host.state = 'error';
+        await window.IntlMsg.setLanguage('en');
+        await host.updateComplete;
+        if (!host.shadowRoot.textContent.includes('We could not load the data')) throw new Error('State did not translate on the same host');
+      })()`);
+    }
     if (artifact === 'action-button') {
       const frame = page.frames()[1];
       await frame.evaluate(`(async () => {

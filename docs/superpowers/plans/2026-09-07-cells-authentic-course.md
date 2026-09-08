@@ -85,3 +85,15 @@ Remaining acceptance work: review lesson-specific component behaviors and advanc
 Evidence: browser regression first failed with `disabled must reflect and disable the native control`, then passed after implementation. The complete suite exposed the preliminary audit's explicit-attribute requirement; the component now declares it without weakening the audit. Final `npm test -- --maxWorkers=2 --reporter=dot`: 1318 passed, 2 skipped; lint and production build passed. Browser verification passed five applications, eight component families, the player challenge, feature states, mutation detection and mobile checks. Existing build warnings remain. Exported test execution in an external CLI and ZIP handoff are not proven by these checks.
 
 Next: mutually exclusive state-panel behavior, actual search/list/catalog interaction, advanced examples and independent exported-project validation. Audio and subtitles remain unchanged.
+
+## Task 5b: Exclusive request-state presentation
+
+- [x] Render one translated state at a time with loading semantics and error announcements.
+- [x] Show consumer content only in success and expose retry only in error; emit the existing public intention without owning networking.
+- [x] Document the finite state domain and fallback, success slot and demo variants.
+- [x] Verify transitions, removal of stale content/actions, invalid input and live ES/EN changes in Chromium; include an exported regression test.
+- [x] Let the generic browser contract runner choose a documented string literal for finite-domain properties instead of supplying an invalid arbitrary string.
+
+Browser red evidence: `Missing exclusive state: loading`; after the state guard, the generic runner also correctly exposed its invalid fixture via `browser-event`. The final browser flow passes all state assertions. The editor integration identified a DOM typing issue in the exported test; using the standard attribute accessor fixed it without suppressing diagnostics. No audio or subtitle changes.
+
+Final verification: full suite 1318 passed / 2 skipped, lint passed, production build passed with existing warnings, browser checks passed. Remaining: search/list/catalog, advanced examples and exported-project execution.

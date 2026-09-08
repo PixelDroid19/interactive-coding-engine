@@ -80,14 +80,14 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
           <small>${translated('action')}</small>
         </button>`;
     case 'state-panel':
-      return `<div class="state-grid">
-          <academy-status-badge .status=\${this.state}></academy-status-badge>
-          <strong>${value}</strong>
-          <p>${translated('description')}</p>
-          <academy-action-button
+      return `<div class="state-grid" data-state=\${this.visibleState} role=\${this.visibleState === 'error' ? 'alert' : 'status'} aria-busy=\${String(this.visibleState === 'loading')}>
+          <academy-status-badge .status=\${this.t('${prefix}.' + this.visibleState)}></academy-status-badge>
+          <p>\${this.t('${prefix}.' + this.visibleState)}</p>
+          \${this.visibleState === 'success' ? html\`<slot></slot>\` : ''}
+          \${this.visibleState === 'error' ? html\`<academy-action-button
             .label=\${this.t('${prefix}.action')}
             ${childAction}
-          ></academy-action-button>
+          ></academy-action-button>\` : ''}
         </div>`;
     case 'product-card':
       return `<article class="product-card">
@@ -276,10 +276,11 @@ ${artifact.id === 'action-button' ? '    this.disabled = false;\n' : ''}
   handleAction(event) {
     event?.stopPropagation();
 ${artifact.id === 'action-button' ? '    if (this.disabled) return;\n' : ''}
+${artifact.id === 'state-panel' ? "    if (this.state !== 'error') return;\n" : ''}
     this.emitEvent('${blueprint.eventName}', { ${blueprint.propertyName}: this.${blueprint.propertyName} });
   }
 
-${artifact.id === 'search-filter' ? '  handleSubmit(event) { event.preventDefault(); this.handleAction(); }\n' : ''}${artifact.id === 'language-switcher' ? `  chooseLocale(locale) { this.${blueprint.propertyName} = locale; this.handleAction(); }\n` : ''}
+${artifact.id === 'state-panel' ? "  get visibleState() { return ['loading', 'empty', 'error', 'success'].includes(this.state) ? this.state : 'loading'; }\n" : ''}${artifact.id === 'search-filter' ? '  handleSubmit(event) { event.preventDefault(); this.handleAction(); }\n' : ''}${artifact.id === 'language-switcher' ? `  chooseLocale(locale) { this.${blueprint.propertyName} = locale; this.handleAction(); }\n` : ''}
 
   render() {
     return html\`
@@ -329,6 +330,7 @@ ${artifact.id === 'search-filter' ? '  handleSubmit(event) { event.preventDefaul
       [`${prefix}.status`]: artifact.id === 'price-tag' ? 'Tax included' : artifact.id === 'notice-banner' ? 'Notice' : 'Available',
       [`${prefix}.spanish`]: 'Spanish',
       [`${prefix}.english`]: 'English',
+      ...(artifact.id === 'state-panel' ? { 'state.panel.loading': 'Loading data', 'state.panel.empty': 'No results', 'state.panel.error': 'We could not load the data', 'state.panel.success': 'Data available' } : {}),
     },
     es: {
       ...Object.assign({}, ...dependencyCatalogs.map((catalog) => catalog.es)),
@@ -339,6 +341,7 @@ ${artifact.id === 'search-filter' ? '  handleSubmit(event) { event.preventDefaul
       [`${prefix}.status`]: artifact.id === 'price-tag' ? 'Impuestos incluidos' : artifact.id === 'notice-banner' ? 'Aviso' : 'Disponible',
       [`${prefix}.spanish`]: 'Español',
       [`${prefix}.english`]: 'Inglés',
+      ...(artifact.id === 'state-panel' ? { 'state.panel.loading': 'Cargando datos', 'state.panel.empty': 'No hay resultados', 'state.panel.error': 'No pudimos cargar los datos', 'state.panel.success': 'Datos disponibles' } : {}),
     },
   };
   for (const path of ['locales/locales.json', 'demo/locales/locales.json', 'test/unit/locales/locales.json']) {
@@ -499,6 +502,27 @@ ${artifact.id === 'action-button' ? `
     expect(events.length).toBe(1);
   });
 ` : ''}
+${artifact.id === 'state-panel' ? `
+  it('retira resultados y reintentos al cambiar el estado principal', async () => {
+    const component = await renderComponent();
+    const retries = [];
+    component.addEventListener('academy-state-panel-retry', (event) => retries.push(event));
+    for (const state of ['loading', 'empty', 'error', 'success', 'unknown']) {
+      component.state = state;
+      await component.updateComplete;
+      const panel = component.shadowRoot.querySelector('[data-state]');
+      const expected = state === 'unknown' ? 'loading' : state;
+      expect(panel.getAttribute('data-state')).toBe(expected);
+      expect(panel.getAttribute('aria-busy')).toBe(String(expected === 'loading'));
+      expect(panel.getAttribute('role')).toBe(expected === 'error' ? 'alert' : 'status');
+      expect(Boolean(panel.querySelector('slot'))).toBe(state === 'success');
+      expect(Boolean(panel.querySelector('academy-action-button'))).toBe(state === 'error');
+      component.handleAction();
+    }
+    expect(retries.length).toBe(1);
+    expect(retries[0].detail).toEqual({ state: 'error' });
+  });
+` : ''}
 });
 `,
   };
@@ -515,11 +539,11 @@ ${artifact.id === 'action-button' ? `
           tagName: artifact.tagName,
           description: blueprint.description.es,
           members: [
-            { kind: 'field', name: blueprint.propertyName, attribute: blueprint.attribute, type: { text: 'string' }, default: JSON.stringify(blueprint.defaultValue), description: blueprint.description.es },
+            { kind: 'field', name: blueprint.propertyName, attribute: blueprint.attribute, type: { text: artifact.id === 'state-panel' ? "'error' | 'loading' | 'empty' | 'success'" : 'string' }, default: JSON.stringify(blueprint.defaultValue), description: blueprint.description.es },
             ...(artifact.id === 'action-button' ? [{ kind: 'field', name: 'disabled', attribute: 'disabled', type: { text: 'boolean' }, default: 'false', reflects: true, description: 'Bloquea la interacción y la emisión de acciones.' }] : []),
           ],
           events: [{ name: `${artifact.tagName}-${blueprint.eventName}`, type: { text: `CustomEvent<{ ${blueprint.propertyName}: string }>` }, description: blueprint.action.es }],
-          slots: artifact.id === 'action-button' ? [{ name: '', description: 'Etiqueta alternativa a la propiedad label.' }] : [],
+          slots: artifact.id === 'action-button' ? [{ name: '', description: 'Etiqueta alternativa a la propiedad label.' }] : artifact.id === 'state-panel' ? [{ name: '', description: 'Contenido del consumidor, visible únicamente en success.' }] : [],
           cssProperties: [{ name: `--${artifact.id}-accent`, default: blueprint.accent, description: 'Acento visual público.' }],
         }],
         exports: [{ kind: 'custom-element-definition', name: artifact.tagName, declaration: { name: className, module: sourcePath } }],
@@ -530,6 +554,16 @@ ${artifact.id === 'action-button' ? `
     ...files['README.md'],
     content: `# ${artifact.tagName}\n\n${blueprint.description.es}\n\n## Evento\n\n\`${artifact.tagName}-${blueprint.eventName}\` comunica \`${blueprint.propertyName}\`.\n${artifact.id === 'action-button' ? '\n## Contrato público\n\n`label` configura el texto; el slot por defecto permite sustituirlo. `disabled` es una propiedad Boolean reflejada en el atributo homónimo. Su presencia bloquea el botón nativo y evita emitir acciones, también por teclado. Elimina el atributo o asigna `false` a la propiedad para habilitarlo; `disabled="false"` sigue siendo un atributo presente.\n' : ''}\n- \`cells component:dev\`\n- \`cells component:test\`\n- \`cells component:documentation\`\n`,
   };
+  if (artifact.id === 'state-panel') {
+    files['README.md'].content += '\n## Estados y recuperación\n\n`state` acepta `loading`, `empty`, `error` o `success`. Una entrada desconocida muestra carga como salida segura. Solo `success` muestra el contenido del slot; los otros estados lo retiran. Solo `error` ofrece reintentar y emite `academy-state-panel-retry` con `{ state: "error" }`. El consumidor inicia la petición y actualiza la propiedad; el panel no realiza llamadas de red ni modifica el estado por su cuenta.\n';
+    for (const state of ['loading', 'empty', 'error', 'success']) {
+      const path = `demo/${state}.html`;
+      files[path] = {
+        path, name: `${state}.html`, language: 'html',
+        content: `<!doctype html>\n<html lang="es"><head><title>Estado ${state}</title></head><body><${artifact.tagName} state="${state}"></${artifact.tagName}><script type="module" src="./demo.js"></script></body></html>\n`,
+      };
+    }
+  }
   const manifest = JSON.parse(files['package.json'].content);
   manifest.learningArtifact = artifact.id;
   manifest.learningDependencies = artifact.dependencies;

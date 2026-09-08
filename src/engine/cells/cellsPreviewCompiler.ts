@@ -455,9 +455,10 @@ export function buildCellsPreviewDocument(workspace: WorkspaceSnapshot, options:
   const componentDemos = isApplication ? [] : readComponentDemos(workspace, definedTag, componentDocumentation);
   const contractProperty = componentDocumentation?.properties?.[0];
   const contractPropertyName = contractProperty?.name ?? '';
+  const contractLiteral = contractProperty?.type.match(/^\s*(['"])(.*?)\1(?:\s*\||\s*$)/)?.[2];
   const contractPropertyValue = contractProperty?.type.toLowerCase().includes('boolean')
     ? true
-    : contractProperty?.type.toLowerCase().includes('number') ? 42 : 'Valor dinámico';
+    : contractProperty?.type.toLowerCase().includes('number') ? 42 : contractLiteral ?? 'Valor dinámico';
   const contractEventName = componentDocumentation?.events?.[0]?.name ?? '';
   const contractScopedTags = Array.from(
     componentSource.matchAll(/import\s+\{\s*[A-Za-z_$][\w$]*\s*\}\s+from\s+['"]\.\/components\/([^'"]+)\.js['"]/g),
