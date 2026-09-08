@@ -3,6 +3,30 @@ import { describe, expect, it } from 'vitest';
 import { createOpenCellsLessonWorkspace } from './lessonWorkspaces';
 import { advancedApplicationArtifactForLesson } from './advancedApplicationArtifacts';
 
+describe('catalog migration boundary', () => {
+  async function normalizer() {
+    const source = advancedApplicationArtifactForLesson(84)!.source;
+    return (await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)).normalizeCatalogItem;
+  }
+
+  it('accepts both contracts while warning only for the legacy property', async () => {
+    const normalize = await normalizer();
+    const warnings: string[] = [];
+    expect(normalize({ id: 'first', title: 'Museo' }, (warning: string) => warnings.push(warning))).toEqual({ id: 'first', name: 'Museo' });
+    expect(warnings).toEqual([]);
+    expect(normalize({ id: 'first', name: 'Museo' }, (warning: string) => warnings.push(warning))).toEqual({ id: 'first', name: 'Museo' });
+    expect(warnings).toHaveLength(1);
+    expect(normalize({ id: 'first', title: 'Nuevo', name: 'Antiguo' })).toEqual({ id: 'first', name: 'Nuevo' });
+  });
+
+  it('rejects malformed inputs without disguising an invalid new contract as legacy', async () => {
+    const normalize = await normalizer();
+    for (const input of [null, undefined, [], {}, { id: '', title: 'Museo' }, { id: {}, title: 'Museo' }, { id: 'first', title: {}, name: 'Museo' }, { id: 'first', title: '' }, { id: 'first', name: 42 }]) {
+      expect(normalize(input)).toBeUndefined();
+    }
+  });
+});
+
 describe('release evidence', () => {
   async function releaseContract() {
     const source = advancedApplicationArtifactForLesson(83)!.source;

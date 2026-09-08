@@ -12,6 +12,7 @@ import { connectTraceWorkspace } from './traceWorkspace';
 import { connectAnalyticsWorkspace } from './analyticsWorkspace';
 import { connectPerformanceWorkspace } from './performanceWorkspace';
 import { connectReleaseWorkspace } from './releaseWorkspace';
+import { connectMigrationWorkspace } from './migrationWorkspace';
 
 function applicationProjectFor(number: number): CellsAppProject {
   if (number <= 46) return 'store';
@@ -38,6 +39,7 @@ export function createOpenCellsLessonWorkspace(number: number): VersionedCellsWo
     : number === 80 ? connectTraceWorkspace(artifactWorkspace)
     : number === 81 ? connectAnalyticsWorkspace(artifactWorkspace)
     : number === 82 ? connectPerformanceWorkspace(artifactWorkspace)
-    : number === 83 ? connectReleaseWorkspace(artifactWorkspace) : artifactWorkspace;
+    : number === 83 ? connectReleaseWorkspace(artifactWorkspace)
+    : number === 84 ? connectMigrationWorkspace(artifactWorkspace) : artifactWorkspace;
   return createVersionedCellsWorkspace({ ...withArtifact.snapshot, activeFilePath: advanced.path }, 0);
 }

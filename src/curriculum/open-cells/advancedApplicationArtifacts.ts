@@ -188,8 +188,11 @@ export function canPromote(evidence) {
 }
 ` },
   84: { path: 'app/migrations/catalog-contract.js', source: `export function normalizeCatalogItem(input, warn = () => {}) {
-  if ('title' in input) return { id: input.id, name: input.title };
-  if ('name' in input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input) || typeof input.id !== 'string' || !input.id.trim()) return undefined;
+  if (Object.hasOwn(input, 'title')) {
+    return typeof input.title === 'string' && input.title.trim() ? { id: input.id, name: input.title } : undefined;
+  }
+  if (Object.hasOwn(input, 'name') && typeof input.name === 'string' && input.name.trim()) {
     warn('La propiedad name se retirará en la próxima versión mayor.');
     return { id: input.id, name: input.name };
   }
