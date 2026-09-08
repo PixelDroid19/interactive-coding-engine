@@ -12,6 +12,23 @@ async function runtime() {
 }
 
 describe('navegación interceptada en el playground', () => {
+  it('entrega parámetros mediante la propiedad de la página antes de llamar onPageEnter sin argumentos', async () => {
+    const core = await runtime();
+    document.body.innerHTML = '<main id="app"></main>';
+    let received: unknown;
+    class ParameterPage extends HTMLElement {
+      params = {};
+      onPageEnter(...args: unknown[]) { received = { params: this.params, argumentCount: args.length }; }
+    }
+    customElements.define('parameter-contract-page', ParameterPage);
+    await core.startApp({ mainNode: 'app', initialTemplate: 'home', routes: [
+      { name: 'home', path: '/', component: 'section', action: async () => {} },
+      { name: 'detail', path: '/detail/:id', component: 'parameter-contract-page', action: async () => {} },
+    ] });
+    await core.navigate('detail', { id: 'selected' });
+    expect(received).toEqual({ params: { id: 'selected' }, argumentCount: 0 });
+  });
+
   it('aplica una redirección síncrona sin montar la página rechazada', async () => {
     const core = await runtime();
     document.body.innerHTML = '<main id="app"></main>';

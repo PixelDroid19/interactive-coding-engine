@@ -30,7 +30,7 @@ El catálogo actual usa productos de demostración en su constructor. El data ma
 | Tarjeta → página | academy-product-card-select; detail contiene una copia del producto. | handleProductSelected de la página. |
 | Página → canal | academy:studio:project:selected, declarado en [channels.js](../app/scripts/channels.js). | Cada suscriptor interpreta la selección; el canal no navega. |
 | Página → router | navigate('product-detail', { id: product.id }). | El router resuelve la ruta nombrada y carga su módulo. |
-| Router → detalle | onPageEnter({ id }). | La página de detalle actualiza su estado local. |
+| Router → detalle | Propiedad params con id; después onPageEnter() sin argumentos. | La página de detalle lee this.params y actualiza su estado local. |
 
 La selección por canal y el parámetro de ruta no son lo mismo. El canal comunica el objeto durante la sesión; la ruta transporta el identificador navegable. En este ejemplo el detalle muestra ese identificador: no obtiene automáticamente el objeto completo del catálogo.
 

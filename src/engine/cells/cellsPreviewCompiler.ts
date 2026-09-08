@@ -13,7 +13,8 @@ const PAGE_MIXIN_RUNTIME = `
 import { navigate, publish, subscribe, unsubscribe } from '@open-cells/core';
 
 export const PageMixin = (Base) => class extends Base {
-  constructor() { super(); this.__cellsSubscriptions = new Map(); }
+  static get properties() { return { ...super.properties, params: { type: Object } }; }
+  constructor() { super(); this.params = {}; this.__cellsSubscriptions = new Map(); }
   publish(channel, value) { publish(channel, value); }
   subscribe(channel, callback) {
     subscribe(channel, this, callback);
@@ -86,7 +87,8 @@ export function startApp({ mainNode, routes, initialTemplate, debug = false, int
     outlet.replaceChildren(page);
     activePage = page;
     currentRoute = { page: route.name, params: structuredClone(params) };
-    page.onPageEnter?.(params);
+    if (page.params) page.params = structuredClone(params);
+    page.onPageEnter?.();
     publish('__oc_app', { currentPage: route.name });
     await page.updateComplete;
     return page;

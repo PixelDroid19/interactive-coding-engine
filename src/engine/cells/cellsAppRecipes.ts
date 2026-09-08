@@ -130,7 +130,7 @@ export function createCellsAppWorkspace(scaffold: CellsAppScaffold): VersionedCe
 <html lang="es">
   <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>html{background:#eef2f6;color:#102a43;font-family:Inter,system-ui,sans-serif}body{margin:0;min-height:100vh}button,input{font:inherit}</style>
+    <style>html{background:#eef2f6;color:#102a43;font-family:Inter,system-ui,sans-serif}body{margin:0;min-height:100vh}button,input{font:inherit}#app>[state="inactive"],#app>[state="cached"]{display:none}</style>
   </head>
   <body><main id="app" aria-live="polite"></main><script type="module" src="./app/scripts/app.js"></script></body>
 </html>
@@ -246,6 +246,7 @@ import { getComponentSharedStyles } from '../../styles/shared-styles.js';
 
 export class AcademyHomePage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-home-page'; }
+  static getPagePrivateChannel() { return this.BRIDGE_PAGE_PRIVATE_CHANNEL_PREFIX + 'home'; }
   static get scopedElements() {
     return {
       ...super.scopedElements,
@@ -327,6 +328,7 @@ import { getComponentSharedStyles } from '../../styles/shared-styles.js';
 
 export class AcademyProductDetailPage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-product-detail-page'; }
+  static getPagePrivateChannel() { return this.BRIDGE_PAGE_PRIVATE_CHANNEL_PREFIX + 'product-detail'; }
   static get scopedElements() {
     return this.scopedElementsFromClasses(this.configurationScopedElements());
   }
@@ -345,8 +347,10 @@ export class AcademyProductDetailPage extends PageMixin(WidgetMixin(ScopedElemen
     this.productId = 'first';
   }
 
-  onPageEnter(params = {}) {
-    this.productId = params.id ?? 'first';
+  onPageEnter() {
+    const id = String(this.params.id ?? 'first');
+    try { this.productId = decodeURIComponent(id); }
+    catch { this.productId = id; }
   }
 
   render() {
@@ -373,6 +377,7 @@ import { getComponentSharedStyles } from '../../styles/shared-styles.js';
 
 export class AcademyNotFoundPage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-not-found-page'; }
+  static getPagePrivateChannel() { return this.BRIDGE_PAGE_PRIVATE_CHANNEL_PREFIX + 'not-found'; }
   static get scopedElements() {
     return this.scopedElementsFromClasses(this.configurationScopedElements());
   }
@@ -404,6 +409,7 @@ import { getComponentSharedStyles } from '../../styles/shared-styles.js';
 
 export class AcademyFavoritesPage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-favorites-page'; }
+  static getPagePrivateChannel() { return this.BRIDGE_PAGE_PRIVATE_CHANNEL_PREFIX + 'favorites'; }
   static get scopedElements() {
     return {
       ...super.scopedElements,
@@ -456,6 +462,7 @@ import { getComponentSharedStyles } from '../../styles/shared-styles.js';
 
 export class AcademyCartPage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-cart-page'; }
+  static getPagePrivateChannel() { return this.BRIDGE_PAGE_PRIVATE_CHANNEL_PREFIX + 'cart'; }
   static get scopedElements() {
     return this.scopedElementsFromClasses(this.configurationScopedElements());
   }
@@ -477,8 +484,8 @@ export class AcademyCartPage extends PageMixin(WidgetMixin(ScopedElementsMixin(L
     ];
   }
 
-  onPageEnter(params = {}) {
-    if (Array.isArray(params.items)) this.items = params.items;
+  onPageEnter() {
+    if (Array.isArray(this.params.items)) this.items = this.params.items;
   }
 
   render() {
@@ -508,6 +515,7 @@ import { getComponentSharedStyles } from '../../styles/shared-styles.js';
 
 export class AcademySearchPage extends PageMixin(WidgetMixin(ScopedElementsMixin(LitElement))) {
   static get is() { return 'academy-search-page'; }
+  static getPagePrivateChannel() { return this.BRIDGE_PAGE_PRIVATE_CHANNEL_PREFIX + 'search'; }
   static get scopedElements() {
     return {
       ...super.scopedElements,
