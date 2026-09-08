@@ -133,14 +133,21 @@ export function resolveFeatureFlags(input = {}) {
 ` },
   79: { path: 'service-worker.js', source: offlineWorkerSource },
   80: { path: 'app/observability/trace.js', source: `export function createTrace(name, correlationId, now = performance.now()) {
-  return {
+  if (typeof name !== 'string' || !name.trim() || typeof correlationId !== 'string' || !correlationId.trim()) throw new TypeError('Trace metadata must be named identifiers');
+  if (!Number.isFinite(now) || now < 0) throw new RangeError('Invalid trace start');
+  let result;
+  return Object.freeze({
     name,
     correlationId,
     startedAt: now,
     finish(status, finishedAt = performance.now()) {
-      return { name, correlationId, status, durationMs: finishedAt - now };
+      if (result) return result;
+      if (!['ok', 'error', 'cancelled'].includes(status)) throw new TypeError('Invalid trace outcome');
+      if (!Number.isFinite(finishedAt) || finishedAt < now) throw new RangeError('Invalid trace end');
+      result = Object.freeze({ name, correlationId, status, durationMs: finishedAt - now });
+      return result;
     },
-  };
+  });
 }
 ` },
   81: { path: 'app/analytics/events.js', source: `const CONTRACTS = { 'catalog:item-selected': ['itemId', 'source'] };

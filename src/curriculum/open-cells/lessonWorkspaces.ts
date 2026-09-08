@@ -8,6 +8,7 @@ import { connectDelegatedRoutesWorkspace } from './delegatedRoutesWorkspace';
 import { connectPageRetentionWorkspace } from './pageRetentionWorkspace';
 import { connectFeatureFlagsWorkspace } from './featureFlagsWorkspace';
 import { connectOfflineShellWorkspace } from './offlineShellWorkspace';
+import { connectTraceWorkspace } from './traceWorkspace';
 
 function applicationProjectFor(number: number): CellsAppProject {
   if (number <= 46) return 'store';
@@ -30,6 +31,7 @@ export function createOpenCellsLessonWorkspace(number: number): VersionedCellsWo
     : number === 76 ? connectDelegatedRoutesWorkspace(artifactWorkspace)
     : number === 77 ? connectPageRetentionWorkspace(artifactWorkspace)
     : number === 78 ? connectFeatureFlagsWorkspace(artifactWorkspace)
-    : number === 79 ? connectOfflineShellWorkspace(artifactWorkspace) : artifactWorkspace;
+    : number === 79 ? connectOfflineShellWorkspace(artifactWorkspace)
+    : number === 80 ? connectTraceWorkspace(artifactWorkspace) : artifactWorkspace;
   return createVersionedCellsWorkspace({ ...withArtifact.snapshot, activeFilePath: advanced.path }, 0);
 }

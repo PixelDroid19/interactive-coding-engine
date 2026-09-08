@@ -3,6 +3,36 @@ import { describe, expect, it } from 'vitest';
 import { createOpenCellsLessonWorkspace } from './lessonWorkspaces';
 import { advancedApplicationArtifactForLesson } from './advancedApplicationArtifacts';
 
+describe('trace completion', () => {
+  async function traceFactory() {
+    const source = advancedApplicationArtifactForLesson(80)!.source;
+    return (await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)).createTrace;
+  }
+
+  it('finishes once with immutable timing metadata', async () => {
+    const createTrace = await traceFactory();
+    const trace = createTrace('data', 'action-1', 10);
+    const result = trace.finish('ok', 25);
+    expect(result).toEqual({ name: 'data', correlationId: 'action-1', status: 'ok', durationMs: 15 });
+    expect(trace.finish('error', 90)).toBe(result);
+    expect(Object.isFrozen(result)).toBe(true);
+  });
+
+  it('rejects invalid clocks and unrecognized outcomes', async () => {
+    const createTrace = await traceFactory();
+    expect(() => createTrace('data', 'action-1', NaN)).toThrow(RangeError);
+    expect(() => createTrace('data', 'action-1', 10).finish('ok', 5)).toThrow(RangeError);
+    expect(() => createTrace('data', 'action-1', 10).finish('pending', 15)).toThrow(TypeError);
+  });
+
+  it('rejects object payloads in metadata fields', async () => {
+    const createTrace = await traceFactory();
+    expect(() => createTrace({ content: 'private' }, 'action-1', 0)).toThrow(TypeError);
+    expect(() => createTrace('data', { token: 'private' }, 0)).toThrow(TypeError);
+    expect(() => createTrace('', 'action-1', 0)).toThrow(TypeError);
+  });
+});
+
 describe('feature flag resolution', () => {
   it('enables only explicit booleans and safely defaults malformed inputs', async () => {
     const source = advancedApplicationArtifactForLesson(78)!.source;
