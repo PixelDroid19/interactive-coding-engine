@@ -31,7 +31,7 @@ const BLUEPRINTS: Record<string, ComponentBlueprint> = {
   'lifecycle-panel': blueprint('connectionState', 'connection-state', 'conectado', 'reconectado', 'inspect', '#0f766e', 'Lifecycle evidence', 'Evidencia del ciclo de vida', 'Subscriptions have a visible owner and cleanup.', 'Las suscripciones tienen propietario y limpieza visibles.', 'Inspect state', 'Inspeccionar estado'),
   'context-panel': blueprint('density', 'density', 'cómoda', 'compacta', 'change', '#2563eb', 'Shared context', 'Contexto compartido', 'Two consumers observe one scoped provider.', 'Dos consumidores observan un proveedor con alcance.', 'Change context', 'Cambiar contexto'),
   'media-tile': blueprint('imageLabel', 'image-label', 'Paisaje de ejemplo', 'Diagrama accesible', 'open', '#c2410c', 'Configurable media', 'Recurso configurable', 'The consumer owns the resource and its accessible description.', 'El consumidor controla el recurso y su descripción accesible.', 'Inspect media', 'Inspeccionar recurso'),
-  'theme-preview': blueprint('theme', 'theme', 'claro', 'oscuro', 'change', '#7c3aed', 'Theme contract', 'Contrato de tema', 'Tokens change the environment without duplicating the component.', 'Los tokens cambian el ambiente sin duplicar el componente.', 'Change theme', 'Cambiar tema'),
+  'theme-preview': blueprint('theme', 'theme', 'claro', 'oscuro', 'change', '#1d4ed8', 'Theme contract', 'Contrato de tema', 'Tokens change the environment without duplicating the component.', 'Los tokens cambian el ambiente sin duplicar el componente.', 'Inspect theme', 'Inspeccionar tema'),
   'component-workflow': blueprint('stage', 'stage', 'desarrollo', 'entrega', 'advance', '#047857', 'Component workflow', 'Flujo del componente', 'Source, demo, tests and package advance together.', 'Fuente, demo, pruebas y paquete avanzan juntos.', 'Advance', 'Avanzar'),
 };
 
@@ -171,12 +171,13 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
 }
 
 function componentStyles(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint): string {
+  const accent = `var(--${artifact.id}-accent, var(--academy-accent, ${blueprint.accent}))`;
   const layout = artifact.id === 'product-list' || artifact.id === 'catalog-shell' ? 'min(52rem, 100%)' : 'min(34rem, 100%)';
   const compact = artifact.id === 'action-button' || artifact.id === 'status-badge';
   return `:host {
   display: ${compact ? 'inline-block' : 'block'};
   width: ${compact ? 'auto' : layout};
-  color: #172033;
+  color: var(--academy-foreground, #172033);
   font-family: system-ui, sans-serif;
 }
 
@@ -184,28 +185,29 @@ function componentStyles(artifact: OpenCellsArtifact, blueprint: ComponentBluepr
   display: grid;
   gap: 1rem;
   padding: clamp(1.25rem, 4vw, 2rem);
-  border: 1px solid color-mix(in srgb, ${blueprint.accent} 42%, #dbe3ef);
+  border: 1px solid var(--academy-border, color-mix(in srgb, ${accent} 42%, #dbe3ef));
   border-radius: 1.35rem;
-  background: linear-gradient(145deg, #ffffff, color-mix(in srgb, ${blueprint.accent} 8%, #f8fafc));
+  background: var(--academy-surface, linear-gradient(145deg, #ffffff, color-mix(in srgb, ${accent} 8%, #f8fafc)));
   box-shadow: 0 1rem 2.5rem rgb(15 23 42 / 12%);
 }
 
-.eyebrow { margin: 0; color: ${blueprint.accent}; font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-.primary-action, .language button { border: 0; border-radius: 999px; padding: .85rem 1.2rem; background: ${blueprint.accent}; color: white; font-weight: 800; cursor: pointer; }
+.eyebrow { margin: 0; color: ${accent}; font-size: .72rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.primary-action, .language button { border: 0; border-radius: 999px; padding: .85rem 1.2rem; background: var(--academy-action-background, ${accent}); color: var(--academy-action-foreground, white); font-weight: 800; cursor: pointer; }
+.primary-action:focus-visible, .status-stage:focus-visible, .language button:focus-visible { outline: 3px solid var(--academy-focus, ${accent}); outline-offset: 3px; }
 ${artifact.id === 'action-button' ? '.primary-action:disabled { opacity: .55; cursor: not-allowed; }\n' : ''}
 .status-stage, .profile, .notice, .price, .collection header, .language { display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }
-.status-stage, .notice, .price { border-left: .35rem solid ${blueprint.accent}; padding: 1rem; background: #f8fafc; }
+.status-stage, .notice, .price { border-left: .35rem solid ${accent}; padding: 1rem; background: var(--academy-muted-surface, #f8fafc); }
 .status-stage, .price { width: 100%; border-top: 0; border-right: 0; border-bottom: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.status-dot { width: .75rem; height: .75rem; border-radius: 50%; background: ${blueprint.accent}; }
+.status-dot { width: .75rem; height: .75rem; border-radius: 50%; background: ${accent}; }
 ${artifact.id === 'status-badge' ? '.status-stage { width: auto; border: 1px solid currentColor; border-radius: 999px; padding: .4rem .7rem; gap: .45rem; font-size: .8rem; }\n' : ''}
 .state-grid, .product-card { display: grid; gap: 1rem; }
-.avatar { display: grid; width: 3rem; height: 3rem; place-items: center; border-radius: 50%; background: ${blueprint.accent}; color: white; font-size: 1.25rem; font-weight: 900; }
+.avatar { display: grid; width: 3rem; height: 3rem; place-items: center; border-radius: 50%; background: ${accent}; color: white; font-size: 1.25rem; font-weight: 900; }
 .collection { display: grid; gap: 1rem; }
 .product-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .8rem; }
 .search { display: flex; align-items: end; gap: .8rem; }
 .search label { display: grid; flex: 1; gap: .35rem; }
 .search input { min-height: 2.65rem; border: 1px solid #94a3b8; border-radius: .6rem; padding: 0 .75rem; }
-.language button.active { outline: 3px solid color-mix(in srgb, ${blueprint.accent} 35%, white); }
+.language button.active { outline: 3px solid color-mix(in srgb, ${accent} 35%, white); }
 .catalog { display: grid; gap: 1rem; }
 `;
 }
@@ -669,7 +671,11 @@ ${advanced?.tests ?? ''}
             ...advanced?.events ?? [],
           ],
           slots: artifact.id === 'action-button' ? [{ name: '', description: 'Etiqueta alternativa a la propiedad label.' }] : artifact.id === 'state-panel' ? [{ name: '', description: 'Contenido del consumidor, visible únicamente en success.' }] : [],
-          cssProperties: [{ name: `--${artifact.id}-accent`, default: blueprint.accent, description: 'Acento visual público.' }],
+          cssProperties: [
+            { name: `--${artifact.id}-accent`, default: blueprint.accent, description: 'Acento visual público; tiene prioridad sobre el acento ambiental.' },
+            ...['surface', 'foreground', 'muted-surface', 'border', 'accent', 'action-background', 'action-foreground', 'focus'].map((token) => ({ name: `--academy-${token}`, description: 'Token ambiental heredable para la composición del curso.' })),
+            ...advanced?.cssProperties ?? [],
+          ],
         }],
         exports: [{ kind: 'custom-element-definition', name: artifact.tagName, declaration: { name: className, module: sourcePath } }],
       }],

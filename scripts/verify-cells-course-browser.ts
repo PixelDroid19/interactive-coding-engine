@@ -73,10 +73,63 @@ try {
   await page.frameLocator('iframe').locator('academy-home-page').waitFor({ state: 'visible', timeout: 15_000 });
   await page.frameLocator('iframe').getByRole('button', { name: 'Ver detalle' }).first().click();
   await page.frameLocator('iframe').locator('academy-product-detail-page').waitFor({ state: 'visible', timeout: 15_000 });
-  for (const artifact of ['action-button', 'status-badge', 'state-panel', 'product-card', 'product-list', 'search-filter', 'language-switcher', 'catalog-shell', 'lifecycle-panel', 'context-panel', 'media-tile']) {
+  for (const artifact of ['action-button', 'status-badge', 'state-panel', 'product-card', 'product-list', 'search-filter', 'language-switcher', 'catalog-shell', 'lifecycle-panel', 'context-panel', 'media-tile', 'theme-preview']) {
     const results = await checkWorkspace(createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS[artifact]).snapshot, artifact);
     const failures = results.filter((result) => !result.passed);
     if (failures.length) throw new Error(`${artifact}: ${JSON.stringify(failures)}`);
+    if (artifact === 'theme-preview') {
+      await page.frames()[1].evaluate(`(async () => {
+        const host = document.querySelector('academy-theme-preview');
+        const statePanel = host.shadowRoot.querySelector('academy-state-panel');
+        if (!statePanel) throw new Error('The theme must reach a real scoped state component');
+        const luminance = (color) => {
+          const channels = color.match(/[\\d.]+/g).slice(0, 3).map(Number).map((value) => value / 255).map((value) => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4);
+          return channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
+        };
+        const contrast = (a, b) => (Math.max(luminance(a), luminance(b)) + .05) / (Math.min(luminance(a), luminance(b)) + .05);
+        const backgrounds = [];
+        for (const theme of ['claro', 'oscuro']) {
+          host.theme = theme;
+          host.state = 'error';
+          await host.updateComplete;
+          await statePanel.updateComplete;
+          const surface = statePanel.shadowRoot.querySelector('.surface');
+          const appearance = getComputedStyle(surface);
+          backgrounds.push(appearance.backgroundColor);
+          if (contrast(appearance.color, appearance.backgroundColor) < 4.5) throw new Error('State text lost contrast in ' + theme);
+          const retry = statePanel.shadowRoot.querySelector('academy-action-button');
+          await retry.updateComplete;
+          const button = retry.shadowRoot.querySelector('button');
+          button.focus();
+          const actionAppearance = getComputedStyle(button);
+          if (contrast(actionAppearance.color, actionAppearance.backgroundColor) < 4.5) throw new Error('Action text lost contrast in ' + theme);
+          if (parseFloat(actionAppearance.outlineWidth) < 2 || actionAppearance.outlineStyle === 'none') throw new Error('The theme must preserve visible keyboard focus');
+          if (contrast(actionAppearance.outlineColor, appearance.backgroundColor) < 3) throw new Error('Focus indicator lost contrast in ' + theme);
+          host.state = 'empty';
+          await host.updateComplete;
+          await statePanel.updateComplete;
+          if (statePanel.shadowRoot.querySelector('academy-action-button')) throw new Error('Theme retained stale retry after state change');
+        }
+        if (backgrounds[0] === backgrounds[1]) throw new Error('Changing theme did not change the shared surface');
+        host.style.setProperty('--theme-preview-background', '#fff1f2');
+        host.style.setProperty('--theme-preview-foreground', '#111827');
+        const sharedSurface = statePanel.shadowRoot.querySelector('.surface');
+        if (getComputedStyle(sharedSurface).backgroundColor !== 'rgb(255, 241, 242)' || getComputedStyle(sharedSurface).color !== 'rgb(17, 24, 39)') throw new Error('Consumer tokens did not cross the scoped component boundary');
+        const action = host.shadowRoot.querySelector('academy-action-button');
+        const events = [];
+        host.addEventListener('academy-theme-preview-change', (event) => events.push(event.detail));
+        host.disabled = true;
+        await host.updateComplete;
+        await action.updateComplete;
+        action.shadowRoot.querySelector('button').click();
+        if (!action.shadowRoot.querySelector('button').disabled || events.length) throw new Error('Theme lost its disabled action state');
+        host.disabled = false;
+        await host.updateComplete;
+        await action.updateComplete;
+        action.shadowRoot.querySelector('button').click();
+        if (events.length !== 1 || events[0].theme !== 'oscuro') throw new Error('Reenabled theme action lost its public event');
+      })()`);
+    }
     if (artifact === 'media-tile') {
       await page.frames()[1].evaluate(`(async () => {
         const host = document.querySelector('academy-media-tile');

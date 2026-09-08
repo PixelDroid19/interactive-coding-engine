@@ -1,3 +1,5 @@
+import { themePreviewRecipe } from './cellsThemeRecipe';
+
 export interface AdvancedComponentRecipe {
   markup: string;
   imports?: string;
@@ -16,9 +18,11 @@ export interface AdvancedComponentRecipe {
   members?: Array<Record<string, unknown>>;
   events?: Array<Record<string, unknown>>;
   dependencies?: Record<string, string>;
+  cssProperties?: Array<Record<string, unknown>>;
 }
 
 export function advancedComponentRecipe(id: string): AdvancedComponentRecipe | undefined {
+  if (id === 'theme-preview') return themePreviewRecipe();
   if (id === 'media-tile') return mediaTileRecipe();
   if (id === 'context-panel') return {
     imports: `import { ContextConsumer } from '@lit/context';

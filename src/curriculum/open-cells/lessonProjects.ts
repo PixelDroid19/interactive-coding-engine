@@ -44,7 +44,7 @@ export const OPEN_CELLS_ARTIFACTS: Record<string, OpenCellsArtifact> = {
   'lifecycle-panel': { id: 'lifecycle-panel', tagName: 'academy-lifecycle-panel', label: 'Panel de ciclo de vida', kind: 'component', firstLesson: 69, dependencies: ['status-badge', 'action-button'] },
   'context-panel': { id: 'context-panel', tagName: 'academy-context-panel', label: 'Panel de contexto', kind: 'component', firstLesson: 70, dependencies: ['status-badge', 'action-button'] },
   'media-tile': { id: 'media-tile', tagName: 'academy-media-tile', label: 'Recurso visual configurable', kind: 'component', firstLesson: 71, dependencies: ['action-button'] },
-  'theme-preview': { id: 'theme-preview', tagName: 'academy-theme-preview', label: 'Vista de tema', kind: 'component', firstLesson: 72, dependencies: ['state-panel'] },
+  'theme-preview': { id: 'theme-preview', tagName: 'academy-theme-preview', label: 'Vista de tema', kind: 'component', firstLesson: 72, dependencies: ['state-panel', 'action-button'] },
   'component-workflow': { id: 'component-workflow', tagName: 'academy-component-workflow', label: 'Flujo de componente', kind: 'component', firstLesson: 73, dependencies: ['media-tile', 'theme-preview'] },
   'architecture-map': { id: 'architecture-map', tagName: 'academy-architecture-map', label: 'Mapa de arquitectura', kind: 'application', firstLesson: 74, dependencies: ['catalog-app'] },
   'route-guard': { id: 'route-guard', tagName: 'academy-route-guard', label: 'Guarda de navegación', kind: 'service', firstLesson: 75, dependencies: ['catalog-app'] },
