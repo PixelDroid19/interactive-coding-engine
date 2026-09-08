@@ -183,6 +183,32 @@ describe('ScrimPlayer overlay coordination', () => {
     expect(screen.getByRole('button', { name: 'Explicar lección' }).hasAttribute('disabled')).toBe(true);
   });
 
+  it('permite consultar archivos complementarios sin cambiar la cinta ni crear una rama', async () => {
+    const focusedLesson = {
+      ...lesson, id: 'clase-con-guia', narrationMode: 'silent' as const,
+      teachingFilePaths: ['app.js'], events: [], snapshots: [], challenges: [],
+      initialWorkspace: { activeFilePath: 'app.js', files: {
+        'app.js': { name: 'app.js', path: 'app.js', language: 'javascript' as const, content: 'const valor = 1;' },
+        'guia.md': { name: 'guia.md', path: 'guia.md', language: 'markdown' as const, content: '# Guía complementaria' },
+      } },
+    };
+    const view = render(<ScrimPlayer lessonData={focusedLesson} onBack={() => undefined} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Empezar la clase' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Pausar la clase' }));
+    expect(screen.queryByRole('button', { name: 'Abrir guia.md' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver todo el proyecto' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Abrir guia.md' })[0]);
+    expect(await screen.findByRole('textbox', { name: 'Editor de guia.md' })).toBeTruthy();
+    expect(loadLastBranchForLesson(focusedLesson.id)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver archivos de la clase' }));
+    expect(screen.queryByRole('button', { name: 'Abrir guia.md' })).toBeNull();
+    expect(screen.getByRole('textbox', { name: 'Editor de app.js' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Ver todo el proyecto' }));
+    view.rerender(<ScrimPlayer lessonData={{ ...focusedLesson, id: 'otra-clase-con-guia' }} onBack={() => undefined} />);
+    expect(screen.getByRole('button', { name: 'Ver todo el proyecto' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Abrir guia.md' })).toBeNull();
+  });
+
   it('pausa la clase antes de aplicar una edición solicitada a la ayuda', async () => {
     const pause = vi.spyOn(PlaybackEngine.prototype, 'pause');
     render(<ScrimPlayer lessonData={lesson} onBack={() => undefined} />);

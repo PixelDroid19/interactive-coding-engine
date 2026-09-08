@@ -124,6 +124,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     if (typeof window !== 'undefined' && window.innerWidth < 768) return false;
     return true;
   });
+  const [showFullProject, setShowFullProject] = useState(false);
   const [isFloatingBrowser, setIsFloatingBrowser] = useState(true);
   const [isExplainOpen, setIsExplainOpen] = useState(false);
   const [awaitingStart, setAwaitingStart] = useState(true);
@@ -318,6 +319,7 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
     setFeedbackState('idle');
     completionReportedRef.current = false;
     setShowFileTree(typeof window !== 'undefined' && window.innerWidth >= 768);
+    setShowFullProject(false);
 
     const engine = new PlaybackEngine({
       onWorkspaceChange: (newWs) => {
@@ -1041,9 +1043,9 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
 
   const activeFile = workspace.files[workspace.activeFilePath] || Object.values(workspace.files)[0] || null;
   const teachingPaths = lessonData.teachingFilePaths ? new Set(lessonData.teachingFilePaths) : null;
-  const visibleFiles = teachingPaths
+  const visibleFiles = teachingPaths && !showFullProject
     ? Object.fromEntries(Object.entries(workspace.files).filter(([path]) => teachingPaths.has(path)))
-    : isLogicMode
+    : isLogicMode && !showFullProject
     ? Object.fromEntries(Object.entries(workspace.files).filter(([, file]) =>
         file.language === 'javascript'
         || file.language === 'typescript'
@@ -1051,6 +1053,9 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
         || file.language === 'python'
         || /\.(?:js|jsx|ts|tsx|json|py)$/i.test(file.name)))
     : workspace.files;
+  const tabFiles = teachingPaths
+    ? Object.values(visibleFiles).filter((file) => teachingPaths.has(file.path) || file.path === workspace.activeFilePath)
+    : Object.values(visibleFiles);
 
   const isCompleted = playerState.status === 'completed' || closureConfirmed;
 
@@ -1397,7 +1402,26 @@ export const ScrimPlayer: React.FC<ScrimPlayerProps> = ({
                   <FolderTree className="h-3 w-3" />
                 </button>
 
-                {(Object.values(visibleFiles) as WorkspaceFile[]).map((f) => (
+                {teachingPaths && (
+                  <button
+                    type="button"
+                    className="editor-action-btn shrink-0"
+                    aria-label={showFullProject ? 'Ver archivos de la clase' : 'Ver todo el proyecto'}
+                    aria-pressed={showFullProject}
+                    onClick={() => {
+                      if (showFullProject && !teachingPaths.has(workspace.activeFilePath)) {
+                        const path = lessonData.teachingFilePaths?.find((candidate) => workspace.files[candidate]);
+                        if (path) setWorkspace((previous) => ({ ...previous, activeFilePath: path }));
+                      }
+                      setShowFullProject((previous) => !previous);
+                      setShowFileTree(true);
+                    }}
+                  >
+                    {showFullProject ? 'Solo la clase' : 'Todo el proyecto'}
+                  </button>
+                )}
+
+                {tabFiles.map((f) => (
                   <button
                     key={f.path}
                     onClick={() => setWorkspace((prev) => ({ ...prev, activeFilePath: f.path }))}
