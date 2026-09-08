@@ -852,12 +852,16 @@ declare module '@open-wc/scoped-elements/lit-element.js' {
 declare module '@open-cells/page-mixin' {
   type Constructor<T = object> = new (...args: any[]) => T;
   interface CellsPageApi {
+    params: Record<string, unknown>;
     /** Publica un valor en un canal Cells. */ publish(channel: string, value: unknown): void;
     /** Recibe el último valor y los siguientes; devuelve la función de limpieza. */ subscribe(channel: string, callback: (value: any) => void): () => void;
     /** Elimina las suscripciones de este host para el canal. */ unsubscribe(channel: string): void;
     /** Navega usando el nombre estable de una página y parámetros opcionales. */ navigate(page: string, params?: Record<string, unknown>): void;
   }
-  export function PageMixin<T extends Constructor>(base: T): T & Constructor<CellsPageApi>;
+  export function PageMixin<T extends Constructor>(base: T): T & Constructor<CellsPageApi> & {
+    readonly BRIDGE_PAGE_PRIVATE_CHANNEL_PREFIX: string;
+    getPagePrivateChannel(tagName: string): string;
+  };
 }
 declare module '@open-cells/core' {
   export function startApp(config: { mainNode: string; routes: unknown[]; initialTemplate: string; debug: false }): Promise<unknown>;
