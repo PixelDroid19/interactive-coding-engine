@@ -138,6 +138,21 @@ import { AcademyAccountSummary } from './pages/academy-account-summary.js';
 import { AcademyMovementList } from './pages/academy-movement-list.js';
 import styles from './${TAG}.css.js';
 
+/**
+ * Feature educativa propia: resumen, movimientos y filtros mediante contratos públicos.
+ * @tag academy-account-detail
+ * @property {string} accountName - Nombre público de la cuenta.
+ * @attribute {string} account-name - Nombre público de la cuenta.
+ * @property {number} balance - Saldo de demostración en euros.
+ * @attribute {number} balance - Saldo de demostración en euros.
+ * @property {Array<{ id: string; description: string; amount: number }>} movements - Colección recibida por propiedad; no se modifica al filtrar.
+ * @property {string} status - success, loading, empty o error; sin datos empieza en empty.
+ * @attribute {string} status - Estado de carga proporcionado por el consumidor.
+ * @fires {CustomEvent<{ accountName: string; view: string }>} academy-account-detail-navigate - Cambio de vista interno.
+ * @fires {CustomEvent<{ accountName: string }>} academy-account-detail-retry - El consumidor decide cómo reintentar la carga.
+ * @cssprop --account-surface - Fondo de la feature.
+ * @cssprop --account-balance-surface - Fondo del resumen.
+ */
 export class AcademyAccountDetail extends WidgetMixin(ScopedElementsMixin(LitElement)) {
   static get is() { return '${TAG}'; }
   static get properties() {
@@ -258,7 +273,7 @@ for (const type of ['${TAG}-navigate', '${TAG}-retry']) subject?.addEventListene
 `);
   put(`test/unit/${TAG}.test.js`, `import catalogs from './locales/locales.json' with { type: 'json' };
 import { installIntlMsg } from '../../src/runtime/academy-intl-msg.js';
-import '../../${TAG}.js';
+import { AcademyAccountDetail } from '../../${TAG}.js';
 describe('account detail public navigation', () => {
   beforeEach(async () => { await installIntlMsg({ catalogs, language: 'es' }).loadUrlResourcesComplete; });
   afterEach(() => document.body.replaceChildren());
@@ -268,6 +283,8 @@ describe('account detail public navigation', () => {
     host.status = 'success';
     document.body.append(host);
     await host.updateComplete;
+    expect(host.localName).toBe(AcademyAccountDetail.is);
+    expect(customElements.get(AcademyAccountDetail.is)).toBe(AcademyAccountDetail);
     const action = host.shadowRoot.querySelector('academy-action-button');
     await action.updateComplete;
     const received = new Promise((resolve) => host.addEventListener('${TAG}-navigate', resolve, { once: true }));
@@ -278,6 +295,41 @@ describe('account detail public navigation', () => {
     expect(event.composed).toBe(true);
     await host.updateComplete;
     expect(host.shadowRoot.querySelector('academy-movement-list')).not.toBeNull();
+    const list = host.shadowRoot.querySelector('academy-movement-list');
+    await list.updateComplete;
+    const input = list.shadowRoot.querySelector('input');
+    input.value = 'tren';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await host.updateComplete;
+    expect(list.query).toBe('tren');
+    const back = host.shadowRoot.querySelector('academy-action-button');
+    await back.updateComplete;
+    back.shadowRoot.querySelector('button').click();
+    await host.updateComplete;
+    expect(host.shadowRoot.querySelector('academy-account-summary')).not.toBeNull();
+    host.handleAction();
+    await host.updateComplete;
+    expect(host.shadowRoot.querySelector('academy-movement-list')).not.toBeNull();
+  });
+  it('shows empty, loading and error states and requests retry without changing status', async () => {
+    const host = document.createElement('${TAG}');
+    document.body.append(host);
+    await host.updateComplete;
+    expect(host.shadowRoot.querySelector('[role="status"]').textContent).toContain(catalogs.es['account.detail.empty']);
+    host.status = 'loading';
+    await host.updateComplete;
+    expect(host.shadowRoot.querySelector('[role="status"]').textContent).toContain(catalogs.es['account.detail.loading']);
+    host.status = 'error';
+    host.accountName = 'Cuenta pendiente';
+    await host.updateComplete;
+    expect(host.shadowRoot.querySelector('[role="alert"]').textContent).toContain(catalogs.es['account.detail.error']);
+    const received = new Promise((resolve) => host.addEventListener('${TAG}-retry', resolve, { once: true }));
+    host.shadowRoot.querySelector('button').click();
+    const event = await received;
+    expect(event.detail).toEqual({ accountName: 'Cuenta pendiente' });
+    expect(event.bubbles).toBe(true);
+    expect(event.composed).toBe(true);
+    expect(host.status).toBe('error');
   });
 });
 `);

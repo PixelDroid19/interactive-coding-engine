@@ -118,11 +118,11 @@ export function createCellsAppWorkspace(scaffold: CellsAppScaffold): VersionedCe
         lit: '3.3.3',
       },
       devDependencies: {
-        '@vitest/coverage-v8': '3.2.4',
+        '@vitest/coverage-v8': '3.2.7',
         'happy-dom': '20.11.2',
         sass: '^1.80.0',
         vite: '7.3.6',
-        vitest: '3.2.4',
+        vitest: '3.2.7',
       },
     }, null, 2)}\n`, 'json'),
     'index.html': file('index.html', `

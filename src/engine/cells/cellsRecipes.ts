@@ -391,7 +391,12 @@ academy-action-button {
       name: `${namespace}/${tagName}`,
       version: '0.1.0',
       type: 'module',
-      exports: { '.': './index.js', [`./${tagName}.js`]: `./${tagName}.js` },
+      exports: {
+        '.': './index.js',
+        [`./${tagName}.js`]: `./${tagName}.js`,
+        './runtime/academy-intl-msg.js': './src/runtime/academy-intl-msg.js',
+        './locales/locales.json': './locales/locales.json',
+      },
       types: './types/open-cells.d.ts',
       scripts: {
         dev: 'cells component:dev',
@@ -408,10 +413,10 @@ academy-action-button {
         lit: '3.3.3',
       },
       devDependencies: {
-        '@vitest/coverage-v8': '3.2.4',
+        '@vitest/coverage-v8': '3.2.7',
         'happy-dom': '20.11.2',
         vite: '7.3.6',
-        vitest: '3.2.4',
+        vitest: '3.2.7',
       },
     }, null, 2)}\n`, 'json'),
     'index.js': file('index.js', `export { ${className} } from './src/${className}.js';\n`, 'javascript'),
@@ -440,6 +445,14 @@ import styles from './${tagName}.css.js';
 import { AcademyTypeText } from './components/academy-type-text.js';
 import { AcademyActionButton } from './components/academy-action-button.js';
 
+/**
+ * Tarjeta educativa con traducciones y una intención pública.
+ * @tag ${tagName}
+ * @property {string} learnerName - Nombre de quien aprende.
+ * @attribute {string} learner-name - Nombre de quien aprende.
+ * @fires {CustomEvent<{ learnerName: string }>} ${tagName}-continue - Solicita continuar con el nombre actual.
+ * @cssprop --learning-card-background - Fondo consumible del contenedor principal.
+ */
 export class ${className} extends WidgetMixin(ScopedElementsMixin(LitElement)) {
   static get scopedElements() {
     return {

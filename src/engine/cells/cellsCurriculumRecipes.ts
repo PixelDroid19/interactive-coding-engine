@@ -32,7 +32,7 @@ const BLUEPRINTS: Record<string, ComponentBlueprint> = {
   'context-panel': blueprint('density', 'density', 'cómoda', 'compacta', 'change', '#2563eb', 'Shared context', 'Contexto compartido', 'Two consumers observe one scoped provider.', 'Dos consumidores observan un proveedor con alcance.', 'Change context', 'Cambiar contexto'),
   'media-tile': blueprint('imageLabel', 'image-label', 'Paisaje de ejemplo', 'Diagrama accesible', 'open', '#c2410c', 'Configurable media', 'Recurso configurable', 'The consumer owns the resource and its accessible description.', 'El consumidor controla el recurso y su descripción accesible.', 'Inspect media', 'Inspeccionar recurso'),
   'theme-preview': blueprint('theme', 'theme', 'claro', 'oscuro', 'change', '#1d4ed8', 'Theme contract', 'Contrato de tema', 'Tokens change the environment without duplicating the component.', 'Los tokens cambian el ambiente sin duplicar el componente.', 'Inspect theme', 'Inspeccionar tema'),
-  'component-workflow': blueprint('stage', 'stage', 'desarrollo', 'entrega', 'advance', '#047857', 'Component workflow', 'Flujo del componente', 'Source, demo, tests and package advance together.', 'Fuente, demo, pruebas y paquete avanzan juntos.', 'Advance', 'Avanzar'),
+  'component-workflow': blueprint('stage', 'stage', 'desarrollo', 'entrega', 'advance', '#047857', 'Component workflow', 'Flujo del componente', 'Source, demo, tests and package advance together.', 'Fuente, demo, pruebas y paquete avanzan juntos.', 'Inspect stage', 'Inspeccionar etapa'),
 };
 
 function blueprint(
@@ -501,6 +501,8 @@ describe('${artifact.tagName}', () => {
 
   it('expone una propiedad configurable y resuelve sus dependencias scoped', async () => {
     const component = await renderComponent();
+    expect(component.localName).toBe(${className}.is);
+    expect(customElements.get(${className}.is)).toBe(${className});
     expect(${className}.properties.${blueprint.propertyName}.attribute).toBe('${blueprint.attribute}');
 ${unitDependencyAssertions}
     expect(component.shadowRoot.textContent).toContain(${JSON.stringify(compact ? blueprint.demoValue : blueprint.title.es)});
@@ -520,11 +522,26 @@ ${artifact.id === 'action-button' ? '    component.label = "";\n' : ''}
     const received = new Promise((resolve) => component.addEventListener('${artifact.tagName}-${blueprint.eventName}', resolve, { once: true }));
     await activate(component);
     const event = await received;
-    expect(event.detail).toEqual({ ${blueprint.propertyName}: ${JSON.stringify(blueprint.demoValue)} });
+    expect(event.detail).toEqual({ ${blueprint.propertyName}: ${JSON.stringify(artifact.id === 'language-switcher' ? 'es' : blueprint.demoValue)} });
     expect(event.bubbles).toBe(true);
     expect(event.composed).toBe(true);
     expect(event.cancelable).toBe(true);
+    const programmatic = new Promise((resolve) => component.addEventListener('${artifact.tagName}-${blueprint.eventName}', resolve, { once: true }));
+    component.handleAction(${artifact.id === 'language-switcher' ? "new Event('change')" : ''});
+    expect((await programmatic).detail).toEqual(event.detail);
   });
+${artifact.id === 'language-switcher' ? `
+  it('permite elegir inglés con el segundo control sin cambiar el idioma del shell', async () => {
+    const component = await renderComponent();
+    const action = component.shadowRoot.querySelectorAll('academy-action-button')[1];
+    await action.updateComplete;
+    const received = new Promise((resolve) => component.addEventListener('academy-language-switcher-change', resolve, { once: true }));
+    action.shadowRoot.querySelector('button').click();
+    expect((await received).detail).toEqual({ locale: 'en' });
+    expect(component.locale).toBe('en');
+    expect(globalThis.IntlMsg.lang).toBe('es');
+  });
+` : ''}
 ${artifact.id === 'action-button' ? `
   it('sincroniza disabled y no emite acciones mientras está bloqueado', async () => {
     const component = await renderComponent();
@@ -537,6 +554,7 @@ ${artifact.id === 'action-button' ? `
     expect(button.disabled).toBe(true);
     button.click();
     button.dispatchEvent(new MouseEvent('click', { bubbles: true, composed: true }));
+    component.handleAction();
     expect(events.length).toBe(0);
     component.removeAttribute('disabled');
     await component.updateComplete;
@@ -612,6 +630,14 @@ ${artifact.id === 'product-list' ? `
     expect(component.shadowRoot.textContent).toContain('No hay productos para esta búsqueda.');
     expect(component.items).toBe(products);
     expect(products.length).toBe(3);
+    component.query = null;
+    component.items = [...JSON.parse('[null, { "id": "invalid", "name": 42 }]'), products[0]];
+    await component.updateComplete;
+    expect(component.shadowRoot.querySelectorAll('academy-product-card').length).toBe(1);
+    component.items = null;
+    await component.updateComplete;
+    expect(component.shadowRoot.querySelectorAll('academy-product-card').length).toBe(0);
+    expect(component.shadowRoot.textContent).toContain('No hay productos para esta búsqueda.');
   });
 ` : ''}
 ${artifact.id === 'catalog-shell' ? `
@@ -631,6 +657,14 @@ ${artifact.id === 'catalog-shell' ? `
     await list.updateComplete;
     expect(list.items).toBe(component.items);
     expect(list.shadowRoot.querySelectorAll('academy-product-card').length).toBe(1);
+    const card = list.shadowRoot.querySelector('academy-product-card');
+    await card.updateComplete;
+    const selected = new Promise((resolve) => component.addEventListener('academy-catalog-shell-select', resolve, { once: true }));
+    await activate(card);
+    const selection = await selected;
+    expect(selection.detail).toEqual({ id: 'second', productName: 'Té' });
+    expect(selection.bubbles).toBe(true);
+    expect(selection.composed).toBe(true);
     await activate(list);
     await component.updateComplete;
     await search.updateComplete;
@@ -638,6 +672,9 @@ ${artifact.id === 'catalog-shell' ? `
     expect(input.value).toBe('');
     expect(list.shadowRoot.querySelectorAll('academy-product-card').length).toBe(2);
     expect(component.items.length).toBe(2);
+    search.dispatchEvent(new CustomEvent('academy-search-filter-search', { detail: {}, bubbles: true, composed: true }));
+    await component.updateComplete;
+    expect(component.query).toBe('');
   });
 ` : ''}
 ${advanced?.tests ?? ''}
@@ -681,6 +718,28 @@ ${advanced?.tests ?? ''}
       }],
     }, null, 2)}\n`,
   };
+  // Keep the source contract discoverable when the CLI regenerates the manifest.
+  const publicApi = JSON.parse(files['custom-elements.json'].content).modules[0].declarations[0] as {
+    description: string;
+    members: Array<{ name: string; attribute?: string; type: { text: string }; description: string }>;
+    events: Array<{ name: string; type: { text: string }; description: string }>;
+    slots: Array<{ name: string; description: string }>;
+    cssProperties: Array<{ name: string; description: string }>;
+  };
+  const apiDocumentation = [
+    '/**',
+    ` * ${publicApi.description}`,
+    ` * @tag ${artifact.tagName}`,
+    ...publicApi.members.flatMap((member) => [
+      ` * @property {${member.type.text}} ${member.name} - ${member.description}`,
+      ...(member.attribute ? [` * @attribute {${member.type.text}} ${member.attribute} - ${member.description}`] : []),
+    ]),
+    ...publicApi.events.map((event) => ` * @fires {${event.type.text}} ${event.name} - ${event.description}`),
+    ...publicApi.slots.map((slot) => ` * @slot ${slot.name} - ${slot.description}`),
+    ...publicApi.cssProperties.map((property) => ` * @cssprop ${property.name} - ${property.description}`),
+    ' */',
+  ].join('\n');
+  files[sourcePath].content = files[sourcePath].content.replace(`export class ${className}`, `${apiDocumentation}\nexport class ${className}`);
   files['README.md'] = {
     ...files['README.md'],
     content: `# ${artifact.tagName}\n\n${blueprint.description.es}\n\n## Evento\n\n\`${artifact.tagName}-${blueprint.eventName}\` comunica \`${blueprint.propertyName}\`.\n${artifact.id === 'action-button' ? '\n## Contrato público\n\n`label` configura el texto; el slot por defecto permite sustituirlo. `disabled` es una propiedad Boolean reflejada en el atributo homónimo. Su presencia bloquea el botón nativo y evita emitir acciones, también por teclado. Elimina el atributo o asigna `false` a la propiedad para habilitarlo; `disabled="false"` sigue siendo un atributo presente.\n' : ''}\n- \`cells component:dev\`\n- \`cells component:test\`\n- \`cells component:documentation\`\n`,
@@ -710,6 +769,7 @@ ${advanced?.tests ?? ''}
     files[path] = { path, name: path.split('/').at(-1)!, content, language: path.endsWith('.ts') ? 'typescript' : path.endsWith('.json') ? 'json' : 'javascript' };
   }
   manifest.dependencies = { ...manifest.dependencies, ...advanced?.dependencies };
+  manifest.devDependencies = { ...manifest.devDependencies, ...advanced?.devDependencies };
   manifest.learningArtifact = artifact.id;
   manifest.learningDependencies = artifact.dependencies;
   files['package.json'] = { ...files['package.json'], content: `${JSON.stringify(manifest, null, 2)}\n` };

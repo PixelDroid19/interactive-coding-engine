@@ -4,6 +4,32 @@ const themeTokens = ['background', 'foreground', 'muted', 'border', 'accent', 'a
 
 export function themePreviewRecipe(): AdvancedComponentRecipe {
   return {
+    devDependencies: { '@vitest/browser': '3.2.7', playwright: '1.63.0' },
+    files: {
+      'vite.config.js': `import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    globals: true,
+    include: ['test/unit/**/*.test.js'],
+    browser: {
+      enabled: true,
+      headless: true,
+      provider: 'playwright',
+      instances: [{ browser: 'chromium', launch: { executablePath: process.env.CELLS_BROWSER_EXECUTABLE || undefined } }],
+    },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'lcov'],
+      include: ['src/academy-theme-preview.js'],
+      thresholds: {
+        'src/academy-theme-preview.js': { statements: 100, branches: 100, functions: 100, lines: 100 },
+      },
+    },
+  },
+});
+`,
+    },
     properties: `      state: { type: String, attribute: 'state' },
       disabled: { type: Boolean, attribute: 'disabled' },`,
     initialize: `    this.state = 'success';
@@ -92,6 +118,7 @@ document.querySelector('#theme-disabled')?.addEventListener('change', (event) =>
     expect(getComputedStyle(state.shadowRoot.querySelector('.surface')).backgroundColor).toBe('rgb(255, 241, 242)');
   });
 `,
-    readme: '\n## Tema y tokens\n\n`theme` acepta `claro` u `oscuro`; otros valores conservan la entrada pública y usan la paleta clara. La estructura y las instancias compartidas no se reemplazan al cambiar de tema. La paleta solo define tokens; el panel de estados, el indicador y los botones consumen variables heredables `--academy-*`. Los tokens `--theme-preview-*` permiten al consumidor sustituir decisiones concretas. Las paletas incluidas mantienen contraste de texto y foco; al personalizarlas, el consumidor debe volver a verificarlo. `state` permite recorrer carga, vacío, error y resultado sin cambiar el tema. `disabled` bloquea la acción principal. El evento `change` conserva el tema actual como intención pública, sin modificar preferencias globales.\n',
+    readme: '\n## Tema y tokens\n\n`theme` acepta `claro` u `oscuro`; otros valores conservan la entrada pública y usan la paleta clara. La estructura y las instancias compartidas no se reemplazan al cambiar de tema. La paleta solo define tokens; el panel de estados, el indicador y los botones consumen variables heredables `--academy-*`. Los tokens `--theme-preview-*` permiten al consumidor sustituir decisiones concretas. Las paletas incluidas mantienen contraste de texto y foco; al personalizarlas, el consumidor debe volver a verificarlo. `state` permite recorrer carga, vacío, error y resultado sin cambiar el tema. `disabled` bloquea la acción principal. El evento `change` conserva el tema actual como intención pública, sin modificar preferencias globales.\n'
+      + '\n## Pruebas en navegador\n\nEste paquete ejecuta `cells component:test --coverage` en Chromium mediante Vitest Browser Mode: los colores calculados y la herencia de variables CSS requieren un navegador real. Después de instalar las dependencias, prepara Chromium con `npx playwright install chromium`, o define `CELLS_BROWSER_EXECUTABLE` con la ruta absoluta de una instalación disponible. La CLI no descarga navegadores automáticamente. La configuración conserva las comprobaciones de estilos y el umbral de cobertura del 100 %.\n',
   };
 }

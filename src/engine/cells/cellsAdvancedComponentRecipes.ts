@@ -18,10 +18,46 @@ export interface AdvancedComponentRecipe {
   members?: Array<Record<string, unknown>>;
   events?: Array<Record<string, unknown>>;
   dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
   cssProperties?: Array<Record<string, unknown>>;
 }
 
 export function advancedComponentRecipe(id: string): AdvancedComponentRecipe | undefined {
+  if (id === 'component-workflow') return {
+    properties: "      theme: { type: String, attribute: 'theme' },",
+    initialize: "    this.theme = 'claro';",
+    markup: `<section class="workflow-grid">
+          <output data-workflow-stage>\${this.stage}</output>
+          <academy-media-tile .imageLabel=\${this.t('component.workflow.media')}></academy-media-tile>
+          <academy-theme-preview .theme=\${this.theme}></academy-theme-preview>
+          <academy-action-button .label=\${this.t('component.workflow.action')} @academy-action-button-activate=\${this.handleAction}></academy-action-button>
+        </section>`,
+    styles: '\n.workflow-grid { display: grid; gap: 1rem; min-width: 0; }\n.workflow-grid > * { max-width: 100%; }\n',
+    locales: {
+      es: { 'component.workflow.media': 'Recurso del paquete consumidor' },
+      en: { 'component.workflow.media': 'Consumer package image' },
+    },
+    members: [{ kind: 'field', name: 'theme', attribute: 'theme', type: { text: "'claro' | 'oscuro'" }, default: '"claro"', description: 'Preferencia que el consumidor entrega al componente de tema reutilizado.' }],
+    demoControls: '<label>Tema del consumidor <select id="workflow-theme"><option value="claro">Claro</option><option value="oscuro">Oscuro</option></select></label>',
+    demoSetup: "document.querySelector('#workflow-theme')?.addEventListener('change', (event) => { subject.theme = event.target.value; });",
+    tests: `
+  it('conserva las dependencias completas al cambiar el contrato consumidor', async () => {
+    const component = await renderComponent();
+    const theme = component.shadowRoot.querySelector('academy-theme-preview');
+    const media = component.shadowRoot.querySelector('academy-media-tile');
+    await Promise.all([theme.updateComplete, media.updateComplete]);
+    expect(media.shadowRoot.querySelector('img')).not.toBeNull();
+    component.theme = 'oscuro';
+    component.stage = 'Entrega comprobada';
+    await component.updateComplete;
+    await theme.updateComplete;
+    expect(component.shadowRoot.querySelector('academy-theme-preview')).toBe(theme);
+    expect(theme.getAttribute('data-theme')).toBe('oscuro');
+    expect(component.shadowRoot.querySelector('[data-workflow-stage]').textContent).toContain('Entrega comprobada');
+  });
+`,
+    readme: '\n## Circuito de entrega\n\nEste consumidor incluye las fuentes completas de imagen, tema y sus dependencias scoped. `stage` es una etiqueta del consumidor, no un comprobante de que se ejecutó una herramienta. La acción la comunica por el evento existente; no simula un build. Modifica una propiedad y su demo, regenera desde SCSS con `cells component:sass`, ejecuta `cells component:test`, actualiza documentación con `cells component:documentation` y construye con `cells component:build:demo`. Empaqueta con `npm pack` e instala el archivo resultante en un proyecto limpio. La aceptación exige ejecutar ese circuito y consumir la entrada pública del paquete, no solo ver esta demo.\n',
+  };
   if (id === 'theme-preview') return themePreviewRecipe();
   if (id === 'media-tile') return mediaTileRecipe();
   if (id === 'context-panel') return {
@@ -278,6 +314,17 @@ for (const property of ['src', 'alt', 'width', 'height']) {
     expect(image.width).toBe(320);
     expect(image.height).toBe(160);
     expect(component.shadowRoot.querySelector('[data-decorative-icon]').getAttribute('aria-hidden')).toBe('true');
+    image.dispatchEvent(new Event('load'));
+    await component.updateComplete;
+    expect(frame.getAttribute('data-media-state')).toBe('ready');
+    expect(frame.querySelector('[role="status"]')).toBeNull();
+    for (const invalid of [0, -1, Number.NaN]) {
+      component.width = invalid;
+      component.height = invalid;
+      await component.updateComplete;
+      expect(image.width).toBe(640);
+      expect(image.height).toBe(360);
+    }
     image.dispatchEvent(new Event('error'));
     await component.updateComplete;
     expect(frame.getAttribute('data-media-state')).toBe('error');

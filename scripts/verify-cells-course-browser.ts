@@ -73,10 +73,26 @@ try {
   await page.frameLocator('iframe').locator('academy-home-page').waitFor({ state: 'visible', timeout: 15_000 });
   await page.frameLocator('iframe').getByRole('button', { name: 'Ver detalle' }).first().click();
   await page.frameLocator('iframe').locator('academy-product-detail-page').waitFor({ state: 'visible', timeout: 15_000 });
-  for (const artifact of ['action-button', 'status-badge', 'state-panel', 'product-card', 'product-list', 'search-filter', 'language-switcher', 'catalog-shell', 'lifecycle-panel', 'context-panel', 'media-tile', 'theme-preview']) {
+  for (const artifact of ['action-button', 'status-badge', 'state-panel', 'product-card', 'product-list', 'search-filter', 'language-switcher', 'catalog-shell', 'lifecycle-panel', 'context-panel', 'media-tile', 'theme-preview', 'component-workflow']) {
     const results = await checkWorkspace(createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS[artifact]).snapshot, artifact);
     const failures = results.filter((result) => !result.passed);
     if (failures.length) throw new Error(`${artifact}: ${JSON.stringify(failures)}`);
+    if (artifact === 'component-workflow') {
+      await page.frames()[1].evaluate(`(async () => {
+        const host = document.querySelector('academy-component-workflow');
+        const media = host.shadowRoot.querySelector('academy-media-tile');
+        const theme = host.shadowRoot.querySelector('academy-theme-preview');
+        if (!media || !theme) throw new Error('The workflow must compose the complete packages it declares');
+        await Promise.all([media.updateComplete, theme.updateComplete]);
+        await media.shadowRoot.querySelector('img').decode();
+        host.theme = 'oscuro';
+        host.stage = 'Entrega comprobada';
+        await host.updateComplete;
+        await theme.updateComplete;
+        if (host.shadowRoot.querySelector('academy-theme-preview') !== theme || theme.getAttribute('data-theme') !== 'oscuro') throw new Error('The workflow disconnected its consumer theme property');
+        if (!host.shadowRoot.querySelector('[data-workflow-stage]')?.textContent.includes('Entrega comprobada')) throw new Error('The consumer stage did not render');
+      })()`);
+    }
     if (artifact === 'theme-preview') {
       await page.frames()[1].evaluate(`(async () => {
         const host = document.querySelector('academy-theme-preview');

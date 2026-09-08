@@ -143,3 +143,17 @@ Red evidence: Chromium failed because the original recipe had no real image or r
 - [x] Document inherited and consumer-specific CSS tokens without duplicate metadata; include generated demo, README and regression test.
 
 Red evidence: the previous theme recipe did not render its declared shared state component. Chromium now checks both palettes, text contrast at least 4.5:1, focus contrast at least 3:1, visible focus width, error-to-empty cleanup, consumer token overrides across shadow boundaries, disabled actions and reenable events. Actual lesson 72 player: start/pause/final seek/reload, mobile Workbench dark/error and light/loading/disabled in English visually inspected. The final copy clarifies that the action inspects the current theme rather than changing a global preference. Full suite: 1321 passed / 2 skipped; final focused editor/curriculum checks: 13 passed, including lesson 73's generated sources; lint, build and browser verification passed with existing build warnings. Lesson 73's workflow behavior and independent ZIP/CLI execution remain unproven, alongside application examples 74–84. No audio or deployment changes.
+
+## Task 5h: Component delivery and independent package consumption (73)
+
+- [x] Compose the complete media, theme and action packages; propagate consumer properties without replacing shared instances or pretending that a label proves a build.
+- [x] Export source JSDoc so the real CLI can regenerate public events and attributes rather than losing the hand-authored manifest contract.
+- [x] Execute ZIP exports through the real CLI: SCSS, tests with unchanged 100 percent component coverage thresholds, documentation and demo builds for all 17 curriculum components.
+- [x] Verify the base component separately and run the exported application's tests and production build.
+- [x] Preserve computed-style assertions by running the theme package in Chromium, not a simulated DOM.
+- [x] Run npm pack, install its tarball as the sole dependency of a clean consumer, compile that consumer and verify its built output in Chromium.
+- [x] Expose the educational i18n runtime and catalogs through public package subpaths; verify translations, registration identity, child composition and the public action event from the installed package.
+
+Evidence: the final combined CLI run passed 17 components and one application. The isolated base-component run passed too. The theme's four tests ran in Chromium and reported 100 percent for statements, branches, functions and lines. The complete platform suite passed 1321 tests with two pre-existing skips; lint, production build and browser verification passed. Final focused recipe/editor tests: 25 passed. Browser checks include the workflow's decoded image and live theme/stage changes, all five application projects, feature states and mobile checks. The clean-consumer check is reproducible with `npx tsx scripts/verify-cells-package-consumer.ts /absolute/path/to/package.tgz`; set `CELLS_BROWSER_EXECUTABLE` when using an existing Chromium installation. It retains its temporary project for inspection and only tests the workflow package, not every package consumer.
+
+Remaining: application examples 74–84 still require their lesson-specific implementation and acceptance audit. The CLI documentation gate checks event and attribute preservation, not a complete semantic comparison of every manifest field. Existing build warnings remain. No recorded audio, subtitles or external reference repositories were changed, and this work does not deploy production.
