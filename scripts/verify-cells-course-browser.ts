@@ -68,6 +68,22 @@ try {
     return true;
   })()`);
   if (!applicationFlow) throw new Error('Application navigation was not verified.');
+  await page.frames()[1].evaluate(`(async () => {
+    const { startApp, navigate, subscribe, unsubscribe } = await import('@open-cells/core');
+    const { ROUTES } = await import('workspace:/app/scripts/app-routes.js');
+    let blocked = true;
+    await startApp({ mainNode: 'app', routes: ROUTES, initialTemplate: 'home', debug: false, interceptor: () => ({ intercept: blocked }) });
+    const home = document.querySelector('academy-home-page');
+    const notification = new Promise((resolve) => subscribe('__oc_intercepted_navigation', document.body, resolve));
+    await navigate('favorites');
+    if (document.querySelector('academy-home-page') !== home) throw new Error('Cancelled navigation replaced the current page');
+    const { value } = await notification;
+    if (value.from.page !== 'home' || value.to.page !== 'favorites' || value.intercept !== true) throw new Error('Wrong intercepted-navigation payload');
+    unsubscribe('__oc_intercepted_navigation', document.body);
+    blocked = false;
+    await navigate('favorites');
+    if (!document.querySelector('academy-favorites-page')) throw new Error('Explicit navigation did not resume');
+  })()`);
   const plainPreview = buildCellsPreviewDocument(createCellsProjectWorkspace('museum').snapshot).html;
   await page.locator('iframe').evaluate((iframe: HTMLIFrameElement, content) => { iframe.srcdoc = content; }, plainPreview);
   await page.frameLocator('iframe').locator('academy-home-page').waitFor({ state: 'visible', timeout: 15_000 });

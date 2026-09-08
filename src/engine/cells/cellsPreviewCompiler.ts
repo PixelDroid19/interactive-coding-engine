@@ -59,19 +59,33 @@ export function navigate(page, params = {}) {
   return renderRoute(page, params);
 }
 
-export function startApp({ mainNode, routes, initialTemplate, debug = false }) {
+export function startApp({ mainNode, routes, initialTemplate, debug = false, interceptor = () => ({ intercept: false }) }) {
   if (debug !== false) throw new Error('El playground solo inicia Cells con debug desactivado.');
   const outlet = document.getElementById(mainNode);
   if (!outlet) throw new Error('No se encontró el outlet ' + mainNode);
   let activePage = null;
+  let currentRoute = null;
   renderRoute = async (name, params = {}) => {
     const route = routes.find((candidate) => candidate.name === name) || routes.find((candidate) => candidate.notFound);
     if (!route) throw new Error('No existe la ruta ' + name + ' ni una ruta notFound.');
+    if (currentRoute) {
+      const navigation = {
+        from: structuredClone(currentRoute),
+        to: { page: route.name, path: route.path, params: structuredClone(params) },
+      };
+      const result = { ...interceptor(navigation, {}), ...navigation };
+      if (result.intercept) {
+        setTimeout(() => publish('__oc_intercepted_navigation', { value: result }), 0);
+        if (result.redirect) return renderRoute(result.redirect.page, result.redirect.params || {});
+        return activePage;
+      }
+    }
     activePage?.onPageLeave?.();
     await route.action();
     const page = document.createElement(route.component);
     outlet.replaceChildren(page);
     activePage = page;
+    currentRoute = { page: route.name, params: structuredClone(params) };
     page.onPageEnter?.(params);
     publish('__oc_app', { currentPage: route.name });
     await page.updateComplete;
