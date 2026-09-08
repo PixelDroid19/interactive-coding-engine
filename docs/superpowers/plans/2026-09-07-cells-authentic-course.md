@@ -171,7 +171,10 @@ Evidence: the new documentation test first failed because the previous document 
 
 - [x] Replace the inert confirmation marker with an asynchronous, typed allow/cancel decision. Confirm only when changes are pending; missing or rejected confirmation fails closed.
 - [x] Test that the decision stays pending until the answer arrives, accepts only true, and preserves cancellation when the provider is absent or throws.
+- [x] Implement and unit-test a synchronous interceptor coordinator with a one-use destination permit, duplicate-event suppression, stale-answer invalidation and disposal. This helper is not connected to the application yet.
 - [ ] Connect the policy to the actual application/router boundary, with one effective transition and stale-confirmation protection.
 - [ ] Exercise the confirmation UI, cancellation, accepted navigation and repeated attempts in the playground and the exported application.
 
 Evidence: two policy tests failed on the original immediate confirm marker. The revised artifact passes all four advanced-artifact tests; combined guided-lesson and course checks pass 19 tests, and TypeScript passes. The installed public router invokes its interceptor synchronously, so passing this async function directly as that callback would be incorrect. The application integration must adapt the decision explicitly. This checkpoint does not claim that the visible application is already protected.
+
+Coordinator evidence: its initial empty implementation failed three tests. The generated JavaScript now passes five direct execution tests, covering one-use replay, superseded confirmations, duplicate notifications, disposal, clean navigation superseding a pending answer, and failed replay removing authorization. The policy and coordinator suites together pass nine tests. Real-router channel wiring and browser/export acceptance remain unchecked above.
