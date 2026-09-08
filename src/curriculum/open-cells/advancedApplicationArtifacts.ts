@@ -169,14 +169,22 @@ export function createAnalyticsEvent(name, properties) {
 }
 ` },
   83: { path: 'ci/quality-gates.js', source: `export const QUALITY_GATES = [
+  { name: 'format', command: 'npm run format:check' },
   { name: 'tests', command: 'npm test' },
   { name: 'build', command: 'npm run build' },
   { name: 'package-audit', command: 'npm run package:audit' },
   { name: 'consumer-smoke', command: 'npm run test:consumer' },
 ];
 
-export function canPromote(results) {
-  return QUALITY_GATES.every((gate) => results[gate.name] === 'passed');
+export function canPromote(evidence) {
+  if (!evidence || typeof evidence.runId !== 'string' || !evidence.runId.trim()) return false;
+  if (![evidence.sourceHash, evidence.artifactHash].every((hash) => typeof hash === 'string' && /^[a-f0-9]{64}$/.test(hash))) return false;
+  return QUALITY_GATES.every((gate) => {
+    const result = evidence.results?.[gate.name];
+    return result?.status === 'passed' && result.exitCode === 0
+      && result.runId === evidence.runId && result.sourceHash === evidence.sourceHash
+      && result.artifactHash === evidence.artifactHash;
+  });
 }
 ` },
   84: { path: 'app/migrations/catalog-contract.js', source: `export function normalizeCatalogItem(input, warn = () => {}) {

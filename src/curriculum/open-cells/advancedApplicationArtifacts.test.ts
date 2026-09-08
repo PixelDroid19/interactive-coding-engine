@@ -3,6 +3,30 @@ import { describe, expect, it } from 'vitest';
 import { createOpenCellsLessonWorkspace } from './lessonWorkspaces';
 import { advancedApplicationArtifactForLesson } from './advancedApplicationArtifacts';
 
+describe('release evidence', () => {
+  async function releaseContract() {
+    const source = advancedApplicationArtifactForLesson(83)!.source;
+    return import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+  }
+
+  it('requires passing evidence from one run and one exact artifact', async () => {
+    const { QUALITY_GATES, canPromote } = await releaseContract();
+    expect(QUALITY_GATES.map((gate: { name: string }) => gate.name)).toContain('format');
+    const evidence = { runId: 'run-1', sourceHash: 'a'.repeat(64), artifactHash: 'b'.repeat(64), results: {} as Record<string, unknown> };
+    for (const gate of QUALITY_GATES) evidence.results[gate.name] = { status: 'passed', exitCode: 0, runId: evidence.runId, sourceHash: evidence.sourceHash, artifactHash: evidence.artifactHash };
+    expect(canPromote(evidence)).toBe(true);
+    evidence.results['consumer-smoke'] = { status: 'passed', exitCode: 0, runId: 'older-run', sourceHash: evidence.sourceHash, artifactHash: 'c'.repeat(64) };
+    expect(canPromote(evidence)).toBe(false);
+  });
+
+  it('does not promote bare status labels or missing evidence', async () => {
+    const { QUALITY_GATES, canPromote } = await releaseContract();
+    expect(canPromote(Object.fromEntries(QUALITY_GATES.map((gate: { name: string }) => [gate.name, 'passed'])))).toBe(false);
+    expect(canPromote(null)).toBe(false);
+    expect(canPromote({})).toBe(false);
+  });
+});
+
 describe('analytics event contract', () => {
   it('connects selection to a bounded local adapter', async () => {
     const files = createOpenCellsLessonWorkspace(81).snapshot.files;
