@@ -96,7 +96,7 @@ export function connectPendingChangesWorkspace(base: VersionedCellsWorkspace): V
   put('app/routing/navigation-guard.js', navigationGuardSource());
   put('app/routing/pending-changes-shell.js', shellSource);
   put('app/routing/pending-changes-shell.scss', shellStyles);
-  put('app/routing/pending-changes-shell.css.js', `export default ${JSON.stringify(shellStyles)};\n`);
+  put('app/routing/pending-changes-shell.css.js', `export default \`${shellStyles}\`;\n`);
   const localePath = 'app/locales-app/locales.json';
   const catalogs = JSON.parse(workspace.snapshot.files[localePath].content);
   for (const language of ['es', 'en'] as const) Object.assign(catalogs[language], messages[language]);

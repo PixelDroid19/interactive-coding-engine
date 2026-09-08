@@ -64,9 +64,22 @@ const styles = `
 export function connectMigrationPanel(base: VersionedCellsWorkspace): VersionedCellsWorkspace {
   let workspace = base;
   const put = (path: string, content: string) => { workspace = writeCellsFile(workspace, path, content); };
-  put('app/migrations/plan.js', `export const MIGRATION_PLAN = Object.freeze({ removalVersion: '2.0.0', removalDate: '2026-12-01', trainingExample: true });\n`);
-  put('app/consumers/legacy-catalog.js', `export const legacyCatalog = [{ id: 'first', name: 'Proyecto Museo' }, { id: 'second', name: 'Proyecto Clima' }];\n`);
-  put('app/consumers/current-catalog.js', `export const currentCatalog = [{ id: 'first', title: 'Proyecto Museo' }, { id: 'second', title: 'Proyecto Clima' }];\n`);
+  put('app/migrations/plan.js', `export const MIGRATION_PLAN = Object.freeze({
+  removalVersion: '2.0.0',
+  removalDate: '2026-12-01',
+  trainingExample: true,
+});
+`);
+  put('app/consumers/legacy-catalog.js', `export const legacyCatalog = [
+  { id: 'first', name: 'Proyecto Museo' },
+  { id: 'second', name: 'Proyecto Clima' },
+];
+`);
+  put('app/consumers/current-catalog.js', `export const currentCatalog = [
+  { id: 'first', title: 'Proyecto Museo' },
+  { id: 'second', title: 'Proyecto Clima' },
+];
+`);
   const home = 'app/pages/academy-home-page/academy-home-page';
   put(`${home}.js`, `import { adaptCatalog } from '../../migrations/adapt-catalog.js';
 import { MIGRATION_PLAN } from '../../migrations/plan.js';

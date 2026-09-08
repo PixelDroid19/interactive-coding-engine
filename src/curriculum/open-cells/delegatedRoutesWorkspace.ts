@@ -91,7 +91,7 @@ export function connectDelegatedRoutesWorkspace(base: VersionedCellsWorkspace): 
   put('app/modules/catalogo/navigation.js', moduleSource);
   put('app/scripts/delegated-shell.js', shellSource);
   put('app/scripts/delegated-shell.scss', styles);
-  put('app/scripts/delegated-shell.css.js', `export default ${JSON.stringify(styles)};\n`);
+  put('app/scripts/delegated-shell.css.js', `export default \`${styles}\`;\n`);
   const routesPath = 'app/scripts/app-routes.js';
   const routes = workspace.snapshot.files[routesPath].content;
   const routeStart = routes.indexOf('export const ROUTES = [\n') + 'export const ROUTES = [\n'.length;

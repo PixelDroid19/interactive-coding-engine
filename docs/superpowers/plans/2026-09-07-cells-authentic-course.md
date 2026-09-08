@@ -207,3 +207,29 @@ Follow-up regression correction for 76: the full generated-tape audit rejected t
 - [ ] Verify retained state, eviction cleanup, bounded mounted pages and durable state outside page instances in playground and export.
 
 Two execution tests first failed: eviction never called cleanup, and invalid limits were accepted. Both now pass, including recency refresh without calling `onPageLeave` during destruction. This validates the isolated policy only, not DOM retention. Runtime investigation found native `viewLimit`/`persistentPages` configuration and a reserved cross-template allowance; the preview currently replaces its outlet on every transition. That difference must be resolved or explicitly scoped before claiming equivalent retention behavior. No recorded audio or subtitle source changed.
+
+## Later implementation checkpoints (77–84)
+
+The preceding entries are chronological checkpoints, not the current completion state. Subsequent commits connected each remaining advanced example to its application. Their browser verifiers live in `scripts/verify-cells-*-browser.ts`; an exported-runtime check requires the corresponding environment URL or release report and is not implied by a playground run.
+
+| Lesson | Implementation commit | Observable boundary |
+| --- | --- | --- |
+| 77 | `1a492ac` | retained page draft, session note, eviction and listener cleanup |
+| 78 | `73a3d42` | compact catalog flag without changing selection/navigation |
+| 79 | `2cd75ad` | real exported service worker, offline shell and separately network-only data |
+| 80 | `1fec041` | correlated selection, navigation, data and render with error/cancellation |
+| 81 | `2781684` | versioned event contract and bounded local collector |
+| 82 | `24cbce9` | resource/transition observations compared with configured budgets |
+| 83 | `93c1022` | executable release gates, artifact identity and real report reader |
+| 84 | `03f1ce2` | both catalog consumers, rejected invalid inputs and simulated retirement |
+
+## Instructional follow-through (75–84)
+
+- Added `docs/recorrido.md` to each generated project and linked it from its README. Each guide identifies actual owners, an observable experiment and the limits of the example; lessons with a technical guide link to it.
+- Kept the recorded project journeys unchanged: their paths and explanations feed narration. The supplemental guides do not claim to replace or update the recordings.
+- The guide-delivery regression first failed for all ten missing guides, then passed after integration. It resolves the generated links against the actual workspace, rather than checking a preferred prose spelling.
+- A full-suite run found previously introduced single-line generated sources in lessons 75, 76 and 84. The source generators now expose readable multiline CSS, migration inputs and the practice plan. Executing both CSS modules yields exactly the original SCSS strings.
+
+Remaining overall acceptance: exercise the latest advanced lessons through the main player (start, pause, edit/fork, run, return and reasoning), finish the requirement-by-requirement course audit, and distinguish recorded coverage from supplemental coverage. No new audio, production deployment or proprietary-runtime equivalence is authorized or claimed by these changes.
+
+Fresh validation for this follow-through: full `npm test -- --maxWorkers=2 --reporter=dot` passed 1,378 tests with 2 skipped (173 passing files, 1 skipped). TypeScript and production build passed; existing Pyodide externalization and bundle warnings remain. Guided-lesson/journey checks passed 17 tests, including the 84 script/subtitle comparisons. The guide-delivery check passes against the actual lesson initial workspaces. The migration browser verifier still passes both consumer/retirement flows, navigation, locale switching and mobile layout after source formatting; this run used the playground, not a newly exported application.
