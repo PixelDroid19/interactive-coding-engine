@@ -43,7 +43,7 @@ describe('inteligencia del editor Cells', () => {
   });
 
   it('no inventa errores en los componentes variados ni en sus pruebas públicas', () => {
-    for (const lesson of [1, 3, 6, 10, 16, 21, 23, 37, 69, 70]) {
+    for (const lesson of [1, 3, 6, 10, 16, 21, 23, 37, 69, 70, 71]) {
       const workspace = createOpenCellsLessonWorkspace(lesson).snapshot;
       const service = new TypeScriptLanguageService(typeScriptLibraries);
       replaceWorkspace(service, workspace);

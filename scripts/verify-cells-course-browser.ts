@@ -73,10 +73,56 @@ try {
   await page.frameLocator('iframe').locator('academy-home-page').waitFor({ state: 'visible', timeout: 15_000 });
   await page.frameLocator('iframe').getByRole('button', { name: 'Ver detalle' }).first().click();
   await page.frameLocator('iframe').locator('academy-product-detail-page').waitFor({ state: 'visible', timeout: 15_000 });
-  for (const artifact of ['action-button', 'status-badge', 'state-panel', 'product-card', 'product-list', 'search-filter', 'language-switcher', 'catalog-shell', 'lifecycle-panel', 'context-panel']) {
+  for (const artifact of ['action-button', 'status-badge', 'state-panel', 'product-card', 'product-list', 'search-filter', 'language-switcher', 'catalog-shell', 'lifecycle-panel', 'context-panel', 'media-tile']) {
     const results = await checkWorkspace(createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS[artifact]).snapshot, artifact);
     const failures = results.filter((result) => !result.passed);
     if (failures.length) throw new Error(`${artifact}: ${JSON.stringify(failures)}`);
+    if (artifact === 'media-tile') {
+      await page.frames()[1].evaluate(`(async () => {
+        const host = document.querySelector('academy-media-tile');
+        await window.IntlMsg.setLanguage('es');
+        host.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="2" height="1"><path fill="blue" d="M0 0h2v1H0z"/></svg>');
+        host.alt = 'Rectángulo azul';
+        host.width = 320;
+        host.height = 160;
+        await host.updateComplete;
+        const frame = host.shadowRoot.querySelector('[data-media-state]');
+        const image = host.shadowRoot.querySelector('img');
+        if (!frame || !image) throw new Error('Media must render the public source with a reserved frame');
+        const before = frame.getBoundingClientRect();
+        if (before.width <= 0 || Math.abs(before.width / before.height - 2) > .05) throw new Error('Media dimensions were not reserved before loading');
+        if (image.alt !== 'Rectángulo azul' || image.getAttribute('width') !== '320' || image.getAttribute('height') !== '160') throw new Error('Accessible media inputs were not bound');
+        if (!host.shadowRoot.querySelector('[data-decorative-icon][aria-hidden="true"]')) throw new Error('The decorative icon must be hidden from assistive technology');
+        await image.decode();
+        await new Promise(requestAnimationFrame);
+        await host.updateComplete;
+        if (frame.getAttribute('data-media-state') !== 'ready') throw new Error('Successful image load did not clear loading feedback');
+        host.src = 'data:image/png;base64,aW52YWxpZA==';
+        await host.updateComplete;
+        await image.decode().catch(() => {});
+        await new Promise(requestAnimationFrame);
+        await host.updateComplete;
+        if (frame.getAttribute('data-media-state') !== 'error' || !host.shadowRoot.textContent.includes('No se pudo cargar')) throw new Error('Broken source must show a useful error state');
+        if (Math.abs(frame.getBoundingClientRect().height - before.height) > 1) throw new Error('Image failure collapsed the reserved area');
+        await window.IntlMsg.setLanguage('en');
+        await host.updateComplete;
+        if (!host.shadowRoot.textContent.includes('Unable to load')) throw new Error('Media error did not follow the active locale');
+        host.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>');
+        host.alt = '';
+        await host.updateComplete;
+        await image.decode();
+        await new Promise(requestAnimationFrame);
+        await host.updateComplete;
+        if (frame.getAttribute('data-media-state') !== 'ready' || image.alt !== '' || image.hidden) throw new Error('A replacement source must recover and preserve decorative alt');
+        host.src = '';
+        host.width = -1;
+        host.height = NaN;
+        await host.updateComplete;
+        if (frame.getAttribute('data-media-state') !== 'empty' || host.shadowRoot.querySelector('img')) throw new Error('Empty source must not request the document as an image');
+        const empty = frame.getBoundingClientRect();
+        if (empty.height <= 0 || !Number.isFinite(empty.height)) throw new Error('Invalid sizes must retain a usable frame');
+      })()`);
+    }
     if (artifact === 'context-panel') {
       await page.frames()[1].evaluate(`(async () => {
         const provider = document.querySelector('academy-density-provider');
