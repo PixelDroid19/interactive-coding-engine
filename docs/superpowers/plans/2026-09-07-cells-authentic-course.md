@@ -254,3 +254,25 @@ Browser routing: the in-app browser bootstrap failed with `privileged native pip
 - TypeScript and production build pass. Existing build warnings, Node localStorage warnings and happy-dom teardown diagnostics remain; do not describe the output as warning-free.
 
 The full requirement audit remains open. These observations do not claim new narration, a complete listen-through, proprietary-runtime equivalence or deployment.
+
+## Requirement audit against the original request
+
+| Requirement | Implementation and acceptance boundary |
+| --- | --- |
+| Original variants; external examples remain read-only | Changes are limited to this platform's generators, curriculum, tests and verifiers. Generated names, data and styles are neutral. No reference repository or recorded audio file is included in the branch diff. The provenance test checks leaked external paths; it is not a copyright detector. |
+| Lit 3 and the requested composition syntax | Generated hosts use `WidgetMixin(ScopedElementsMixin(LitElement))`, property getters, class-based scoped registration, configurable classes, shared styles, translation and public events. Executed composition tests cover inheritance, invalid classes and isolated style registries; Chromium covers actual scoped children, ES/EN changes and event payloads. |
+| Data manager is optional | Account-detail receives its data through properties. Its views emit intentions without networking; retry does not fabricate a successful response. The supplemental reading explains when a separate integration owner is needed. |
+| Build a coherent feature, not one repeated card | Account-detail composes summary/movement views and complete shared controls. Browser acceptance covers navigation, filtering, empty/error/loading states, a failing starter and a disconnected-filter mutation. Five application variants and their selection routes pass. |
+| Evolve the course coherently | All 84 lesson mappings, initial/final tapes, file references, readings and reasoning exercises are checked by the full suite. Advanced examples have project-owned implementations and supplemental file-by-file guides visible through the real player. Existing recordings are preserved; these checks are not a complete audio listen-through. |
+| Advanced observable behavior | Fresh browser runs pass lessons 75–84, including the required real report for 83. Lesson 79 additionally passes offline and update checks against the actual exported service worker. Its exported source comparison differs from current generation only in README and the added guide. Playground capability boundaries remain explicit. |
+| Continue uploading verified changes | Implementation and acceptance checkpoints are committed on `codex/cells-authentic-course`; no production deployment is implied. |
+
+Additional fresh ZIP acceptance: `user-summary`, `notice-banner` and `price-tag` each pass Sass, native CLI tests with coverage, regenerated public documentation and both demo builds. The retained diagnostic root is `/tmp/open-cells-cli-gate-q64Z9J`. This closes the three component variants omitted from the main browser-verifier loop.
+
+### Final export gate and closure
+
+The other fourteen component variants also pass the same ZIP → independent install → Sass → CLI tests with coverage → regenerated public documentation → demo build sequence. The first twelve completed in `/tmp/open-cells-cli-gate-Y0lnm2`; `theme-preview` and `component-workflow` completed in `/tmp/open-cells-cli-gate-w0Rluj`. Together with the three above, this covers all seventeen component artifacts, including account-detail. The latter run also passes the exported application's `app:test` and `app:build -c prod.js`.
+
+The first theme test attempt could not launch Playwright's absent downloaded browser and ran zero tests. Supplying the already-supported `CELLS_BROWSER_EXECUTABLE=/opt/google/chrome/chrome` resolved the environment issue without editing sources or thresholds. Its four real-browser tests pass with 100% statement, branch, function and line coverage for the configured root component file; this is not a claim of 100% coverage across every dependency.
+
+The original requested implementation and its acceptance audit are complete. Earlier remaining-work paragraphs above are historical checkpoints, superseded by this audit and the later implementation entries. The delivered scope is original educational Cells-style components, composed features, coherent course projects and independently executable exports—not redistribution of private components or equivalence with a proprietary runtime. Existing recordings remain unchanged, and production deployment was not requested. Known non-blocking tooling/build warnings and the unconstrained audit timeout are recorded above rather than hidden.
