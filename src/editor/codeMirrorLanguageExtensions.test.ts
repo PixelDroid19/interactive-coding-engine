@@ -4,12 +4,17 @@ import { CompletionContext } from '@codemirror/autocomplete';
 import { javascript } from '@codemirror/lang-javascript';
 import { EditorState } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
+import { forceLinting, diagnosticCount } from '@codemirror/lint';
+import { TypeScriptLanguageService } from './typeScriptLanguageService';
+import { typeScriptLibraries } from 'virtual:typescript-libraries';
 import {
   completionToCodeMirror,
   collectCodeMirrorSyntaxDiagnostics,
   createSignatureHelpExtension,
   createSemanticCompletionSource,
+  createSemanticLintExtensions,
   languageDiagnosticsToCodeMirror,
+  type EditorDiagnosticStatus,
   type SemanticLanguageClient,
 } from './codeMirrorLanguageExtensions';
 
@@ -86,6 +91,51 @@ describe('adaptador semántico de CodeMirror', () => {
     const diagnostics = collectCodeMirrorSyntaxDiagnostics(state);
     expect(diagnostics).toHaveLength(1);
     expect(diagnostics[0]?.message).toContain('llave');
+  });
+
+  it.each([
+    { label: 'acepta import attributes válidos', code: "import catalog from './catalog.json' with { type: 'json' };\nexport const title = catalog.title;", hasErrors: false },
+    { label: 'conserva errores de sintaxis reales', code: 'export const value = ;', hasErrors: true },
+  ])('$label al integrar el servicio del lenguaje con CodeMirror', async ({ code, hasErrors }) => {
+    const service = new TypeScriptLanguageService(typeScriptLibraries);
+    service.replaceWorkspace([{ path: 'app.js', content: code }, { path: 'catalog.json', content: '{"title":"Catálogo"}' }]);
+    const languageClient: SemanticLanguageClient = { ...client, diagnostics: async (path) => service.diagnostics(path) };
+    let status: EditorDiagnosticStatus | undefined;
+    const parent = document.createElement('div');
+    document.body.append(parent);
+    const view = new EditorView({
+      parent,
+      state: EditorState.create({ doc: code, extensions: [javascript(), createSemanticLintExtensions(languageClient, () => 'app.js', (value) => { status = value; })] }),
+    });
+    try {
+      forceLinting(view);
+      await expect.poll(() => status?.state).toBe('ready');
+      expect((status?.errors ?? 0) > 0, JSON.stringify(status?.details)).toBe(hasErrors);
+      expect(diagnosticCount(view.state) > 0).toBe(hasErrors);
+    } finally {
+      view.destroy();
+      parent.remove();
+    }
+  });
+
+  it('conserva el diagnóstico sintáctico de respaldo cuando falla el servicio', async () => {
+    let status: EditorDiagnosticStatus | undefined;
+    const languageClient: SemanticLanguageClient = { ...client, diagnostics: async () => { throw new Error('Worker no disponible'); } };
+    const parent = document.createElement('div');
+    document.body.append(parent);
+    const view = new EditorView({
+      parent,
+      state: EditorState.create({ doc: 'function incomplete() {', extensions: [javascript(), createSemanticLintExtensions(languageClient, () => 'app.js', (value) => { status = value; })] }),
+    });
+    try {
+      forceLinting(view);
+      await expect.poll(() => status?.state).toBe('error');
+      expect(status?.errors).toBeGreaterThan(0);
+      expect(diagnosticCount(view.state)).toBeGreaterThan(0);
+    } finally {
+      view.destroy();
+      parent.remove();
+    }
   });
 
   it('cierra la ayuda de firma cuando el editor pierde el foco', async () => {

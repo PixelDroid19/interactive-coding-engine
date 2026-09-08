@@ -153,16 +153,6 @@ export function collectCodeMirrorSyntaxDiagnostics(state: EditorState): Diagnost
   return diagnostics;
 }
 
-function mergeDiagnostics(syntax: Diagnostic[], semantic: Diagnostic[]): Diagnostic[] {
-  const seen = new Set<string>();
-  return [...syntax, ...semantic].filter((diagnostic) => {
-    const key = `${diagnostic.from}:${diagnostic.to}:${diagnostic.message}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
 export function createSemanticLintExtensions(
   client: SemanticLanguageClient,
   getFilePath: () => string | null,
@@ -200,9 +190,10 @@ export function createSemanticLintExtensions(
           await client.diagnostics(path),
           doc.length,
         );
-        const merged = mergeDiagnostics(syntax, semantic);
-        report(merged, 'ready');
-        return merged;
+        // The language service includes syntax diagnostics. Its JS/TS grammar
+        // supports constructs that the highlighting parser may not recognize.
+        report(semantic, 'ready');
+        return semantic;
       } catch {
         report(syntax, 'error');
         return syntax;

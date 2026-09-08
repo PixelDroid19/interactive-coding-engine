@@ -75,8 +75,8 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
       return `<button type="button" class="primary-action" ?disabled=\${this.disabled} ${action}><academy-type-text as="span"><slot>\${this.label || this.t('${prefix}.action')}</slot></academy-type-text></button>`;
     case 'status-badge':
       return `<button type="button" class="status-stage" ${action}>
-          <span class="status-dot"></span>
-          <strong>${value}</strong>
+          <span class="status-dot" aria-hidden="true"></span>
+          <academy-type-text as="span">${value}</academy-type-text>
           <small>${translated('action')}</small>
         </button>`;
     case 'state-panel':
@@ -171,9 +171,10 @@ function renderMarkup(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint
 
 function componentStyles(artifact: OpenCellsArtifact, blueprint: ComponentBlueprint): string {
   const layout = artifact.id === 'product-list' || artifact.id === 'catalog-shell' ? 'min(52rem, 100%)' : 'min(34rem, 100%)';
+  const compact = artifact.id === 'action-button' || artifact.id === 'status-badge';
   return `:host {
-  display: ${artifact.id === 'action-button' ? 'inline-block' : 'block'};
-  width: ${artifact.id === 'action-button' ? 'auto' : layout};
+  display: ${compact ? 'inline-block' : 'block'};
+  width: ${compact ? 'auto' : layout};
   color: #172033;
   font-family: system-ui, sans-serif;
 }
@@ -195,6 +196,7 @@ ${artifact.id === 'action-button' ? '.primary-action:disabled { opacity: .55; cu
 .status-stage, .notice, .price { border-left: .35rem solid ${blueprint.accent}; padding: 1rem; background: #f8fafc; }
 .status-stage, .price { width: 100%; border-top: 0; border-right: 0; border-bottom: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .status-dot { width: .75rem; height: .75rem; border-radius: 50%; background: ${blueprint.accent}; }
+${artifact.id === 'status-badge' ? '.status-stage { width: auto; border: 1px solid currentColor; border-radius: 999px; padding: .4rem .7rem; gap: .45rem; font-size: .8rem; }\n' : ''}
 .state-grid, .product-card { display: grid; gap: 1rem; }
 .avatar { display: grid; width: 3rem; height: 3rem; place-items: center; border-radius: 50%; background: ${blueprint.accent}; color: white; font-size: 1.25rem; font-weight: 900; }
 .collection { display: grid; gap: 1rem; }
@@ -235,6 +237,7 @@ export function createCellsCurriculumComponentWorkspace(artifact: OpenCellsArtif
   const markup = renderMarkup(artifact, blueprint, prefix);
   const styles = componentStyles(artifact, blueprint);
   const isCollection = artifact.id === 'product-list' || artifact.id === 'catalog-shell';
+  const compact = artifact.id === 'action-button' || artifact.id === 'status-badge';
   const source = `import { LitElement, html } from 'lit';
 import { ScopedElementsMixin } from '@open-wc/scoped-elements/lit-element.js';
 import { WidgetMixin } from './mixins/WidgetMixin.js';
@@ -316,7 +319,7 @@ ${artifact.id === 'product-list' ? `  get visibleItems() {
 
   render() {
     return html\`
-      ${artifact.id === 'action-button' ? markup : `<section class="surface">
+      ${compact ? markup : `<section class="surface">
         ${dependencyIds.includes('type-text') ? `<academy-type-text as="h2">\${this.t('${prefix}.title')}</academy-type-text>` : `<h2>\${this.t('${prefix}.title')}</h2>`}
         ${markup}
       </section>`}
@@ -487,7 +490,7 @@ describe('${artifact.tagName}', () => {
     const component = await renderComponent();
     expect(${className}.properties.${blueprint.propertyName}.attribute).toBe('${blueprint.attribute}');
 ${unitDependencyAssertions}
-    expect(component.shadowRoot.textContent).toContain(${JSON.stringify(artifact.id === 'action-button' ? blueprint.demoValue : blueprint.title.es)});
+    expect(component.shadowRoot.textContent).toContain(${JSON.stringify(compact ? blueprint.demoValue : blueprint.title.es)});
   });
 
   it('cambia a inglés sobre el mismo host', async () => {
@@ -496,7 +499,7 @@ ${artifact.id === 'action-button' ? '    component.label = "";\n' : ''}
     await globalThis.IntlMsg.setLanguage('en');
     await globalThis.IntlMsg.loadUrlResourcesComplete;
     await component.updateComplete;
-    expect(component.shadowRoot.textContent).toContain(${JSON.stringify(artifact.id === 'action-button' ? blueprint.action.en : blueprint.title.en)});
+    expect(component.shadowRoot.textContent).toContain(${JSON.stringify(compact ? blueprint.action.en : blueprint.title.en)});
   });
 
   it('emite una intención pública completa desde el control visible', async () => {

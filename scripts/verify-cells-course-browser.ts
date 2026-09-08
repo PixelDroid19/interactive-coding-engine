@@ -77,6 +77,16 @@ try {
     const results = await checkWorkspace(createCellsCurriculumComponentWorkspace(OPEN_CELLS_ARTIFACTS[artifact]).snapshot, artifact);
     const failures = results.filter((result) => !result.passed);
     if (failures.length) throw new Error(`${artifact}: ${JSON.stringify(failures)}`);
+    if (artifact === 'status-badge') {
+      await page.frames()[1].evaluate(`(async () => {
+        const host = document.querySelector('academy-status-badge');
+        const text = host.shadowRoot.querySelector('academy-type-text');
+        if (!text) throw new Error('Status must compose the scoped typography');
+        await text.updateComplete;
+        if (host.getBoundingClientRect().height > 96) throw new Error('A status indicator must not occupy a full content card');
+        if (!host.shadowRoot.querySelector('button')) throw new Error('The inspect control must remain keyboard accessible');
+      })()`);
+    }
     if (artifact === 'state-panel') {
       await page.frames()[1].evaluate(`(async () => {
         const host = document.querySelector('academy-state-panel');

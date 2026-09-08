@@ -107,3 +107,12 @@ Final verification: full suite 1318 passed / 2 skipped, lint passed, production 
 - [x] Ship metadata, README contracts and regression tests with all three generated packages.
 
 Red evidence: missing scoped search action, missing keyboard query, and disconnected catalog data each failed in Chromium before the corresponding correction. Final browser flow verifies Enter, composition, filtering, exact duplicate-name selection, empty results and clearing; all five applications and previous component/feature checks still pass. Full suite: 1318 passed / 2 skipped; targeted editor and curriculum checks: 24 passed; lint and production build passed with existing warnings. Exported test source is validated by editor diagnostics, but execution outside the platform remains a separate pending gate.
+
+## Task 5d: Reusable status sizing and accurate editor diagnostics
+
+- [x] Render the status indicator as a compact control with scoped typography instead of nesting an entire content card.
+- [x] Keep its existing inspect event and keyboard-accessible native button.
+- [x] Use the language service's syntactic and semantic diagnostics for JS/TS; retain the highlighting parser as fallback when the service is unavailable and for other languages.
+- [x] Reproduce valid JSON import-attribute false positives with the real TypeScript library set, and preserve genuine syntax errors plus unavailable-service fallback in integration tests.
+
+Final evidence: 1321 tests passed / 2 skipped; lint and build passed with existing warnings. Chromium catches a restored oversized indicator and passes the compact version alongside all component/application flows. In the actual lesson 12 player: start/pause/seek/reload, visible `Sin errores`, compact status, `error` retry with `{ state: "error" }` in the event inspector, transition to `empty` removing retry, and English translation were checked. No audio changes or deployment. Remaining: advanced component/application examples and independent ZIP/CLI execution.
