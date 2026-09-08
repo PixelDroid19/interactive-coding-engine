@@ -3,6 +3,50 @@ import { describe, expect, it } from 'vitest';
 import { createOpenCellsLessonWorkspace } from './lessonWorkspaces';
 import { advancedApplicationArtifactForLesson } from './advancedApplicationArtifacts';
 
+describe('analytics event contract', () => {
+  it('connects selection to a bounded local adapter', async () => {
+    const files = createOpenCellsLessonWorkspace(81).snapshot.files;
+    expect(files['app/analytics/adapter.js']).toBeDefined();
+    const eventSource = files['app/analytics/events.js'].content;
+    const eventUrl = `data:text/javascript;base64,${Buffer.from(eventSource).toString('base64')}`;
+    const source = files['app/analytics/adapter.js'].content.replace('./events.js', eventUrl);
+    const { createAnalyticsAdapter } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+    const adapter = createAnalyticsAdapter();
+    expect(adapter.track('unknown', {})).toBe(false);
+    for (let index = 0; index < 30; index++) adapter.track('catalog:item-selected', { itemId: 'first', source: 'home', secret: 'synthetic' });
+    expect(adapter.getEvents()).toHaveLength(25);
+    expect(adapter.getEvents()[0].properties).toEqual({ itemId: 'first', source: 'home' });
+    adapter.getEvents().pop();
+    expect(adapter.getEvents()).toHaveLength(25);
+    adapter.clear();
+    expect(adapter.getEvents()).toEqual([]);
+    expect(files['app/pages/academy-home-page/academy-home-page.js'].content).toContain("analytics.track('catalog:item-selected'");
+  });
+
+  async function eventFactory() {
+    const source = advancedApplicationArtifactForLesson(81)!.source;
+    return (await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)).createAnalyticsEvent;
+  }
+
+  it('rejects unknown names and malformed property values', async () => {
+    const createEvent = await eventFactory();
+    for (const name of ['unknown', 'toString', '__proto__', null]) {
+      expect(createEvent(name, {})).toBeUndefined();
+    }
+    for (const properties of [undefined, null, [], {}, { itemId: {}, source: 'home' }, { itemId: 'first', source: {} }, { itemId: '', source: 'home' }]) {
+      expect(createEvent('catalog:item-selected', properties)).toBeUndefined();
+    }
+  });
+
+  it('returns an immutable versioned event without extra properties', async () => {
+    const createEvent = await eventFactory();
+    const result = createEvent('catalog:item-selected', { itemId: 'first', source: 'home', secret: 'synthetic' });
+    expect(result).toEqual({ name: 'catalog:item-selected', version: 1, properties: { itemId: 'first', source: 'home' } });
+    expect(Object.isFrozen(result)).toBe(true);
+    expect(Object.isFrozen(result.properties)).toBe(true);
+  });
+});
+
 describe('trace completion', () => {
   async function traceFactory() {
     const source = advancedApplicationArtifactForLesson(80)!.source;

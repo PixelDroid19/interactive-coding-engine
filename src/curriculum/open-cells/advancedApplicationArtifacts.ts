@@ -153,9 +153,12 @@ export function resolveFeatureFlags(input = {}) {
   81: { path: 'app/analytics/events.js', source: `const CONTRACTS = { 'catalog:item-selected': ['itemId', 'source'] };
 
 export function createAnalyticsEvent(name, properties) {
+  if (typeof name !== 'string' || !Object.hasOwn(CONTRACTS, name)) return undefined;
+  if (!properties || typeof properties !== 'object' || Array.isArray(properties)) return undefined;
   const allowed = CONTRACTS[name];
-  if (!allowed) return undefined;
-  return { name, version: 1, properties: Object.fromEntries(allowed.map((key) => [key, properties[key]])) };
+  const entries = allowed.map((key) => [key, properties[key]]);
+  if (entries.some(([, value]) => typeof value !== 'string' || !value.trim())) return undefined;
+  return Object.freeze({ name, version: 1, properties: Object.freeze(Object.fromEntries(entries)) });
 }
 ` },
   82: { path: 'performance-budget.json', source: `{
