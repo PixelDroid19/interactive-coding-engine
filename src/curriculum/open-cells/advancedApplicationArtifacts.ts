@@ -75,10 +75,24 @@ export async function pendingChangesInterceptor({ target, hasPendingChanges, con
   }
 }
 ` },
-  76: { path: 'app/scripts/delegated-routes.js', source: `export function delegateRoute(url) {
-  const match = /^\\/catalogo(?:\\/([^/?#]+))?/.exec(url);
+  76: { path: 'app/scripts/delegated-routes.js', source: `/**
+ * Resuelve solamente URLs internas del módulo de catálogo.
+ * @param {unknown} url
+ * @returns {{ module: 'catalogo', route: 'home' | 'detail', params: { id?: string } } | undefined}
+ */
+export function delegateRoute(url) {
+  if (typeof url !== 'string') return undefined;
+  const pathname = url.split(/[?#]/, 1)[0];
+  const match = /^\\/catalogo(?:\\/([^/]+))?\\/?$/.exec(pathname);
   if (!match) return undefined;
-  return { module: 'catalogo', route: match[1] ? 'detail' : 'home', params: { id: match[1] } };
+  if (!match[1]) return { module: 'catalogo', route: 'home', params: {} };
+  try {
+    const id = decodeURIComponent(match[1]);
+    if (!id.trim() || id === '.' || id === '..' || /[\\/\\\\\\x00-\\x1f\\x7f]/.test(id)) return undefined;
+    return { module: 'catalogo', route: 'detail', params: { id } };
+  } catch {
+    return undefined;
+  }
 }
 ` },
   77: { path: 'app/runtime/page-retention.js', source: `export class PageRetention {

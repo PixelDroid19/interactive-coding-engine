@@ -3,6 +3,27 @@ import { describe, expect, it } from 'vitest';
 import { createOpenCellsLessonWorkspace } from './lessonWorkspaces';
 import { advancedApplicationArtifactForLesson } from './advancedApplicationArtifacts';
 
+describe('frontera de rutas delegadas', () => {
+  async function resolver() {
+    const source = advancedApplicationArtifactForLesson(76)!.source;
+    return (await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)).delegateRoute;
+  }
+
+  it('reconoce el catálogo completo y decodifica un único identificador', async () => {
+    const resolve = await resolver();
+    expect(resolve('/catalogo')).toStrictEqual({ module: 'catalogo', route: 'home', params: {} });
+    expect(resolve('/catalogo/?orden=nombre')).toEqual({ module: 'catalogo', route: 'home', params: {} });
+    expect(resolve('/catalogo/proyecto%20uno#resumen')).toEqual({ module: 'catalogo', route: 'detail', params: { id: 'proyecto uno' } });
+  });
+
+  it('no delega prefijos parecidos, segmentos sobrantes ni identificadores ambiguos', async () => {
+    const resolve = await resolver();
+    for (const url of ['/catalogos', '/catalogo-extra', '/catalogo/a/b', '/catalogo//', '/catalogo/%2F', '/catalogo/%5C', '/catalogo/%20', '/catalogo/%ZZ', '/catalogo/..', '/catalogo/%00', 'https://example.com/catalogo/a', null, {}]) {
+      expect(resolve(url), String(url)).toBeUndefined();
+    }
+  });
+});
+
 describe('diseño técnico del proyecto avanzado', () => {
   it('enlaza los propietarios reales y conserva contratos comprobables del proyecto', () => {
     const { files } = createOpenCellsLessonWorkspace(74).snapshot;
