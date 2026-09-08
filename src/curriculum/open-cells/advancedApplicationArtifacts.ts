@@ -4,22 +4,53 @@ export interface AdvancedApplicationArtifact {
 }
 
 const ARTIFACTS: Record<number, AdvancedApplicationArtifact> = {
-  74: { path: 'docs/architecture.md', source: `# Diseño técnico de la aplicación
+  74: { path: 'docs/architecture.md', source: `# Diseño técnico del Estudio Cells
 
-## Fronteras
+## Recorre una decisión real
 
-- **Shell:** arranque, outlet, rutas y configuración.
-- **Página:** ciclo de entrada y salida de una ruta.
-- **Componente:** presentación reutilizable y eventos públicos.
-- **Servicio:** datos, políticas y adaptadores sin render.
+Abre la aplicación y selecciona un proyecto del catálogo. La tarjeta publica la selección; la página comunica el proyecto y solicita la ruta de detalle. El shell aplica la navegación. No hace falta que la tarjeta conozca una URL ni que importe el router.
 
-## Regla de dependencias
+## Propietarios y duración
 
-La página coordina componentes y servicios. Los componentes no importan el router ni el data manager.
+| Frontera | Archivo de entrada | Responsabilidad | Duración |
+| --- | --- | --- | --- |
+| Shell | [app.js](../app/scripts/app.js) | Inicializa mensajes y arranca el outlet; usa las [rutas declaradas](../app/scripts/app-routes.js). | Sesión de la aplicación. |
+| Página de catálogo | [academy-home-page.js](../app/pages/academy-home-page/academy-home-page.js) | Entrega productos a las tarjetas, recibe intenciones, publica en el canal y solicita navegación. | Instancia de página; la suscripción solo existe entre entrada y salida. |
+| Página de detalle | [academy-product-detail-page.js](../app/pages/academy-product-detail-page/academy-product-detail-page.js) | Recibe el parámetro id en onPageEnter y presenta la visita. | Instancia de página; los parámetros se actualizan al entrar. |
+| Componente compartido | [academy-product-card.js](../app/components/academy-product-card/academy-product-card.js) | Recibe product por propiedad y emite una copia como intención pública. | Instancia scoped dentro de la página. |
+| Servicio de datos | [academy-product-data-manager.js](../app/data/academy-product-data-manager.js) | Encapsula carga, estados y cancelación sin renderizar. | La decide el consumidor que lo cree. |
 
-## Evidencia
+El catálogo actual usa productos de demostración en su constructor. El data manager está disponible y probado por separado, pero todavía no alimenta esa pantalla. No dibujes una dependencia página → servicio como si ya existiera: al conectarla tendrás que definir quién escucha sus estados y quién cancela la petición al salir.
 
-Una selección sale como evento, la página decide navegar y la ruta carga el módulo bajo demanda.
+## Contratos entre fronteras
+
+| Emisor → receptor | Entrada o evento | Quién decide el siguiente paso |
+| --- | --- | --- |
+| Página → tarjeta | Propiedad product con id, name y price. | La tarjeta decide cómo presentarla, no cómo cargarla. |
+| Tarjeta → página | academy-product-card-select; detail contiene una copia del producto. | handleProductSelected de la página. |
+| Página → canal | academy:studio:project:selected, declarado en [channels.js](../app/scripts/channels.js). | Cada suscriptor interpreta la selección; el canal no navega. |
+| Página → router | navigate('product-detail', { id: product.id }). | El router resuelve la ruta nombrada y carga su módulo. |
+| Router → detalle | onPageEnter({ id }). | La página de detalle actualiza su estado local. |
+
+La selección por canal y el parámetro de ruta no son lo mismo. El canal comunica el objeto durante la sesión; la ruta transporta el identificador navegable. En este ejemplo el detalle muestra ese identificador: no obtiene automáticamente el objeto completo del catálogo.
+
+## Dependencias permitidas
+
+Las páginas pueden componer componentes y coordinar servicios. Una tarjeta presentacional no importa páginas, configuración de rutas ni el data manager. El shell conoce módulos de página a través de las rutas, no sus controles internos. Estas direcciones evitan el ciclo tarjeta → página → tarjeta.
+
+El botón, la tipografía y el registro de estilos compartidos son capacidades transversales, no propietarios del producto seleccionado. Cada componente registra sus dependencias scoped y comunica intenciones con emitEvent. Las traducciones se inicializan en [app-messages.js](../app/scripts/app-messages.js); no se reparte un catálogo independiente por cada pantalla.
+
+## Criterios de aceptación
+
+1. Cambia un id de los datos de demostración y selecciona esa tarjeta. El detalle debe mostrar el nuevo id, no un valor fijo.
+2. El evento de la tarjeta conserva id, name y price; la propiedad original no se modifica al emitirlo.
+3. Sal del catálogo y vuelve. onPageLeave retira la suscripción y onPageEnter la establece para la nueva visita.
+4. Selecciona desde Inicio, Favoritos y Búsqueda. Las tres superficies solicitan product-detail con el id elegido.
+5. Ejecuta cells app:test y cells app:build -c prod.js tras exportar. Consulta [app.test.js](../test/unit/app.test.js): sus pruebas verifican contratos aislados, no sustituyen el recorrido en navegador.
+
+## Tu decisión de diseño
+
+Antes de añadir persistencia de favoritos, escribe qué servicio conserva los ids, qué página lo consulta y qué evento solicita un cambio. Conserva la tarjeta sin conocimiento de almacenamiento. Define dos casos observables: guardar un proyecto y volver a abrir la página sin duplicarlo. Solo después conecta los archivos y comprueba ambos recorridos.
 ` },
   75: { path: 'app/routing/pending-changes-interceptor.js', source: `export function pendingChangesInterceptor({ target, hasPendingChanges }) {
   if (!hasPendingChanges) return { action: 'allow', target };

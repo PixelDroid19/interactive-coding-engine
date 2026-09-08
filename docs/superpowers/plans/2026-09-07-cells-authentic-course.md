@@ -157,3 +157,12 @@ Red evidence: the previous theme recipe did not render its declared shared state
 Evidence: the final combined CLI run passed 17 components and one application. The isolated base-component run passed too. The theme's four tests ran in Chromium and reported 100 percent for statements, branches, functions and lines. The complete platform suite passed 1321 tests with two pre-existing skips; lint, production build and browser verification passed. Final focused recipe/editor tests: 25 passed. Browser checks include the workflow's decoded image and live theme/stage changes, all five application projects, feature states and mobile checks. The clean-consumer check is reproducible with `npx tsx scripts/verify-cells-package-consumer.ts /absolute/path/to/package.tgz`; set `CELLS_BROWSER_EXECUTABLE` when using an existing Chromium installation. It retains its temporary project for inspection and only tests the workflow package, not every package consumer.
 
 Remaining: application examples 74–84 still require their lesson-specific implementation and acceptance audit. The CLI documentation gate checks event and attribute preservation, not a complete semantic comparison of every manifest field. Existing build warnings remain. No recorded audio, subtitles or external reference repositories were changed, and this work does not deploy production.
+
+## Task 5i: Repository-grounded design contract (74)
+
+- [x] Replace generic architecture prose with actual file owners, lifetimes, public event payloads, named navigation and the capstone channel.
+- [x] Distinguish the current demonstration data from the available but unconnected data manager; do not claim an integration that the source does not implement.
+- [x] Provide a concrete storage extension exercise and observable acceptance criteria without putting persistence into presentation components.
+- [x] Verify every document link against the generated workspace and preserve course/guided-lesson integration checks.
+
+Evidence: the new documentation test first failed because the previous document linked no owners. The completed document resolves all eight required owners plus its locale initialization link. Targeted documentation, course and guided-lesson suites: 16 passed; TypeScript passed. This change documents the actual application; it does not add a new router, service connection or visual architecture editor. Recorded narration and subtitle sources remain unchanged. Next: connect the lesson 75 navigation policy to an observable application transition, then continue 76–84.
