@@ -56,7 +56,19 @@ const __document = {
   addEventListener() {}, removeEventListener() {},
 };
 const __window = Object.freeze({ document: __document });
-const __clone = (value) => typeof structuredClone === 'function' ? structuredClone(value) : value;
+const __clone = (value) => {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(__clone);
+  if (value.__testCallback === 'resolve') return async () => __clone(value.value);
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, __clone(item)]));
+};
+// Callbacks belong inside this Worker; they cannot cross postMessage.
+const __reportArgs = (value) => {
+  if (typeof value === 'function') return null;
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) return value.map(__reportArgs);
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, __reportArgs(item)]));
+};
 `;
 
 function serializeTrustedValue(value: unknown): string {
@@ -110,7 +122,7 @@ void (async () => {
     const sameReference = Number.isInteger(__request.referenceArgIndex)
       ? value === args[__request.referenceArgIndex]
       : false;
-    self.postMessage({ kind: 'single', value, argsAfter: args, sameReference });
+    self.postMessage({ kind: 'single', value, argsAfter: __reportArgs(args), sameReference });
   } catch (error) {
     self.postMessage({ kind: 'thrown', message: error?.message || String(error) });
   }
@@ -179,6 +191,7 @@ function legacyFunctionEvaluation(source: string, targetFunction: string, reques
     const clone = (value: any): any => {
       if (typeof value === 'function' || value === null || typeof value !== 'object') return value;
       if (Array.isArray(value)) return value.map(clone);
+      if (value.__testCallback === 'resolve') return async () => clone(value.value);
       return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, clone(item)]));
     };
     let target: any;

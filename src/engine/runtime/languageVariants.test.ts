@@ -2,6 +2,23 @@ import { describe, expect, it } from 'vitest';
 import type { DebuggingExerciseItem, SoloProjectItem } from '../../types/curriculum';
 import type { LanguageVariants, ScrimLessonData } from '../../types/scrim';
 import { resolveDebuggingLanguage, resolveLessonLanguage, resolveProjectLanguage } from './languageVariants';
+import { JAVASCRIPT_SCRIMS } from '../../curriculum/javascript/course';
+
+it('abre las lecciones reales de JavaScript sin perder los proveedores asíncronos de los retos', async () => {
+  for (const lesson of Object.values(JAVASCRIPT_SCRIMS)) {
+    const resolved = resolveLessonLanguage(lesson, 'javascript');
+    expect(resolved).not.toBe(lesson);
+    expect(resolved.initialWorkspace).not.toBe(lesson.initialWorkspace);
+    expect(resolved.challenges).not.toBe(lesson.challenges);
+  }
+  const lesson = JAVASCRIPT_SCRIMS['javascript-19'];
+  const resolved = resolveLessonLanguage(lesson, 'javascript');
+  expect(resolved.challenges[0].tests[0].args![0]).toEqual({
+    __testCallback: 'resolve', value: { titulo: 'Guía práctica' },
+  });
+  resolved.challenges[0].tests[0].args!.push('solo en la copia');
+  expect(lesson.challenges[0].tests[0].args).toHaveLength(1);
+});
 
 const variants: LanguageVariants = {
   javascript: {
